@@ -1,0 +1,90 @@
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+   <title>How to use the JBoss DocBook system</title><link rel="stylesheet" href="css/html.css" type="text/css"><meta name="generator" content="DocBook XSL Stylesheets V1.65.1"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="book" lang="en"><div class="titlepage"><div><div><h1 class="title"><a name="d0e1"></a>How to use the JBoss DocBook system</h1></div><div><h2 class="subtitle">A guide for content developers</h2></div><div><p class="releaseinfo">1.0</p></div></div><div></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="preface"><a href="#target">Target Audience</a></span></dt><dt><span class="preface"><a href="#preface">Preface</a></span></dt><dt><span class="chapter"><a href="#introduction">1. Introduction to DocBook proceessing</a></span></dt><dt><span class="chapter"><a href="#howto">2. How to develop content for JBoss DocBook</a></span></dt><dd><dl><dt><span class="section"><a href="#d0e56">2.1. Setup the directories</a></span></dt><dt><span class="section"><a href="#d0e106">2.2. Author the content</a></span></dt><dt><span class="section"><a href="#d0e131">2.3.  Build the documents </a></span></dt></dl></dd><dt><span class="chapter"><a href="#styles">3. Maintain the JBoss DocBook system</a></span></dt></dl></div><div class="preface" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="target"></a>Target Audience</h2></div></div><div></div></div><p> All JBoss documentation content developers and style developers
+            should read this document. You should also read this if you want to
+            build JBoss DocBooks from the public CVS tree. </p></div><div class="preface" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="preface"></a>Preface</h2></div></div><div></div></div><p> This document introduces the new unified DocBook system for JBoss
+            documentation in the public CVS tree. There are a couple of reasons
+            why we did this. </p><div class="itemizedlist"><ul type="disc"><li> It provides a unified set of styles to make sure that all
+                JBoss DocBooks have a consistent look and feel. </li><li> The styles can be managed from a central location. We can
+                design new styles or fix bugs without worrying about
+                "deployment" issues. </li><li> The libraries and build scripts can also be managed from
+                a central location. </li><li> The build process is simplified and standardized. Just
+                follow the simple instructions in this guide to setup your docs
+                directory and copy a very simple <tt class="literal">build.xml</tt>
+                file. </li><li> Last but not least, we can reduce the duplication of
+                style sheets, XSLs and libraries in the system. </li></ul></div><p> If you have questions, please feel free to contact Michael Yuan
+            or Norman Richards for more information. </p></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="introduction"></a>Chapter&nbsp;1.&nbsp;Introduction to DocBook proceessing</h2></div></div><div></div></div><p> DocBook is an XML format to write documents. It allows the author to
+        focus on the content itself during the writing process instead of
+        worrying about the presentation. </p><p> Using the standard DocBook tags, we can tag the content according to
+        their syntax structure. The DocBook document is then processed against
+        XSL style sheets. Each tagged element in the DocBook is transformed to a
+        presentation element with the style (e.g., margin, font etc.) specified
+        in the XSL. Using different XSL stylesheets, we can generate different
+        output documents. For example, we can generate HTML and PDF outputs from
+        a single DocBook source. We can also generate multiple versions of PDF
+        (or HTML) files each with a different formatting style. </p><p> In the JBoss DocBook system, we provide XSL stylesheets to build HTML
+        and PDF outputs from the DocBook source. The build process is
+        illustrated in <a href="#build.fig" title="Figure&nbsp;1.1.&nbsp;The DocBook build process ">Figure&nbsp;1.1, &#8220;The DocBook build process &#8221;</a>. </p><div class="figure"><a name="build.fig"></a><div class="mediaobject" align="center"><img src="images/build.png" align="middle" alt="The DocBook build process"></div><p class="title"><b>Figure&nbsp;1.1.&nbsp;The DocBook build process </b></p></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="howto"></a>Chapter&nbsp;2.&nbsp;How to develop content for JBoss DocBook</h2></div></div><div></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e56"></a>2.1.&nbsp;Setup the directories</h2></div></div><div></div></div><p> Each top-level JBoss project (<tt class="literal">projectname/</tt>) in
+            the public CVS stores its documentations in the
+            <tt class="literal">projectname/docs</tt> directory. The
+            <tt class="literal">projectname/docs</tt> directory can contain any number
+            of subdirectories for API references, sample code, user guide etc.
+            But each DocBook should be placed in its own directory directly
+            under <tt class="literal">projectname/docs</tt>. For example, the user's
+            guide DocBook for a project could be placed in
+            <tt class="literal">projectname/docs/userguide</tt>. The easiest way to
+            setup this DocBook directory is to copy the
+            <tt class="literal">docbook-support/docs/guide</tt> directory to your
+            target project and use it as a template. The
+            <tt class="literal">userguide</tt> DocBook structure for the JBoss AOP
+            project is shown in <a href="#aop.fig" title="Figure&nbsp;2.1.&nbsp;The user guide DocBook in the AOP project ">Figure&nbsp;2.1, &#8220;The user guide DocBook in the AOP project &#8221;</a>. </p><div class="figure"><a name="aop.fig"></a><div class="mediaobject" align="center"><img src="images/aop.png" align="middle" alt="The user guide DocBook in the AOP project"></div><p class="title"><b>Figure&nbsp;2.1.&nbsp;The user guide DocBook in the AOP project </b></p></div><p> Inside the DocBook directory, there are typically several
+            sub-directories, each corresponding to a specific lanuguage version
+            of the document. The English version resides in the
+            <tt class="literal">en/</tt> sub-directory. Inside each language
+            directory, there are typically two sub-directories for contents:</p><div class="itemizedlist"><ul type="disc"><li> The <tt class="literal">images/</tt> directory stores images. </li><li> The <tt class="literal">modules/</tt> directory stores DocBook
+                text modules for each chapter. </li></ul></div></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e106"></a>2.2.&nbsp;Author the content</h2></div></div><div></div></div><p> Now you can write your content in DocBook format. Make sure that
+            the master file of your DocBook (i.e., the file that contains the
+            <tt class="literal">book</tt> element) in the
+            <tt class="literal">master.xml</tt> file directly under the language
+            directory (see <a href="#aop.fig" title="Figure&nbsp;2.1.&nbsp;The user guide DocBook in the AOP project ">Figure&nbsp;2.1, &#8220;The user guide DocBook in the AOP project &#8221;</a>). You can either put the
+            entire content in <tt class="literal">master.xml</tt> or divide up the
+            chapters and place them in the <tt class="literal">modules/</tt>
+            directory. If you do the latter, you should reference the chapter
+            files from the <tt class="literal">master.xml</tt> file via entity
+            reference. Please see the
+            <tt class="literal">docbook-support/docs/guide/en/master.xml</tt> file to
+            see how it is done. </p></div><div class="section" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="d0e131"></a>2.3.&nbsp; Build the documents </h2></div></div><div></div></div><p> To build the deliverable documents, just run ANT against the
+            <tt class="literal">build.xml</tt> file in the DocBook directory. The
+            <tt class="literal">build.xml</tt> file is really simple and its content
+            is shown below. It delegates most of the tasks to the
+            <tt class="literal">support.xml</tt> file mainatined by the
+            <tt class="literal">docbook-support</tt> project. </p><pre class="programlisting">
+&lt;project name="Documentation" default="all.doc" basedir="."&gt;
+
+    &lt;property name="pdf.name" value="jboss-mybook.pdf" /&gt;
+    &lt;import file="../../../docbook-support/support.xml" /&gt;
+
+    &lt;target name="all.doc" depends="clean"&gt;
+        &lt;antcall target="lang.all"&gt;
+            &lt;param name="lang" value="en"/&gt;
+        &lt;/antcall&gt;
+    &lt;/target&gt;
+
+&lt;/project&gt;
+        </pre><p> After the build is finished, you have three output documents for
+            each language edition in the following places:</p><div class="itemizedlist"><ul type="disc"><li> The <tt class="literal">build/en/html</tt> directory contains
+                the HTML version of the document. Each chapter is broken into a
+                separate HTML file and they are linked by the
+                <tt class="literal">index.html</tt> file.</li><li> The <tt class="literal">build/en/html_signle</tt> directory
+                contains a big <tt class="literal">index.html</tt> file which holds
+                the entire document. </li><li> The <tt class="literal">build/en/pdf</tt> directory contains
+                the PDF version of the document. </li></ul></div></div></div><div class="chapter" lang="en"><div class="titlepage"><div><div><h2 class="title"><a name="styles"></a>Chapter&nbsp;3.&nbsp;Maintain the JBoss DocBook system</h2></div></div><div></div></div><p> The structure of the <tt class="literal">docbook-support</tt> module is
+        illustrated in <a href="#docbook.fig" title="Figure&nbsp;3.1.&nbsp;The docbook-support module ">Figure&nbsp;3.1, &#8220;The docbook-support module &#8221;</a>. The contents are as follows. </p><div class="figure"><a name="docbook.fig"></a><div class="mediaobject" align="center"><img src="images/docbook.png" align="middle" alt="The docbook-support module"></div><p class="title"><b>Figure&nbsp;3.1.&nbsp;The docbook-support module </b></p></div><div class="itemizedlist"><ul type="disc"><li> The <tt class="literal">support</tt> directory contains Java
+            libraries and executables for XML processors. It also contains
+            standard DocBook XSL stylesheets. This is the place for "system" software.</li><li> The <tt class="literal">styles</tt> directory contains DocBook
+            styles we developed in-house for JBoss. Each language would have a
+            separate set of styles.</li><li> The <tt class="literal">docs</tt> directory contains this guide to
+            serve as a template for other projects. </li><li> The <tt class="literal">support.xml</tt> file contains all the
+            necessary ANT tasks to build DocBooks. It is referenced from the
+            <tt class="literal">build.xml</tt> file for each individual DocBook
+            project. </li></ul></div></div></div></body></html>
