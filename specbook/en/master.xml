@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Alpha.20070822</releaseinfo>
+    <releaseinfo>1.0.Alpha.20071012</releaseinfo>
 
-    <date>2007-08-22</date>
+    <date>2007-10-12</date>
 
     <copyright>
       <year>2007</year>
@@ -188,7 +188,7 @@
 
         <para>Collection-valued or array-valued fields and properties can hold
         constraint declarations, in this case the validated state is the
-        collection or the array. </para>
+        collection or the array.</para>
 
         <para>If cascade validation is requested on such a field or property,
         all the objects contained in the collection-valued or array-valued
@@ -365,7 +365,7 @@
         but <literal>message</literal>, <literal>shortcircuit</literal> and
         <literal>groups</literal>.</para>
 
-        <para>TBD Any other name to exclude? Like valid-* </para>
+        <para>TBD Any other name to exclude? Like valid-*</para>
 
         <section>
           <title>message</title>
@@ -389,7 +389,7 @@
           <literal>groups</literal> parameter defined, the
           <literal>default</literal> group is used. The validation will be
           applied if one or more requested group is matching one or more
-          constraint declaration groups. See XXX. </para>
+          constraint declaration groups. See XXX.</para>
         </section>
 
         <section>
@@ -526,6 +526,85 @@ public interface Constraint {
       <para>If the Constraint validation routine retrieve an object of an
       unexpected type an <literal>IllegalArgumentException</literal> should be
       raised.</para>
+    </section>
+
+    <section id="constraintsdefinition-standardconstraint">
+      <title>StandardConstraint description</title>
+
+      <para>Constraint metadata can be consumed through the <xref
+      linkend="constraint-metadata" />. In addition to their
+      <classname>Constraint</classname> inmplementation, built-in and custom
+      constraint validators can describe the constraint through some static
+      and standard dimensions (such as nullability, length for a String etc).
+      Such metadata are particularly useful for third-party metadata consumers
+      like persistence frameworks generating database schemas (such as Java
+      Persistence) or presentation frameworks.</para>
+
+      <para>Any constraint validator can implement the
+      <classname>StandardConstraint</classname> interface to express such
+      static dimensions.</para>
+
+      <programlisting>/**
+ * Define the constraint influence on standard constraints
+ *
+ * @author Emmanuel Bernard
+ */
+public interface StandardConstraint {
+    /**
+     * returns the StandardConstraintDescriptor initialized according to the
+     * constraint validator
+     */
+    StandardConstraintDescriptor getStandardConstraints();
+}
+
+/**
+ * Describe how the current constraint influences the standard constraints
+ *
+ * @author Emmanuel Bernard
+ */
+public class StandardConstraintDescriptor {
+    /**
+     * Defines the object nullability.
+     * TRUE means the object is nullable,
+     * FALSE means the object is not nullable
+     * NULL means unaffected.
+     */
+    public Boolean getNullability() {
+        return null;
+    }
+
+    /**
+     * Defines the precision if the validated object is a number.
+     * NULL means unaffected
+     */
+    public Integer getPrecision() {
+        return null;
+    }
+
+    /**
+     * Defines the scale if the validated object is a number.
+     * NULL means unaffected
+     */
+    public Integer getScale() {
+        return null;
+    }
+
+    /**
+     * Defines the length if the validated object is a string.
+     * NULL means unaffected
+     */
+    public Boolean getLength() {
+        return null;
+    }
+}</programlisting>
+
+      <para>TODO: should we expand the list? Up to which level.</para>
+
+      <para>TODO should we explicitely allow "proprietary" extensions based on
+      the same model (ie a specific interface implemented by the constraint
+      implementation and providing proprietary dimensions? Another extension
+      possibility is to subclass StandardConstraintDescriptor by a
+      "proprietary" subclass.</para>
     </section>
   </chapter>
 
@@ -774,8 +853,6 @@ public interface InvalidConstraint {
     <section>
       <title>Message</title>
 
-      <para>TODO Introduce MessageResolver</para>
-
       <para>The default message resolver can resolve properties based on a
       user defined <filename>/ValidationMessages.properties</filename> file
       (which supports properties localization) backed up by a Bean Validation
@@ -812,15 +889,50 @@ public interface InvalidConstraint {
           for step 2 and 3 in a row.</para>
         </listitem>
       </orderedlist>
+
+      <para>It is possible to plug a custom message resolver implementation
+      (for example to resolve contextual data, or to adjust the Locale used).
+      A message resolver implementation must implement the following
+      interface:</para>
+
+      <programlisting>/**
+* Interpolate a given validation message
+*
+* @author Emmanuel Bernard
+*/
+public interface MessageResolver {
+    /**
+     * Interpolate the message from the constraint parameters (annotation)
+     */
+    String interpolate(String message, ConstraintDescriptor constraintDescriptor);
+}</programlisting>
+
+      <para><parameter>message</parameter> is the raw unresolved message as
+      seen in <literal>@Annotation.message</literal>,
+      <parameter>constraintDescriptor</parameter> is the
+      <classname>ConstraintDescriptor</classname> object representing the
+      metadata of the failing constraint (see <xref
+      linkend="constraint-metadata" />). Every time a constraint is failing,
+      the final message is resolved calling
+      <methodname>MessageResolver.interpolate()</methodname>.</para>
+
+      <para>A message resolver implementation is expected to be
+      threadsafe.</para>
+
+      <para>The message resolver is injected to the validator instance through
+      <methodname>validator.setMessageResolver(MessageResolver)</methodname>.
+      TODO: Define threadsafety rules when switching from one MessageResolver
+      to an other.</para>
     </section>
   </chapter>
 
-  <chapter>
+  <chapter id="constraint-metadata" label=""
+           xreflabel="Constraint metadata request API">
     <title>Constraint metadata request APIs</title>
 
     <para>The Bean Validation specification provides a way to query the
     constraint repository. This API is expected to be used for tooling support
-    as well as integration with other frameworks, library and JSRs: the Bean
+    as well as integration with other frameworks, libraries and JSRs: the Bean
     Validation is expected to be the main object oriented constraint
     declaration repository, whose metadata are consumed by all component
     oriented or domain model oriented frameworks avoiding duplication at the
@@ -844,11 +956,10 @@ public interface InvalidConstraint {
  * Describe a contraint validation defect
  *
  * FIXME the rational behind rootBean and propertyPath is to keep the context available to the user
- * TODO add pointers to the metadata? 
  *
  * @author Emmanuel Bernard
  */
-public interface InvalidConstraint {
+public interface Validator&lt;T&gt; {
 
     [...]
 
@@ -905,58 +1016,44 @@ public interface InvalidConstraint {
       field, a method or a class).</para>
 
       <programlisting>/**
- * Describe a validated element (class, field or property)
- * //TODO interface or class
- *
+ * Describes a validated element (class, field or property)
+ * 
  * @author Emmanuel Bernard
  */
-public class ElementDescriptor {
-    
-    [...]
-
+public interface ElementDescriptor {
     /**
      * Element type
      */
-    public ElementType getElementType() {
-        return elementType;
-    }
+    ElementType getElementType();
 
     /**
      * statically defined returned type
      * //TODO should it be Type or even completly removed
      */
-    public Class getReturnType() {
-        return returnType;
-    }
+    Class getReturnType();
 
     /**
      * is the association cascaded
      */
-    public boolean isCascaded() {
-        return cascaded;
-    }
+    boolean isCascaded();
 
     /**
      * all the constraint descriptors for the given element
-     * @return
      */
-    public ConstraintDescriptor[] getConstraintDescriptors() {
-        return constraintDescriptors;
-    }
+    ConstraintDescriptor[] getConstraintDescriptors();
 
     /**
      * Property path from the root entity validated.
      * //FIXME there is a problem in describing cyclic dependencies
      */
-    public String getPropertyPath() {
-        return propertyPath;
-    }
+    String getPropertyPath();
+
 }</programlisting>
 
       <para><methodname>getElementType</methodname> returns the
       <classname>java.lang.annotations.ElementType</classname> the constraint
       is declared on. The expected types for the current version of the Bean
-      Validation spec are:</para>
+      Validation specification are:</para>
 
       <itemizedlist>
         <listitem>
@@ -997,52 +1094,35 @@ public class ElementDescriptor {
       given constraint declaration (ie a constraint annotation).</para>
 
       <programlisting>/**
- * Describe a single constraint
- * //TODO interface or class
- * 
+ * describes a single constraint
+ *
  * @author Emmanuel Bernard
  */
-public class ConstraintDescriptor {
-    
+public interface ConstraintDescriptor {
     /**
      * Constraint declaration annotation
      */
-    public Annotation getAnnotation() {
-        return annotation;
-    }
+    Annotation getAnnotation();
 
     /**
      * constraint parameters
      */
-    public Map&lt;String, Object&gt; getParameters() {
-        return parameters;
-    }
+    Map&lt;String, Object&gt; getParameters();
 
     /**
      * Does the constraint enables short circuit
      */
-    public boolean isShortCircuited() {
-        return shortCircuited;
-    }
+    boolean isShortCircuited();
 
     /**
-     * What are the groups the constraint is applied on
+     * What are the contexts the constraint is applied on
      */
-    public String[] getGroups() {
-        return groups;
-    }
-
-    //TODO keep that?
-    public String getPartiallyResolvedMessage() {
-        return partiallyResolvedMessage;
-    }
+    String[] getContexts();
 
     /**
      * Return the constraint implementation routine
      */
-    public Constraint getConstraintImplementation() {
-        return constraintImplementation;
-    }
+    Constraint getConstraintImplementation();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -1062,14 +1142,17 @@ public class ConstraintDescriptor {
       <para><methodname>getGroups</methodname> returns the group names, the
       constraint is supposed to be applied upon.</para>
 
-      <para><methodname>getPartiallyResolvedMessage</methodname> returns the
-      interpolated message as defined in XXX (TODO minor the pluggable
-      messageResolver) TODO is this somewhat useful?</para>
-
       <para><methodname>getConstraintImplementation</methodname> returns the
       initialized and ready to use
       <classname>javax.validator.Constraint</classname> implementation for the
-      given constraint declaration.</para>
+      given constraint declaration. Specifically, the
+      <classname>StandardConstraintDescriptor</classname> is available if the
+      constraint validator implements
+      <classname>StandardConstraint</classname> (see <xref
+      linkend="constraintsdefinition-standardconstraint" />).</para>
+
+      <para>TODO should ConstraintDescriptor points back to
+      ElementDescriptor?</para>
     </section>
   </chapter>
 
