@@ -32,7 +32,7 @@
     </authorgroup>
 
     <legalnotice>
-      <para>All right reserved, do not distribute outside the JSR 303 expert
+      <para>All rights reserved, do not distribute outside the JSR 303 expert
       group.</para>
     </legalnotice>
   </bookinfo>
@@ -40,7 +40,7 @@
   <preface>
     <title>License</title>
 
-    <para>All right reserved, do not distribute outside the JSR 303 expert
+    <para>All rights reserved, do not distribute outside the JSR 303 expert
     group.</para>
   </preface>
 
@@ -51,17 +51,14 @@
     validation in Java EE and Java SE. The technical objective of this work is
     to provide an object level constraint declaration and validation facility
     for the Java application developer, as well as a metadata repository and
-    querying API for such constraints repository.</para>
+    querying API for a constraints repository.</para>
 
     <section>
       <title>Expert group</title>
 
       <para>This work is being conducted as part of JSR-303 under the Java
       Community Process Program. This specification is the result of the
-      collaborative work of the members of the JSR 303 Expert Group. These
-      include the following present and former expert group members: Red Hat
-      Middleware LLC: Emmanuel Bernard, TBD corp, Jason Carreira, TBD
-      individuals.</para>
+      collaborative work of the members of the JSR 303 Expert Group.</para>
     </section>
 
     <section>
@@ -87,8 +84,7 @@
       application programming, as well as rich client Swing application
       developers. This API is seen as a general extension to the JavaBeans
       object model, and as such is expected to be used as a core component in
-      other specifications, such as JSF, JPA, Web Beans and Bean
-      Binding.</para>
+      other specifications.</para>
     </section>
   </chapter>
 
@@ -138,8 +134,8 @@ public @interface ValidatorClass {
       <section>
         <title>Parameters</title>
 
-        <para>A constraint definition can have several parameters that a user
-        can (or might have to) define when using the constraint. The
+        <para>A constraint definition can have several elements that a user
+        can (or might have to) specify when using the constraint. The
         parameters are mapped as annotation parameters. Parameters can be on
         any type supported by annotations. The parameter names can be anything
         but <literal>message</literal>, <literal>shortcircuit</literal> and
@@ -148,12 +144,13 @@ public @interface ValidatorClass {
         <section id="constraintsdefinitionimplementation-constraintdefinition-parameters-message">
           <title>message</title>
 
-          <para><literal>message</literal> is a String parameter that any
-          constraint annotation must implement.</para>
+          <para>Every constraint annotation must define a
+          <literal>message</literal> element of type
+          <literal>String</literal>.</para>
 
           <programlisting>    String message() default "{beancheck.myConstraintFailure}";</programlisting>
 
-          <para>The <methodname>message</methodname> parameter value will be
+          <para>The <methodname>message</methodname> element value will be
           used to build the (localized) error message. See <xref
           linkend="validationapi-message" /> for a detailed
           explanation.</para>
@@ -162,7 +159,7 @@ public @interface ValidatorClass {
         <section id="constraintsdefinitionimplementation-constraintdefinition-groups">
           <title>groups</title>
 
-          <para><literal>groups</literal> is an optional parameter describing
+          <para><literal>groups</literal> is an optional element describing
           the group(s) the constraint declaration belongs to.</para>
 
           <programlisting>    String[] groups() default {};</programlisting>
@@ -171,11 +168,11 @@ public @interface ValidatorClass {
 
           <para>When using the constraint declaration, if no group is declared
           or if the annotation does not have a <literal>groups</literal>
-          parameter defined, the <literal>default</literal> group is used. The
+          element defined, the <literal>default</literal> group is used. The
           validation will be applied if one or more requested group is
           matching one or more constraint declaration groups. See <xref
           linkend="validationapi-validatorapi-groups" />. It is recommended
-          for all constraint definitions to support this parameter.</para>
+          for all constraint definitions to support this element.</para>
 
           <para>Groups are useful to define some subsets of constraints,
           especially grouping them by use cases when some partial validation
@@ -185,12 +182,12 @@ public @interface ValidatorClass {
         <section>
           <title>shortcircuit</title>
 
-          <para>This parameter is a boolean defaulted to
+          <para>This element is a boolean defaulted to
           <literal>false</literal>.</para>
 
           <programlisting>    boolean shortcircuit() default false;</programlisting>
 
-          <para>If the parameter is not present, the
+          <para>If the element is not present, the
           <literal>shortcircuit</literal> parameter value is considered
           <literal>false</literal> at declaration time. If
           <parameter>shortcircuit</parameter> is set to true, when a
@@ -201,15 +198,15 @@ public @interface ValidatorClass {
           linkend="constraintdeclarationvalidationprocess-validationroutine" />.</para>
 
           <para>It is recommended for all constraint definitions to support
-          this parameter.</para>
+          this element.</para>
         </section>
 
         <section>
           <title>Constraint specific parameter</title>
 
-          <para>The constraint annotation can support any additional
-          parameters needed to refine the way the constraint will be applied.
-          Those parameters will be provided to the constraint validation
+          <para>The constraint annotation can support any additional element
+          needed to refine the way the constraint will be applied. Those
+          elements will be provided to the constraint validation
           implementation by the Bean Validation provider.</para>
         </section>
       </section>
@@ -266,7 +263,7 @@ public @interface Min {
       <title>Multiple constraint declarations of the same type</title>
 
       <para>It is sometimes useful to apply the same constraint type (i.e.
-      same annotation type) twice on the same target.
+      same annotation type) more than once on the same target.
       <literal>@Pattern</literal> (constraint based on a regular expression)
       is an example, the use of different constraint parameters for different
       groups is another example.</para>
@@ -575,7 +572,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
     <title>Constraint declaration and validation process</title>
 
     <para>The Bean Validation specification aims at defining a framework for
-    JavaBeans constraints declaration and validation. Constraints can be
+    JavaBeans constraint declarations and validations. Constraints can be
     applied to the object itself or to any of the object's fields or
     properties. The primary declaration mechanism is through the use of
     annotations.</para>
@@ -590,16 +587,17 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       requirements.</para>
 
       <para>Properties holding constraints declaration have to follow the
-      JavaBean specification, the object state to be validated will be access
-      either through the JavaBeans style property accessor or via attribute
-      access. Getters and field visibility are not restricted.</para>
+      JavaBean specification, the object state to be validated will be
+      accessed either through the JavaBeans style property accessor or via
+      attribute access. Getters and field visibility are not
+      restricted.</para>
 
-      <para>It is required that the entity class follows the method signature
+      <para>It is required that the entity class follow the method signature
       conventions for JavaBeans read properties (as defined by the JavaBeans
       Introspector class) for properties holding a constraint
       declaration.</para>
 
-      <para>The objects can support inheritance, interface and
+      <para>The objects can support inheritance, interfaces and
       associations.</para>
 
       <para>A given constraint declaration can be applied to any field,
@@ -647,11 +645,18 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       <section>
         <title>Associated objects validation</title>
 
-        <para>An bean B associated to (field or property of) a bean A can be
+        <para>The Bean Validation specification supports the ability to
+        validate associated objects (i.e. an object graph) by cascade. Instead
+        of manually validating several related (associated) objects one by one
+        explicitly through the validation API, a unified list of invalid
+        values is returned during a single validation routine operation
+        call.</para>
+
+        <para>A bean B associated to (field or property of) a bean A can be
         requested to be validated by cascade when bean A is validated:
         validation by cascade means that object B's class, field and method
-        constraint have to be validated. Object B is accessed through the
-        previously describe mechanism. Association is defined as an object
+        constraints have to be validated. Object B is accessed through the
+        previously described mechanisms. Association is defined as an object
         field or property referencing another object, or as an object field or
         property referencing a collection or array of objects. The cascading
         behavior is defined statically at the field or property level through
@@ -672,6 +677,17 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         <classname>java.util.Set</classname>,
         <classname>java.util.List</classname>,
         <classname>java.util.Map</classname>.</para>
+
+        <para>The <classname>@Valid</classname> annotation on a given
+        association (i.e. object reference or collection / array of objects),
+        dictates the Bean Validator implementation to apply recursively the
+        bean validation routine on (each of) the associated object(s) when the
+        field or the getter is processed and after the current field or getter
+        constraint have been processed. This mechanism is recursive: an
+        associated object can itself contains cascaded references. The Bean
+        Validation implementation must ignore the cascading operation if the
+        associated object instance has already been validated by the current
+        validation routine, thus preventing infinite loops.</para>
       </section>
     </section>
 
@@ -721,7 +737,9 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         </listitem>
       </itemizedlist>
 
-      <para>For more information about groups, see <xref
+      <para><literal>Groups</literal> of constraints may be defined for the
+      purpose of selectively controlling the execution of constraints, see
+      <xref
       linkend="constraintsdefinitionimplementation-constraintdefinition-groups" />.</para>
 
       <para>The object validation routine is described as such. For each
@@ -763,13 +781,6 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
 
       <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
         <title>Object graph validation</title>
-
-        <para>The Bean Validation specification supports the ability to
-        validate associated objects (i.e. an object graph) by cascade. Instead
-        of manually validating several related (associated) objects one by one
-        explicitly through the validation API, a unified list of invalid
-        values is returned during a single validation routine operation
-        call.</para>
 
         <para>The <classname>@Valid</classname> annotation on a given
         association (i.e. object reference or collection / array of objects),
@@ -1186,9 +1197,9 @@ author.setCompany( "Some random publisher but with a really really long name" );
 
       <para>The main Bean Validation API is the
       <classname>javax.validation.Validator&lt;T&gt;</classname> interface.
-      The besides implementing the <classname>Validator&lt;T&gt;</classname>
-      API, the Bean Validation provider implementation of Validator&lt;T&gt;
-      must have a constructor Constructor(Class&lt;T&gt;).</para>
+      Besides implementing the <classname>Validator&lt;T&gt;</classname> API,
+      the Bean Validation provider implementation of Validator&lt;T&gt; must
+      have a constructor Constructor(Class&lt;T&gt;).</para>
 
       <para>A <classname>Validator&lt;T&gt;</classname> instance is able to
       validate instances of T classes (and the associated objects if any). It
