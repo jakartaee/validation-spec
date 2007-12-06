@@ -14,7 +14,7 @@
     <copyright>
       <year>2007</year>
 
-      <holder>Red Hat Middleware, LLC (to be adjusted but for now...)</holder>
+      <holder>Red Hat Middleware, LLC and Acorn Bay Software Inc.(to be adjusted but for now...)</holder>
     </copyright>
 
     <authorgroup>
@@ -27,6 +27,15 @@
 
         <affiliation>
           <orgname>Red Hat Middleware, LLC</orgname>
+        </affiliation>
+      </author>
+      <author>
+        <firstname>Steve</firstname>
+
+        <surname>Peterson</surname>
+
+        <affiliation>
+          <orgname>Acorn Bay Software Inc.</orgname>
         </affiliation>
       </author>
     </authorgroup>
@@ -1646,29 +1655,29 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
       message resolver shall use the algorithm defined here to resolve message descriptors
       into human-readable messages.</para>
       
-      <para>The resolver begins by retrieving the message descriptor from
-      the "message" property of the constraint definition.  Message parameters, which are
-      string literals enclosed in braces [need to define the string literal here], are then
+      <para>Each constraint defines a message descriptor via its "message" property.  
+      Every constraint definition shall define a default
+      message descriptor for that constraint.  A particular 
+      use of a constraint can override the default
+      message descriptor of the constraint by setting the 
+      "message" property on the constraint.</para>
+      
+      <para>The message descriptor is a string literal and may contain one or more
+      message parameters.  Message parameters are
+      string literals enclosed in braces [need to define the string literal here].
+      </para>
+      
+      <section id="default-resolution-algorithm">
+      <title>Algorithm</title>
+      
+      <para>The default message resolver begins by retrieving the message descriptor from
+      the constraint.  Message parameters are then
       replaced by repeatedly executing the steps listed below until no replacements
       are performed.</para>
-
-      <para>The default message resolver first resolves messages using the
-      user defined message file named <filename>/ValidationMessages.properties</filename>.
-      If the specified message is not found in that file, the message is then resolved using a
-      set of standard message properties.  See ... for a list of standard messages that each implementation
-      shall resolve.</para>
       
       <para>SteveP:  Do we want to allow MessageFormat style formatting here?</para>
       
       <orderedlist>
-        <listitem>
-          <para>The message string is taken from the
-          <parameter>message</parameter> parameter of the currently failing
-          constraint (while defaulted, such a message can be overridden by the
-          user through the constraint annotation) See <xref
-          linkend="constraintsdefinitionimplementation-constraintdefinition-parameters-message" />
-          </para>
-        </listitem>
 
         <listitem>
           <para>A message parameter that matches the name of a property of the
@@ -1699,14 +1708,15 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
       
       </section>
       
+      </section>
+      
       <section id="custom-message-resolution">
       
       <title>Custom message resolution</title>
 
-      <para>It is possible to plug a custom message resolver implementation
+      <para>A custom message resolver may be provided
       (for example to resolve contextual data, or to adjust the Locale used).
-      A message resolver implementation must implement the following
-      interface:</para>
+      A message resolver implementation implements the MessageResolver interface.</para>
 
       <programlisting>/**
 * Interpolate a given validation message
@@ -1717,23 +1727,31 @@ public interface MessageResolver {
     /**
      * Interpolate the message from the constraint parameters (annotation)
      */
-    String interpolate(String message, ConstraintDescriptor constraintDescriptor);
+    String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value);
 }</programlisting>
 
-      <para><parameter>message</parameter> is the raw unresolved message as
-      seen in <literal>@Annotation.message</literal>,
+      <para><parameter>message</parameter> is the message descriptor as
+      seen in <literal>@Annotation.message</literal></para>
+      
+      <para>
       <parameter>constraintDescriptor</parameter> is the
       <classname>ConstraintDescriptor</classname> object representing the
       metadata of the failing constraint (see <xref
-      linkend="constraintmetadata" />). Every time a constraint is failing,
-      the final message is resolved calling
-      <methodname>MessageResolver.interpolate()</methodname>.</para>
+      linkend="constraintmetadata" />). </para>
+      
+      <para><parameter>value</parameter> is the value being validated.</para>
+      
+      <para>
+      <methodname>MessageResolver.interpolate()</methodname> is invoked once
+      for each constraint whose isValid() method returns false..</para>
 
-      <para>A message resolver implementation is expected to be
+      <para>A message resolver implementation shall be
       threadsafe.</para>
 
       <para>The message resolver is injected to the validator instance through
       <methodname>validator.setMessageResolver(MessageResolver)</methodname>.</para>
+      
+      <para>SteveP:  should we support per-invocation message resolver override?</para>
       
       </section>
 
@@ -1810,7 +1828,7 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
     </section>
   </chapter>
 
-  <chapter id="constraintmetadata" label=""
+  <chapter id="constraintmetadata"
            xreflabel="Constraint metadata request API">
     <title>Constraint metadata request APIs</title>
 
@@ -1868,6 +1886,12 @@ public interface Validator&lt;T&gt; {
      * return the property names having at least a constraint defined
      */
     String[] getValidatedProperties();
+
+    /**
+     * set the message resolver to be used for
+     * message resolution.
+     */
+    void setMessageResolver(MessageResolver resolver);
 
 }</programlisting>
 
