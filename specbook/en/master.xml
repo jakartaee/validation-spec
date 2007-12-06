@@ -1636,19 +1636,33 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
     </section>
 
     <section id="validationapi-message">
-      <title>Message</title>
+      <title>Message resolution</title>
+      
+      <section id="default-messageresolver">
+      
+      <title>Default message resolution</title>
+      
+      <para>A conforming implementation includes a default message resolver.  This
+      message resolver shall use the algorithm defined here to resolve message descriptors
+      into human-readable messages.</para>
+      
+      <para>The resolver begins by retrieving the message descriptor from
+      the "message" property of the constraint definition.  Message parameters, which are
+      string literals enclosed in braces [need to define the string literal here], are then
+      replaced by repeatedly executing the steps listed below until no replacements
+      are performed.</para>
 
-      <para>The default message resolver can resolve properties based on a
-      user defined <filename>/ValidationMessages.properties</filename> file
-      (which supports properties localization) backed up by a Bean Validation
-      provider embedded property file.</para>
-
-      <para>The error message for a given constraint failure is built from the
-      following rules:</para>
-
+      <para>The default message resolver first resolves messages using the
+      user defined message file named <filename>/ValidationMessages.properties</filename>.
+      If the specified message is not found in that file, the message is then resolved using a
+      set of standard message properties.  See ... for a list of standard messages that each implementation
+      shall resolve.</para>
+      
+      <para>SteveP:  Do we want to allow MessageFormat style formatting here?</para>
+      
       <orderedlist>
         <listitem>
-          <para>the message string is taken from the
+          <para>The message string is taken from the
           <parameter>message</parameter> parameter of the currently failing
           constraint (while defaulted, such a message can be overridden by the
           user through the constraint annotation) See <xref
@@ -1657,25 +1671,37 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
         </listitem>
 
         <listitem>
-          <para>any <literal>{property}</literal> pattern (open bracket -
-          property name - close bracket) is extended to the value of property
-          in the constraint parameters if such a parameter name is present,
-          otherwise it is ignored</para>
+          <para>A message parameter that matches the name of a property of the
+          constraint definition is replaced by the value of that property.</para>
         </listitem>
 
         <listitem>
-          <para>any <literal>{property}</literal> pattern is extended from the
-          matching name in <filename>/ValidationMessages.properties</filename>
-          if such a property is present in the properties file. If not,
-          <literal>{property}</literal> is extended from the matching name in
-          the Bean Validation provider embedded property file.</para>
+          <para>The <literal>{value}</literal> message parameter is replaced 
+          by the value being validated, using the result of invoking the toString() method on
+          value.  If the value being validated is null, the string 'null' is
+          used as the replacement string.</para>
         </listitem>
 
         <listitem>
-          <para>step 2 and 3 are executed until no more matching can be found
-          for step 2 and 3 in a row.</para>
+          <para>The message parameter is used as a key to search the 
+          <filename>/ValidationMessages.properties</filename>.  If a property
+          is found, the message parameter is replaced with the property.
+          </para>
+        </listitem>
+        
+        <listitem>
+          <para>The message parameter is used as a key to search the 
+          default message resolver's built-in message properties.  If a property
+          is found, the message parameter is replaced with the property.
+          </para>
         </listitem>
       </orderedlist>
+      
+      </section>
+      
+      <section id="custom-message-resolution">
+      
+      <title>Custom message resolution</title>
 
       <para>It is possible to plug a custom message resolver implementation
       (for example to resolve contextual data, or to adjust the Locale used).
@@ -1708,25 +1734,19 @@ public interface MessageResolver {
 
       <para>The message resolver is injected to the validator instance through
       <methodname>validator.setMessageResolver(MessageResolver)</methodname>.</para>
+      
+      </section>
 
       <section>
         <title>Examples</title>
 
         <para>These examples describe message interpolation based on the
-        default message resolver implementation and the given
-        <filename>ValidationMessages.properties</filename> file. The current
+        default message resolver's built-in messages (see <xref
+      linkend="standard-resolver-messages" />), and the 
+        <filename>ValidationMessages.properties</filename> file shown in table . The current
         locale is assumed English.</para>
 
         <programlisting>//ValidationMessages.properties
-beancheck.length=length must be between {min} and {max}
-beancheck.max=must be less than or equal to {value}
-beancheck.min=must be greater than or equal to {value}
-beancheck.notNull=may not be null
-beancheck.range=must be between {min} and {max}
-beancheck.size=size must be between {min} and {max}
-beancheck.email=not a well-formed email address
-beancheck.notEmpty=may not be null or empty
-beancheck.creditCard=Invalid credit card number
 myapp.creditcard.error=Your credit card number is not valid</programlisting>
 
         <para></para>
@@ -2284,4 +2304,21 @@ assert propertyDescriptor.isCascaded()</programlisting>
 
     <para></para>
   </appendix>
+  <appendix id="standard-resolver-messages">
+    <title>Standard resolver messages</title>
+
+    <para>The properties listed below are resolved by the default message resolver.</para>
+    
+            <programlisting>beancheck.length=length must be between {min} and {max}
+beancheck.max=must be less than or equal to {value}
+beancheck.min=must be greater than or equal to {value}
+beancheck.notNull=may not be null
+beancheck.range=must be between {min} and {max}
+beancheck.size=size must be between {min} and {max}
+beancheck.email=not a well-formed email address
+beancheck.notEmpty=may not be null or empty
+beancheck.creditCard=Invalid credit card number</programlisting>
+  </appendix>
+    
+  
 </book>
