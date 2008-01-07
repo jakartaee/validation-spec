@@ -7,14 +7,15 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Alpha.20071119</releaseinfo>
+    <releaseinfo>1.0.Beta1</releaseinfo>
 
     <date>2007-11-19</date>
 
     <copyright>
-      <year>2007</year>
+      <year>2007, 2008</year>
 
-      <holder>Red Hat Middleware, LLC and Steve Peterson(to be adjusted but for now...)</holder>
+      <holder>Red Hat Middleware, LLC and Steve Peterson (to be adjusted but
+      for now...)</holder>
     </copyright>
 
     <authorgroup>
@@ -29,14 +30,11 @@
           <orgname>Red Hat Middleware, LLC</orgname>
         </affiliation>
       </author>
+
       <author>
         <firstname>Steve</firstname>
 
         <surname>Peterson</surname>
-
-        <affiliation>
-          <orgname></orgname>
-        </affiliation>
       </author>
     </authorgroup>
 
@@ -719,20 +717,31 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       invocation is passed to the validation routine.</para>
     </section>
 
+    <section id="constraintdeclarationvalidationprocess-inheritance">
+      <title>Inheritance (interface and superclass)</title>
+
+      <para>A constraint declaration can be defined on an interface.
+      Constraint declarations held on superclasses (recursively) as well as
+      interfaces (or super interfaces recursively) have to be honored by the
+      constraint validation routine. Constraints declared on the superclasses
+      have to be checked before the constraints declared on the subclasses.
+      Constraints declared on interfaces have to be checked before constraints
+      declared on the implementation class. Ordering between constraints from
+      different interfaces is undefined.</para>
+
+      <para>The constraints are additive. This especially means that
+      constraints declared on a superclass getter will be checked as well as
+      any constraints defined on an overridden version of the getter.</para>
+    </section>
+
     <section id="constraintdeclarationvalidationprocess-validationroutine">
       <title>Validation routine</title>
 
       <para>To validate a given bean instance, the Bean Validation provider is
-      expected to execute the constraint validations in the following
-      order:</para>
+      expected to execute (for a given class or interface in the hierarchy
+      level) the constraint validations in the following order:</para>
 
       <itemizedlist>
-        <listitem>
-          <para>execute all class level validations matching the requested
-          groups (or the default group if none are explicitly
-          requested)</para>
-        </listitem>
-
         <listitem>
           <para>execute all field level validations matching the requested
           groups (or the default group if none are explicitly requested) and
@@ -743,6 +752,12 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
           <para>execute all getter level validations matching the requested
           groups (or the default group if none are explicitly requested) and
           the cascading validation if necessary (see below)</para>
+        </listitem>
+
+        <listitem>
+          <para>execute all class level validations matching the requested
+          groups (or the default group if none are explicitly
+          requested)</para>
         </listitem>
       </itemizedlist>
 
@@ -807,23 +822,6 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         path to reach the object from the root validated object (See <xref
         linkend="validationapi-invalidconstraint" />).</para>
       </section>
-    </section>
-
-    <section id="constraintdeclarationvalidationprocess-inheritance">
-      <title>Inheritance (interface and superclass)</title>
-
-      <para>A constraint declaration can be defined on an interface.
-      Constraint declarations held on superclasses (recursively) as well as
-      interfaces (or super interfaces recursively) have to be honored by the
-      constraint validation routine. Constraints declared on the superclasses
-      have to be checked before the constraints declared on the subclasses.
-      Constraints declared on interfaces have to be checked before constraints
-      declared on the implementation class. Ordering between constraints from
-      different interfaces is undefined.</para>
-
-      <para>The constraints are additive. This especially means that
-      constraints declared on a superclass getter will be checked as well as
-      any constraints defined on an overridden version of the getter.</para>
     </section>
 
     <section>
@@ -1646,79 +1644,75 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
 
     <section id="validationapi-message">
       <title>Message resolution</title>
-      
+
       <section id="default-messageresolver">
-      
-      <title>Default message resolution</title>
-      
-      <para>A conforming implementation includes a default message resolver.  This
-      message resolver shall use the algorithm defined here to resolve message descriptors
-      into human-readable messages.</para>
-      
-      <para>Each constraint defines a message descriptor via its "message" property.  
-      Every constraint definition shall define a default
-      message descriptor for that constraint.  A particular 
-      use of a constraint can override the default
-      message descriptor of the constraint by setting the 
-      "message" property on the constraint.</para>
-      
-      <para>The message descriptor is a string literal and may contain one or more
-      message parameters.  Message parameters are
-      string literals enclosed in braces [need to define the string literal here].
-      </para>
-      
-      <section id="default-resolution-algorithm">
-      <title>Algorithm</title>
-      
-      <para>The default message resolver begins by retrieving the message descriptor from
-      the constraint.  Message parameters are then
-      replaced by repeatedly executing the steps listed below until no replacements
-      are performed.</para>
-      
-      <para>SteveP:  Do we want to allow MessageFormat style formatting here?</para>
-      
-      <orderedlist>
+        <title>Default message resolution</title>
 
-        <listitem>
-          <para>A message parameter that matches the name of a property of the
-          constraint definition is replaced by the value of that property.</para>
-        </listitem>
+        <para>A conforming implementation includes a default message resolver.
+        This message resolver shall use the algorithm defined here to resolve
+        message descriptors into human-readable messages.</para>
 
-        <listitem>
-          <para>The <literal>{value}</literal> message parameter is replaced 
-          by the value being validated, using the result of invoking the toString() method on
-          value.  If the value being validated is null, the string 'null' is
-          used as the replacement string.</para>
-        </listitem>
+        <para>Each constraint defines a message descriptor via its "message"
+        property. Every constraint definition shall define a default message
+        descriptor for that constraint. A particular use of a constraint can
+        override the default message descriptor of the constraint by setting
+        the "message" property on the constraint.</para>
 
-        <listitem>
-          <para>The message parameter is used as a key to search the 
-          <filename>/ValidationMessages.properties</filename>.  If a property
-          is found, the message parameter is replaced with the property.
-          </para>
-        </listitem>
-        
-        <listitem>
-          <para>The message parameter is used as a key to search the 
-          default message resolver's built-in message properties.  If a property
-          is found, the message parameter is replaced with the property.
-          </para>
-        </listitem>
-      </orderedlist>
-      
+        <para>The message descriptor is a string literal and may contain one
+        or more message parameters. Message parameters are string literals
+        enclosed in braces [need to define the string literal here].</para>
+
+        <section id="default-resolution-algorithm">
+          <title>Algorithm</title>
+
+          <para>The default message resolver begins by retrieving the message
+          descriptor from the constraint. Message parameters are then replaced
+          by repeatedly executing the steps listed below until no replacements
+          are performed.</para>
+
+          <!--SteveP: Do we want to allow MessageFormat style formatting here?-->
+
+          <orderedlist>
+            <listitem>
+              <para>A message parameter that matches the name of a property of
+              the constraint definition is replaced by the value of that
+              property.</para>
+            </listitem>
+
+            <listitem>
+              <para>The <literal>{value}</literal> message parameter is
+              replaced by the value being validated, using the result of
+              invoking the toString() method on value. If the value being
+              validated is null, the string 'null' is used as the replacement
+              string.</para>
+            </listitem>
+
+            <listitem>
+              <para>The message parameter is used as a key to search the
+              <filename>/ValidationMessages.properties</filename>. If a
+              property is found, the message parameter is replaced with the
+              property.</para>
+            </listitem>
+
+            <listitem>
+              <para>The message parameter is used as a key to search the
+              default message resolver's built-in message properties. If a
+              property is found, the message parameter is replaced with the
+              property.</para>
+            </listitem>
+          </orderedlist>
+        </section>
       </section>
-      
-      </section>
-      
+
       <section id="custom-message-resolution">
-      
-      <title>Custom message resolution</title>
+        <title>Custom message resolution</title>
 
-      <para>A custom message resolver may be provided
-      (for example to resolve contextual data, or to adjust the Locale used).
-      A message resolver implementation implements the MessageResolver interface.</para>
+        <para>A custom message resolver may be provided (for example to
+        resolve contextual data, or to adjust the Locale used). A message
+        resolver implementation implements the MessageResolver
+        interface.</para>
 
-      <programlisting>/**
+        <programlisting>/**
 * Interpolate a given validation message
 *
 * @author Emmanuel Bernard
@@ -1730,29 +1724,29 @@ public interface MessageResolver {
     String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value);
 }</programlisting>
 
-      <para><parameter>message</parameter> is the message descriptor as
-      seen in <literal>@Annotation.message</literal></para>
-      
-      <para>
-      <parameter>constraintDescriptor</parameter> is the
-      <classname>ConstraintDescriptor</classname> object representing the
-      metadata of the failing constraint (see <xref
-      linkend="constraintmetadata" />). </para>
-      
-      <para><parameter>value</parameter> is the value being validated.</para>
-      
-      <para>
-      <methodname>MessageResolver.interpolate()</methodname> is invoked once
-      for each constraint whose isValid() method returns false..</para>
+        <para><parameter>message</parameter> is the message descriptor as seen
+        in <literal>@Annotation.message</literal></para>
 
-      <para>A message resolver implementation shall be
-      threadsafe.</para>
+        <para><parameter>constraintDescriptor</parameter> is the
+        <classname>ConstraintDescriptor</classname> object representing the
+        metadata of the failing constraint (see <xref
+        linkend="constraintmetadata" />).</para>
 
-      <para>The message resolver is injected to the validator instance through
-      <methodname>validator.setMessageResolver(MessageResolver)</methodname>.</para>
-      
-      <para>SteveP:  should we support per-invocation message resolver override?</para>
-      
+        <para><parameter>value</parameter> is the value being
+        validated.</para>
+
+        <para><methodname>MessageResolver.interpolate()</methodname> is
+        invoked once for each constraint whose isValid() method returns
+        false..</para>
+
+        <para>A message resolver implementation shall be threadsafe.</para>
+
+        <para>The message resolver is injected to the validator instance
+        through
+        <methodname>validator.setMessageResolver(MessageResolver)</methodname>.</para>
+
+        <para>SteveP: should we support per-invocation message resolver
+        override?</para>
       </section>
 
       <section>
@@ -1760,9 +1754,9 @@ public interface MessageResolver {
 
         <para>These examples describe message interpolation based on the
         default message resolver's built-in messages (see <xref
-      linkend="standard-resolver-messages" />), and the 
-        <filename>ValidationMessages.properties</filename> file shown in table . The current
-        locale is assumed English.</para>
+        linkend="standard-resolver-messages" />), and the
+        <filename>ValidationMessages.properties</filename> file shown in table
+        . The current locale is assumed English.</para>
 
         <programlisting>//ValidationMessages.properties
 myapp.creditcard.error=Your credit card number is not valid</programlisting>
@@ -1828,8 +1822,7 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
     </section>
   </chapter>
 
-  <chapter id="constraintmetadata"
-           xreflabel="Constraint metadata request API">
+  <chapter id="constraintmetadata" xreflabel="Constraint metadata request API">
     <title>Constraint metadata request APIs</title>
 
     <para>The Bean Validation specification provides a way to query the
@@ -2328,12 +2321,14 @@ assert propertyDescriptor.isCascaded()</programlisting>
 
     <para></para>
   </appendix>
+
   <appendix id="standard-resolver-messages">
     <title>Standard resolver messages</title>
 
-    <para>The properties listed below are resolved by the default message resolver.</para>
-    
-            <programlisting>beancheck.length=length must be between {min} and {max}
+    <para>The properties listed below are resolved by the default message
+    resolver.</para>
+
+    <programlisting>beancheck.length=length must be between {min} and {max}
 beancheck.max=must be less than or equal to {value}
 beancheck.min=must be greater than or equal to {value}
 beancheck.notNull=may not be null
@@ -2343,6 +2338,4 @@ beancheck.email=not a well-formed email address
 beancheck.notEmpty=may not be null or empty
 beancheck.creditCard=Invalid credit card number</programlisting>
   </appendix>
-    
-  
 </book>
