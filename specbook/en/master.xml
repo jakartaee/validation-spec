@@ -145,8 +145,7 @@ public @interface ValidatorClass {
         can (or might have to) specify when using the constraint. The
         parameters are mapped as annotation parameters. Parameters can be on
         any type supported by annotations. The parameter names can be anything
-        but <literal>message</literal>, <literal>shortcircuit</literal> and
-        <literal>groups</literal>.</para>
+        but <literal>message</literal> and <literal>groups</literal>.</para>
 
         <section id="constraintsdefinitionimplementation-constraintdefinition-parameters-message">
           <title>message</title>
@@ -183,29 +182,8 @@ public @interface ValidatorClass {
 
           <para>Groups are useful to define some subsets of constraints,
           especially grouping them by use cases when some partial validation
-          is needed.</para>
-        </section>
-
-        <section>
-          <title>shortcircuit</title>
-
-          <para>This element is a boolean defaulted to
-          <literal>false</literal>.</para>
-
-          <programlisting>    boolean shortcircuit() default false;</programlisting>
-
-          <para>If the element is not present, the
-          <literal>shortcircuit</literal> parameter value is considered
-          <literal>false</literal> at declaration time. If
-          <parameter>shortcircuit</parameter> is set to true, when a
-          validation failure happens for the given constraint, the Bean
-          Validation provider stops executing the validation process for
-          subsequent constraints and returns immediately. Otherwise the next
-          constraints are processed. See <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine" />.</para>
-
-          <para>It is recommended for all constraint definitions to support
-          this element.</para>
+          is needed. It is also useful to define some ordering between
+          validations.</para>
         </section>
 
         <section>
@@ -227,7 +205,6 @@ public @interface ValidatorClass {
 @Retention(RUNTIME)
 public @interface NotNull {
     String message() default "Must not be null";
-    boolean shortcircuit() default false;
     String[] groups() default {};
 }</programlisting>
 
@@ -243,7 +220,6 @@ public @interface Length {
     int min() default 0;
     int max() default Integer.MAX_VALUE;
     String message() default "{beancheck.notNull}";
-    boolean shortcircuit() default false;
     String[] groups() default {};
 }</programlisting>
 
@@ -257,7 +233,6 @@ public @interface Length {
 public @interface Min {
     int value();
     String message() default "{beancheck.notNull}";
-    boolean shortcircuit() default false;
     String[] groups() default {};
 }</programlisting>
 
@@ -297,6 +272,7 @@ public @interface Pattern {
     int flags() default 0;
 
     String message() default "{validator.pattern}";
+    String[] groups() default {};
 }
 
 @Documented
@@ -333,17 +309,16 @@ public @interface Patterns {
       <programlisting>/**
  * Define the logic to validate a given constraint
  */
-public interface Constraint {
+public interface Constraint&lt;A extends Annotation&gt; {
     /**
      * Validator parameters for a given constraint definition
      * Annotations parameters are passed as key/value into parameters
      *
-     * @param parameters parameters for a given constraint definition
-     * FIXME should it be the actual annotation passed (using generics Validator&lt;A extends Annotation&gt;
-     * FIXME it would provide type safety, but complicate (slightly) the code for XML parsing
-     * FIXME ebernard +1 for the change
+     * This method is guaranteed to be called before any of the other Constraint implementation methods
+     *
+     * @param constraintAnnotation parameters for a given constraint definition
      */
-    void initialize(Map parameters);
+    void initialize(A constraintAnnotation);
     /**
      * Implement the validation constraint
      *
@@ -359,9 +334,8 @@ public interface Constraint {
 
       <para><methodname>initialize</methodname> is called by the Bean
       validation provider prior to any use of the constraint implementation.
-      The Map passed as a parameter contains all the annotation parameters of
-      the associated constraint declaration, the key being the annotation
-      parameter name, the value being the value of the given parameter.</para>
+      The annotation passed as a parameter is the associated constraint
+      declaration.</para>
 
       <para>The life cycle of a constraint validation implementation instance
       is undefined, but the Bean Validation provider guaranties that the
@@ -386,6 +360,24 @@ public interface Constraint {
       unexpected type an <literal>IllegalArgumentException</literal> should be
       raised.</para>
 
+      <para>The new constraint validation implementation instance is provided
+      by a <classname>ConstraintFactory</classname> object.</para>
+
+      <programlisting>/**
+ * Returns a new Constraint instance from it's class.
+ * The ConstraintFactory is &lt;b&gt;not&lt;/b&gt; responsible for calling Constraint#initialize
+ */
+public interface ConstraintFactory {
+    &lt;T extends Constraint&gt; T getInstance(Class&lt;T&gt; constraintClass);
+}</programlisting>
+
+      <para>The default <classname>ConstraintFactory</classname> provided by
+      the bean provider implementation uses the public constraint no-arg
+      constructor (it is recommended that all constraint implementation have a
+      public no-arg constructor). A custom constraint factory can be provided
+      for example to benefit from a dependency injection control in constraint
+      implementations.</para>
+
       <section id="constraintsdefinitionimplementation-validationimplementation-example">
         <title>Example</title>
 
@@ -393,16 +385,16 @@ public interface Constraint {
  * Check that a string length is between min and max
  *
  */
-public class LengthConstraint implements Constraint {
+public class LengthConstraint implements Constraint&lt;Length&gt; {
     private int min;
     private int max;
 
     /**
      * retrieve parameters from the annotation for later use
      */
-    public void initialize(Map parameters) {
-        min = (Integer) parameters.get( "min" );
-        max = (Integer) parameters.get( "max" );
+    public void initialize(Length constraint) {
+        min = constraint.min();
+        max = constraint.max();
     }
 
     /**
@@ -688,13 +680,12 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         <para>The <classname>@Valid</classname> annotation on a given
         association (i.e. object reference or collection / array of objects),
         dictates the Bean Validator implementation to apply recursively the
-        bean validation routine on (each of) the associated object(s) when the
-        field or the getter is processed and after the current field or getter
-        constraint have been processed. This mechanism is recursive: an
-        associated object can itself contains cascaded references. The Bean
-        Validation implementation must ignore the cascading operation if the
-        associated object instance has already been validated by the current
-        validation routine, thus preventing infinite loops.</para>
+        bean validation routine on (each of) the associated object(s). This
+        mechanism is recursive: an associated object can itself contains
+        cascaded references. The Bean Validation implementation must ignore
+        the cascading operation if the associated object instance has already
+        been validated by the current validation routine, thus preventing
+        infinite loops.</para>
       </section>
     </section>
 
@@ -723,48 +714,124 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       <para>A constraint declaration can be defined on an interface.
       Constraint declarations held on superclasses (recursively) as well as
       interfaces (or super interfaces recursively) have to be honored by the
-      constraint validation routine. Constraints declared on the superclasses
-      have to be checked before the constraints declared on the subclasses.
-      Constraints declared on interfaces have to be checked before constraints
-      declared on the implementation class. Ordering between constraints from
-      different interfaces is undefined.</para>
+      constraint validation routine.</para>
 
       <para>The constraints are additive. This especially means that
       constraints declared on a superclass getter will be checked as well as
       any constraints defined on an overridden version of the getter.</para>
     </section>
 
-    <section id="constraintdeclarationvalidationprocess-validationroutine">
-      <title>Validation routine</title>
+    <section id="constraintdeclarationvalidationprocess-groupsequence">
+      <title>Group and group sequence</title>
 
-      <para>To validate a given bean instance, the Bean Validation provider is
-      expected to execute (for a given class or interface in the hierarchy
-      level) the constraint validations in the following order:</para>
+      <para>Groups are useful to define a subset of constraints to guarantee
+      at a given time. It provides the ability to do partial validation. A
+      constraint declares which group it belongs to (through the
+      <methodname>groups</methodname> element held by the constraint
+      annotation) and the validation API defines which groups are expected to
+      be validated. </para>
+
+      <para>Sometimes, there is a need to define validation ordering between
+      two groups of constraint. If the first group raises one or more
+      constraint validation failure, the second group of constraint should not
+      be tested. This is useful in two scenarios:</para>
 
       <itemizedlist>
         <listitem>
-          <para>execute all field level validations matching the requested
-          groups (or the default group if none are explicitly requested) and
-          the cascading validation if necessary (see below)</para>
+          <para>the second group depends on a stable state to run
+          properly</para>
         </listitem>
 
         <listitem>
-          <para>execute all getter level validations matching the requested
-          groups (or the default group if none are explicitly requested) and
-          the cascading validation if necessary (see below)</para>
-        </listitem>
-
-        <listitem>
-          <para>execute all class level validations matching the requested
-          groups (or the default group if none are explicitly
-          requested)</para>
+          <para>the second group is a heavy consumer of time, CPU or memory
+          and should be avoided if possible</para>
         </listitem>
       </itemizedlist>
 
-      <para><literal>Groups</literal> of constraints may be defined for the
-      purpose of selectively controlling the execution of constraints, see
-      <xref
-      linkend="constraintsdefinitionimplementation-constraintdefinition-groups" />.</para>
+      <para>To implements such ordering, one or more
+      <classname>@GroupSequence</classname> annotations can be added on a
+      validatable object.</para>
+
+      <programlisting>@Target({TYPE})
+@Retention(RUNTIME)
+public @interface GroupSequence {
+    String name();
+    String[] sequence();
+}
+
+@Target({TYPE})
+@Retention(RUNTIME)
+public @interface GroupSequences {
+    GroupSequence[] value();
+}</programlisting>
+
+      <para>Each group of a group sequence must be processed sequencially one
+      after the other in the order defined by
+      <methodname>@GroupSequence.sequence</methodname> when the group
+      <methodname>@GroupSequence.name</methodname> is requested ; processing a
+      group is defined in <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine" /> ;
+      if one of the group process in the sequence leads to one or more
+      validation failure, the groups following in the sequence must not be
+      processed. Group sequences are recursively resolved: the user must make
+      sure no circular graph is defined by the group sequence definitions.
+      Group sequences defined on a given class, all its superclasses and all
+      its interfaces are used when validating an object instance of the class.
+      When an object graph is validated (through the use of
+      <literal>@Valid</literal>), the children elements of the graph inherit
+      the sequence definitions of their parent. Two group sequences must not
+      share the same group name in a given object graph (including
+      superclasses and interfaces). Group sequences must not use constraint
+      definition group names as a name. In other words, constraint definition
+      groups cannot contain one of the group sequence name.</para>
+
+      <para>Unless constrained by a group sequence, the order in which groups
+      are validated is undefined.</para>
+
+      <!--if a groups is part of a group sequence and also explicitly called in validator.validate()-->
+    </section>
+
+    <section id="constraintdeclarationvalidationprocess-validationroutine">
+      <title>Validation routine</title>
+
+      <para>For a given group to validate, the validation routine applied in a
+      given bean instance is expected to execute the constraint
+      validations:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>execute all field level validations (including the one
+          expressed in interfaces and superclasses) matching the targeted
+          group unless the given validation constraint has already been
+          processed during this validation routine (as part of a previous
+          group match)</para>
+        </listitem>
+
+        <listitem>
+          <para>execute all method level validations (including the one
+          expressed in interfaces and superclasses) matching the targeted
+          group unless the given validation constraint has already been
+          processed during this validation routine (as part of a previous
+          group match)</para>
+        </listitem>
+
+        <listitem>
+          <para>execute all bean level validations (including the one
+          expressed in interfaces and superclasses) matching the targeted
+          group unless the given validation constraint has already been
+          processed during this validation routine (as part of a previous
+          group match)</para>
+        </listitem>
+
+        <listitem>
+          <para>execute all cascading validations (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+          including the one expressed in interfaces and superclasses</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Note that it implies that a given validation constraint will not
+      be processed more than once per validation.</para>
 
       <para>The object validation routine is described as such. For each
       constraint declaration and in the previously defined order:</para>
@@ -790,18 +857,11 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         </listitem>
 
         <listitem>
-          <para>if the failing constraint declaration is <code>shortcircuit =
-          true</code>, or if there is no more constraint declaration to
-          process, return all the <classname>InvalidConstraint</classname>
-          objects</para>
-        </listitem>
-
-        <listitem>
-          <para>otherwise, continue to the next constraint</para>
+          <para>if there is no more constraint declaration to process, return
+          all the <classname>InvalidConstraint</classname> objects otherwise,
+          continue to the next constraint</para>
         </listitem>
       </itemizedlist>
-
-      <para></para>
 
       <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
         <title>Object graph validation</title>
@@ -809,13 +869,12 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         <para>The <classname>@Valid</classname> annotation on a given
         association (i.e. object reference or collection / array of objects),
         dictates the Bean Validator implementation to apply recursively the
-        bean validation routine on (each of) the associated object(s) when the
-        field or the getter is processed and after the current field or getter
-        constraint have been processed. This mechanism is recursive: an
-        associated object can itself contains cascaded references. The Bean
-        Validation implementation must ignore the cascading operation if the
-        associated object instance has already been validated by the current
-        validation routine, thus preventing infinite loops.</para>
+        bean validation routine on (each of) the associated object(s). This
+        mechanism is recursive: an associated object can itself contains
+        cascaded references. The Bean Validation implementation must ignore
+        the cascading operation if the associated object instance has already
+        been validated by the current validation routine, thus preventing
+        infinite loops.</para>
 
         <para>The <classname>InvalidConstraint</classname> objects, built when
         a failing constraint on an associated object is found, reflects the
@@ -881,11 +940,6 @@ public class Address {
 
       <itemizedlist>
         <listitem>
-          <para>ZipCodeCohereneChecker is a constraint whose validation
-          implementation's isValid method receives the address object</para>
-        </listitem>
-
-        <listitem>
           <para>addressline1 field value is passed to the NotNull as well as
           Length constraint validation implementation.</para>
         </listitem>
@@ -898,6 +952,11 @@ public class Address {
         <listitem>
           <para>getCity value is passed to the Length and NotNull constraint
           validation implementations</para>
+        </listitem>
+
+        <listitem>
+          <para>ZipCodeCohereneChecker is a constraint whose validation
+          implementation's isValid method receives the address object</para>
         </listitem>
       </itemizedlist>
 
@@ -988,20 +1047,15 @@ public class Address {
     }
 }</programlisting>
 
-      <para>During the validation routine execution on an address object, the
-      country field value is processed in the following order</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>the NotNull constraint is applied</para>
-        </listitem>
-
-        <listitem>
-          <para>the country object itself is validated by cascade. More
-          specifically country.name is checked for NotNull, ISO2Code and
-          ISO3Code are checked for Length.</para>
-        </listitem>
-      </itemizedlist>
+      <para>During the validation routine execution on an address object,
+      onstraints on <methodname>addressLine1</methodname>,
+      <methodname>addressLine2</methodname>, <methodname>zipCode</methodname>
+      and <methodname>country</methodname> are processed as well as the
+      validation of the <classname>Country</classname> object itself, more
+      specifically <methodname>country.name</methodname> is checked for
+      <classname>NotNull</classname>, <methodname>ISO2Code</methodname> and
+      <methodname>ISO3Code</methodname> are checked for
+      <classname>Length</classname>.</para>
 
       <para>The third example demonstrates superclass and inheritance</para>
 
@@ -1079,7 +1133,7 @@ public class PreferredGuest extends Customer {
 }</programlisting>
 
       <para>When validating a PreferredGuest the following constraints are
-      processed in the following order:</para>
+      processed:</para>
 
       <itemizedlist>
         <listitem>
@@ -1095,17 +1149,17 @@ public class PreferredGuest extends Customer {
         </listitem>
       </itemizedlist>
 
-      <para>The forth example demonstrates the influence of
-      shortcircuit</para>
+      <para>The forth example demonstrates the influence of group
+      sequence</para>
 
       <programlisting>public class Author {
-    @NotEmpty
+    @NotEmpty(groups="last")
     private String firstName;
     
-    @NotEmpty
+    @NotEmpty(groups="first")
     private String lastName;
 
-    @Length(max=30)
+    @Length(max=30, groups="last")
     private String company;
 
     public String getFirstName() {
@@ -1133,12 +1187,16 @@ public class PreferredGuest extends Customer {
     }
 }
 
+<emphasis role="bold">@GroupSequence(name="default", sequence={"first", "second", "last"})</emphasis>
 public class Book {
-    <emphasis role="bold">@NotEmpty(shortcircuit = true)</emphasis>
+    <emphasis role="bold">@NotEmpty(groups="first")</emphasis>
     private String title;
 
+    @Length(max=30, groups="second")
+    private String subtitle;
+
     @Valid
-    @NotNull
+    @NotNull(groups="first")
     private Author author;
 
     public String getTitle() {
@@ -1147,6 +1205,14 @@ public class Book {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    public void setSubtitle(String subtitle) {
+        this.subtitle = subtitle;
     }
 
     public Author getAuthor() {
@@ -1174,22 +1240,28 @@ book.setAuthor( author );</programlisting>
         </listitem>
       </itemizedlist>
 
-      <para>If the instance is updated:</para>
+      <para>As both <methodname>title</methodname> and
+      <methodname>author.lastname</methodname> are checked as part of the
+      <literal>first</literal> group. If the instance is updated:</para>
 
       <programlisting>book.setTitle( "Les fleurs du mal" );
-author.setCompany( "Some random publisher but with a really really long name" );</programlisting>
+author.setCompany("Some random publisher with a very very very long name");</programlisting>
 
       <para>the validation routine will return the following failures:</para>
 
       <itemizedlist>
         <listitem>
-          <para>firstName fails to pass the NotNull constraint</para>
+          <para>author.firstName fails to pass the NotEmpty constraint</para>
         </listitem>
 
         <listitem>
-          <para>company fails to pass the Length constraint</para>
+          <para>author.company fails to pass the Length constraint</para>
         </listitem>
       </itemizedlist>
+
+      <para>As the <literal>first</literal> and <literal>second</literal>
+      groups pass without failure, the <literal>last</literal> group is going
+      through validation</para>
     </section>
   </chapter>
 
@@ -1276,11 +1348,11 @@ public interface Validator&lt;T&gt; {
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         as well.</para>
 
-        <para><methodname>InvalidConstraint[] validate(T object, String
-        propertyName, String... groups)</methodname> validates a given field
-        or property of a given object. The property name is the JavaBeans
-        property name (as defined by the JavaBeans Introspector class). This
-        method implements the logic described in <xref
+        <para><methodname>InvalidConstraint[] validateProperty(T object,
+        String propertyName, String... groups)</methodname> validates a given
+        field or property of a given object. The property name is the
+        JavaBeans property name (as defined by the JavaBeans Introspector
+        class). This method implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         and apply it only to the given property. <literal>@Valid</literal> is
         not honored by this method. This method is useful for partial object
@@ -1368,14 +1440,14 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <literal>city</literal> violates <literal>Length</literal> and only
           <literal>city</literal> is validated.</para>
 
-          <programlisting>validator.validate(address, "city").length == 1</programlisting>
+          <programlisting>validator.validateProperty(address, "city").length == 1</programlisting>
 
           <para>The following code will return an empty array of
           <classname>InvalidConstraint</classname> because the value
           <literal>Paris</literal> for <literal>city</literal> would not raise
           any constraint failure.</para>
 
-          <programlisting>validator.validate("city", "Paris").length == 0</programlisting>
+          <programlisting>validator.validateValue("city", "Paris").length == 0</programlisting>
         </section>
       </section>
 
@@ -1424,7 +1496,48 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <programlisting>validator.validate(address, "minimal", "default");</programlisting>
 
           <para>applies @NotEmpty and @Length on street1, @NotEmpty on city,
-          @NotEmpty on zipCode.</para>
+          @NotEmpty on zipCode. Note that if <methodname>zipCode</methodname>
+          is indeed not empty, only one
+          <classname>InvalidConstraint</classname> object will represent the
+          failure and the not empty validation will only be executed
+          once.</para>
+
+          <para>Let's look at a more complex example involving group
+          sequence.</para>
+
+          <programlisting>@GroupSequence(name="total", sequence={"firststep", "secondstep"})
+public class Address {
+    @NotEmpty(groups = "minimal")
+    @Length(max=50, groups="firststep")
+    private String street1;
+    
+    @NotEmpty(groups="secondstep")
+    private String city;
+
+    @NotEmpty(groups = {"minimal", "secondstep"})
+    private String zipCode;
+    ...
+}</programlisting>
+
+          <para>When running:</para>
+
+          <programlisting>validator.validate(address, "minimal", "total");</programlisting>
+
+          <para>the validation process will process NotEmpty and Length from
+          street1 and NotEmpty from zipCode. If Length from street1 does not
+          generate a failure, then NotEmpty from <methodname>city</methodname>
+          will be processed. Note that NotEmpty from zipCode is not
+          reprocessed as it has already been processed before.</para>
+
+          <para>When running:</para>
+
+          <programlisting>validator.validate(address, "total", "secondstep");</programlisting>
+
+          <para>NotEmpty from city and NotEmpty from zipCode will be processed
+          even if Length from street1 fails: while secondstep is in the total
+          group sequence and hence should not be triggered if firststep has a
+          failure, it also has been requested outside the sequence (in this
+          case explicitely). </para>
         </section>
       </section>
     </section>
@@ -1474,7 +1587,7 @@ public interface InvalidConstraint {
 
     /**
      * return the list of groups that the triggered constraint applies on and witch also are
-     * within the list of groups requested for validation
+     * within the list of groups requested for validation (directly or through a group sequence)
      */
     String[] getGroups();
 
