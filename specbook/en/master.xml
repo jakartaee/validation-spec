@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Beta1</releaseinfo>
+    <releaseinfo>1.0.Alpha.20080124</releaseinfo>
 
-    <date>2007-11-19</date>
+    <date>2008-01-24</date>
 
     <copyright>
       <year>2007, 2008</year>
@@ -729,7 +729,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       constraint declares which group it belongs to (through the
       <methodname>groups</methodname> element held by the constraint
       annotation) and the validation API defines which groups are expected to
-      be validated. </para>
+      be validated.</para>
 
       <para>Sometimes, there is a need to define validation ordering between
       two groups of constraint. If the first group raises one or more
@@ -1537,7 +1537,7 @@ public class Address {
           even if Length from street1 fails: while secondstep is in the total
           group sequence and hence should not be triggered if firststep has a
           failure, it also has been requested outside the sequence (in this
-          case explicitely). </para>
+          case explicitely).</para>
         </section>
       </section>
     </section>
@@ -1731,10 +1731,9 @@ assert Book.class == invalidConstraint.getBeanClass();
 assert book.getTitle().equals( invalidConstraint.getValue() );
 //the offending property
 assert "title".equals( invalidConstraint.getPropertyPath() );
-assert invalidConstraint.getGroups().length == 2
+assert invalidConstraint.getGroups().length == 1
 
-List expectedGroups = new ArrayList(2);
-expectedGroups.add("firstlevelcheck");
+List expectedGroups = new ArrayList(1);
 expectedGroups.add("default");
 for ( String group : invalidConstraint.getGroups() ) {
     assert expectedGroups.contains(group);
@@ -1802,9 +1801,12 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
 
             <listitem>
               <para>The message parameter is used as a key to search the
-              <filename>/ValidationMessages.properties</filename>. If a
-              property is found, the message parameter is replaced with the
-              property.</para>
+              <classname>ResourceBundle</classname> name
+              <literal>ValidationMessage</literal> (often materialized as the
+              property file
+              <filename>/ValidationMessages.properties</filename> and it's
+              locale variations). If a property is found, the message
+              parameter is replaced with the property.</para>
             </listitem>
 
             <listitem>
@@ -2354,11 +2356,11 @@ assert propertyDescriptor.isCascaded()</programlisting>
           </row>
 
           <row>
-            <entry>shortcircuit</entry>
+            <entry>group sequence</entry>
 
-            <entry>When a constraint marked as shortcircuit=true is found to
-            not pass on a given value. The validation process stops right away
-            rather than processing the following constraints</entry>
+            <entry>Define a group ordering in the validation process. If a
+            given ordered group contains one or more failure, the following
+            ones in the sequence must be ignored.</entry>
           </row>
 
           <row>
