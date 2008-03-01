@@ -709,8 +709,9 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         however not be duplicated between a field and its associated property
         (the constraint validation would be applied twice). It is recommended
         for objects holding constraint declarations to adhere a single state
-        access strategy (either annotated fields or properties). Constraints
-        may not be declared on fields of primitive type.</para>
+        access strategy (either annotated fields or properties).</para>
+
+        <!--EBE steve, constraints can be applied on fields of primitive types. We use boxing.-->
 
         <para>When a field is annotated with a constraint definition, field
         access strategy is used to access the state validated by such
@@ -720,8 +721,22 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         property access strategy is used to access the state validated by such
         constraint.</para>
 
-        <comment>SCP: Need to define field access strategy and property access
-        strategy here.</comment>
+        <para>When using field access strategy, the bean validation provider
+        accesses the instance vairable directly. When using the property
+        access strategy, the bean validation provider accesses the state via
+        the property accessor method. It is required that the class follow the
+        method signature conventions for JavaBeans read properties (as defined
+        by the JavaBeans Introspector class) for constrained properties when
+        constrained properties are used. In this case, for every constraint
+        property of type T, there is a getter method,
+        <methodname>getProperty</methodname>. For boolean properties,
+        <methodname>isProperty</methodname> is an alternative name for the
+        getter method. Specifically, if <methodname>getX</methodname> is the
+        name of the getter method, where X is a string, the name of the
+        persistent property is defined by the result of
+        <code>java.beans.Introspector.decapitalize(X)</code>.</para>
+
+        <para>The fields or methods visibility are not constrained. </para>
       </section>
 
       <section>
@@ -738,10 +753,29 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         <para>Collection-valued or array-valued fields and properties may also
         be decorated with the @Valid annotation. This causes the contents of
         the collection or array to be validated. The following types are
-        supported: <classname>java.util.Collection</classname>,
-        <classname>java.util.Set</classname>,
-        <classname>java.util.List</classname>,
-        <classname>java.util.Map</classname>.</para>
+        supported:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>any array of object</para>
+          </listitem>
+
+          <listitem>
+            <para><classname>java.util.Collection</classname></para>
+          </listitem>
+
+          <listitem>
+            <para><classname>java.util.Set</classname></para>
+          </listitem>
+
+          <listitem>
+            <para><classname>java.util.List</classname></para>
+          </listitem>
+
+          <listitem>
+            <para><classname>java.util.Map</classname></para>
+          </listitem>
+        </itemizedlist>
 
         <para>The <classname>@Valid</classname> annotation is applied
         recursively. A conforming implementation avoids infinite loops by
@@ -756,8 +790,8 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       <para>Constraint definitions are defined on classes or interfaces
       primarily through annotations. A constraint annotation (see <xref
       linkend="constraintsdefinitionimplementation-constraintdefinition" />),
-      can be applied to a type, on any of the type's fields that are not of
-      primitive type, or on any of the JavaBeans-compliant properties.</para>
+      can be applied to a type, on any of the type's fields or on any of the
+      JavaBeans-compliant properties.</para>
 
       <para>When a constraint is defined on a type, the type instance being
       validated is passed to the constraint validator. When a constraint is
@@ -783,10 +817,10 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
 
       <para>Groups are useful to define subsets of constraints for validation
       purposes. Assigning constraints to groups provides the ability to do
-      partial validation to the group. The groups element of the constraint
-      annotation specifies the groups in which the constraint participates. At
-      validation time, an optional parameter can be specified that narrows the
-      set of groups to be validated.</para>
+      partial validation to the group. The <methodname>groups</methodname>
+      element of the constraint annotation specifies the groups in which the
+      constraint participates. At validation time, an optional parameter can
+      be specified that narrows the set of groups to be validated.</para>
 
       <para>One important application for grouping is to control the order of
       evaluation of constraints. There are often scenarios where a preliminary
@@ -821,8 +855,9 @@ public @interface GroupSequences {
     GroupSequence[] value();
 }</programlisting>
 
-      <comment>Need to show where in the API the GroupSequence is
-      specified</comment>
+      <para><classname>@GroupSequence</classname> and
+      <classname>@GroupSequences</classname> are placed on the validated class
+      they should be applied on.</para>
 
       <para>Each group of a group sequence must be processed sequentially in
       the order defined by <methodname>@GroupSequence.sequence</methodname>
@@ -832,10 +867,10 @@ public @interface GroupSequences {
       if one of the group process in the sequence leads to one or more
       validation failure, the groups following in the sequence must not be
       processed. Group sequences are recursively resolved: the user must make
-      sure no circular graph is defined by the group sequence definitions.
-      Group sequences defined on a given class, all its superclasses and all
-      its interfaces are used when validating an object instance of the class.
-      When an object graph is validated (through the use of
+      sure no circular graph is defined by the group sequence definitions. For
+      a given class, the group sequences taken into account are the one placed
+      on the class itself as well as the ones on all its superclasses and all
+      its interfaces. When an object graph is validated (through the use of
       <literal>@Valid</literal>), the children elements of the graph inherit
       the sequence definitions of their parent. Two group sequences must not
       share the same group name in a given object graph (including
@@ -846,7 +881,7 @@ public @interface GroupSequences {
       <para>Unless constrained by a group sequence, the order in which groups
       are validated is undefined.</para>
 
-      <!--if a groups is part of a group sequence and also explicitly called in validator.validate()-->
+      <!--Make explicit what happens if a group is part of a group sequence and also explicitly called in validator.validate()-->
     </section>
 
     <section id="constraintdeclarationvalidationprocess-validationroutine">
@@ -891,8 +926,8 @@ public @interface GroupSequences {
       <para>Note that it implies that a given validation constraint will not
       be processed more than once per validation.</para>
 
-      <comment>SCP: note that grouping, as currently defined cannot control
-      depth of search in the graph</comment>
+      <!--SCP: note that grouping, as currently defined cannot control depth of search in the graph
+EBE: correct, so far I don't think it's useful-->
 
       <para>The object validation routine is described as such. For each
       constraint declaration and in the previously defined order:</para>
@@ -914,10 +949,10 @@ public @interface GroupSequences {
           <para>if <methodname>isValid</methodname> returns false, the Bean
           Validation provider populate an
           <classname>InvalidConstraint</classname> object and append it to the
-          array of return values</para>
+          list of returned values</para>
 
-          <comment>SCP: note that this implies that validation issues are
-          returned in the order they are discovered</comment>
+          <!--SCP: note that this implies that validation issues are returned in the order they are discovered
+EBE: is that a problem?-->
         </listitem>
       </itemizedlist>
 
@@ -993,28 +1028,33 @@ public class Address {
     }
 }</programlisting>
 
-      <para>During the validation routine execution on an Address
-      object,</para>
+      <para>During the validation routine execution on an
+      <classname>Address</classname> object,</para>
 
       <itemizedlist>
         <listitem>
-          <para>addressline1 field value is passed to the NotNull as well as
-          Length constraint validation implementation.</para>
+          <para><methodname>addressline1</methodname> field value is passed to
+          the <classname>NotNull</classname> as well as
+          <classname>Length</classname> constraint validation
+          implementation.</para>
         </listitem>
 
         <listitem>
-          <para>addressline2 field value is passed to the Length constraint
-          validation implementations.</para>
+          <para><methodname>addressline2</methodname> field value is passed to
+          the <classname>Length</classname> constraint validation
+          implementations.</para>
         </listitem>
 
         <listitem>
-          <para>getCity value is passed to the Length and NotNull constraint
-          validation implementations</para>
+          <para><methodname>getCity</methodname> value is passed to the
+          <classname>Length</classname> and <classname>NotNull</classname>
+          constraint validation implementations</para>
         </listitem>
 
         <listitem>
-          <para>ZipCodeCohereceChecker is a constraint whose validation
-          implementation's isValid method receives the address object</para>
+          <para><classname>ZipCodeCohereceChecker</classname> is a constraint
+          whose validation implementation's <methodname>isValid</methodname>
+          method receives the <classname>Address</classname> object</para>
         </listitem>
       </itemizedlist>
 
@@ -1105,8 +1145,9 @@ public class Address {
     }
 }</programlisting>
 
-      <para>During the validation routine execution on an address object,
-      onstraints on <methodname>addressLine1</methodname>,
+      <para>During the validation routine execution on an
+      <classname>Address</classname> object, constraints on
+      <methodname>addressLine1</methodname>,
       <methodname>addressLine2</methodname>, <methodname>zipCode</methodname>
       and <methodname>country</methodname> are processed as well as the
       validation of the <classname>Country</classname> object itself, more
@@ -1287,17 +1328,16 @@ public class Book {
 
       <programlisting>Author author = new Author();
 author.setLastName( "Baudelaire" );
+author.setFirstName( "" );
 Book book = new Book();
 book.setAuthor( author );</programlisting>
-
-      <comment>SCP: this would be more interesting if setFirstName() invoked
-      here</comment>
 
       <para>the validation routine will return the following failure:</para>
 
       <itemizedlist>
         <listitem>
-          <para>NotEmpty failure on the title field</para>
+          <para><classname>NotEmpty</classname> failure on the title
+          field</para>
         </listitem>
       </itemizedlist>
 
@@ -1312,17 +1352,19 @@ author.setCompany("Some random publisher with a very very very long name");</pro
 
       <itemizedlist>
         <listitem>
-          <para>author.firstName fails to pass the NotEmpty constraint</para>
+          <para><methodname>author.firstName</methodname> fails to pass the
+          <classname>NotEmpty</classname> constraint</para>
         </listitem>
 
         <listitem>
-          <para>author.company fails to pass the Length constraint</para>
+          <para><methodname>author.company</methodname> fails to pass the
+          <classname>Length</classname> constraint</para>
         </listitem>
       </itemizedlist>
 
       <para>As the <literal>first</literal> and <literal>second</literal>
       groups pass without failure, the <literal>last</literal> group is going
-      through validation</para>
+      through validation.</para>
     </section>
   </chapter>
 
