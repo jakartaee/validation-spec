@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Alpha.20080124</releaseinfo>
+    <releaseinfo>1.0.Alpha.20080303</releaseinfo>
 
-    <date>2008-01-24</date>
+    <date>2008-03-03</date>
 
     <copyright>
       <year>2007, 2008</year>
@@ -51,6 +51,15 @@
     group.</para>
   </preface>
 
+  <preface>
+    <title>Disclaimer</title>
+
+    <para>This specification is a work in progress. The content of this spec
+    is highly subject to change. The JSR 303 expert group is seeking for
+    feedbacks from the community on this specification and will update it
+    accordingly.</para>
+  </preface>
+
   <chapter>
     <title>Introduction</title>
 
@@ -65,7 +74,90 @@
 
       <para>This work is being conducted as part of JSR-303 under the Java
       Community Process Program. This specification is the result of the
-      collaborative work of the members of the JSR 303 Expert Group.</para>
+      collaborative work of the members of the JSR 303 Expert Group. These
+      include the following present and former expert group members:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Geert Bevin</para>
+        </listitem>
+
+        <listitem>
+          <para>Emmanuel Bernard (Red Hat Middleware LLC)</para>
+        </listitem>
+
+        <listitem>
+          <para>Uri Boness</para>
+        </listitem>
+
+        <listitem>
+          <para>Erik Brakkee (Ericsson AB)</para>
+        </listitem>
+
+        <listitem>
+          <para>Ed Burns (Sun Microsystems, Inc.)</para>
+        </listitem>
+
+        <listitem>
+          <para>Jason Carreira</para>
+        </listitem>
+
+        <listitem>
+          <para>Robert Clevenger</para>
+        </listitem>
+
+        <listitem>
+          <para>Linda DeMichiel (Sun Microsystems, Inc.)</para>
+        </listitem>
+
+        <listitem>
+          <para>Tim Fennel</para>
+        </listitem>
+
+        <listitem>
+          <para>Romain Guy (Google Inc.)</para>
+        </listitem>
+
+        <listitem>
+          <para>Robert Harrop</para>
+        </listitem>
+
+        <listitem>
+          <para>Jacob J. Hookom</para>
+        </listitem>
+
+        <listitem>
+          <para>Bob Lee (Google Inc.)</para>
+        </listitem>
+
+        <listitem>
+          <para>Craig R. McClanahan</para>
+        </listitem>
+
+        <listitem>
+          <para>Niall K. Pemberton</para>
+        </listitem>
+
+        <listitem>
+          <para>Steve Peterson</para>
+        </listitem>
+
+        <listitem>
+          <para>Dhanji R. Prasanna</para>
+        </listitem>
+
+        <listitem>
+          <para>Matt Raible</para>
+        </listitem>
+
+        <listitem>
+          <para>Michael Nascimento Santos</para>
+        </listitem>
+
+        <listitem>
+          <para>Jon Wetherbee (Oracle)</para>
+        </listitem>
+      </itemizedlist>
     </section>
 
     <section>
@@ -107,7 +199,7 @@
       describes how a JavaBean class is decorated with annotations to describe
       constraints on the contents of an instance of the class.</para>
 
-      <para>Chapter <xref linkend="validationapi" />describes how to
+      <para>Chapter <xref linkend="validationapi" /> describes how to
       programmatically validate a JavaBean.</para>
 
       <para>Chapter <xref linkend="constraintmetadata" /> describes how the
@@ -123,16 +215,16 @@
   </chapter>
 
   <chapter id="constraintsdefinitionimplementation">
-    <title>Constraint Declaration</title>
+    <title>Constraint Definition</title>
 
     <!--[SCP: "declaration" is creating a new kind of constraint; "definition" is applying a constraint to a class, method, or field.]
-EBE I started a thread on the ML-->
+EBE I started a thread on the ML => I don't think I like the move.-->
 
     <!--[SCP: consider moving this chapter after the next one] // EBE:I tried earlier but this order make more sense-->
 
-    <para>Constraints are declared through a combination of a constraint
-    annotation and a constraint validator. The constraint annotation is
-    applied to a type, method, or field target.</para>
+    <para>Constraints are defined through a combination of a constraint
+    annotation and a constraint validation implementation. The constraint
+    annotation is applied to a type, method, or field target.</para>
 
     <para>Unless stated otherwise the default package name for the Bean
     Validation APIs is <classname>javax.validation</classname>.</para>
@@ -144,19 +236,20 @@ EBE I started a thread on the ML-->
       annotations. An annotation is considered a constraint definition if its
       retention policy contains <literal>RUNTIME</literal> and if the
       annotation itself is annotated with
-      <literal>javax.validation.ValidatorClass</literal>.</para>
+      <literal>javax.validation.ConstraintValidator</literal>.</para>
 
       <programlisting>/**
  * Link between an constraint annotation and its constraint validation implementation
  *
  * A given constraint annotation should be annotated by a @ValidatorClass
  * annotation to refer to its constraint validation implementation
- *<!--TODO SCP:  Do we want to just call this Validator? EBE thread started on the ML but validator is the name of the main API, maybe ConstraintValidation-->
+ *<!--TODO SCP:  Do we want to just call this Validator? 
+EBE thread started on the ML but validator is the name of the main API, maybe ConstraintValidator-->
  */
 @Documented
 @Target({ANNOTATION_TYPE})
 @Retention(RUNTIME)
-public @interface ValidatorClass {
+public @interface ConstraintValidator {
     /**
      * Constraint validation implementation
      */
@@ -166,21 +259,20 @@ public @interface ValidatorClass {
       <para>Constraint annotations can be defined on <literal>FIELD</literal>,
       <literal>METHOD</literal>, or <literal>TYPE</literal> targets.</para>
 
-      <para>Since a given constraint declaration applies to one or more
+      <para>Since a given constraint definition applies to one or more
       specific types, the JavaDoc for the constraint annotation should clearly
       state which types are supported. Applying a constraint annotation to an
       incompatible type is a runtime error.</para>
 
       <section>
-        <title>Constraint declaration properties</title>
+        <title>Constraint definition properties</title>
 
-        <para>A constraint declaration may have properties that can be
+        <para>A constraint definition may have properties that can be
         specified at the time the constraint is applied to a JavaBean. The
         properties are mapped as annotation elements. The annotation element
         names <literal>message</literal> and <literal>groups</literal> are
         considered reserved names; a constraint may use any other element name
-        for its parameters. <comment>[SCP: reserve a prefix for future
-        use?]</comment><!--[SCP: reserve a prefix for future use?] EBE: I think I have a smarter approach check the "Constraint definition elements" email from 2007/11/26--></para>
+        for its parameters. <!--[SCP: reserve a prefix for future use?] EBE: I think I have a smarter approach check the "Constraint definition elements" email from 2007/11/26--></para>
 
         <section id="constraintsdefinitionimplementation-constraintdefinition-parameters-message">
           <title>message</title>
@@ -210,7 +302,7 @@ public @interface ValidatorClass {
 
           <para>When using the constraint declaration, if no group is
           specified, the <literal>default</literal> group is considered
-          declared. The validation will be evaluated if </para>
+          declared. The validation will be evaluated if</para>
 
           <itemizedlist>
             <listitem>
@@ -227,8 +319,8 @@ public @interface ValidatorClass {
           </itemizedlist>
 
           <para>See <xref linkend="validationapi-validatorapi-groups" /> for
-          more informations. It is required that all constraint declarations
-          support this element.<comment /></para>
+          more informations. It is required that all constraint definitions
+          support this element.</para>
 
           <para>Groups are typically used to control the order of validator
           evaluation, or perform partial validation of a JavaBean.</para>
@@ -237,7 +329,7 @@ public @interface ValidatorClass {
         <section>
           <title>Constraint specific parameter</title>
 
-          <para>The constraint annotation declaration may define additional
+          <para>The constraint annotation definitions may define additional
           elements needed to parameterize the constraint definition. For
           example, a constraint that validates the length of a string can use
           an annotation element named <literal>length</literal> to specify the
@@ -323,7 +415,7 @@ public @interface Min {
       corresponding multi-valued constraint.</para>
 
       <programlisting>@Documented
-@ValidatorClass(PatternValidator.class)
+@ConstraintValidator(PatternValidator.class)
 @Target({METHOD, FIELD})
 @Retention(RUNTIME)
 public @interface Pattern {
@@ -342,7 +434,8 @@ public @interface Pattern {
 @Retention(RUNTIME)
 public @interface Patterns {
     Pattern[] value();<!--SCP:  will we ever need to distinguish this type of annotation from other arrays of constraints?
-EBE anything specific in mind?--><!--SCP:  what order are these evaluated in? EBE: this is not specified, I don't think there is a need for-->}</programlisting>
+EBE anything specific in mind?--><!--SCP:  what order are these evaluated in? 
+EBE: this is not specified, I don't think there is a need for-->}</programlisting>
 
       <example>
         <title>Multi-valued constraint</title>
@@ -367,9 +460,10 @@ EBE anything specific in mind?--><!--SCP:  what order are these evaluated in? EB
 
       <para>A constraint validation implementation performs the validation of
       a target class, field, or method. It is specified by the value element
-      of the ValidatorClass annotation that decorates the constraint
-      definition. The constaint validation implementation implements the
-      <classname>Constraint</classname> interface.</para>
+      of the <classname>ConstraintValidator</classname> annotation that
+      decorates the constraint definition. The constaint validation
+      implementation implements the <classname>Constraint</classname>
+      interface.</para>
 
       <!--[SCP: consider naming this ConstraintValidator] EBE naming proposal circulating-->
 
@@ -664,8 +758,8 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
     <para>The Bean Validation specification defines a framework for declaring
     constraints on JavaBean classes, fields and properties.</para>
 
-    <para>Constraints are defined for classes, and evaluated against instances
-    or graphs of instances.</para>
+    <para>Constraints are declared for classes, and evaluated against
+    instances or graphs of instances.</para>
 
     <section id="constraintdeclarationvalidationprocess-requirements">
       <title>Requirements on classes to be validated</title>
@@ -684,11 +778,11 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
 
       <itemizedlist>
         <listitem>
-          <para>The constraint definition supports the specified target</para>
+          <para>the constraint definition supports the specified target</para>
         </listitem>
 
         <listitem>
-          <para>The constraint validator supports the type of the target
+          <para>the constraint validator supports the type of the target
           object</para>
         </listitem>
       </itemizedlist>
@@ -713,11 +807,11 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
 
         <!--EBE steve, constraints can be applied on fields of primitive types. We use boxing.-->
 
-        <para>When a field is annotated with a constraint definition, field
+        <para>When a field is annotated with a constraint declaration, field
         access strategy is used to access the state validated by such
         constraint.</para>
 
-        <para>When a property is annotated with a constraint definition,
+        <para>When a property is annotated with a constraint declaration,
         property access strategy is used to access the state validated by such
         constraint.</para>
 
@@ -736,7 +830,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         persistent property is defined by the result of
         <code>java.beans.Introspector.decapitalize(X)</code>.</para>
 
-        <para>The fields or methods visibility are not constrained. </para>
+        <para>The fields or methods visibility are not constrained.</para>
       </section>
 
       <section>
@@ -785,9 +879,9 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
     </section>
 
     <section>
-      <title>Constraint definition</title>
+      <title>Constraint declaration</title>
 
-      <para>Constraint definitions are defined on classes or interfaces
+      <para>Constraint declarations are placed on classes or interfaces
       primarily through annotations. A constraint annotation (see <xref
       linkend="constraintsdefinitionimplementation-constraintdefinition" />),
       can be applied to a type, on any of the type's fields or on any of the
@@ -803,9 +897,9 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
     <section id="constraintdeclarationvalidationprocess-inheritance">
       <title>Inheritance (interface and superclass)</title>
 
-      <para>A constraint declaration can be defined on an interface.
-      Constraint declarations held on superclasses as well as interfaces are
-      evaluated by the Validator.</para>
+      <para>A constraint declaration can be placed on an interface. Constraint
+      declarations held on superclasses as well as interfaces are evaluated by
+      the Validator.</para>
 
       <para>The effect of constraint declarations is cumulative. Constraints
       declared on a superclass getter will be validate along with any
@@ -875,7 +969,7 @@ public @interface GroupSequences {
       the sequence definitions of their parent. Two group sequences must not
       share the same group name in a given object graph (including
       superclasses and interfaces). Group sequences must not use constraint
-      definition group names as a name. In other words, constraint definition
+      declaration group names as a name. In other words, constraint definition
       groups cannot contain one of the group sequence name.</para>
 
       <para>Unless constrained by a group sequence, the order in which groups
@@ -1380,16 +1474,17 @@ author.setCompany("Some random publisher with a very very very long name");</pro
       <para>The main Bean Validation API is the
       <classname>javax.validation.Validator&lt;T&gt;</classname> interface.
       Besides implementing the <classname>Validator&lt;T&gt;</classname> API,
-      the Bean Validation provider implementation of Validator&lt;T&gt; must
-      have a constructor Constructor(Class&lt;T&gt;).</para>
+      the Bean Validation provider implementation of
+      <classname>Validator&lt;T&gt;</classname> must have a constructor
+      <classname>Validator(Class&lt;T&gt;)</classname>.</para>
 
       <para>A <classname>Validator&lt;T&gt;</classname> instance is able to
-      validate instances of T classes (and the associated objects if any). It
-      is recommended to cache Validator&lt;T&gt; instances. The Bean
-      Validation provider has to guarantee that concurrent, multi-threaded
-      access to a Validator&lt;T&gt; implementation are safe.</para>
-
-      <comment>SCP: are references to shortcut here obsolete?</comment>
+      validate instances of <classname>T</classname> classes (and the
+      associated objects if any). It is recommended to cache
+      <classname>Validator&lt;T&gt;</classname> instances. The Bean Validation
+      provider has to guarantee that concurrent, multi-threaded access to a
+      <classname>Validator&lt;T&gt;</classname> implementation are
+      safe.</para>
 
       <programlisting>/**
  * Validate a given object type
@@ -1398,64 +1493,61 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  */
 public interface Validator&lt;T&gt; {
     /**
-     * validate all constraints on object (unless shortcut)
+     * validate all constraints on object
      *
      * @param object object to validate
-     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;
-     * @return array of invalid constrains or an empty array if none
-     * @throws IllegalArgumentException e if object is null TODO should it just be ignored?
+     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @return invalid constrains or an empty Set if none
+     * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
-    InvalidConstraint[] validate(T object, String... groups);
+    Set&lt;InvalidConstraint&gt; validate(T object, String... groups);
 
     /**
-     * validate all constraints on propertyname property of object (unless shortcut)
+     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property of object
      *
      *
      * @param object object to validate
      * @param propertyName property to validate
-     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;
-     * @return array of invalid constrains or an empty array if none
-     * @throws IllegalArgumentException e if object is null TODO should it just be ignored?
+     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @return invalid constrains or an empty Set if none
+     * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
-    InvalidConstraint[] validateProperty(T object, String propertyName, String... groups);
+    Set&lt;InvalidConstraint&gt; validateProperty(T object, String propertyName, String... groups);
 
     /**
-     * validate all constraints on propertyname property if the property value is value (unless shortcut)
+     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property if the property value is &lt;code&gt;value&lt;/code&gt;
      *
      * TODO express limitations of InvalidConstraint in this case
      *
      * @param propertyName property to validate
      * @param value property value to validate
-     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;
-     * @return array of invalid constrains or an empty array if none
+     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @return invalid constrains or an empty Set if none
      */
-    InvalidConstraint[] validateValue(String propertyName, Object value, String... groups);
+    Set&lt;InvalidConstraint&gt; validateValue(String propertyName, Object value, String... groups);
 
     [...]
 
 }</programlisting>
 
-      <para />
+      <para></para>
 
       <section id="validationapi-validatorapi-validationmethods">
         <title>Validation methods</title>
 
-        <para><methodname>InvalidConstraint[] validate(T object, String...
-        groups)</methodname> is used to validate a given object of type T from
-        a Validator&lt;T&gt; instance. This method implements the logic
-        described in <xref
+        <para><methodname>Set&lt;InvalidConstraint&gt; validate(T object,
+        String... groups)</methodname> is used to validate a given object of
+        type <classname>T</classname> from a
+        <classname>Validator&lt;T&gt;</classname> instance. This method
+        implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
-        An array of <classname>InvalidConstraint</classname> representing all
-        the failing constraints (or until one of the failing one is marked as
-        <literal>shortcut = true</literal>) is returned, an empty array is
-        returned otherwise. The order of InvalidConstraint elements is
-        described in <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine" />
-        as well.</para>
+        A Set containing all <classname>InvalidConstraint</classname>
+        representing the failing constraints is returned, an empty
+        <classname>Set</classname> is returned otherwise.</para>
 
-        <para><methodname>InvalidConstraint[] validateProperty(T object,
-        String propertyName, String... groups)</methodname> validates a given
-        field or property of a given object. The property name is the
+        <para><methodname>Set&lt;InvalidConstraint&gt; validateProperty(T
+        object, String propertyName, String... groups)</methodname> validates
+        a given field or property of an object. The property name is the
         JavaBeans property name (as defined by the JavaBeans Introspector
         class). This method implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
@@ -1463,8 +1555,8 @@ public interface Validator&lt;T&gt; {
         not honored by this method. This method is useful for partial object
         validation.</para>
 
-        <para><methodname>InvalidConstraint[] validateValue(String
-        propertyName, Object value, String... groups)</methodname> validate
+        <para><methodname>Set&lt;InvalidConstraint&gt; validateValue(String
+        propertyName, Object value, String... groups)</methodname> validates
         the property referenced by <parameter>propertyName</parameter>, if the
         property value were <parameter>value</parameter>. This method
         implements the logic described in <xref
@@ -1473,8 +1565,8 @@ public interface Validator&lt;T&gt; {
         <literal>@Valid</literal> is not honored by this method. This method
         is useful for ahead of time validation.</para>
 
-        <comment>SCP: what values come back in InvalidConstraint for the
-        validateValue() case?</comment>
+        <!--SCP: what values come back in InvalidConstraint for the validateValue() case?
+EBE the value passed as a parameter. I think the JavaDoc is clear, should it be made explicit?-->
 
         <section>
           <title>Examples</title>
@@ -1534,7 +1626,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 //town in North Wales</programlisting>
 
           <para>Assuming a <classname>Validator&lt;Address&gt;</classname>,
-          the following code will return an array of three
+          the following code will return three
           <classname>InvalidConstraint</classname>. One for
           <literal>addressline1</literal> violating
           <literal>NotNull</literal>, one for <literal>addressline2</literal>
@@ -1543,14 +1635,14 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
           <programlisting>validator.validate(address).length == 3</programlisting>
 
-          <para>The following code will return an array of one
+          <para>The following code will return one
           <classname>Invalid</classname>Constraint since
           <literal>city</literal> violates <literal>Length</literal> and only
           <literal>city</literal> is validated.</para>
 
           <programlisting>validator.validateProperty(address, "city").length == 1</programlisting>
 
-          <para>The following code will return an empty array of
+          <para>The following code will return no
           <classname>InvalidConstraint</classname> because the value
           <literal>Paris</literal> for <literal>city</literal> would not raise
           any constraint failure.</para>
@@ -1563,10 +1655,13 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
         <title>groups</title>
 
         <para>The (list of) group(s) restricts the set of constraints applied.
-        Only the constraints declarations targeting (see <xref
+        Only the constraint declarations targeting (see <xref
         linkend="constraintsdefinitionimplementation-constraintdefinition-groups" />)
-        one or more of the group(s) passed as a parameter to the validate*
-        methods will be applied during the <xref
+        one or more of the group(s) passed as a parameter to the
+        <methodname>validate</methodname>,
+        <methodname>validateProperty</methodname> and
+        <methodname>validateValue</methodname> methods will be applied during
+        the <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
         If no group is passed, the <literal>default</literal> group is
         assumed.</para>
@@ -1587,25 +1682,38 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
     ...
 }</programlisting>
 
-          <para>In the previous example, @NotEmpty on street1 applies to the
-          group minimal, @Length on street1 applies to the group default and
-          @NotEmpty on zipCode applies to the groups default and
-          minimal.</para>
+          <para>In the previous example, <classname>@NotEmpty</classname> on
+          <methodname>street1</methodname> applies to the group
+          <literal>minimal</literal>, <classname>@Length</classname> on
+          <methodname>street1</methodname> applies to the group
+          <literal>default</literal> and <classname>@NotEmpty </classname>on
+          <methodname>zipCode</methodname> applies to the groups
+          <literal>default</literal> and <literal>minimal</literal>.</para>
 
           <programlisting>validator.validate(address);</programlisting>
 
-          <para>applies @Length on street1, @NotEmpty on city, @NotEmpty on
-          zipCode. Particularly, @NotEmpty on street1 is not applied.</para>
+          <para>applies <classname>@Length</classname> on
+          <methodname>street1</methodname>, <classname>@NotEmpty</classname>
+          on <methodname>city</methodname>, <classname>@NotEmpty</classname>
+          on <methodname>zipCode</methodname>. Particularly,
+          <classname>@NotEmpty</classname> on <methodname>street1</methodname>
+          is not applied.</para>
 
           <programlisting>validator.validate(address, "minimal");</programlisting>
 
-          <para>applies @NotEmpty on street1 and @NotEmpty on zipCode</para>
+          <para>applies <classname>@NotEmpty</classname> on
+          <methodname>street1</methodname> and
+          <classname>@NotEmpty</classname> on
+          <methodname>zipCode</methodname></para>
 
           <programlisting>validator.validate(address, "minimal", "default");</programlisting>
 
-          <para>applies @NotEmpty and @Length on street1, @NotEmpty on city,
-          @NotEmpty on zipCode. Note that if <methodname>zipCode</methodname>
-          is indeed not empty, only one
+          <para>applies <classname>@NotEmpty</classname> and
+          <classname>@Length</classname> on <methodname>street1</methodname>,
+          <classname>@NotEmpty</classname> on <methodname>city</methodname>,
+          <classname>@NotEmpty</classname> on
+          <methodname>zipCode</methodname>. Note that if
+          <methodname>zipCode</methodname> is indeed not empty, only one
           <classname>InvalidConstraint</classname> object will represent the
           failure and the not empty validation will only be executed
           once.</para>
@@ -1631,21 +1739,30 @@ public class Address {
 
           <programlisting>validator.validate(address, "minimal", "total");</programlisting>
 
-          <para>the validation process will process NotEmpty and Length from
-          street1 and NotEmpty from zipCode. If Length from street1 does not
-          generate a failure, then NotEmpty from <methodname>city</methodname>
-          will be processed. Note that NotEmpty from zipCode is not
-          reprocessed as it has already been processed before.</para>
+          <para>the validation process will process
+          <classname>NotEmpty</classname> and <classname>Length</classname>
+          from <methodname>street1</methodname> and
+          <classname>NotEmpty</classname> from
+          <methodname>zipCode</methodname>. If <classname>Length</classname>
+          from <methodname>street1</methodname> does not generate a failure,
+          then <classname>NotEmpty</classname> from
+          <methodname>city</methodname> will be processed. Note that
+          <classname>NotEmpty</classname> from
+          <methodname>zipCode</methodname> is not reprocessed as it has
+          already been processed before.</para>
 
           <para>When running:</para>
 
           <programlisting>validator.validate(address, "total", "secondstep");</programlisting>
 
-          <para>NotEmpty from city and NotEmpty from zipCode will be processed
-          even if Length from street1 fails: while secondstep is in the total
-          group sequence and hence should not be triggered if firststep has a
-          failure, it also has been requested outside the sequence (in this
-          case explicitely).</para>
+          <para><classname>NotEmpty</classname> from
+          <methodname>city</methodname> and <classname>NotEmpty</classname>
+          from <methodname>zipCode</methodname> will be processed even if
+          <classname>Length</classname> from <methodname>street1</methodname>
+          fails: while secondstep is in the <literal>total</literal> group
+          sequence and hence should not be triggered if
+          <literal>firststep</literal> has a failure, it also has been
+          requested outside the sequence (in this case explicitely).</para>
         </section>
       </section>
     </section>
@@ -1674,9 +1791,7 @@ public interface InvalidConstraint {
 
     /**
      * Root bean being validated validated
-     */
-     // TODO SCP perhaps getRootValue()?
-    Object getRootBean();
+     */<!--SCP perhaps getRootValue()?-->    Object getRootBean();
 
     /**
      * Bean type being validated
@@ -1684,7 +1799,7 @@ public interface InvalidConstraint {
     Class getBeanClass();
 
     /**
-     * the value failing to pass the constraint
+     * The value failing to pass the constraint
      */
     Object getValue();
 
@@ -1697,9 +1812,9 @@ public interface InvalidConstraint {
     /**
      * return the list of groups that the triggered constraint applies on and witch also are
      * within the list of groups requested for validation (directly or through a group sequence)
+     * TODO: considering removal, if you think it's important, speak up
      */
     String[] getGroups();
-
 }</programlisting>
 
       <para><methodname>message</methodname> return the expanded (localized)
@@ -1744,8 +1859,8 @@ public interface InvalidConstraint {
           field or JavaBeans property name and a dot ('.') as a prefix to the
           previous rules. This rule is recursive.</para>
 
-          <comment>SCP: Need to decide what to do here when terminal is class.
-          Trailing dot?</comment>
+          <!--SCP: Need to decide what to do here when terminal is class. Trailing dot?
+EBE rule #1 addresses that or am I off base?-->
         </listitem>
       </itemizedlist>
 
@@ -1755,8 +1870,11 @@ public interface InvalidConstraint {
         context of the failure</para>
       </note>
 
-      <para>groups returns the intersection of the groups the triggered
-      constraint applies on and the groups requested for validation.</para>
+      <para><methodname>groups</methodname> returns the intersection of the
+      groups the triggered constraint applies on and the groups requested for
+      validation.</para>
+
+      <!--EBE: this notion is quite vague with the recursive group sequence-->
 
       <section>
         <title>Example</title>
@@ -1826,14 +1944,14 @@ Book book = new Book();
 book.setTitle("");
 book.setAuthor(author);
 
-InvalidConstraint[] invalidConstraints = validator.validate(book);</programlisting>
+Set&lt;InvalidConstraint&gt; invalidConstraints = validator.validate(book);</programlisting>
 
-        <para><literal>invalidConstraints</literal> is an array of size 2. One
-        of the entries represent the failure of <literal>NotEmpty</literal> on
+        <para><literal>invalidConstraints</literal> is a set of size 2. One of
+        the entries represent the failure of <literal>NotEmpty</literal> on
         the <literal>title</literal> property.</para>
 
-        <para>The invalidConstraint object for this failure pass the following
-        assertions:</para>
+        <para>The <classname>invalidConstraint</classname> object for this
+        failure passes the following assertions:</para>
 
         <programlisting>//assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( invalidConstraint.getMessage() );
@@ -1852,7 +1970,7 @@ for ( String group : invalidConstraint.getGroups() ) {
 }</programlisting>
 
         <para>The second failure, <literal>NotEmpty</literal> on the author's
-        lastname, will produce the following
+        <methodname>lastname</methodname>, will produce the following
         <classname>InvalidConstraint</classname> object:</para>
 
         <programlisting>assert "lastname must not be null".equals( invalidConstraint.getMessage() );
@@ -1876,15 +1994,16 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
         This message resolver shall use the algorithm defined here to resolve
         message descriptors into human-readable messages.</para>
 
-        <para>Each constraint defines a message descriptor via its "message"
-        property. Every constraint definition shall define a default message
-        descriptor for that constraint. A particular use of a constraint can
-        override the default message descriptor of the constraint by setting
-        the "message" property on the constraint.</para>
+        <para>Each constraint defines a message descriptor via its
+        <methodname>message</methodname> property. Every constraint definition
+        shall define a default message descriptor for that constraint. A
+        particular use of a constraint can override the default message
+        descriptor of the constraint by setting the
+        <methodname>message</methodname> property on the constraint.</para>
 
         <para>The message descriptor is a string literal and may contain one
         or more message parameters. Message parameters are string literals
-        enclosed in braces [need to define the string literal here].</para>
+        enclosed in braces.<!--SCP need to define the string literal here--></para>
 
         <section id="default-resolution-algorithm">
           <title>Algorithm</title>
@@ -1894,21 +2013,17 @@ assert invalidConstraint.getGroups().length == 0</programlisting>
           by repeatedly executing the steps listed below until no replacements
           are performed.</para>
 
-          <!--SteveP: Do we want to allow MessageFormat style formatting here?-->
+          <!--SCP: Do we want to allow MessageFormat style formatting here?-->
 
           <orderedlist>
             <listitem>
               <para>A message parameter that matches the name of a property of
-              the constraint definition is replaced by the value of that
+              the constraint declaration is replaced by the value of that
               property.</para>
-            </listitem>
 
-            <listitem>
-              <para>The <literal>{value}</literal> message parameter is
-              replaced by the value being validated, using the result of
-              invoking the toString() method on value. If the value being
-              validated is null, the string 'null' is used as the replacement
-              string.</para>
+              <!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
+If the value being valudated is null, the string 'null' is used as a replacement string
+EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it conflicts with value the default annotation name-->
             </listitem>
 
             <listitem>
@@ -1971,8 +2086,7 @@ public interface MessageResolver {
         through
         <methodname>validator.setMessageResolver(MessageResolver)</methodname>.</para>
 
-        <comment>SCP: should we support per-invocation message resolver
-        override?</comment>
+        <!--SCP: should we support per-invocation message resolver override?-->
       </section>
 
       <section>
@@ -1987,7 +2101,7 @@ public interface MessageResolver {
         <programlisting>//ValidationMessages.properties
 myapp.creditcard.error=Your credit card number is not valid</programlisting>
 
-        <para />
+        <para></para>
 
         <table>
           <title>message interpolation</title>
@@ -2036,8 +2150,7 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
           </tgroup>
         </table>
 
-        <comment>SCP: add example of {value} here. Add use of MessageFormat
-        style formatting</comment>
+        <!--SCP: add example of {value} here. Add use of MessageFormat style formatting-->
       </section>
     </section>
 
@@ -2077,15 +2190,13 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
       <classname>Validator&lt;T&gt;</classname> implementation is safe.</para>
 
       <programlisting>/**
- * Describe a contraint validation defect
- *
- * FIXME the rational behind rootBean and propertyPath is to keep the context available to the user
- *
+ * Validate a given object type
+ * 
  * @author Emmanuel Bernard
  */
 public interface Validator&lt;T&gt; {
 
-    [...]
+    [...] //See 4.1
 
     /**
      * return true if at least one constraint declaration is present for the given bean
@@ -2107,14 +2218,7 @@ public interface Validator&lt;T&gt; {
     /**
      * return the property names having at least a constraint defined
      */
-    String[] getValidatedProperties();
-
-    /**
-     * set the message resolver to be used for
-     * message resolution.
-     */
-    void setMessageResolver(MessageResolver resolver);
-
+    Set&lt;String&gt; getValidatedProperties();<!--Add a method to return the GroupSequences-->
 }</programlisting>
 
       <para><methodname>hasConstraints</methodname> returns true if the given
@@ -2136,9 +2240,7 @@ public interface Validator&lt;T&gt; {
 
       <para><methodname>getValidatedProperties</methodname> returns the names
       of the bean properties having at least one constraint or being cascaded
-      (<classname>@Valid</classname> annotation)</para>
-
-      <para></para>
+      (<classname>@Valid</classname> annotation).</para>
     </section>
 
     <section>
@@ -2173,7 +2275,7 @@ public interface ElementDescriptor {
     /**
      * all the constraint descriptors for the given element
      */
-    ConstraintDescriptor[] getConstraintDescriptors();
+    Set&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
 
     /**
      * Property path from the root entity validated.
@@ -2215,8 +2317,8 @@ public interface ElementDescriptor {
       as described in <xref
       linkend="validationapi-invalidconstraint" />.</para>
 
-      <para><classname>getConstraintDescriptors</classname> return an array of
-      <classname>ConstraintDescriptor</classname> (see <xref
+      <para><classname>getConstraintDescriptors</classname> returns the
+      <classname>ConstraintDescriptor</classname>s (see <xref
       linkend="constraintmetadata-constraintdescriptor" />), each
       <classname>ConstraintDescriptor</classname> describing one of the
       constraints declared on the given element.</para>
@@ -2245,14 +2347,9 @@ public interface ConstraintDescriptor {
     Map&lt;String, Object&gt; getParameters();
 
     /**
-     * Does the constraint enables short circuit
-     */
-    boolean isShortCircuited();
-
-    /**
      * What are the groups the constraint is applied on
-     */
-    String[] getGroups();
+     */<!--EBE: Should it be List<String> as the groups comes from an array??-->
+    Set&lt;String&gt; getGroups();
 
     /**
      * Return the constraint implementation routine
@@ -2267,12 +2364,7 @@ public interface ConstraintDescriptor {
       <para><methodname>getParameters</methodname> returns a map containing
       the annotation parameter names as a key, and the annotation parameter
       values as a value (this API is anticipated to be simpler to use by tools
-      that reflection over the annotation instance)</para>
-
-      <para><methodname>isShortCircuited</methodname> returns
-      <literal>true</literal> if the annotation's
-      <parameter>shortCircuit</parameter> parameter (if any) is set to
-      <literal>true</literal>.</para>
+      that reflection over the annotation instance).</para>
 
       <para><methodname>getGroups</methodname> returns the group names, the
       constraint is supposed to be applied upon.</para>
@@ -2359,10 +2451,10 @@ assert bookValidator.hasConstraints();
 
 ElementDescriptor bookBeanDescriptor = bookValidator.getBeanConstraints();
 assert bookBeanDescriptor.getElementType() == ElementType.TYPE;
-assert bookBeanDescriptor.getConstraintDescriptors().length == 0 //no constraint
+assert bookBeanDescriptor.getConstraintDescriptors().size() == 0 //no constraint
 assert "".equals( bookBeanDescriptor.getPropertyPath() ); //root element
 
-assert bookValidator.getValidatedProperties().length == 2;
+assert bookValidator.getValidatedProperties().size() == 2;
 //more specifically "author" and "title"
 
 assert bookValidator.getConstraintsForProperty("doesNotExist") == null; //not a property
@@ -2370,29 +2462,34 @@ assert bookValidator.getConstraintsForProperty("description") == null; //propert
 
 ElementDescriptor propertyDescriptor = bookValidator.getConstraintsForProperty("title");
 assert propertyDescriptor.getElementType() == ElementType.METHOD;
-assert propertyDescriptor.getConstraintDescriptors().length == 2
+assert propertyDescriptor.getConstraintDescriptors().size() == 2
 assert "title".equals( propertyDescriptor.getPropertyPath() );
 
 //assuming the implementation returns the NotEmpty constraint first
-ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDescriptors()[0];
+ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
-assert ! constraintDescriptor.isShortCiscuited();
-assert constraintDescriptor.getGroups().length == 2; //"firstlevelcheck" and "default"
+assert constraintDescriptor.getGroups().size() == 2; //"firstlevelcheck" and "default"
 assert constraintDescriptor.getConstraintImplementation() instanceof StandardConstraint;
 StandardConstraint standardConstraint = (StandardConstraint) constraintDescriptor.getConstraintImplementation();
 assert ! standardConstraint.getStandardConstraints().getNullability(); //@NotEmpty cannot be null
 
 /assuming the implementation returns the Length constraint second
-constraintDescriptor = bookBeanDescriptor.getConstraintDescriptors()[1];
+constraintDescriptor = bookBeanDescriptor.getConstraintDescriptors().iterator().next().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Length.class );
 assert constraintDescriptor.getParameters().get("max") == 30; 
-assert ! constraintDescriptor.isShortCiscuited();
 assert constraintDescriptor.getGroups().length == 0;
 
 propertyDescriptor = bookValidator.getConstraintsForProperty("author");
-assert propertyDescriptor.getConstraintDescriptors().length == 1
+assert propertyDescriptor.getConstraintDescriptors().size() == 1
 assert propertyDescriptor.isCascaded()</programlisting>
     </section>
+  </chapter>
+
+  <chapter>
+    <title>Standard Constraint definitions</title>
+
+    <para>Some basic constraint definitions will be included later in the
+    specification.</para>
   </chapter>
 
   <chapter>
