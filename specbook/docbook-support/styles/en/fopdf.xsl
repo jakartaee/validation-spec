@@ -377,7 +377,7 @@
     <xsl:attribute-set name="section.title.level2.properties">
         <xsl:attribute name="space-before.optimum">0.6em</xsl:attribute>
         <xsl:attribute name="space-before.minimum">0.6em</xsl:attribute>
-        <xsl:attribute name="space-before.maximum">0.6em</xsl:attribute>
+        <xsl:attribute name="space-before.maximum">0.6em</xsl:attribute
         <xsl:attribute name="font-size">
             <xsl:value-of select="$body.font.master * 1.25"/>
             <xsl:text>pt</xsl:text>
@@ -432,7 +432,7 @@
         <xsl:attribute name="padding-bottom">0.5em</xsl:attribute>
         <xsl:attribute name="margin-left">0.5em</xsl:attribute>
         <xsl:attribute name="margin-right">0.5em</xsl:attribute>
-        <xsl:attribute name="background-color">#F0F0F0</xsl:attribute>
+        <xsl:attribute name="background-color">#D0D0D0</xsl:attribute>
     </xsl:attribute-set>
 
 
@@ -461,7 +461,7 @@
     <!-- Shade (background) programlistings -->
     <xsl:param name="shade.verbatim">1</xsl:param>
     <xsl:attribute-set name="shade.verbatim.style">
-        <xsl:attribute name="background-color">#F0F0F0</xsl:attribute>
+        <xsl:attribute name="background-color">#D0D0D0</xsl:attribute>
     </xsl:attribute-set>
     
     

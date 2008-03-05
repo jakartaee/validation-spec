@@ -54,7 +54,7 @@ don't want that -->
                      </xsl:if>
                      <xsl:if test="bookinfo/title">
                         <fo:block font-family="Helvetica" font-size="26pt" padding-before="10mm" text-align="left"
-                                  font-weight="bold">
+                                  font-weight="bold" color="#003399">
                            <xsl:value-of select="bookinfo/title"/>
                         </fo:block>
                      </xsl:if>
@@ -371,6 +371,17 @@ don't want that -->
          <xsl:value-of select="$body.font.master * 1.8"/>
          <xsl:text>pt</xsl:text>
       </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
+   </xsl:attribute-set>
+   
+   <xsl:attribute-set name="preface.titlepage.recto.style">
+      <!-- xsl:attribute name="text-align">right</xsl:attribute -->
+      <xsl:attribute name="font-weight">bold</xsl:attribute>
+      <xsl:attribute name="font-size">
+         <xsl:value-of select="$body.font.master * 1.8"/>
+         <xsl:text>pt</xsl:text>
+      </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
    </xsl:attribute-set>
 
 
@@ -381,13 +392,14 @@ don't want that -->
          <xsl:value-of select="$body.font.master * 1.8"/>
          <xsl:text>pt</xsl:text>
       </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
    </xsl:attribute-set>
 
    <xsl:template name="appendix.titlepage.before.recto">
       <xsl:param name="node" select="ancestor-or-self::appendix[1]"/>
       <fo:block xmlns:fo="http://www.w3.org/1999/XSL/Format"
                 text-align="right"
-                font-size="72pt" font-weight="bold">
+                font-size="72pt" font-weight="bold" color="#003399">
          <xsl:number from="book" format="A"/>
       </fo:block>
    </xsl:template>
@@ -396,7 +408,7 @@ don't want that -->
       <xsl:param name="node" select="ancestor-or-self::chapter[1]"/>
       <fo:block xmlns:fo="http://www.w3.org/1999/XSL/Format"
                 text-align="right"
-                font-size="72pt" font-weight="bold">
+                font-size="72pt" font-weight="bold" color="#003399">
          <xsl:number from="book" format="1"/>
       </fo:block>
    </xsl:template>
@@ -435,6 +447,7 @@ don't want that -->
          <xsl:value-of select="$body.font.master * 1.5"/>
          <xsl:text>pt</xsl:text>
       </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
       <xsl:attribute name="space-after.optimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.minimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.maximum">0.1em</xsl:attribute>
@@ -447,6 +460,7 @@ don't want that -->
          <xsl:value-of select="$body.font.master * 1.25"/>
          <xsl:text>pt</xsl:text>
       </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
       <xsl:attribute name="space-after.optimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.minimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.maximum">0.1em</xsl:attribute>
@@ -459,6 +473,7 @@ don't want that -->
          <xsl:value-of select="$body.font.master * 1.0"/>
          <xsl:text>pt</xsl:text>
       </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
       <xsl:attribute name="space-after.optimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.minimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.maximum">0.1em</xsl:attribute>
@@ -472,6 +487,7 @@ don't want that -->
          <xsl:value-of select="$body.font.master"/>
          <xsl:text>pt</xsl:text>
       </xsl:attribute>
+      <xsl:attribute name="color">#003399</xsl:attribute>
       <xsl:attribute name="hyphenate">false</xsl:attribute>
       <xsl:attribute name="space-after.minimum">0.4em</xsl:attribute>
       <xsl:attribute name="space-after.optimum">0.6em</xsl:attribute>
@@ -511,7 +527,7 @@ don't want that -->
       <xsl:attribute name="space-after.minimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.optimum">0.1em</xsl:attribute>
       <xsl:attribute name="space-after.maximum">0.1em</xsl:attribute>
-      <xsl:attribute name="border-color">#444444</xsl:attribute>
+      <xsl:attribute name="border-color">#999999</xsl:attribute>
       <xsl:attribute name="border-style">solid</xsl:attribute>
       <xsl:attribute name="border-width">0.1pt</xsl:attribute>
       <xsl:attribute name="padding-top">0.5em</xsl:attribute>
@@ -524,7 +540,7 @@ don't want that -->
    <!-- Shade (background) programlistings -->
    <xsl:param name="shade.verbatim">1</xsl:param>
    <xsl:attribute-set name="shade.verbatim.style">
-      <xsl:attribute name="background-color">#F0F0F0</xsl:attribute>
+      <xsl:attribute name="background-color">#F1F1F1</xsl:attribute>
    </xsl:attribute-set>
 
 

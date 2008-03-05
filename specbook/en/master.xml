@@ -7,15 +7,14 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Alpha.20080303</releaseinfo>
+    <releaseinfo>1.0.Beta1</releaseinfo>
 
-    <date>2008-03-03</date>
+    <date>2008-03-04</date>
 
     <copyright>
       <year>2007, 2008</year>
 
-      <holder>Red Hat Middleware, LLC and Steve Peterson (to be adjusted but
-      for now...)</holder>
+      <holder>Red Hat Middleware, LLC and Steve Peterson</holder>
     </copyright>
 
     <authorgroup>
@@ -37,27 +36,51 @@
         <surname>Peterson</surname>
       </author>
     </authorgroup>
-
-    <legalnotice>
-      <para>All rights reserved, do not distribute outside the JSR 303 expert
-      group.</para>
-    </legalnotice>
   </bookinfo>
-
-  <preface>
-    <title>License</title>
-
-    <para>All rights reserved, do not distribute outside the JSR 303 expert
-    group.</para>
-  </preface>
 
   <preface>
     <title>Disclaimer</title>
 
-    <para>This specification is a work in progress. The content of this spec
-    is highly subject to change. The JSR 303 expert group is seeking for
-    feedbacks from the community on this specification and will update it
-    accordingly.</para>
+    <para>This specification is a work in progress. The content of this
+    specification is highly subject to change. Specific areas currently at
+    work include:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para><classname>StandardConstraint</classname> extension (feedback
+        from presentation frameworks)</para>
+      </listitem>
+
+      <listitem>
+        <para>Message resolution and localization</para>
+      </listitem>
+
+      <listitem>
+        <para>Boostrap strategy (including validation provider
+        resolution)</para>
+      </listitem>
+
+      <listitem>
+        <para>Constraint metadata request API (feedback from consumer
+        frameworks including presentation, tools and so on)</para>
+      </listitem>
+
+      <listitem>
+        <para>Built-in constraint definitions</para>
+      </listitem>
+
+      <listitem>
+        <para>XML deployment descriptor</para>
+      </listitem>
+
+      <listitem>
+        <para>Extension for method parameters validation</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>The JSR 303 expert group is seeking for feedbacks from the community
+    on this specification and will update it accordingly. Direct feedbacks to
+    jsr-303-comments@jcp.org.</para>
   </preface>
 
   <chapter>
@@ -182,7 +205,8 @@
       server-side application programming, as well as rich client Swing
       application developers. This API is seen as a general extension to the
       JavaBeans object model, and as such is expected to be used as a core
-      component in other specifications.</para>
+      component in other specifications. Ease of use and flexibility are
+      influencing the design of this specification.</para>
     </section>
 
     <section>
@@ -192,18 +216,18 @@
       specification in a separate chapter. One should remember that the
       specification is a consistent whole.</para>
 
-      <para>Chapter <xref linkend="constraintsdefinitionimplementation" />
-      describes how constraints are defined.</para>
+      <para><xref linkend="constraintsdefinitionimplementation" /> describes
+      how constraints are defined.</para>
 
-      <para>Chapter <xref linkend="constraintdeclarationvalidationprocess" />
+      <para><xref linkend="constraintdeclarationvalidationprocess" />
       describes how a JavaBean class is decorated with annotations to describe
       constraints on the contents of an instance of the class.</para>
 
-      <para>Chapter <xref linkend="validationapi" /> describes how to
-      programmatically validate a JavaBean.</para>
+      <para><xref linkend="validationapi" /> describes how to programmatically
+      validate a JavaBean.</para>
 
-      <para>Chapter <xref linkend="constraintmetadata" /> describes how the
-      metadata query API works.</para>
+      <para> <xref linkend="constraintmetadata" /> describes how the metadata
+      query API works.</para>
     </section>
 
     <section>
@@ -272,7 +296,7 @@ public @interface ConstraintValidator {
         properties are mapped as annotation elements. The annotation element
         names <literal>message</literal> and <literal>groups</literal> are
         considered reserved names; a constraint may use any other element name
-        for its parameters. <!--[SCP: reserve a prefix for future use?] EBE: I think I have a smarter approach check the "Constraint definition elements" email from 2007/11/26--></para>
+        for its parameters.<!--[SCP: reserve a prefix for future use?] EBE: I think I have a smarter approach check the "Constraint definition elements" email from 2007/11/26--></para>
 
         <section id="constraintsdefinitionimplementation-constraintdefinition-parameters-message">
           <title>message</title>
@@ -474,8 +498,9 @@ public interface Constraint&lt;A extends Annotation&gt; {
     /**
      * Initialize the constraint validator.
      *
-     * This method is guaranteed to be called once right after the constraint is retrieved from the
-     * ConstraintFactory and before the Bean Validation provider starts using it.
+     * This method is guaranteed to be called once right after the constraint is retrieved 
+     * from the &lt;code&gt;ConstraintFactory&lt;/code&gt; and before the Bean Validation provider 
+     * starts using it.
      *
      * @param constraintAnnotation The constraint declaration
      */
@@ -486,7 +511,8 @@ public interface Constraint&lt;A extends Annotation&gt; {
      *
      * @param value The object to validate
      * @return false if the value is not valid, true otherwise
-     * @exception IllegalArgumentException The value's type isn't understood by the constraint validator
+     * @exception IllegalArgumentException The value's type isn't understood 
+     *            by the constraint validator
      */
     boolean isValid(Object value);
     <!--TODO SCP: What happens to other exceptions inside isValid()?-->}</programlisting>
@@ -816,7 +842,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         constraint.</para>
 
         <para>When using field access strategy, the bean validation provider
-        accesses the instance vairable directly. When using the property
+        accesses the instance variable directly. When using the property
         access strategy, the bean validation provider accesses the state via
         the property accessor method. It is required that the class follow the
         method signature conventions for JavaBeans read properties (as defined
@@ -1500,7 +1526,7 @@ public interface Validator&lt;T&gt; {
      * @return invalid constrains or an empty Set if none
      * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
-    Set&lt;InvalidConstraint&gt; validate(T object, String... groups);
+    Set&lt;InvalidConstraint&lt;T&gt;&gt; validate(T object, String... groups);
 
     /**
      * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property of object
@@ -1512,10 +1538,13 @@ public interface Validator&lt;T&gt; {
      * @return invalid constrains or an empty Set if none
      * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
-    Set&lt;InvalidConstraint&gt; validateProperty(T object, String propertyName, String... groups);
+    Set&lt;InvalidConstraint&lt;T&gt;&gt; validateProperty(T object, 
+                                               String propertyName, 
+                                               String... groups);
 
     /**
-     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property if the property value is &lt;code&gt;value&lt;/code&gt;
+     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property 
+     * if the property value is &lt;code&gt;value&lt;/code&gt;
      *
      * TODO express limitations of InvalidConstraint in this case
      *
@@ -1524,7 +1553,9 @@ public interface Validator&lt;T&gt; {
      * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
      * @return invalid constrains or an empty Set if none
      */
-    Set&lt;InvalidConstraint&gt; validateValue(String propertyName, Object value, String... groups);
+    Set&lt;InvalidConstraint&lt;T&gt;&gt; validateValue(String propertyName, 
+                                            Object value, 
+                                            String... groups);
 
     [...]
 
@@ -1759,10 +1790,11 @@ public class Address {
           <methodname>city</methodname> and <classname>NotEmpty</classname>
           from <methodname>zipCode</methodname> will be processed even if
           <classname>Length</classname> from <methodname>street1</methodname>
-          fails: while secondstep is in the <literal>total</literal> group
-          sequence and hence should not be triggered if
-          <literal>firststep</literal> has a failure, it also has been
-          requested outside the sequence (in this case explicitely).</para>
+          fails: while <literal>secondstep</literal> is in the
+          <literal>total</literal> group sequence and hence should not be
+          triggered if <literal>firststep</literal> has a failure, it also has
+          been requested outside the sequence (in this case
+          explicitly).</para>
         </section>
       </section>
     </section>
@@ -1777,12 +1809,11 @@ public class Address {
       <programlisting>/**
  * Describe a constraint validation defect
  *
- * FIXME the rational behind rootBean and propertyPath is to keep the context available to the user
- * TODO add pointers to the metadata? 
+ * TODO add pointers to the metadata?
  *
  * @author Emmanuel Bernard
  */
-public interface InvalidConstraint {
+public interface InvalidConstraint&lt;T&gt; {
     
     /**
      * Error message
@@ -1791,7 +1822,7 @@ public interface InvalidConstraint {
 
     /**
      * Root bean being validated validated
-     */<!--SCP perhaps getRootValue()?-->    Object getRootBean();
+     */<!--SCP perhaps getRootValue()?-->    T getRootBean();
 
     /**
      * Bean type being validated
@@ -1811,7 +1842,8 @@ public interface InvalidConstraint {
 
     /**
      * return the list of groups that the triggered constraint applies on and witch also are
-     * within the list of groups requested for validation (directly or through a group sequence)
+     * within the list of groups requested for validation 
+     * (directly or through a group sequence)
      * TODO: considering removal, if you think it's important, speak up
      */
     String[] getGroups();
@@ -2062,7 +2094,9 @@ public interface MessageResolver {
     /**
      * Generate a display the message based on the constraint and its parameters.
      */
-    String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value);
+    String interpolate(String message, 
+                       ConstraintDescriptor constraintDescriptor, 
+                       Object value);
 }</programlisting>
 
         <para><parameter>message</parameter> is the message descriptor as seen
@@ -2454,11 +2488,13 @@ assert bookBeanDescriptor.getElementType() == ElementType.TYPE;
 assert bookBeanDescriptor.getConstraintDescriptors().size() == 0 //no constraint
 assert "".equals( bookBeanDescriptor.getPropertyPath() ); //root element
 
-assert bookValidator.getValidatedProperties().size() == 2;
 //more specifically "author" and "title"
+assert bookValidator.getValidatedProperties().size() == 2;
 
-assert bookValidator.getConstraintsForProperty("doesNotExist") == null; //not a property
-assert bookValidator.getConstraintsForProperty("description") == null; //property with no constraint
+//not a property
+assert bookValidator.getConstraintsForProperty("doesNotExist") == null; 
+//property with no constraint
+assert bookValidator.getConstraintsForProperty("description") == null; 
 
 ElementDescriptor propertyDescriptor = bookValidator.getConstraintsForProperty("title");
 assert propertyDescriptor.getElementType() == ElementType.METHOD;
@@ -2466,14 +2502,17 @@ assert propertyDescriptor.getConstraintDescriptors().size() == 2
 assert "title".equals( propertyDescriptor.getPropertyPath() );
 
 //assuming the implementation returns the NotEmpty constraint first
-ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
+ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
+                                                              .iterator().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //"firstlevelcheck" and "default"
 assert constraintDescriptor.getConstraintImplementation() instanceof StandardConstraint;
-StandardConstraint standardConstraint = (StandardConstraint) constraintDescriptor.getConstraintImplementation();
-assert ! standardConstraint.getStandardConstraints().getNullability(); //@NotEmpty cannot be null
+StandardConstraint standardConstraint = 
+        (StandardConstraint) constraintDescriptor.getConstraintImplementation();
+//@NotEmpty cannot be null
+assert ! standardConstraint.getStandardConstraints().getNullability(); 
 
-/assuming the implementation returns the Length constraint second
+//assuming the implementation returns the Length constraint second
 constraintDescriptor = bookBeanDescriptor.getConstraintDescriptors().iterator().next().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Length.class );
 assert constraintDescriptor.getParameters().get("max") == 30; 
@@ -2486,7 +2525,7 @@ assert propertyDescriptor.isCascaded()</programlisting>
   </chapter>
 
   <chapter>
-    <title>Standard Constraint definitions</title>
+    <title>Built-in Constraint definitions</title>
 
     <para>Some basic constraint definitions will be included later in the
     specification.</para>
