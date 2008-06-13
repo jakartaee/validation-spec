@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.Betax</releaseinfo>
 
-    <pubdate>2008-03-04</pubdate>
+    <pubdate>2008-06-13</pubdate>
 
     <copyright>
       <year>2007, 2008</year>
@@ -228,6 +228,10 @@
 
       <para><xref linkend="constraintmetadata" /> describes how the metadata
       query API works.</para>
+
+      <para>A <xref linkend="terminology" /> section summarize key concepts.
+      Some reviewers have found that reading the terminology section first
+      helps to better understand the specification.</para>
     </section>
 
     <section>
@@ -343,7 +347,7 @@ public @interface ConstraintValidator {
           </itemizedlist>
 
           <para>See <xref linkend="validationapi-validatorapi-groups" /> for
-          more informations. It is required that all constraint definitions
+          more information. It is required that all constraint definitions
           support this element.</para>
 
           <para>Groups are typically used to control the order of validator
@@ -420,23 +424,25 @@ public @interface Min {
     </section>
 
     <section>
-      <title>Multi-valued constraints</title>
+      <title>Applying multiple constraints of the same type</title>
 
       <para>It is often useful to apply the same constraint more than once to
       the same target, with different properties. A common example is the
       <literal>@Pattern</literal> constraint, which validates that its target
       matches a specified regular expression.</para>
 
-      <para>To support this, the bean validation provider treats annotations
-      applied to a type, field or property with a <literal>value</literal>
-      annotation element with a return type of an array of constraint
-      annotations and whose retention is <literal>RUNTIME</literal> as a list
-      of annotations that are processed by the Bean Validation implementation.
-      This means that each constraint specified in the value element is
-      applied to the target.</para>
+      <para>To support this, the bean validation provider treats non
+      constraint annotations (an annotation not annotated by
+      <classname>@ConstraintValidator</classname>) with a
+      <literal>value</literal> element having a return type of an array of
+      constraint annotations as a list of annotations that are processed by
+      the Bean Validation implementation. This means that each constraint
+      specified in the value element is applied to the target. The annotation
+      must have a retention and can be applied on a type, field or
+      property.</para>
 
-      <para>Each constraint implementation should implement their
-      corresponding multi-valued constraint.</para>
+      <para>Each constraint annotation should be coupled with its
+      corresponding multi-valued annotation.</para>
 
       <programlisting>@Documented
 @ConstraintValidator(PatternValidator.class)
@@ -514,8 +520,8 @@ public interface Constraint&lt;A extends Annotation&gt; {
      * @exception IllegalArgumentException The value's type isn't understood 
      *            by the constraint validator
      */
-    boolean isValid(Object value);
-    <!--TODO SCP: What happens to other exceptions inside isValid()?-->}</programlisting>
+    boolean isValid(Object value);    <!--TODO SCP: What happens to other exceptions inside isValid()?-->
+}</programlisting>
 
       <para>The lifetime of a constraint validation implementation instance is
       undefined.</para>
@@ -538,6 +544,13 @@ public interface Constraint&lt;A extends Annotation&gt; {
         (for example, an <classname>@Email</classname> constraint will return
         true on a null object, i.e. will not take care of the
         <classname>@NotNull</classname> validation)</para>
+
+        <para><code>null</code> can have multiple meanings but is commonly
+        used to express that a value does not make sense, is not available or
+        is simply unknown. Those constraints on the value are orthogonal in
+        most cases to other constraints. For example a String, if present,
+        must be an email but can be null. Separating both concerns is a good
+        practice.</para>
 
         <!--[SCP: I think this should be mandatory.] I don't think you can: for once, it would prevent from implementing @NotNull or @NotEmpty-->
       </note>
@@ -568,10 +581,13 @@ public interface ConstraintFactory {
 
       <para>The default <classname>ConstraintFactory</classname> provided by
       the bean provider implementation uses the public constraint no-arg
-      constructor (it is recommended that all constraint implementation have a
-      public no-arg constructor). A custom constraint factory can be provided
-      for example to benefit from a dependency injection control in constraint
-      implementations.</para>
+      constructor. A custom constraint factory can be provided for example to
+      benefit from a dependency injection control in constraint
+      implementations. Any constraint implementation relying on
+      <classname>ConstraintFactory</classname> behaviors specific to an
+      implementation (dependency injection, no no-arg constructor and so on)
+      are not considered portable, hence great care should be given before
+      walking that path.</para>
 
       <!--[SCP: I think supporting dependency injection here violates the javadoc comment on Constraint.initialize() above]
 EBE fixed this by rewordingthe JavaDoc-->
@@ -727,7 +743,8 @@ EBE not sure what immaterial means. unaffected means that the nullability dimans
  * and expose the information through the standard constraint model
  *
  */
-public class LengthConstraint implements Constraint, <emphasis role="bold">StandardConstraint</emphasis> {
+public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
+              role="bold">StandardConstraint</emphasis> {
     private int min;
     private int max;
 
@@ -849,12 +866,13 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         by the JavaBeans Introspector class) for constrained properties when
         constrained properties are used. In this case, for every constraint
         property of type T, there is a getter method,
-        <methodname>getProperty</methodname>. For boolean properties,
-        <methodname>isProperty</methodname> is an alternative name for the
-        getter method. Specifically, if <methodname>getX</methodname> is the
-        name of the getter method, where X is a string, the name of the
-        persistent property is defined by the result of
-        <code>java.beans.Introspector.decapitalize(X)</code>.</para>
+        <methodname>get&lt;Property-name&gt;</methodname>. For
+        <code>boolean</code> properties,
+        <methodname>is&lt;Property-name&gt;</methodname> is an alternative
+        name for the getter method. Specifically, if
+        <methodname>getX</methodname> is the name of the getter method, where
+        X is a string, the name of the persistent property is defined by the
+        result of <code>java.beans.Introspector.decapitalize(X)</code>.</para>
 
         <para>The fields or methods visibility are not constrained.</para>
       </section>
@@ -928,7 +946,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
       the Validator.</para>
 
       <para>The effect of constraint declarations is cumulative. Constraints
-      declared on a superclass getter will be validate along with any
+      declared on a superclass getter will be validated along with any
       constraints defined on an overridden version of the getter.</para>
     </section>
 
@@ -937,7 +955,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
 
       <para>Groups are useful to define subsets of constraints for validation
       purposes. Assigning constraints to groups provides the ability to do
-      partial validation to the group. The <methodname>groups</methodname>
+      partial validation of the group. The <methodname>groups</methodname>
       element of the constraint annotation specifies the groups in which the
       constraint participates. At validation time, an optional parameter can
       be specified that narrows the set of groups to be validated.</para>
@@ -959,7 +977,7 @@ public class LengthConstraint implements Constraint, <emphasis role="bold">Stand
         </listitem>
       </itemizedlist>
 
-      <para>To implements such ordering, one or more
+      <para>To implement such ordering, one or more
       <classname>@GroupSequence</classname> annotations can be added.</para>
 
       <programlisting>@Target({TYPE})
@@ -984,19 +1002,19 @@ public @interface GroupSequences {
       when the group <methodname>@GroupSequence.name</methodname> is requested
       ; processing a group is defined in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine" /> ;
-      if one of the group process in the sequence leads to one or more
-      validation failure, the groups following in the sequence must not be
+      if one of the groups processed in the sequence leads to one or more
+      validation failures, the groups following in the sequence must not be
       processed. Group sequences are recursively resolved: the user must make
       sure no circular graph is defined by the group sequence definitions. For
-      a given class, the group sequences taken into account are the one placed
-      on the class itself as well as the ones on all its superclasses and all
-      its interfaces. When an object graph is validated (through the use of
-      <literal>@Valid</literal>), the children elements of the graph inherit
-      the sequence definitions of their parent. Two group sequences must not
-      share the same group name in a given object graph (including
+      a given class, the group sequences taken into account are the ones
+      placed on the class itself as well as the ones on all its superclasses
+      and all its interfaces. When an object graph is validated (through the
+      use of <literal>@Valid</literal>), the children elements of the graph
+      inherit the sequence definitions of their parent. Two group sequences
+      must not share the same group name in a given object graph (including
       superclasses and interfaces). Group sequences must not use constraint
       declaration group names as a name. In other words, constraint definition
-      groups cannot contain one of the group sequence name.</para>
+      groups cannot contain one of the group sequence names.</para>
 
       <para>Unless constrained by a group sequence, the order in which groups
       are validated is undefined.</para>
@@ -1099,7 +1117,7 @@ EBE: is that a problem?-->
     <section>
       <title>Examples</title>
 
-      <para>The first example demonstrate how bean, fields and getters are
+      <para>The first example demonstrate how beans, fields and getters are
       annotated to express some constraints.</para>
 
       <programlisting>@ZipCodeCityCoherenceChecker
@@ -1572,7 +1590,7 @@ public interface Validator&lt;T&gt; {
         <classname>Validator&lt;T&gt;</classname> instance. This method
         implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
-        A Set containing all <classname>InvalidConstraint</classname>
+        A Set containing all <classname>InvalidConstraint</classname> objects
         representing the failing constraints is returned, an empty
         <classname>Set</classname> is returned otherwise.</para>
 
@@ -1658,7 +1676,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
           <para>Assuming a <classname>Validator&lt;Address&gt;</classname>,
           the following code will return three
-          <classname>InvalidConstraint</classname>. One for
+          <classname>InvalidConstraint</classname> objects. One for
           <literal>addressline1</literal> violating
           <literal>NotNull</literal>, one for <literal>addressline2</literal>
           violating <literal>NotNull</literal> and one for
@@ -1674,7 +1692,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <programlisting>validator.validateProperty(address, "city").size() == 1</programlisting>
 
           <para>The following code will return no
-          <classname>InvalidConstraint</classname> because the value
+          <classname>InvalidConstraint</classname> object because the value
           <literal>Paris</literal> for <literal>city</literal> would not raise
           any constraint failure.</para>
 
@@ -1803,8 +1821,9 @@ public class Address {
       <title>InvalidConstraint</title>
 
       <para><classname>InvalidConstraint</classname> is the class describing a
-      single constraint failure. An array of InvalidConstraint is returned
-      from an object validation.</para>
+      single constraint failure. An array of
+      <classname>InvalidConstraint</classname> is returned from an object
+      validation.</para>
 
       <programlisting>/**
  * Describe a constraint validation defect
@@ -1821,8 +1840,9 @@ public interface InvalidConstraint&lt;T&gt; {
     String getMessage();
 
     /**
-     * Root bean being validated validated
-     */<!--SCP perhaps getRootValue()?-->    T getRootBean();
+     * Root bean being validated
+     */
+<!--SCP perhaps getRootValue()?-->    T getRootBean();
 
     /**
      * Bean type being validated
@@ -1841,7 +1861,7 @@ public interface InvalidConstraint&lt;T&gt; {
     String getPropertyPath();
 
     /**
-     * return the list of groups that the triggered constraint applies on and witch also are
+     * return the list of groups that the triggered constraint applies on and which also are
      * within the list of groups requested for validation 
      * (directly or through a group sequence)
      * TODO: considering removal, if you think it's important, speak up
@@ -1849,25 +1869,25 @@ public interface InvalidConstraint&lt;T&gt; {
     String[] getGroups();
 }</programlisting>
 
-      <para><methodname>message</methodname> return the expanded (localized)
-      message for the failing constraint (See <xref
+      <para>The <methodname>getMessage</methodname> method returns the
+      expanded (localized) message for the failing constraint (See <xref
       linkend="validationapi-message" /> for more information on message
       expansion).</para>
 
-      <para><methodname>rootBean</methodname> returns the root object being
-      validated that leaded to the failing constraint (i.e. the object the
-      client code passed to the <methodname>Validator.validate</methodname>
-      method.</para>
+      <para>The <methodname>getRootBean</methodname> method returns the root
+      object being validated that leaded to the failing constraint (i.e. the
+      object the client code passed to the
+      <methodname>Validator.validate</methodname> method.</para>
 
-      <para><methodname>beanClass</methodname> returns the type of the current
-      bean being validated and leading to the failure.</para>
+      <para>The <methodname>getBeanClass</methodname> method returns the type
+      of the current bean being validated and leading to the failure.</para>
 
-      <para><methodname>value</methodname> returns the value (field, property
-      or validated object) being passed to <methodname>isValid</methodname>
-      and returning false.</para>
+      <para>The <methodname>getValue</methodname> method returns the value
+      (field, property or validated object) being passed to
+      <methodname>isValid</methodname> and returning false.</para>
 
-      <para><methodname>propertyPath</methodname> is defined by the following
-      rules:</para>
+      <para>The <methodname>getPropertyPath</methodname> is defined by the
+      following rules:</para>
 
       <itemizedlist>
         <listitem>
@@ -1978,9 +1998,10 @@ book.setAuthor(author);
 
 Set&lt;InvalidConstraint&gt; invalidConstraints = validator.validate(book);</programlisting>
 
-        <para><literal>invalidConstraints</literal> is a set of size 2. One of
-        the entries represent the failure of <literal>NotEmpty</literal> on
-        the <literal>title</literal> property.</para>
+        <para><classname>invalidConstraints</classname> is a set of size 2.
+        One of the entries represents the failure of
+        <literal>NotEmpty</literal> on the <literal>title</literal>
+        property.</para>
 
         <para>The <classname>invalidConstraint</classname> object for this
         failure passes the following assertions:</para>
@@ -2060,10 +2081,10 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
 
             <listitem>
               <para>The message parameter is used as a key to search the
-              <classname>ResourceBundle</classname> name
+              <classname>ResourceBundle</classname> named
               <literal>ValidationMessage</literal> (often materialized as the
               property file
-              <filename>/ValidationMessages.properties</filename> and it's
+              <filename>/ValidationMessages.properties</filename> and its
               locale variations). If a property is found, the message
               parameter is replaced with the property.</para>
             </listitem>
@@ -2092,7 +2113,7 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
 */
 public interface MessageResolver {
     /**
-     * Generate a display the message based on the constraint and its parameters.
+     * Generate a display message based on the constraint and its parameters.
      */
     String interpolate(String message, 
                        ConstraintDescriptor constraintDescriptor, 
@@ -2203,11 +2224,13 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
 
     <para>The Bean Validation specification provides a way to query the
     constraint repository. This API is expected to be used for tooling support
-    as well as integration with other frameworks, libraries and JSRs: the Bean
-    Validation is expected to be the main object oriented constraint
-    declaration repository, whose metadata are consumed by all component
-    oriented or domain model oriented frameworks avoiding duplication at the
-    platform level (EE or SE).</para>
+    as well as integration with other frameworks, libraries and JSRs. The Bean
+    Validation specification aims to provide both a validation engine and a
+    metadata repository for object constraints. Frameworks (EE or SE) in need
+    for constraint definition, validation and metadata will be able to rely on
+    the Bean Validation specification for these services avoiding any
+    unnecessary duplication work from an application and infrastructure point
+    of view.</para>
 
     <section>
       <title>Validator&lt;T&gt;</title>
@@ -2342,7 +2365,7 @@ public interface ElementDescriptor {
       type for a class, or the returned type for a property (TODO problem of
       generics resolution).</para>
 
-      <para><methodname>is cascaded</methodname> returns
+      <para>The <methodname>isCascaded</methodname> method returns
       <literal>true</literal> of the property is marked with
       <classname>@Valid</classname>. Class level element descriptors always
       return <literal>false</literal>.</para>
@@ -2541,7 +2564,7 @@ assert propertyDescriptor.isCascaded()</programlisting>
     </section>
   </chapter>
 
-  <appendix>
+  <appendix id="terminology">
     <title>Terminology</title>
 
     <para>This appendix aims at giving an overview on the different specific
@@ -2701,7 +2724,6 @@ beancheck.notNull=may not be null
 beancheck.range=must be between {min} and {max}
 beancheck.size=size must be between {min} and {max}
 beancheck.email=not a well-formed email address
-beancheck.notEmpty=may not be null or empty
-beancheck.creditCard=Invalid credit card number</programlisting>
+beancheck.notEmpty=may not be null or empty</programlisting>
   </appendix>
 </book>
