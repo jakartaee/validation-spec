@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.Betax</releaseinfo>
 
-    <pubdate>2008-06-13</pubdate>
+    <pubdate>2008-09-23</pubdate>
 
     <copyright>
       <year>2007, 2008</year>
@@ -56,7 +56,7 @@
       </listitem>
 
       <listitem>
-        <para>Boostrap strategy (including validation provider
+        <para>Bootstrap strategy (including validation provider
         resolution)</para>
       </listitem>
 
@@ -2104,7 +2104,8 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
 
         <para>A custom message resolver may be provided (e.g., to resolve
         contextual data, or to adjust the Locale used). A message resolver
-        implements the MessageResolver interface.</para>
+        implements the <classname>MessageResolver</classname>
+        interface.</para>
 
         <programlisting>/**
 * Interpolate a given validation message
@@ -2212,10 +2213,811 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
     <section>
       <title>Bootstrapping</title>
 
-      <para>To be defined, will include a description of the Validation Bean
-      provider discovery model (most likely inspired by the service discovery
-      model used in the JDK) as well as the <classname>Validator</classname>
-      object factory.</para>
+      <para>The bootstrapping API aims at creating a
+      <classname>ValidatorFactory</classname> which is used to create
+      <classname>Validator</classname> instances. The bootstrap sequence has
+      been designed to achieve several goals:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>plug multiple implementations</para>
+        </listitem>
+
+        <listitem>
+          <para>choose a specific implementation</para>
+        </listitem>
+
+        <listitem>
+          <para>extensibility: an application using a specific provider
+          implementation can use specific configurations</para>
+        </listitem>
+
+        <listitem>
+          <para>share and reuse metadata across validators</para>
+        </listitem>
+
+        <listitem>
+          <para>leave as much freedom as possible to implementations</para>
+        </listitem>
+
+        <listitem>
+          <para>provide integration mechanisms to Java EE 5 and other
+          containers</para>
+        </listitem>
+
+        <listitem>
+          <para>type safety</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Let's first see the API in action through some examples before
+      diving into the concrete definitions.</para>
+
+      <section>
+        <title>Examples</title>
+
+        <para>The most simple approach is to use the default Bean Validation
+        provider or the one defined in the XML configuration file. A generic
+        <classname>ValidationBuilder</classname> instance is returned on which
+        we apply the build operation. The
+        <classname>ValidatorFactory</classname> is then ready to provide
+        <classname>Validator</classname> instance.</para>
+
+        <example>
+          <title>Simple Bean Validation bootstrap sequence</title>
+
+          <programlisting>ValidatorFactory factory = Validation.getValidatorBuilder().build();
+
+//cache the factory somewhere
+Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);</programlisting>
+        </example>
+
+        <para>The <classname>ValidatorFactory</classname> object is
+        thread-safe contrary to individual <classname>Validator</classname>s.
+        Building Validator instance should typically be a cheap operation.
+        Building a <classname>ValidatorFactory</classname> is typically more
+        expensive. Make sure to check your Bean Validation implementation
+        documentation for more accurate details.</para>
+
+        <para>The second example shows how a container can customize some Bean
+        Validator resource handling to match its own behavior.</para>
+
+        <example>
+          <title>Customize message resolution and</title>
+
+          <programlisting>//some customization from a container like Web Beans
+ValidatorFactory factory = Validation
+       .getValidatorBuilder()
+          .messageResolver( new WBMessageResolver() )
+          .constraintFactory( new WBComponentConstraintFactory() )
+          .build();
+
+//cache the factory somewhere
+Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);</programlisting>
+        </example>
+
+        <para>The third example shows how a container not following the
+        traditional Java deployment strategies (tooling or alternative service
+        containers like OSGi) can still properly discover Bean Validation
+        providers.</para>
+
+        <example>
+          <title>Customize the Bean Validation provider resolution
+          mechanism</title>
+
+          <programlisting>//osgi environment
+ValidatorFactory factory = Validation
+       .getValidatorBuilder()
+          .providerResolver(new OSGiServiceDiscoverer() )
+          .build();
+
+//cache the factory somewhere
+Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);</programlisting>
+        </example>
+
+        <para>The last example shows how a client can choose a specific Bean
+        Validation provider and configure provider specific properties
+        programmatically in a type-safe way.</para>
+
+        <example>
+          <title>Use a specific provider and add specific
+          configuration</title>
+
+          <programlisting>ValidatorFactory factory = Validation
+       .builderType( ACMEValidatorBuilder.class )
+       .getValidatorBuilder()
+          .messageResolver( new ACMEMessageResolver() ) //default configuration option
+          .addConstaint(Address.class, customConstraintDescriptor) //specific configuration option
+          .build();</programlisting>
+        </example>
+
+        <para>We will now explore the various interfaces, their constraints
+        and usage. We will go from the <classname>ValidatorFactory</classname>
+        to the <classname>Validation</classname> class walking up the
+        bootstrap chain.</para>
+      </section>
+
+      <section>
+        <title>ValidatorFactory</title>
+
+        <para><classname>ValidatorFactory</classname> objects build and
+        provide initialized instances of
+        <classname>Validator&lt;T&gt;</classname> to Bean Validation clients.
+        Clients should cache <classname>ValidatorFactory</classname> objects
+        and reuse them for optimal performances. The API is designed to allow
+        implementors to share constraint metadata in
+        <classname>ValidatorFactory</classname>.</para>
+
+        <para><classname>ValidatorFactory</classname> implementations must be
+        thread-safe (which is not the case of
+        <classname>Validator</classname>).
+        <classname>ValidatorFactory</classname> implementations are allowed to
+        return the same <classname>Validator</classname> instances and act as
+        a cache of validators. <classname>Validator</classname>
+        implementations must be thread-safe in this case.</para>
+
+        <example>
+          <title>ValidatorFactory interface</title>
+
+          <programlisting>/**
+ * Factory returning initialized Validator instances.
+ * Implementations are thread-safe
+ * This object is typically cached and reused.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface ValidatorFactory {
+    /**
+     * return an initialized Validator instance for the specific class.
+     * Validator instances can be pooled and shared by the implementation
+     * In this scenario, the implementation must return 
+     * thread-safe Validator implementations
+     *
+     */
+    &lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz);
+}</programlisting>
+        </example>
+
+        <para>A <classname>ValidatorFactory</classname> is provided by a
+        <classname>ValidatorBuilder</classname>.</para>
+      </section>
+
+      <section>
+        <title>ValidatorBuilder</title>
+
+        <para><classname>ValidatorBuilder</classname> collects configuration
+        informations, determines the correct provider implementation and
+        delegates it the <classname>ValidatorFactory</classname> creation.
+        This class lets you define:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>the message resolver strategy instance</para>
+          </listitem>
+
+          <listitem>
+            <para>the constraint factory instance</para>
+          </listitem>
+
+          <listitem>
+            <para>the configuration <classname>InputStream</classname></para>
+          </listitem>
+        </itemizedlist>
+
+        <para>The configuration artifacts provided, clients call
+        <methodname>ValidatorBuilder.build()</methodname> to retrieve the
+        <classname>ValidatorFactory</classname> instance.</para>
+
+        <example>
+          <title>ValidatorBuilder interface</title>
+
+          <programlisting>/**
+ * Receives configuration information, selects the appropriate
+ * Bean Validation provider and build the appropriate
+ * ValidatorFactory.
+ *
+ * The provider is selected in the following way:
+ *  - if a specific ValidatorBuilder subclass is requested programmatically using Validation.builderType(), 
+ * find the first provider matching it
+ *  - if a specific ValidatorBuilder subclass is defined in META-INF/validation.xml, 
+ * find the first provider matching it
+ *  - otherwise, use the first provider returned by the ValidationProviderResolver
+ *
+ * Implementations are not meant to be thread safe
+ *
+ * @author Emmanuel Bernard
+ */
+public interface ValidatorBuilder&lt;T extends ValidatorBuilder&gt; {
+    /**
+     * defines the message resolver used. Has priority over the configuration based message resolver
+     *
+     * @param resolver message resolver implementation
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     */
+    T messageResolver(MessageResolver resolver);
+
+    /**
+     * defines the constraint factory. Has priority over the configuration based constraint factory
+     *
+     * @param constraintFactory constraint factory inmplementation
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     */
+    T constraintFactory(ConstraintFactory constraintFactory);
+
+    /**
+     * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
+     * If not specified, META-INF/validation.xml is used
+     *
+     * The stream should be closed by the client API after the ValidatorFactory has been returned
+     *
+     * @param stream configuration stream
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     */
+    T configure(InputStream stream);
+
+    /**
+     * Defines a provider resolution strategy
+     * Used to select the list of providers evaluated
+     * to build the ValidatorFactory
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     */
+    T providerResolver(ValidationProviderResolver resolver);
+
+    /**
+     * Build a ValidatorFactory implementation
+     * 
+     * @return ValidatorFactory
+     */
+    ValidatorFactory build();
+}</programlisting>
+        </example>
+
+        <para><classname>ValidatorBuilder</classname> can be extended by Bean
+        Validator implementors to host implementor specific configuration
+        artifacts. To facilitate that approach,
+        <classname>ValidatorBuilder</classname> uses generics:
+        <classname>ValidatorBuilder&lt;T extends
+        ValidatorBuilder&gt;</classname> ; the generic return type
+        <classname>T</classname> is returned by chaining methods. A typical
+        subclass will define T as itself as shown in the following
+        example.</para>
+
+        <example>
+          <title>Example of provider specific ValidationBuilder sub
+          interface</title>
+
+          <programlisting>/**
+ * Unique identifier of the ACME provider
+ *
+ * @author Emmanuel Bernard
+ */
+public interface ACMEValidatorBuilder 
+    extends ValidatorBuilder&lt;ACMEValidatorBuilder&gt; {
+
+    /**
+     * Enables contraints implementation dynamic reloading when using ACME
+     * default to false
+     */
+    ACMEValidatorBuilder enableDynamicReloading(boolean)
+
+}</programlisting>
+        </example>
+
+        <para>When <methodname>ValidatorBuilder.build()</methodname> is
+        called, the requested Bean Validation provider is determined and the
+        the result of
+        <code>validationProvider.buildValidatorFactory(ValidatorBuilderImplementor)</code>
+        is returned. <classname>ValidatorBuilderImplementor</classname> gives
+        access to the configuration artifacts passed to
+        <classname>ValidatorBuilder</classname>. A typical implementation of
+        <classname>ValidatorBuilder</classname> also implements
+        <classname>ValidatorBuilderImplementor</classname>, hence
+        <code>this</code> can be passed to
+        <methodname>buildValidatorFactory()</methodname>.<!--talk about extensibility--></para>
+
+        <para>The correct provider implementation is resolved according to the
+        following rules in the following order:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>Use the provider implementation requested if
+            <classname>ValidatorBuilder</classname> has been created from
+            <classname>Validation.getValidatorBuilder(ValidationConfiguration)</classname>.</para>
+          </listitem>
+
+          <listitem>
+            <para>Use the provider implementation associated with the
+            <classname>ValidatorBuilder</classname> implementation described
+            in the XML configuration (under
+            <literal>validation.provider</literal>) if defined: the value of
+            this element is the fully qualified class name of the
+            <classname>ValidationBuilder</classname> subinterface.</para>
+          </listitem>
+
+          <listitem>
+            <para>Use the first provider implementation returned by
+            <classname>validationProviderResolver.getValidationProviders()</classname>.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>If no <classname>ValidationProviderResolver</classname> instance
+        has been passed to the <classname>ValidatorBuilder</classname> when
+        <methodname>build()</methodname> is called, the default
+        <classname>ValidationProviderResolver</classname> is used.</para>
+
+        <example>
+          <title>ValidatorBuilderImplementor interface</title>
+
+          <programlisting>/**
+ * Contract between a ValidationBuilder and a ValidatorProvider to create
+ * a ValidatorFactory.
+ * The configuration artefacts provided to the ValidationBuilder are passed along
+ *
+ * @author Emmanuel Bernard
+ */
+public interface ValidatorBuilderImplementor {
+    /**
+     * Message resolver as defined by the client programmatically
+     * or null if undefined.
+     *
+     * @return message provider instance or null if not defined
+     */
+    MessageResolver getMessageResolver();
+
+    /**
+     * Returns the configuration stream defined by the client programmatically
+     * or null if undefined.
+     * 
+     * @return the configuration input stream or null
+     */
+    InputStream getConfigurationStream();
+
+    /**
+     * Defines the constraint implementation factory as defined by the client programmatically
+     * or null if undefined
+     *
+     * @return factory instance or null if not defined
+     */
+    ConstraintFactory getConstraintFactory();
+}</programlisting>
+        </example>
+
+        <para>A <classname>ValidatorBuilder</classname> is returned from
+        <methodname>Validation.builderType(Class&lt;T extends
+        ValidationBuilder&lt;T&gt;)</methodname> or
+        <methodname>Validation.getValidatorBuilder()</methodname>.</para>
+
+        <warning>
+          <para>Should we add a ignore XML method? to bypass the XMl file
+          configuration?</para>
+        </warning>
+      </section>
+
+      <section>
+        <title>ValidationProvider and ValidationProviderResolver</title>
+
+        <para><classname>ValidationProvider</classname> is implemented by Bean
+        Validation providers.
+        <classname>ValidationProviderResolver</classname> can be implemented
+        by any Bean Validation client but is typically implemented by
+        container having specific classloader restrictions.</para>
+
+        <section>
+          <title>ValidationProviderResolver</title>
+
+          <para><classname>ValidationProviderResolver</classname> represents
+          the contact returning the list of Bean Validation providers
+          available at runtime. This service can be customize by
+          implementing.</para>
+
+          <example>
+            <title>ValidationProviderResolver</title>
+
+            <programlisting>/**
+ * Determine the list of Bean Validation providers available in the runtime environment
+ * &lt;p/&gt;
+ * Bean Validation providers are identified by the presence of META-INF/services/javax.validation.spi.ValidationProvider
+ * files following the Service Provider pattern described 
+ * &lt;a href="http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html#Service%20Provider"&gt;here&lt;/a&gt;
+ * &lt;p/&gt;
+ * Each META-INF/services/javax.validation.spi.ValidationProvider file contains the list of
+ * ValidationProvider implementations each of them representing a provider.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface ValidationProviderResolver {
+    /**
+     * Returns a list of ValidationProviders available in the runtime environment.
+     *
+     * @return list of validation providers.
+     */
+    List&lt;ValidationProvider&gt; getValidationProviders();
+}</programlisting>
+          </example>
+
+          <para>By default, providers are resolved using the Service Provider
+          pattern described in <ulink
+          url="http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html#Service%20Provider">http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html#Service%20Provider</ulink>.
+          Each Bean Validation provider should supply a service provider
+          configuration file by creating a text file name
+          <filename>javax.validation.spi.ValidationProvider</filename> and
+          placing it in the <filename>META-INF/services</filename> directory
+          of one of its jar files. The content of the the file should be the
+          name of the provider implementation class of the
+          <classname>javax.validation.spi.ValidationProvider</classname>
+          interface.</para>
+
+          <para>Persistence provider jars may be installed or made available
+          in the same ways as other service providers, e.g. as extensions or
+          added to the application classpath according to the guidelines in
+          the JAR file speciﬁcation.</para>
+
+          <para>The default <classname>ValidationProviderResolver</classname>
+          implementation will locate all the Bean Validation providers by
+          their provider configuration files. The default
+          <classname>ValidationProviderResolver</classname> implementation is
+          recommended and custom
+          <classname>ValidationProviderResolver</classname> implementations
+          should be rarely used. A typical use of a custom resolution is
+          resolving providers in a classloader constrained container like OSGi
+          or in a tool environment (IDE).</para>
+
+          <para>The default implementation of
+          <classname>ValidationProviderResolver</classname> must be
+          <classname>javax.validation.bootstrap.DefaultValidationProviderResolver</classname>.
+          It must contain a public no-arg constructor and must not have any
+          other non private attribute or method besides the method described
+          by <classname>ValidationProviderResolver</classname>.</para>
+        </section>
+
+        <section>
+          <title>ValidationProvider</title>
+
+          <para><classname>ValidationProvider</classname> represents the SPI
+          (Service Provider Interface) defining the contract between the
+          provider discovery mechanism and the provider. A
+          <classname>ValidationProvider</classname> does:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Determine if a provider matches a given
+              <classname>ValidatorBuilder</classname> sub interface. One
+              <classname>ValidatorBuilder</classname> sub interface
+              specifically represent one Bean Validation provider.</para>
+            </listitem>
+
+            <listitem>
+              <para>Provide a provider specific
+              <classname>ValidatorBuilder</classname> implementation. This
+              <classname>ValidatorBuilder</classname> will specifically build
+              <classname>ValidatorFactory</classname> though the provider it
+              h.</para>
+            </listitem>
+
+            <listitem>
+              <para>Build a <classname>ValidatorFactory</classname> object
+              from the configuration provided by
+              <classname>ValidatorBuilder</classname>.</para>
+            </listitem>
+          </itemizedlist>
+
+          <example>
+            <title>ValidationProvider</title>
+
+            <programlisting>/**
+ * Contract between the validation bootstrap mechanism and the provider engine.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface ValidationProvider {
+    /**
+     * Returs true if &lt;code&gt;builderClass&lt;/code&gt; is the Bean Validation Provider sub interface for ValidatorBuilder
+     * This sub interface uniquely identify a provider.
+     *
+     * @param builderType targeted builder type
+     * 
+     */
+    boolean isSuitable(Class&lt;? extends ValidatorBuilder&lt;?&gt;&gt; builderType);
+
+    /**
+     * Returns a ValidatorBuilder instance implementing the &lt;code&gt;builderType&lt;/code&gt; interface.
+     * The ValidatorBuilder instance uses the current provider to build
+     * the ValidatorFactory instance.
+     *
+     *
+     * @param builderClass the Builder class type
+     * @return specific validator builder implementation
+     */
+    &lt;T extends ValidatorBuilder&lt;T&gt;&gt; T createValidatorBuilder(Class&lt;T&gt; builderClass);
+
+    /**
+     * Returns a ValidatorBuilder instance. This instance is not bound to
+     * use the current provider. The choice of provider follows the algorithm described
+     * in {@link javax.validation.ValidatorBuilder}
+     *
+     * @return validator builder implementation
+     */
+    ValidatorBuilder&lt;?&gt; createValidatorBuilder();
+
+    /**
+     * Build a ValidatorFactory using the current provider implementation. The ValidationFactory
+     * is assembled and follow the configuration passed using ValidatorBuilderImplementor.
+     *
+     * The returned ValidatorFactory is properly initialized and ready for use. 
+     *
+     * @param configuration the configuration descriptor
+     *
+     * @return the instanciated ValidatorFactory
+     */
+    ValidatorFactory buildValidatorFactory(ValidatorBuilderImplementor configuration);
+}</programlisting>
+          </example>
+
+          <para>A client can request a specific Bean Validation provider by
+          using <classname>Validation.builderType(Class&lt;T exptends
+          ValidatorBuilder&lt;T&gt;&gt;)</classname> or by defining the
+          provider in the XML configuration file. The key uniquely identifying
+          a Bean Validation provider is an implementation specific sub
+          interface of <classname>ValidatorBuilder</classname>. The sub
+          interface does not have to add any new method but is the natural
+          holder of provider specific configurations.</para>
+
+          <example>
+            <title>Example of provider specific ValidationBuilder sub
+            interface</title>
+
+            <programlisting>/**
+ * Unique identifier of the Bean Check provider
+ *
+ * @author Emmanuel Bernard
+ */
+public interface BeanCheckValidatorBuilder 
+    extends ValidatorBuilder&lt;BeanCheckValidatorBuilder&gt; {
+
+    /**
+     * Enable contraints implementation dynamic reloading when using Bean Check
+     * default to false
+     */
+    BeanCheckValidatorBuilder enableDynamicReloading(boolean)
+
+}</programlisting>
+          </example>
+
+          <note>
+            <para><classname>BeanCheckValidatorBuilder</classname> references
+            itself in the generic definition. Methods of
+            <classname>ValidatorBuilder</classname> will return the
+            <classname>BeanCheckValidatorBuilder</classname> making the API
+            easy to use even for vendor specific extensions,</para>
+          </note>
+
+          <para>The provider discovery mechanism uses the following
+          algorithm:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>Retrieve available providers using
+              <methodname>ValidationProviderResolver.getValidationProviders()</methodname>.</para>
+            </listitem>
+
+            <listitem>
+              <para>The first <classname>ValidationProvider</classname>
+              matching the requested provider is returned. Providers are
+              evaluated in the order they are returned by
+              <classname>ValidationProviderResolver</classname>. A provider is
+              considered matching if
+              <methodname>ValidationProvider.isSuitable(Class&lt;T extends
+              ValidatorBuilder&lt;T&gt;&gt;)</methodname> returns true when
+              the requested provider specific
+              <classname>ValidationBuilder</classname> sub interface is
+              passed.</para>
+            </listitem>
+          </itemizedlist>
+
+          <para>When the default Bean Validation provider is requested, the
+          first <classname>ValidationProvider</classname> returned by the
+          <classname>ValidationProviderResolver</classname> strategy is
+          returned.</para>
+
+          <para>Every Bean Validation provider must provide a
+          <classname>ValidationProvider</classname> implementation containing
+          a public no-arg constructor and add the corresponding
+          <filename>META-INF/services/javax.validation.spi.ValidationProvider</filename>
+          file descriptor in one of its jars.</para>
+        </section>
+      </section>
+
+      <section>
+        <title>Validation</title>
+
+        <para>The <classname>Validation</classname> class is the entry point
+        used to bootstrap Bean Validation providers. The first entry point,
+        <methodname>getValidatorBuilder()</methodname>, returns a
+        <classname>ValidationBuilder</classname> not tied to any provider
+        implementation. The first provider returned by the default
+        <classname>ValidationProviderResolver</classname> is used to build the
+        <classname>ValidationBuilder</classname>. The result of
+        <methodname>Validation.getValidatorBuilder()</methodname> is the
+        result of
+        <methodname>ValidationProvider.createValidatorBuilder()</methodname>.</para>
+
+        <warning>
+          <para>Should the resolver strategy be configurable by XML</para>
+        </warning>
+
+        <para>The second entry point gives more flexibility and lets the
+        client define the specific Bean Validation provider requested as well
+        as a custom <classname>ValidationProviderResolver</classname>
+        implementation if needed. The entry point method,
+        <methodname>builderType(Class&lt;T&gt; builderType)</methodname>,
+        takes the provider specific <classname>ValidationBuilder</classname>
+        sub interface type and returns a
+        <classname>BootstrapConfiguration</classname> object that guarantees
+        to return an instance of the specific
+        <classname>ValidationBuilder</classname> sub interface. Thanks to the
+        use of generics, the client API does not have to cast to the
+        <classname>ValidatorBuilder</classname> sub interface. </para>
+
+        <para>A <classname>BootstrapConfiguration</classname> object can
+        optionally receive a <classname>ValidationProviderResolver</classname>
+        instance.</para>
+
+        <para><methodname>BootStrapConfiguration.getValidatorBuilder()</methodname>
+        must return the result of
+        <methodname>ValidationProvider.createValidatorBuilder(Class&lt;T
+        extends ValidatorBuilder&lt;T&gt;&gt;)</methodname>. The builder type
+        passed as a parameter is the builder type passed to
+        <methodname>Validation.builderType()</methodname>. The validation
+        provider is selected from the builder type according to the algorithm
+        described in (XX).</para>
+
+        <example>
+          <title>Validation methods available</title>
+
+          <programlisting>/**
+ * Bean Validation bootstrap class. This class has two bootstrap strategies.
+ *
+ * The firt bootstrap approach selects programmatically the specific provider
+ * requested and build the corresponding ValidatorFactory.
+ *
+ * The second bootstrap approach does not select any provider. The chosen provider is then
+ * either the one defined in the Validation XML configuration file or the default
+ * Validation Provider.
+ *
+ * The ValidatorFactory object built by the bootstrap process should be cached and shared amongst
+ * Validator consumers.
+ * 
+ * @author Emmanuel Bernard
+ * @author Hardy Feretnschik
+ */
+public class Validation {
+    /**
+     * Build a ValidatorBuilder for a particular provider implementation.
+     * Optionally override the provider resolution strategy used to determine the provider
+     * &lt;p/&gt;
+     * Used by applications targeting a specific provider programmatically
+     * &lt;p/&gt;
+     * * &lt;pre&gt;
+     * Validation.builderType(ACMEValidatorBuilder.class)
+     *     .providerResolver( new MyResolverStrategy() )
+     *     .build();
+     * &lt;/pre&gt;
+     *
+     * @param builderType the ValidatorBuilder sub interface uniquely defining the targeted provider
+     *
+     * @return BootstrapConfiguration instance building a provider specific ValidatorBuilder sub interfce implementation
+     *
+     * @see #getValidatorBuilder() 
+     */
+    public static &lt;T extends ValidatorBuilder&lt;T&gt;&gt; BootstrapConfiguration&lt;T&gt; builderType(Class&lt;T&gt; builderType) {
+        ...
+    }
+
+
+    /**
+     * Build a ValidatorBuilder defering the provider choice for later
+     * (XML configuration file or default provider)
+     * 
+     * @return validator builder instance
+     */
+    public static ValidatorBuilder getValidatorBuilder() {
+        ... 
+    }
+}</programlisting>
+        </example>
+
+        <para>The <classname>Validation</classname> implementation provided by
+        the Bean Validation provider must not contain any non private
+        attribute or method aside from the two public static bootstrap
+        methods:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><methodname>public static &lt;T extends
+            ValidatorBuilder&lt;T&gt;&gt; BootstrapConfiguration&lt;T&gt;
+            builderType(Class&lt;T&gt; builderType)</methodname></para>
+          </listitem>
+
+          <listitem>
+            <para><methodname>public static ValidatorBuilder
+            getValidatorBuilder()</methodname></para>
+          </listitem>
+        </itemizedlist>
+
+        <example>
+          <title>BootstrapConfiguration class</title>
+
+          <programlisting>/**
+ * Build implementations of builderType, the specific ValidationBuilder sub interface uniquely identifying
+ * a provider.
+ *
+ * The requested provider is the first provider suitable for T (as defined in
+ * {@link javax.validation.spi.ValidationProvider#isSuitable(Class)}). The list of providers evaluated is
+ * returned by {@link ValidationProviderResolver}. If no ValidationProviderResolver is defined, the
+ * default ValidationProviderResolver strategy is used. 
+ *
+ * TODO should it be an interface?
+ *
+ * @author Emmanuel Bernard
+ */
+public class BootstrapConfiguration&lt;T extends ValidatorBuilder&lt;T&gt;&gt; {
+
+    
+    public BootstrapConfiguration(Class&lt;T&gt; builderType) {
+        ...
+    }
+
+    /**
+     * Optionally define the provider resolver implementation used.
+     * If not defined, use the default ValidationProviderResolver
+     *
+     * @param resolver ValidationProviderResolver implementation used
+     * @return self
+     */
+    public BootstrapConfiguration&lt;T&gt; providerResolver(ValidationProviderResolver resolver) {
+        ...
+    }
+
+    /**
+     * Determine the provider implementation suitable for builderType and delegate the creation
+     * of this specific ValidatorBuilder subclass to the provider.
+     *
+     * @return a ValidatorBuilder sub interface implementation
+     */
+    public T getValidatorBuilder() {
+        ...
+    }
+}</programlisting>
+        </example>
+
+        <para>The <classname>BootstrapConfiguration</classname> class provided
+        by the Bean Validation provider must not contain any non private
+        attribute or method aside from:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><methodname>public BootstrapConfiguration(Class&lt;T&gt;
+            builderType)</methodname></para>
+          </listitem>
+
+          <listitem>
+            <para><methodname>public BootstrapConfiguration&lt;T&gt;
+            providerResolver(ValidationProviderResolver
+            resolver)</methodname></para>
+          </listitem>
+
+          <listitem>
+            <para><methodname>public T
+            getValidatorBuilder()</methodname></para>
+          </listitem>
+        </itemizedlist>
+
+        <para>The bootstrap API is designed to allow complete portability
+        amongst Bean Validation provider implementations. The bootstrap
+        implementation must ensure it can bootstrap third party
+        providers.</para>
+      </section>
     </section>
   </chapter>
 
