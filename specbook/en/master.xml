@@ -863,10 +863,10 @@ public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
         access strategy, the bean validation provider accesses the state via
         the property accessor method. It is required that the class follow the
         method signature conventions for JavaBeans read properties (as defined
-        by the JavaBeans Introspector class) for constrained properties when
-        constrained properties are used. In this case, for every constraint
-        property of type T, there is a getter method,
-        <methodname>get&lt;Property-name&gt;</methodname>. For
+        by the JavaBeans <classname>Introspector</classname> class) for
+        constrained properties when constrained properties are used. In this
+        case, for every constraint property of type T, there is a getter
+        method, <methodname>get&lt;Property-name&gt;</methodname>. For
         <code>boolean</code> properties,
         <methodname>is&lt;Property-name&gt;</methodname> is an alternative
         name for the getter method. Specifically, if
@@ -886,12 +886,15 @@ public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
 
         <para>Consider the situation where bean X contains a field of type Y.
         By annotating field Y with the @Valid annotation, the Validator will
-        validate the contents of Y when X is validated.</para>
+        validate the contents of Y when X is validated. The exact type of the
+        field of type Y (subclass, implementation) is determined at runtime.
+        The constrain definitions for this particular subtype are used. This
+        ensure proper polymorphism behavior. </para>
 
         <para>Collection-valued or array-valued fields and properties may also
-        be decorated with the @Valid annotation. This causes the contents of
-        the collection or array to be validated. The following types are
-        supported:</para>
+        be decorated with the <classname>@Valid</classname> annotation. This
+        causes the contents of the collection or array to be validated. The
+        following types are supported:</para>
 
         <itemizedlist>
           <listitem>
@@ -914,6 +917,10 @@ public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
             <para><classname>java.util.Map</classname></para>
           </listitem>
         </itemizedlist>
+
+        <para>Each object stored in the array or collection is validated. Like
+        regular references, it's type is determined at runtime and the
+        constraint definitions for this particular type are used. </para>
 
         <para>The <classname>@Valid</classname> annotation is applied
         recursively. A conforming implementation avoids infinite loops by
@@ -1025,7 +1032,7 @@ public @interface GroupSequences {
     <section id="constraintdeclarationvalidationprocess-validationroutine">
       <title>Validation routine</title>
 
-      <para>For a given group to validate, the validation routine applied in a
+      <para>For a given group to validate, the validation routine applied on a
       given bean instance is expected to execute the constraint
       validations:</para>
 
@@ -1093,6 +1100,9 @@ EBE: correct, so far I don't think it's useful-->
 EBE: is that a problem?-->
         </listitem>
       </itemizedlist>
+
+      <para>Bean Validation is a fully polymorphic framework. Constraints are
+      gathered according to the object type determined at runtime.</para>
 
       <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
         <title>Object graph validation</title>
@@ -1516,19 +1526,12 @@ author.setCompany("Some random publisher with a very very very long name");</pro
       <title>Validator&lt;T&gt; API</title>
 
       <para>The main Bean Validation API is the
-      <classname>javax.validation.Validator&lt;T&gt;</classname> interface.
-      Besides implementing the <classname>Validator&lt;T&gt;</classname> API,
-      the Bean Validation provider implementation of
-      <classname>Validator&lt;T&gt;</classname> must have a constructor
-      <classname>Validator(Class&lt;T&gt;)</classname>.</para>
+      <classname>javax.validation.Validator&lt;T&gt;</classname>
+      interface.</para>
 
       <para>A <classname>Validator&lt;T&gt;</classname> instance is able to
-      validate instances of <classname>T</classname> classes (and the
-      associated objects if any). It is recommended to cache
-      <classname>Validator&lt;T&gt;</classname> instances. The Bean Validation
-      provider has to guarantee that concurrent, multi-threaded access to a
-      <classname>Validator&lt;T&gt;</classname> implementation are
-      safe.</para>
+      validate instances of <classname>T</classname> classes, all its
+      subclasses and the associated objects if any.</para>
 
       <programlisting>/**
  * Validate a given object type
@@ -1586,13 +1589,19 @@ public interface Validator&lt;T&gt; {
 
         <para><methodname>Set&lt;InvalidConstraint&gt; validate(T object,
         String... groups)</methodname> is used to validate a given object of
-        type <classname>T</classname> from a
+        type <classname>T</classname> or any of its subtype from a
         <classname>Validator&lt;T&gt;</classname> instance. This method
         implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
         A Set containing all <classname>InvalidConstraint</classname> objects
         representing the failing constraints is returned, an empty
         <classname>Set</classname> is returned otherwise.</para>
+
+        <note>
+          <para>Calling the validation methods on an instance of U a subtype
+          of T is functionally equivalent (but not type wise) to call the same
+          method on <classname>Validator&lt;U&gt;</classname>.</para>
+        </note>
 
         <para><methodname>Set&lt;InvalidConstraint&gt; validateProperty(T
         object, String propertyName, String... groups)</methodname> validates
