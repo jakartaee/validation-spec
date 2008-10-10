@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.Betax</releaseinfo>
 
-    <pubdate>2008-09-29</pubdate>
+    <pubdate>2008-10-10</pubdate>
 
     <copyright>
       <year>2007, 2008</year>
@@ -47,26 +47,12 @@
 
     <itemizedlist>
       <listitem>
-        <para><classname>StandardConstraint</classname> extension (feedback
-        from presentation frameworks)</para>
-      </listitem>
-
-      <listitem>
         <para>Message resolution and localization</para>
-      </listitem>
-
-      <listitem>
-        <para>Bootstrap strategy (including validation provider
-        resolution)</para>
       </listitem>
 
       <listitem>
         <para>Constraint metadata request API (feedback from consumer
         frameworks including presentation, tools and so on)</para>
-      </listitem>
-
-      <listitem>
-        <para>Built-in constraint definitions</para>
       </listitem>
 
       <listitem>
@@ -180,6 +166,10 @@
         <listitem>
           <para>Jon Wetherbee (Oracle)</para>
         </listitem>
+
+        <listitem>
+          <para>//add new members</para>
+        </listitem>
       </itemizedlist>
     </section>
 
@@ -284,13 +274,36 @@ public @interface ConstraintValidator {
     Class&lt;? extends Constraint&gt; value();
 }</programlisting>
 
-      <para>Constraint annotations can be defined on <literal>FIELD</literal>,
-      <literal>METHOD</literal>, or <literal>TYPE</literal> targets.</para>
+      <para>Constraint annotations can target any of the following
+      <classname>ElementType</classname>s:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para><literal>FIELD</literal> for constrained attributes</para>
+        </listitem>
+
+        <listitem>
+          <para><literal>METHOD</literal> for constrained getters</para>
+        </listitem>
+
+        <listitem>
+          <para><literal>TYPE</literal> for constrained beans</para>
+        </listitem>
+
+        <listitem>
+          <para><literal>ANNOTATION_TYPE</literal> for constraints composing
+          other constraints</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>While other <classname>ElementType</classname>s are not forbidden,
+      the provider does not have to recognize and process constraints placed
+      on such types.</para>
 
       <para>Since a given constraint definition applies to one or more
-      specific types, the JavaDoc for the constraint annotation should clearly
-      state which types are supported. Applying a constraint annotation to an
-      incompatible type is a runtime error.</para>
+      specific Java types, the JavaDoc for the constraint annotation should
+      clearly state which types are supported. Applying a constraint
+      annotation to an incompatible type is a runtime error.</para>
 
       <section>
         <title>Constraint definition properties</title>
@@ -423,7 +436,7 @@ public @interface Min {
       </section>
     </section>
 
-    <section>
+    <section id="constraintsdefinitionimplementation-multipleconstraints">
       <title>Applying multiple constraints of the same type</title>
 
       <para>It is often useful to apply the same constraint more than once to
@@ -485,46 +498,301 @@ EBE: this is not specified, I don't think there is a need for-->}</programlistin
       <literal>serialNumber</literal> field.</para>
     </section>
 
+    <section id="constraintsdefinitionimplementation-constraintcomposition">
+      <title>Constraint composition</title>
+
+      <para>The specification allows to compose constraints from other
+      constraints.</para>
+
+      <para>Constraint composition is useful in several ways:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Avoid duplication and facilitate reuse of more primitive
+          constraints.</para>
+        </listitem>
+
+        <listitem>
+          <para>Expose primitive constraints as part of a composed constraint
+          in the metadata API.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Composition is done by annotating the constraint annotation with
+      constraint annotations.</para>
+
+      <example>
+        <title>Composition consists of annotating the composed</title>
+
+        <programlisting>@NotNull
+@Size(min=5, max=5)
+@ConstraintValidator(FrenchZipcodeValidator.class)
+@Documented
+@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface FrenchZipcode {
+    String message() default "Wrong zipcode";
+    String[] groups() default {};
+}</programlisting>
+      </example>
+
+      <para>Annotating an element with @FrenchZipcode is equivalent to
+      annotate it with @NotNull, @Size(min=5, max=5) and
+      <classname>@FrenchZipcode</classname>. More formally, each constraint
+      annotation hosted on a constraint annotation is applied to the target
+      element and this recursively. Note that the main annotation and its
+      constraint validation implementation is also applied. By default, each
+      failing constraint generates an error report. Groups from the main
+      constraint annotation are inherited by the composing annotations. Any
+      <methodname>groups</methodname> definition on a composing annotation is
+      ignored.</para>
+
+      <para>It is possible to ensure that composing annotations do not raise
+      individual error reports. In this scenario, if one or more composing
+      annotations are invalid, the main annotation is automatically considered
+      invalid and the corresponding error report is generated. To mark a
+      constraint as raising only the main constraint error report despite its
+      use of composing constraints, use the
+      <classname>@ReportAsSingleInvalidConstraint</classname>
+      annotation.</para>
+
+      <example>
+        <title>If any of the composing constraint fails, the error report
+        corresponding to @FrenchZipcode is raised and none other.</title>
+
+        <programlisting>@NotNull
+@Size(min=5, max=5)
+@ReportAsSingleInvalidConstraint
+@ConstraintValidator(FrenchZipcodeValidator.class)
+@Documented
+@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface FrenchZipcode {
+    String message() default "Wrong zipcode";
+    String[] groups() default {};
+}</programlisting>
+      </example>
+
+      <example>
+        <title>@ReportAsSingleInvalidConstraint annotation definition</title>
+
+        <programlisting>/**
+ * A constraint annotation annotated with ReportAsSingleInvalidConstraint
+ * will return the composed annotation error report if any of the composing annotations
+ * fail. The error reports of each individual composing constraint is ignored.
+ * 
+ * @author Emmanuel Bernard
+ */
+public @interface ReportAsSingleInvalidConstraint {
+}</programlisting>
+      </example>
+
+      <para>Composing annotations can define parameters and message (aside
+      from <methodname>groups</methodname>) but these are fixed for a given
+      main annotation.</para>
+
+      <example>
+        <title>Composing annotations can use parameters. They are fixed for a
+        given main annotation. All @FrenchZipcode constraints have a @Size
+        restricted to 5.</title>
+
+        <programlisting>@NotNull
+@Size(min=5, max=5)
+@ConstraintValidator(FrenchZipcodeValidator.class)
+@Documented
+@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface FrenchZipcode {
+    String message() default "Wrong zipcode";
+    String[] groups() default {};
+}</programlisting>
+      </example>
+
+      <para>It is possible to override parameters and messages defined on a
+      composing annotation. A parameter from the main annotation is used to
+      override one or more parameters from the composing annotations. Such a
+      parameter is annotated with the
+      <classname>@OverridesParameter</classname> annotation or its multivalued
+      equivalent <classname>@OverridesParameters</classname>.</para>
+
+      <example id="example-composing-overridden">
+        <title>Parameters from composing annotations can be overridden by
+        parameters from the main annotation.</title>
+
+        <programlisting>@NotNull
+@Size(min=5, max=5)    //arbitrary settings
+@ConstraintValidator(FrenchZipcodeValidator.class)
+@Documented
+@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface FrenchZipcode {
+    String message() default "Wrong zipcode";
+    String[] groups() default {};
+
+    @OverridesParameters( {
+        @OverridesParameter(constraint=Size.class, parameter="min"),
+        @OverridesParameter(constraint=Size.class, parameter="max") } )
+    int size() default 5;
+
+    @OverridesParameter(constraint=Size.class, parameter="message")
+    String sizeMessage() default "{beancheck.zipcode.size}";
+}</programlisting>
+      </example>
+
+      <para>The parameter value from the main application annotated with
+      <classname>@OverridesParameter</classname> is applied to the composing
+      constraint of type
+      <methodname>OverridesParameter.constraint</methodname> on its parameter
+      named after <methodname>OverridesParameter.parameter</methodname>. If
+      not specified, the name of the targeted parameter equals the name of the
+      parameter the <classname>@OverridesParameter</classname> is on The types
+      of the overridden and overriding parameters must be equals.</para>
+
+      <para>Using <xref linkend="example-composing-overridden" />,</para>
+
+      <programlisting>@FrenchZipcode(size=9, sizeMessage="Zipcode should be of size {max}")</programlisting>
+
+      <para>is equivalent to</para>
+
+      <programlisting>@FrenchZipcode</programlisting>
+
+      <para>using the following definition</para>
+
+      <programlisting>@NotNull
+@Size(min=9, max=9, message="Zipcode should be of size {max}")
+@ConstraintValidator(FrenchZipcodeValidator.class)
+@Documented
+@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Retention(RUNTIME)
+public @interface FrenchZipcode {
+    String message() default "Wrong zipcode";
+    String[] groups() default {};
+}</programlisting>
+
+      <para>If a constraint type is used more than once as a composing
+      constraint, the construct described at <xref
+      linkend="constraintsdefinitionimplementation-multipleconstraints" /> is
+      used. To select the appropriate composing constraint targeted,
+      <methodname>OverridesParameter.index</methodname> is used. It represents
+      the constraint index of the <methodname>value</methodname> array. If
+      index is undefined, the single constraint declaration is
+      targeted.</para>
+
+      <example>
+        <title>@OverridesParameter annotation definition</title>
+
+        <programlisting>/**
+ * Mark a parameter as overriding the parameter of a composing constraint.
+ * Both parameter must share the same type.
+ *
+ * @author Emmanuel Bernard
+ */
+public @interface OverridesParameter {
+    /**
+     * constraint type the parameter is overriding
+     */
+    Class&lt;? extends Annotation&gt; constraint();
+
+    /**
+     * name of constraint parameter overridden
+     * Defaults to the name of the parameter hosting the annotation  
+     */
+    String parameter();
+
+    /**
+     * index of the targetted constraint declaration when using
+     * multiple constraints of the same type.
+     * The index represent the index of the constraint in the value() array.
+     *
+     * By default, no index is defined and the single constraint declaration
+     * is targeted
+     */
+    int index() default -1;
+}</programlisting>
+      </example>
+
+      <para>The following elements uniquely identify an overridden constraint
+      parameter:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para><methodname>OverridesParameter.constraint</methodname></para>
+        </listitem>
+
+        <listitem>
+          <para><methodname>OverridesParameter.parameter</methodname></para>
+        </listitem>
+
+        <listitem>
+          <para><methodname>OverridesParameter.index</methodname></para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Constraint designers are encouraged to make use of composition
+      (recursively or not) based on the built-in constraints defined by the
+      specification. The composing constraints are exposed through the Bean
+      Validation metadata API (<xref
+      linkend="constraintmetadata-constraintdescriptor" />). This metadata is
+      particularly useful for third-party metadata consumers like persistence
+      frameworks generating database schemas (such as Java Persistence) or
+      presentation frameworks.</para>
+    </section>
+
     <section id="constraintsdefinitionimplementation-validationimplementation">
       <title>Constraint validation implementation</title>
 
       <para>A constraint validation implementation performs the validation of
       a target class, field, or method. It is specified by the value element
       of the <classname>ConstraintValidator</classname> annotation that
-      decorates the constraint definition. The constaint validation
+      decorates the constraint definition. The constraint validation
       implementation implements the <classname>Constraint</classname>
       interface.</para>
 
       <!--[SCP: consider naming this ConstraintValidator] EBE naming proposal circulating-->
 
-      <programlisting>/**
- * Define the logic to validate a given constraint
+      <example>
+        <title>Constraint interface</title>
+
+        <programlisting>/**
+ * Define the logic to validate a given constraint.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
  */
 public interface Constraint&lt;A extends Annotation&gt; {
     /**
-     * Initialize the constraint validator.
+     * Validator parameters for a given constraint definition
+     * Annotations parameters are passed as key/value into parameters
+     * &lt;p/&gt;
+     * This method is guaranteed to be called before any of the other Constraint implementation methods
      *
-     * This method is guaranteed to be called once right after the constraint is retrieved 
-     * from the &lt;code&gt;ConstraintFactory&lt;/code&gt; and before the Bean Validation provider 
-     * starts using it.
-     *
-     * @param constraintAnnotation The constraint declaration
+     * @param constraintAnnotation parameters for a given constraint definition
      */
     void initialize(A constraintAnnotation);
-    /**
-     * Evaluates the constraint against a value.  This method
-     * must be thread safe.
-     *
-     * @param value The object to validate
-     * @return false if the value is not valid, true otherwise
-     * @exception IllegalArgumentException The value's type isn't understood 
-     *            by the constraint validator
-     */
-    boolean isValid(Object value);    <!--TODO SCP: What happens to other exceptions inside isValid()?-->
-}</programlisting>
 
-      <para>The lifetime of a constraint validation implementation instance is
-      undefined.</para>
+    /**
+     * Implement the validation constraint
+     *
+     * @param object object to validate
+     * @param validationContext context in which the constraint implementation is evaluated
+     *
+     * @return true if object pass the constraint
+     */
+    boolean isValid(Object object, Context validationContext);
+}</programlisting>
+      </example>
+
+      <para>The life cycle of a constraint validation implementation instance
+      is undefined. Compliant implementations are allowed to cache
+      <classname>Constraint</classname> instances retrieved from the
+      <classname>ConstraintFactory</classname> or request them every time it
+      is needed.</para>
+
+      <warning>
+        <para>Should we restrict further? Should a cosntraint impl be
+        retrieved from the ConstraintFactory before each use? Metadata
+        providing the instance has lead to this rule.</para>
+      </warning>
 
       <!--EBE should we make explicit that instances cannot be shared if the annotations attributes are not the same?-->
 
@@ -537,6 +805,69 @@ public interface Constraint&lt;A extends Annotation&gt; {
       returns <literal>false</literal> if the value is not valid,
       <literal>true</literal> otherwise. <literal>isValid</literal>
       implementations must be thread-safe.</para>
+
+      <para>The <classname>Context</classname> object passed to the
+      <methodname>isValid</methodname> method carries information and
+      operations available in the context the constraint is validated
+      to.</para>
+
+      <example>
+        <title>Context interface passed to Constraint.isValid()</title>
+
+        <programlisting>/**
+ * Provide contextual data and operation when applying a given constraint implementation
+ *
+ * @author Emmanuel Bernard
+ */
+public interface Context {
+    /**
+     * Disable default InvalidConstraint object generation.
+     * Useful to set a different error message or generate an InvalidConstraint based on
+     * a different property
+     *
+     * @see #addErrorMessage(String)
+     * @see #addErrorMessage(String, String)
+     */
+    void disableDefaultError();
+
+    /**
+     * return the current unexpanded default message
+     * TODO: is it needed
+     */
+    String getDefaultErrorMessage();
+
+    /**
+     * Add a new unexpanded error message.
+     * &lt;p/&gt;
+     * If isValid returns false, an InvalidConstraint object will be built per error message
+     * including the default one unless #disableDefaultErrorMEssage() has been called.
+     * &lt;p/&gt;
+     * Aside from the error message, InvalidConstraint objects generated from such a call
+     * contains the same contextual information (root bean, path and so on)
+     * &lt;p/&gt;
+     * This method can be called multiple time. One InvalidConstraint instance per call is created.
+     *
+     * @param message new unexpanded error message
+     */
+    void addError(String message);
+
+    /**
+     * Add a new unexpanded error message to a given sub property.
+     * &lt;p/&gt;
+     * If isValid returns false, an InvalidConstraint object will be built per error message including the default one
+     * if null apply to the current property or the bean the constraint is applied on, otherwise apply to the &lt;code&gt;property&lt;/code&gt; named
+     * &lt;p/&gt;
+     * TODO exception or swallowed when bean-level instance is not present?
+     *
+     * @param message new unexpanded error message
+     * @param property property name the InvalidConstraint is targeting
+     *
+     * @throws ValidationException when the property is not present on the bean level object
+     */
+    void addError(String message, String property);
+
+}</programlisting>
+      </example>
 
       <note>
         <para>While not mandatory, it is considered a good practice to split
@@ -558,6 +889,47 @@ public interface Constraint&lt;A extends Annotation&gt; {
       <para>If the value parameter references an object with an unanticipated
       type, an <literal>IllegalArgumentException</literal> should be
       raised.</para>
+
+      <para>The <classname>Context</classname> interface allows to redefine
+      the default message error generated when a constraint is not valid. By
+      default, every invalid constraint lead to the generation of an error
+      object represented by an <classname>InvalidConstraint</classname>
+      object. This object is build from the default error message as defined
+      by the constraint declaration and the context the constraint declaration
+      is placed on (bean, property, attribute).</para>
+
+      <para>The <classname>Context</classname> methods let the constraint
+      implementation disable the default error object generation and create
+      one or more custom ones. The unexpanded message passed as a parameter is
+      used to build the <classname>InvalidConstraint</classname> object (the
+      message resolution operation is applied to it). The property on which
+      the error object is applied is defined as following:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>if the property is not overridden, the current context the
+          constraint is declared on is used (bean or property)</para>
+        </listitem>
+
+        <listitem>
+          <para>if the property is overridden, the current context the
+          constraint is declared on the property passed as a parameter
+          relative to the bean the constraint declaration is on</para>
+        </listitem>
+
+        <listitem>
+          <para>if the property is overridden and the constraint is declared
+          on a property, TODO what should we do, exception or swallow?</para>
+        </listitem>
+
+        <listitem>
+          <para>if the overridden property is not present on the bean, a
+          <classname>ValidationException</classname> is raised.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>The property can be overridden by calling
+      <methodname>Context.addError(String, String)</methodname>.</para>
     </section>
 
     <section id="constraintsdefinitionimplementation-constraintfactory">
@@ -650,147 +1022,6 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
             <para>returns <literal>true</literal> on a null parameter</para>
           </listitem>
         </itemizedlist>
-      </section>
-    </section>
-
-    <section id="constraintsdefinition-standardconstraint">
-      <title>StandardConstraint description</title>
-
-      <para>Constraint metadata can be consumed through the <xref
-      linkend="constraintmetadata" />. In addition to their
-      <classname>Constraint</classname> implementation, built-in and custom
-      constraint definitions can describe the constraint through static and
-      standard dimensions (such as nullability, length for a String etc). This
-      metadata is particularly useful for third-party metadata consumers like
-      persistence frameworks generating database schemas (such as Java
-      Persistence) or presentation frameworks.</para>
-
-      <para>Any constraint definition can implement the
-      <classname>StandardConstraint</classname> interface to expose this
-      metadata.</para>
-
-      <programlisting>/**
- * Indicates the availability of standard constraint metadata.
- *
- */
-public interface StandardConstraint {
-    /**
-     * @return A StandardConstraintDescriptor containing metadata
-     * for this constraint definition.
-     */
-<!--SCP change method name here-->    StandardConstraintDescriptor getStandardConstraintDescriptor();
-}
-
-/**
- * Describe how the current constraint influences the standard constraints
- *
- * @author Emmanuel Bernard
- */
-public class StandardConstraintDescriptor {
-    /**
-     * Defines the object nullability.
-     * TRUE means the object is nullable,
-     * FALSE means the object is not nullable,
-     * NULL means does not apply.
-     */
-<!--// SCP does unaffected here mean "immaterial" or "does not apply"?
-EBE not sure what immaterial means. unaffected means that the nullability dimansion does not apply for this constraint: I've changed the JavaDoc-->
-    public Boolean getNullability() {
-        return null;
-    }
-
-    /**
-     * Defines the precision if the validated object is a number.
-     * NULL means does not apply.
-     */
-    public Integer getPrecision() {
-        return null;
-    }
-
-    /**
-     * Defines the scale if the validated object is a number.
-     * NULL means does not apply.
-     */
-    public Integer getScale() {
-        return null;
-    }
-
-    /**
-     * Defines the length if the validated object is a string.
-     * NULL means does not apply.
-     */
-    public Integer getLength() {
-        return null;
-    }
-}</programlisting>
-
-      <para>Clients can then access this information through the <xref
-      linkend="constraintmetadata" /> and more specifically through the
-      <methodname>getConstraintImplementation</methodname> method of
-      <classname>ConstraintDescriptor</classname>.</para>
-
-      <section>
-        <title>Standard Constraint metadata examples</title>
-
-        <para>The following example extends <xref
-        linkend="constraintsdefinitionimplementation-validationimplementation-example" />.</para>
-
-        <example>
-          <title>Standard constraint metadata</title>
-
-          <programlisting>/**
- * Check that a string length is between min and max
- * and expose the information through the standard constraint model
- *
- */
-public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
-              role="bold">StandardConstraint</emphasis> {
-    private int min;
-    private int max;
-
-    /**
-     * retrieve parameters from the annotation for later use
-     */
-    public void initialize(Length constraint) {
-        min = constraint.min();
-        max = constraint.max();
-    }
-
-    /**
-     * return true if the object is null
-     * returns false if the value object is out of boundaries
-     * rause an IllegalArgumentException if the object is not of type String
-     */
-    public boolean isValid(Object value) {
-        if ( value == null ) return true;
-        if ( !( value instanceof String ) ) {
-            throw new IllegalArgumentException("Expected String type");
-        }
-        String string = (String) value;
-        int length = string.length();
-        return length &gt;= min &amp;&amp; length &lt;= max;
-    }
-
-    /**
-     * Returns the standard constraint descriptor in accordance with the max constraint
-     */
-    <emphasis role="bold">public StandardConstraintDescriptor getStandardConstraints() {
-        return new StandardConstraintDescriptor() {
-            public Integer getLength() {
-                if ( max == Integer.MAX_VALUE ) {
-                    return null;
-                }
-                else {
-                    return max;
-                }
-            }
-        };
-    }</emphasis>
-}</programlisting>
-        </example>
-
-        <para>In this example, the only standard constraint metadata value
-        provided by this constraint definition is length.</para>
       </section>
     </section>
   </chapter>
@@ -889,7 +1120,7 @@ public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
         validate the contents of Y when X is validated. The exact type of the
         field of type Y (subclass, implementation) is determined at runtime.
         The constrain definitions for this particular subtype are used. This
-        ensure proper polymorphism behavior. </para>
+        ensure proper polymorphism behavior.</para>
 
         <para>Collection-valued or array-valued fields and properties may also
         be decorated with the <classname>@Valid</classname> annotation. This
@@ -918,9 +1149,10 @@ public class LengthConstraint implements Constraint&lt;Length&gt;, <emphasis
           </listitem>
         </itemizedlist>
 
-        <para>Each object stored in the array or collection is validated. Like
+        <para>Each object stored in the array or collection is validated. For
+        <classname>Map</classname>, the value of each entry is validated. Like
         regular references, it's type is determined at runtime and the
-        constraint definitions for this particular type are used. </para>
+        constraint definitions for this particular type are used.</para>
 
         <para>The <classname>@Valid</classname> annotation is applied
         recursively. A conforming implementation avoids infinite loops by
@@ -1092,9 +1324,11 @@ EBE: correct, so far I don't think it's useful-->
 
         <listitem>
           <para>if <methodname>isValid</methodname> returns false, the Bean
-          Validation provider populate an
-          <classname>InvalidConstraint</classname> object and append it to the
-          list of returned values</para>
+          Validation provider populates
+          <classname>InvalidConstraint</classname> object(s) according to the
+          rules defined in <xref
+          linkend="constraintsdefinitionimplementation-validationimplementation" />
+          and appends these objects to the list of returned values</para>
 
           <!--SCP: note that this implies that validation issues are returned in the order they are discovered
 EBE: is that a problem?-->
@@ -1686,10 +1920,9 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <para>Assuming a <classname>Validator&lt;Address&gt;</classname>,
           the following code will return three
           <classname>InvalidConstraint</classname> objects. One for
-          <literal>addressline1</literal> violating
-          <literal>NotNull</literal>, one for <literal>addressline2</literal>
-          violating <literal>NotNull</literal> and one for
-          <literal>city</literal> violating <literal>Length</literal>.</para>
+          <literal>addressline1</literal> violating <literal>NotNull</literal>
+          and one for <literal>city</literal> violating
+          <literal>Length</literal>.</para>
 
           <programlisting>validator.validate(address).size() == 3</programlisting>
 
@@ -1835,47 +2068,55 @@ public class Address {
       validation.</para>
 
       <programlisting>/**
- * Describe a constraint validation defect
- *
- * TODO add pointers to the metadata?
+ * Describe a constraint validation defect.
  *
  * @author Emmanuel Bernard
+ * @todo add pointers to the metadata?
  */
 public interface InvalidConstraint&lt;T&gt; {
-    
+
     /**
-     * Error message
+     * @return The error message for this constraint violation.
      */
     String getMessage();
 
     /**
-     * Root bean being validated
+     * @return The root bean being validated.
      */
-<!--SCP perhaps getRootValue()?-->    T getRootBean();
+    T getRootBean();
 
     /**
-     * Bean type being validated
+     * If a bean constraint, the bean instance the constraint is applied on
+     * If a property constraint, the bean instance hosting the property the constraint is applied on
+     * 
+     * @return the leaf bean the constraint is applied on or null if Validator#validateValue is used
      */
-    Class getBeanClass();
+    Object getLeafBean();
 
     /**
-     * The value failing to pass the constraint
+     * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
+     *         &lt;code&gt;null&lt;/code&gt; if the value is the &lt;code&gt;rootBean&lt;code&gt; itself.
+     */
+    String getPropertyPath();
+
+
+    /**
+     * @return the bean type being validated.
+     */
+    Class&lt;T&gt; getBeanClass();
+
+    /**
+     * @return the value failing to pass the constraint.
      */
     Object getValue();
 
     /**
-     * the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
-     * Null if the value is the rootBean itself
-     */
-    String getPropertyPath();
-
-    /**
-     * return the list of groups that the triggered constraint applies on and which also are
-     * within the list of groups requested for validation 
-     * (directly or through a group sequence)
+     * @return the list of groups that the triggered constraint applies on and which also are
+     *         within the list of groups requested for validation.
+     * 
      * TODO: considering removal, if you think it's important, speak up
      */
-    String[] getGroups();
+    Set&lt;String&gt; getGroups();
 }</programlisting>
 
       <para>The <methodname>getMessage</methodname> method returns the
@@ -1889,7 +2130,9 @@ public interface InvalidConstraint&lt;T&gt; {
       <methodname>Validator.validate</methodname> method.</para>
 
       <para>The <methodname>getBeanClass</methodname> method returns the type
-      of the current bean being validated and leading to the failure.</para>
+      of the current bean being validated and leading to the failure.
+      <methodname>getLeafBean</methodname> returns the value of this
+      bean.</para>
 
       <para>The <methodname>getValue</methodname> method returns the value
       (field, property or validated object) being passed to
@@ -1906,13 +2149,13 @@ public interface InvalidConstraint&lt;T&gt; {
 
         <listitem>
           <para>if the constraint is a field level constraint, the field name
-          is the propertyPath</para>
+          is the <methodname>propertyPath</methodname></para>
         </listitem>
 
         <listitem>
           <para>if the constraint is a property, the JavaBeans property name
-          (as defined by the JavaBeans Introspector class) is the
-          propertyPath</para>
+          (as defined by the JavaBeans <classname>Introspector</classname>
+          class) is the propertyPath</para>
         </listitem>
 
         <listitem>
@@ -1923,7 +2166,32 @@ public interface InvalidConstraint&lt;T&gt; {
           <!--SCP: Need to decide what to do here when terminal is class. Trailing dot?
 EBE rule #1 addresses that or am I off base?-->
         </listitem>
+
+        <listitem>
+          <para>if an associated object in a <classname>List</classname> or
+          array is validated, add the association field or JavaBeans property
+          name, followed by the index value surrounded by square brackets
+          (<literal>[index]</literal>) and a dot ('.') as a prefix to the
+          previous rules. For example <code>order.orderLines[1]</code> This
+          rule is recursive.</para>
+        </listitem>
+
+        <listitem>
+          <para>if an associated object in a Map is validated, add the
+          association field or JavaBeans property name, followed by the
+          <methodname>toString()</methodname> result of the key object
+          surrounded by square brackets and quotes
+          (<literal>["key.toString()"]</literal>) and a dot ('.') as a prefix
+          to the previous rules. For example
+          <code>item.evaluation["quality"]</code> This rule is
+          recursive.</para>
+        </listitem>
       </itemizedlist>
+
+      <note>
+        <para>the collection notation is following the Unified Expression
+        Language conventions.</para>
+      </note>
 
       <note>
         <para>From <methodname>rootBean</methodname> and
@@ -2266,7 +2534,7 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
 
       <itemizedlist>
         <listitem>
-          <para><classname>Validation</classname>: API entry point. Let's you
+          <para><classname>Validation</classname>: API entry point. Lets you
           optionally define the Bean Validation provider targeted as well as a
           provider resolution strategy. Validation generates
           <classname>ValidatorBuilder</classname> objects and can bootstrap
@@ -2380,8 +2648,8 @@ Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);
           <programlisting>ValidatorFactory factory = Validation
        .builderType( ACMEValidatorBuilder.class )
        .getValidatorBuilder()
-          .messageResolver( new ACMEMessageResolver() ) //default configuration option
-          .addConstaint(Address.class, customConstraintDescriptor) //specific configuration option
+          .messageResolver( new ContainerMessageResolver() ) //default configuration option
+          .addConstaint(Address.class, customConstraintDescriptor) //ACME specific method
           .build();
 
 //same initialization breaking the chaining method use
@@ -2390,9 +2658,20 @@ ACMEValidatorBuilder acmeBuilder = Validation
        .getValidatorBuilder();
 
 ValidatorFactory factory = acmeBuilder
-          .messageResolver( new ACMEMessageResolver() ) //default configuration option
-          .addConstaint(Address.class, customConstraintDescriptor) //specific configuration option
-          .build();</programlisting>
+          .messageResolver( new ContainerMessageResolver() ) //default configuration option
+          .addConstaint(Address.class, customConstraintDescriptor) //ACME specific method
+          .build();
+
+
+/**
+ * ACME specific validator builder and configuration options
+ */
+public interface ACMEValidatorBuilder extends ValidatorBuilder&lt;ACMEValidatorBuilder&gt; {
+    /**
+     * Programmatically add constraints. Specific to the ACME provider.
+     */
+    ACMEValidatorBuilder addConstraint(Class&lt;?&gt; entity, ACMEConstraintDescriptor constraintDescriptor);
+}</programlisting>
         </example>
 
         <para>We will now explore the various interfaces, their constraints
@@ -2973,22 +3252,64 @@ public interface ACMEValidatorBuilder
           <title>Validation methods available</title>
 
           <programlisting>/**
- * Bean Validation bootstrap class. This class has two bootstrap strategies.
+ * This class is the entry point for the Bean Validation framework. There are three ways to bootstrap the framework:
+ * &lt;ul&gt;
+ * &lt;li&gt;
+ * The easiest approach is to use the default Bean Validation provider.
+ * &lt;pre&gt;
+ * ValidatorFactory factory = Validation.getValidatorBuilder().build();
+ * &lt;/pre&gt;
+ * In this case {@link  javax.validation.bootstrap.DefaultValidationProviderResolver  DefaultValidationProviderResolver}
+ * will be used to locate available providers.
  *
- * The firt bootstrap approach selects programmatically the specific provider
- * requested and build the corresponding ValidatorFactory.
+ * The chosen provider is defined as followed:
+ * &lt;ul&gt;
+ * &lt;li&gt;if the XML configuration defines a provider, this provider is used&lt;/li&gt;
+ * &lt;li&gt;if the XML configuratio does not define a provider or if no XML configuration is present the first provider
+ * returned by the ValidationProviderResolver isntance is used.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/li&gt;
+ * &lt;li&gt;
+ * The second bootstrap approach allows to choose a custom &lt;code&gt;ValidationProviderResolver&lt;/code&gt;. The chosen
+ * &lt;code&gt;ValidationProvider&lt;/code&gt; is then determined in the same way as in the default bootstrapping case (see above).
+ * &lt;pre&gt;
+ * ValidatorBuilder&amp;lt?&amp;gt; builder = Validation
+ *    .defineBootstrapState()
+ *    .providerResolver( new MyResolverStrategy() )
+ *    .getValidatorBuilder();
+ * ValidatorFactory factory = builder.build();
+ * &lt;/pre&gt;
+ * &lt;/li&gt;
+ * 
+ * &lt;p/&gt;
+ * &lt;li&gt;
+ * The third approach allows you to specify explicitly and in a type safe fashion the expected provider by
+ * using its specific &lt;code&gt;ValidatorBuilder&lt;/code&gt; sub-interface.
  *
- * The second bootstrap approach does not select any provider. The chosen provider is then
- * either the one defined in the Validation XML configuration file or the default
- * Validation Provider.
- *
+ * Optionally you can choose a custom &lt;code&gt;ValidationProviderResolver&lt;/code&gt;.
+ * &lt;pre&gt;
+ * ACMEValidatorBuilder builder = Validation
+ *    .builderType(ACMEValidatorBuilder.class)
+ *    .providerResolver( new MyResolverStrategy() )  // optionally set the provider resolver
+ *    .getValidatorBuilder();
+ * ValidatorFactory factory = builder.build();
+ * &lt;/pre&gt;
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
+ * Note:&lt;br/&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;
  * The ValidatorFactory object built by the bootstrap process should be cached and shared amongst
  * Validator consumers.
- *
+ * &lt;/li&gt;
+ * &lt;li&gt;
  * This class is thread-safe.
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
  *
  * @author Emmanuel Bernard
  * @author Hardy Feretnschik
+ * @see DefaultValidationProviderResolver
  */
 public class Validation {
     public class Validation {
@@ -3262,7 +3583,7 @@ public interface Validator&lt;T&gt; {
     /**
      * return the class level constraints
      */
-    ElementDescriptor getBeanConstraints();
+    ElementDescriptor getConstraintsForBean();
 
     /**
      * return the property level constraints for a given propertyName
@@ -3280,7 +3601,7 @@ public interface Validator&lt;T&gt; {
       <parameter>T</parameter> class has at least one constraint
       declared.</para>
 
-      <para><methodname>getBeanConstraints</methodname> returns an
+      <para><methodname>getConstraintsForBean</methodname> returns an
       <classname>ElementDescriptor</classname> object describing the bean
       level constraints (see <xref
       linkend="constraintdeclarationvalidationprocess-requirements-object" />).</para>
@@ -3306,61 +3627,41 @@ public interface Validator&lt;T&gt; {
       field, a method or a class).</para>
 
       <programlisting>/**
- * Describes a validated element (class, field or property)
- * 
+ * Describes a validated element (class, field or property).
+ *
  * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
  */
 public interface ElementDescriptor {
-    /**
-     * Element type
-     */
-    ElementType getElementType();
 
     /**
-     * statically defined returned type
-     * //TODO should it be Type or even completly removed
+     * @return Statically defined returned type.
+     *
+     * @todo should it be Type or even completly removed
      */
-    Class getReturnType();
+    Class getType();
 
     /**
-     * is the association cascaded
+     * @return Returns &lt;code&gt;true&lt;/code&gt; if the association is cascaded, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isCascaded();
 
     /**
-     * all the constraint descriptors for the given element
+     * @return All the constraint descriptors for this element.
      */
-    Set&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
+    List&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
 
     /**
-     * Property path from the root entity validated.
-     * //FIXME there is a problem in describing cyclic dependencies
+     * @return Property path from the root entity validated.
+     *
+     * @todo there is a problem in describing cyclic dependencies
      */
     String getPropertyPath();
 
 }</programlisting>
 
-      <para><methodname>getElementType</methodname> returns the
-      <classname>java.lang.annotations.ElementType</classname> the constraint
-      is declared on. The expected types for the current version of the Bean
-      Validation specification are:</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>TYPE</para>
-        </listitem>
-
-        <listitem>
-          <para>FIELD</para>
-        </listitem>
-
-        <listitem>
-          <para>METHOD</para>
-        </listitem>
-      </itemizedlist>
-
-      <para><methodname>getReturnType</methodname> returns either the object
-      type for a class, or the returned type for a property (TODO problem of
+      <para><methodname>getType</methodname> returns either the object type
+      for a class, or the returned type for a property (TODO problem of
       generics resolution).</para>
 
       <para>The <methodname>isCascaded</methodname> method returns
@@ -3386,52 +3687,85 @@ public interface ElementDescriptor {
       given constraint declaration (i.e. a constraint annotation).</para>
 
       <programlisting>/**
- * describes a single constraint
+ * Describes a single constraint.
  *
  * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
  */
 public interface ConstraintDescriptor {
     /**
-     * Constraint declaration annotation
+     * Returns the annotation describing the constraint declaration.
+     * If a composing constraint, parameter values are reflecting
+     * the overridden parameters from the main constraint
+     *
+     * @return The annotation for this constraint.
      */
     Annotation getAnnotation();
 
     /**
-     * constraint parameters
+     * @return The groups the constraint is applied on.
+     */
+    Set&lt;String&gt; getGroups();
+
+    /**
+     * @return the constraint implementation class
+     */
+    Class&lt;? extends Constraint&gt; getContstraintClass();
+
+    /**
+     * Returns a map containing the annotation paramter names as keys and the annotation parameter values
+     * as value.
+     * If a composing constraint, parameter values are reflecting
+     * the overridden parameters form the main constraint
+     *
+     * @return Returns a map containing the annotation paramter names as keys and the annotation parameter values
+     *         as value.
      */
     Map&lt;String, Object&gt; getParameters();
 
     /**
-     * What are the groups the constraint is applied on
-     */<!--EBE: Should it be List<String> as the groups comes from an array??-->
-    Set&lt;String&gt; getGroups();
+     * Return a set of ConstraintDescriptors. Each ConstraintDescriptor describes a composing
+     * constraint. ConstraintDescriptor instances of composing constraints reflect overridden
+     * parameter values in #getParameters() and #getAnnotation() 
+     *
+     * @return a set of ConstraintDescriptor object or an empty set
+     */
+    Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
     /**
-     * Return the constraint implementation routine
+     * @return true if the constraint is annotated with @ReportAsSingleInvalidConstraint
      */
-    Constraint getConstraintImplementation();
+    boolean isReportAsSingleInvalidConstraint();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
       instance (or an annotation instance representing the given constraint
-      declaration)</para>
+      declaration). If <classname>ConstraintDescriptor</classname> represents
+      a composing annotation (see <xref
+      linkend="constraintsdefinitionimplementation-constraintcomposition" />),
+      the returned annotation must reflect parameter overriding. In other
+      words, the annotation parameter values must reflect any parameter
+      overriding.</para>
 
       <para><methodname>getParameters</methodname> returns a map containing
       the annotation parameter names as a key, and the annotation parameter
       values as a value (this API is anticipated to be simpler to use by tools
-      that reflection over the annotation instance).</para>
+      that reflection over the annotation instance). If
+      <classname>ConstraintDescriptor</classname> represents a composing
+      annotation (see <xref
+      linkend="constraintsdefinitionimplementation-constraintcomposition" />),
+      the returned map must reflect parameter overriding.</para>
 
       <para><methodname>getGroups</methodname> returns the group names, the
       constraint is supposed to be applied upon.</para>
 
-      <para><methodname>getConstraintImplementation</methodname> returns the
-      initialized and ready to use
-      <classname>javax.validator.Constraint</classname> implementation for the
-      given constraint declaration. Specifically, the
-      <classname>StandardConstraintDescriptor</classname> is available if the
-      constraint validator implements
-      <classname>StandardConstraint</classname> (see <xref
-      linkend="constraintsdefinition-standardconstraint" />).</para>
+      <para><methodname>getConstraintClass</methodname> returns the class
+      implementing the constraint.</para>
+
+      <warning>
+        <para>Would <methodname>getConstraintImplementation()</methodname> be
+        useful? Why would you use it for?</para>
+      </warning>
     </section>
 
     <section>
@@ -3527,11 +3861,16 @@ ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDesc
                                                               .iterator().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //"firstlevelcheck" and "default"
-assert constraintDescriptor.getConstraintImplementation() instanceof StandardConstraint;
-StandardConstraint standardConstraint = 
-        (StandardConstraint) constraintDescriptor.getConstraintImplementation();
+assert constraintDescriptor.getComposingConstraints().size() != 0;
+
 //@NotEmpty cannot be null
-assert ! standardConstraint.getStandardConstraints().getNullability(); 
+boolean notNullPresence = false;
+for ( ConstraintDescriptor composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
+    if ( composingDescriptor.getAnnotation().getAnnotationType().equals( NotNull.class ) ) {
+        notNullPresence = true;
+    }
+}
+assert notNullPresence; 
 
 //assuming the implementation returns the Length constraint second
 constraintDescriptor = bookBeanDescriptor.getConstraintDescriptors().iterator().next().next();
@@ -3548,8 +3887,298 @@ assert propertyDescriptor.isCascaded()</programlisting>
   <chapter>
     <title>Built-in Constraint definitions</title>
 
-    <para>Some basic constraint definitions will be included later in the
-    specification.</para>
+    <para>The specification defines a small set of built-in constraints. Their
+    usage is encourage both in regular constraint declarations and as
+    composing constraints. Using this set of constraint will enhance
+    portability of your constraints across constraint-consuming frameworks
+    relying on the metadata API (such as client side validation frameworks or
+    database schema generation frameworks).</para>
+
+    <para>All built-in constraints are in the
+    <package>javax.validation.constraints</package> package. Here is the list
+    of constraints and their declaration.</para>
+
+    <example>
+      <title>@Null constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be null.
+ * Accepts any type. 
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Null {
+    String message() default "{constraint.null}";
+    String[] groups() default {};
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@NotNull constraint</title>
+
+      <programlisting>/**
+ * The annotated element must not be null.
+ * Accepts any type.
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface NotNull {
+    String message() default "{constraint.notNull}";
+    String[] groups() default {};
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@AssertTrue constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be true.
+ * Supported types are &lt;code&gt;boolean&lt;/code&gt; and &lt;code&gt;Boolean&lt;/code&gt; 
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface AssertTrue {
+    String message() default "{constraint.assertTrue}";
+    String[] groups() default {};
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@AssertFalse constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be false.
+ * Supported types are &lt;code&gt;boolean&lt;/code&gt; and &lt;code&gt;Boolean&lt;/code&gt;
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface AssertFalse {
+    String message() default "{constraint.assertFalse}";
+    String[] groups() default {};
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@Min constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a number whose value must be greater or
+ * equal than the specificed minimum
+ * 
+ * Supported types are:
+ *   - &lt;code&gt;BigDecimal&lt;/code&gt;
+ *   - &lt;code&gt;BigInteger&lt;/code&gt;
+ *   - &lt;code&gt;Number&lt;/code&gt;
+ *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
+ *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;
+ * TODO &lt;code&gt;byte&lt;/code&gt;
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Min {
+    String message() default "{constraint.min}";
+    String[] groups() default {};
+
+    /**
+     * @return Value the element must be higher or equal to
+     */
+    long value();
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@Max constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a number whose value must be lower or
+ * equal than the specificed maximum.
+ *
+ * Supported types are:
+ *   - &lt;code&gt;BigDecimal&lt;/code&gt;
+ *   - &lt;code&gt;BigInteger&lt;/code&gt;
+ *   - &lt;code&gt;Number&lt;/code&gt;
+ *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
+ *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;
+ * TODO &lt;code&gt;byte&lt;/code&gt;
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Max {
+    String message() default "{constraint.max}";
+    String[] groups() default {};
+
+    /**
+     * @return Value the element must be lower or equal to
+     */
+    long value();
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@Size constraint</title>
+
+      <programlisting>/**
+ * The annotated element size must be between the specified boundaries (included).
+ *
+ * Supported types are:
+ *   - &lt;code&gt;String&lt;/code&gt; (string length is evaludated)
+ *   - &lt;code&gt;Collection&lt;/code&gt; (collection size is evaluated)
+ *   - Array (array length is evaludated)
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Size {
+    String message() default "{constraint.min}";
+    String[] groups() default {};
+
+    /**
+     * @return size the element must be higher or equal to
+     */
+    int min() default Integer.MIN_VALUE;
+
+    /**
+     * @return size the element must be lower or equal to
+     */
+    int max() default Integer.MAX_VALUE;
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@Digits constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a number within accepted range
+ * Supported types are:
+ *   - &lt;code&gt;BigDecimal&lt;/code&gt;
+ *   - &lt;code&gt;BigInteger&lt;/code&gt;
+ *   - &lt;code&gt;Number&lt;/code&gt;
+ *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
+ *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;
+ * TODO &lt;code&gt;byte&lt;/code&gt;  
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Digits {
+    String message() default "{constraint.digits}";
+    String[] groups() default {};
+
+    /**
+     * @return maximum number of integral digits accepted for this number
+     */
+    int integer();
+
+    /**
+     * @return maximum number of fractional digits accepted for this numbe
+     */
+    int fraction();
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@Past constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a date in the past.
+ * Now is defined as the current time according to the virtual machine
+ * The calendar used if the compared type is of type &lt;code&gt;Calendar&lt;/code&gt;
+ * is the calendar based on the current timezone and the current locale.
+ *
+ * TODO what are the implications
+ * 
+ * Supported types are:
+ *  - &lt;code&gt;java.util.Date&lt;/code&gt;
+ *  - &lt;code&gt;java.util.Calendar&lt;/code&gt;
+ *  - TODO new date/time JSR types?
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Past {
+    String message() default "{constraint.past}";
+    String[] groups() default {};
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@Future constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a date in the future.
+ * Now is defined as the current time according to the virtual machine
+ * The calendar used if the compared type is of type &lt;code&gt;Calendar&lt;/code&gt;
+ * is the calendar based on the current timezone and the current locale.
+ *
+ * TODO what are the implications
+ *
+ * Supported types are:
+ *  - &lt;code&gt;java.util.Date&lt;/code&gt;
+ *  - &lt;code&gt;java.util.Calendar&lt;/code&gt;
+ *  - TODO new date/time JSR types?
+ *
+ * Null elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Future {
+    String message() default "{constraint.future}";
+    String[] groups() default {};
+}</programlisting>
+    </example>
+
+    <para>Built-in annotations are not annotated with
+    <classname>@ConstraintValidator</classname> to avoid any dependency
+    between the specification API and a specific implementation. Each Bean
+    Validation provider must recognize built-in constraint annotations as
+    valid constraint definitions and provide a compliant constraint
+    implementation for each.</para>
+
+    <warning>
+      <para>Add @Like, @AlphaNumerical? other subset of Regexp? Regexp seems
+      to generic and not descriptive enough.</para>
+    </warning>
   </chapter>
 
   <chapter>
@@ -3683,11 +4312,11 @@ assert propertyDescriptor.isCascaded()</programlisting>
           </row>
 
           <row>
-            <entry>javax.validation.StandardConstraint</entry>
+            <entry>Composing constraint</entry>
 
-            <entry>optional interface implemented by a constraint validation
-            implementation. Used to express standard constraint
-            dimensions</entry>
+            <entry>Constraint declared on another constraint definition. When
+            the main constraint is validated, the composing constraints are
+            validated too.</entry>
           </row>
 
           <row>
