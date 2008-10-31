@@ -553,7 +553,7 @@ public @interface FrenchZipcode {
       invalid and the corresponding error report is generated. To mark a
       constraint as raising only the main constraint error report despite its
       use of composing constraints, use the
-      <classname>@ReportAsSingleInvalidConstraint</classname>
+      <classname>@ReportAsViolationFromComposingConstraint</classname>
       annotation.</para>
 
       <example>
@@ -562,7 +562,7 @@ public @interface FrenchZipcode {
 
         <programlisting>@NotNull
 @Size(min=5, max=5)
-@ReportAsSingleInvalidConstraint
+@ReportAsViolationFromComposingConstraint
 @ConstraintValidator(FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
@@ -574,16 +574,17 @@ public @interface FrenchZipcode {
       </example>
 
       <example>
-        <title>@ReportAsSingleInvalidConstraint annotation definition</title>
+        <title>@ReportAsViolationFromComposingConstraint annotation
+        definition</title>
 
         <programlisting>/**
- * A constraint annotation annotated with ReportAsSingleInvalidConstraint
+ * A constraint annotation annotated with this annotation
  * will return the composed annotation error report if any of the composing annotations
  * fail. The error reports of each individual composing constraint is ignored.
  * 
  * @author Emmanuel Bernard
  */
-public @interface ReportAsSingleInvalidConstraint {
+public @interface ReportAsViolationFromComposingConstraint {
 }</programlisting>
       </example>
 
@@ -821,8 +822,8 @@ public interface Constraint&lt;A extends Annotation&gt; {
  */
 public interface Context {
     /**
-     * Disable default InvalidConstraint object generation.
-     * Useful to set a different error message or generate an InvalidConstraint based on
+     * Disable default ConstraintViolation object generation.
+     * Useful to set a different error message or generate a ConstraintViolation based on
      * a different property
      *
      * @see #addErrorMessage(String)
@@ -839,13 +840,13 @@ public interface Context {
     /**
      * Add a new unexpanded error message.
      * &lt;p/&gt;
-     * If isValid returns false, an InvalidConstraint object will be built per error message
+     * If isValid returns false, a ConstraintViolation object will be built per error message
      * including the default one unless #disableDefaultErrorMEssage() has been called.
      * &lt;p/&gt;
-     * Aside from the error message, InvalidConstraint objects generated from such a call
+     * Aside from the error message, ConstraintViolation objects generated from such a call
      * contains the same contextual information (root bean, path and so on)
      * &lt;p/&gt;
-     * This method can be called multiple time. One InvalidConstraint instance per call is created.
+     * This method can be called multiple time. One ConstraintViolation instance per call is created.
      *
      * @param message new unexpanded error message
      */
@@ -854,13 +855,13 @@ public interface Context {
     /**
      * Add a new unexpanded error message to a given sub property.
      * &lt;p/&gt;
-     * If isValid returns false, an InvalidConstraint object will be built per error message including the default one
+     * If isValid returns false, a ConstraintViolation object will be built per error message including the default one
      * if null apply to the current property or the bean the constraint is applied on, otherwise apply to the &lt;code&gt;property&lt;/code&gt; named
      * &lt;p/&gt;
      * TODO exception or swallowed when bean-level instance is not present?
      *
      * @param message new unexpanded error message
-     * @param property property name the InvalidConstraint is targeting
+     * @param property property name the ConstraintViolation is targeting
      *
      * @throws ValidationException when the property is not present on the bean level object
      */
@@ -893,7 +894,7 @@ public interface Context {
       <para>The <classname>Context</classname> interface allows to redefine
       the default message error generated when a constraint is not valid. By
       default, every invalid constraint lead to the generation of an error
-      object represented by an <classname>InvalidConstraint</classname>
+      object represented by a <classname>ConstraintViolation</classname>
       object. This object is build from the default error message as defined
       by the constraint declaration and the context the constraint declaration
       is placed on (bean, property, attribute).</para>
@@ -901,7 +902,7 @@ public interface Context {
       <para>The <classname>Context</classname> methods let the constraint
       implementation disable the default error object generation and create
       one or more custom ones. The unexpanded message passed as a parameter is
-      used to build the <classname>InvalidConstraint</classname> object (the
+      used to build the <classname>ConstraintViolation</classname> object (the
       message resolution operation is applied to it). The property on which
       the error object is applied is defined as following:</para>
 
@@ -1113,7 +1114,7 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
 
         <para>In addition to supporting instance validation, validation of
         graphs of object is also supported. The result of graph validation is
-        a unified list of invalid values.</para>
+        a unified list of constraint violations.</para>
 
         <para>Consider the situation where bean X contains a field of type Y.
         By annotating field Y with the @Valid annotation, the Validator will
@@ -1325,8 +1326,8 @@ EBE: correct, so far I don't think it's useful-->
         <listitem>
           <para>if <methodname>isValid</methodname> returns false, the Bean
           Validation provider populates
-          <classname>InvalidConstraint</classname> object(s) according to the
-          rules defined in <xref
+          <classname>ConstraintViolation</classname> object(s) according to
+          the rules defined in <xref
           linkend="constraintsdefinitionimplementation-validationimplementation" />
           and appends these objects to the list of returned values</para>
 
@@ -1351,10 +1352,10 @@ EBE: is that a problem?-->
         been validated by the current validation routine, thus preventing
         infinite loops.</para>
 
-        <para>The <classname>InvalidConstraint</classname> objects, built when
-        a failing constraint on an associated object is found, reflects the
-        path to reach the object from the root validated object (See <xref
-        linkend="validationapi-invalidconstraint" />).</para>
+        <para>The <classname>ConstraintViolation</classname> objects, built
+        when a failing constraint on an associated object is found, reflects
+        the path to reach the object from the root validated object (See <xref
+        linkend="validationapi-constraintviolation" />).</para>
       </section>
     </section>
 
@@ -1778,10 +1779,10 @@ public interface Validator&lt;T&gt; {
      *
      * @param object object to validate
      * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
-     * @return invalid constrains or an empty Set if none
+     * @return constraint violations or an empty Set if none
      * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
-    Set&lt;InvalidConstraint&lt;T&gt;&gt; validate(T object, String... groups);
+    Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, String... groups);
 
     /**
      * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property of object
@@ -1790,10 +1791,10 @@ public interface Validator&lt;T&gt; {
      * @param object object to validate
      * @param propertyName property to validate
      * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
-     * @return invalid constrains or an empty Set if none
+     * @return constraint violations or an empty Set if none
      * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
-    Set&lt;InvalidConstraint&lt;T&gt;&gt; validateProperty(T object, 
+    Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object, 
                                                String propertyName, 
                                                String... groups);
 
@@ -1801,14 +1802,14 @@ public interface Validator&lt;T&gt; {
      * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property 
      * if the property value is &lt;code&gt;value&lt;/code&gt;
      *
-     * TODO express limitations of InvalidConstraint in this case
+     * TODO express limitations of ConstraintViolation in this case
      *
      * @param propertyName property to validate
      * @param value property value to validate
      * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
-     * @return invalid constrains or an empty Set if none
+     * @return constraint violations or an empty Set if none
      */
-    Set&lt;InvalidConstraint&lt;T&gt;&gt; validateValue(String propertyName, 
+    Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(String propertyName, 
                                             Object value, 
                                             String... groups);
 
@@ -1821,14 +1822,14 @@ public interface Validator&lt;T&gt; {
       <section id="validationapi-validatorapi-validationmethods">
         <title>Validation methods</title>
 
-        <para><methodname>Set&lt;InvalidConstraint&gt; validate(T object,
-        String... groups)</methodname> is used to validate a given object of
-        type <classname>T</classname> or any of its subtype from a
+        <para><methodname>Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T
+        object, String... groups)</methodname> is used to validate a given
+        object of type <classname>T</classname> or any of its subtype from a
         <classname>Validator&lt;T&gt;</classname> instance. This method
         implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
-        A Set containing all <classname>InvalidConstraint</classname> objects
-        representing the failing constraints is returned, an empty
+        A Set containing all <classname>ConstraintViolation</classname>
+        objects representing the failing constraints is returned, an empty
         <classname>Set</classname> is returned otherwise.</para>
 
         <note>
@@ -1837,27 +1838,29 @@ public interface Validator&lt;T&gt; {
           method on <classname>Validator&lt;U&gt;</classname>.</para>
         </note>
 
-        <para><methodname>Set&lt;InvalidConstraint&gt; validateProperty(T
-        object, String propertyName, String... groups)</methodname> validates
-        a given field or property of an object. The property name is the
-        JavaBeans property name (as defined by the JavaBeans Introspector
-        class). This method implements the logic described in <xref
+        <para><methodname>Set&lt;ConstraintViolation&lt;T&gt;&gt;
+        validateProperty(T object, String propertyName, String...
+        groups)</methodname> validates a given field or property of an object.
+        The property name is the JavaBeans property name (as defined by the
+        JavaBeans Introspector class). This method implements the logic
+        described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         and apply it only to the given property. <literal>@Valid</literal> is
         not honored by this method. This method is useful for partial object
         validation.</para>
 
-        <para><methodname>Set&lt;InvalidConstraint&gt; validateValue(String
-        propertyName, Object value, String... groups)</methodname> validates
-        the property referenced by <parameter>propertyName</parameter>, if the
-        property value were <parameter>value</parameter>. This method
-        implements the logic described in <xref
+        <para><methodname>Set&lt;ConstraintViolation&lt;T&gt;&gt;
+        validateValue(String propertyName, Object value, String...
+        groups)</methodname> validates the property referenced by
+        <parameter>propertyName</parameter>, if the property value were
+        <parameter>value</parameter>. This method implements the logic
+        described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         and apply it only to the given property and the given value.
         <literal>@Valid</literal> is not honored by this method. This method
         is useful for ahead of time validation.</para>
 
-        <!--SCP: what values come back in InvalidConstraint for the validateValue() case?
+        <!--SCP: what values come back in ConstraintViolation for the validateValue() case?
 EBE the value passed as a parameter. I think the JavaDoc is clear, should it be made explicit?-->
 
         <section>
@@ -1919,7 +1922,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
           <para>Assuming a <classname>Validator&lt;Address&gt;</classname>,
           the following code will return three
-          <classname>InvalidConstraint</classname> objects. One for
+          <classname>ConstraintViolation</classname> objects. One for
           <literal>addressline1</literal> violating <literal>NotNull</literal>
           and one for <literal>city</literal> violating
           <literal>Length</literal>.</para>
@@ -1927,14 +1930,14 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <programlisting>validator.validate(address).size() == 3</programlisting>
 
           <para>The following code will return one
-          <classname>Invalid</classname>Constraint since
+          <classname>ConstraintViolation</classname> since
           <literal>city</literal> violates <literal>Length</literal> and only
           <literal>city</literal> is validated.</para>
 
           <programlisting>validator.validateProperty(address, "city").size() == 1</programlisting>
 
           <para>The following code will return no
-          <classname>InvalidConstraint</classname> object because the value
+          <classname>ConstraintViolation</classname> object because the value
           <literal>Paris</literal> for <literal>city</literal> would not raise
           any constraint failure.</para>
 
@@ -2005,7 +2008,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <classname>@NotEmpty</classname> on
           <methodname>zipCode</methodname>. Note that if
           <methodname>zipCode</methodname> is indeed not empty, only one
-          <classname>InvalidConstraint</classname> object will represent the
+          <classname>ConstraintViolation</classname> object will represent the
           failure and the not empty validation will only be executed
           once.</para>
 
@@ -2059,21 +2062,24 @@ public class Address {
       </section>
     </section>
 
-    <section id="validationapi-invalidconstraint">
-      <title>InvalidConstraint</title>
+    <section id="validationapi-constraintviolation">
+      <title>ConstraintViolation</title>
 
-      <para><classname>InvalidConstraint</classname> is the class describing a
-      single constraint failure. An array of
-      <classname>InvalidConstraint</classname> is returned from an object
+      <para><classname>ConstraintViolation</classname> is the class describing
+      a single constraint failure. A set of
+      <classname>ConstraintViolation</classname> is returned from an object
       validation.</para>
 
       <programlisting>/**
- * Describe a constraint validation defect.
+ * Describe a constraint validation defect./**
+ * Describe a constraint violation. This object describe the error context as
+ * well as the message describing the violation.
  *
  * @author Emmanuel Bernard
  * @todo add pointers to the metadata?
+ * @todo the rational behind rootBean and propertyPath is to keep the context available to the user
  */
-public interface InvalidConstraint&lt;T&gt; {
+public interface ConstraintViolation&lt;T&gt; {
 
     /**
      * @return The error message for this constraint violation.
@@ -2113,7 +2119,7 @@ public interface InvalidConstraint&lt;T&gt; {
     /**
      * @return the list of groups that the triggered constraint applies on and which also are
      *         within the list of groups requested for validation.
-     * 
+     *
      * TODO: considering removal, if you think it's important, speak up
      */
     Set&lt;String&gt; getGroups();
@@ -2273,44 +2279,47 @@ Book book = new Book();
 book.setTitle("");
 book.setAuthor(author);
 
-Set&lt;InvalidConstraint&gt; invalidConstraints = validator.validate(book);</programlisting>
+Set&lt;ConstraintViolation&gt; constraintViolations = validator.validate(book);</programlisting>
 
-        <para><classname>invalidConstraints</classname> is a set of size 2.
+        <para><classname>ConstraintViolations</classname> is a set of size 2.
         One of the entries represents the failure of
         <literal>NotEmpty</literal> on the <literal>title</literal>
         property.</para>
 
-        <para>The <classname>invalidConstraint</classname> object for this
+        <para>The <classname>ConstraintViolation</classname> object for this
         failure passes the following assertions:</para>
 
         <programlisting>//assuming an english locale, the interpolated message is returned
-assert "may not be null or empty".equals( invalidConstraint.getMessage() );
-assert book == invalidConstraint.getRootBean();
-assert Book.class == invalidConstraint.getBeanClass();
+assert "may not be null or empty".equals( constraintViolation.getMessage() );
+assert book == constraintViolation.getRootBean();
+assert book == constraintViolation.getLeafBean();
+assert Book.class == constraintViolation.getBeanClass();
 //the offending value
-assert book.getTitle().equals( invalidConstraint.getValue() );
+assert book.getTitle().equals( constraintViolation.getValue() );
 //the offending property
-assert "title".equals( invalidConstraint.getPropertyPath() );
-assert invalidConstraint.getGroups().length == 1
+assert "title".equals( constraintViolation.getPropertyPath() );
+assert constraintViolation.getGroups().length == 1
+assert 
 
 List expectedGroups = new ArrayList(1);
 expectedGroups.add("default");
-for ( String group : invalidConstraint.getGroups() ) {
+for ( String group : constraintViolation.getGroups() ) {
     assert expectedGroups.contains(group);
 }</programlisting>
 
         <para>The second failure, <literal>NotEmpty</literal> on the author's
         <methodname>lastname</methodname>, will produce the following
-        <classname>InvalidConstraint</classname> object:</para>
+        <classname>ConstraintViolation</classname> object:</para>
 
-        <programlisting>assert "lastname must not be null".equals( invalidConstraint.getMessage() );
-assert book == invalidConstraint.getRootBean();
-assert Author.class == invalidConstraint.getBeanClass();
+        <programlisting>assert "lastname must not be null".equals( constraintViolation.getMessage() );
+assert book == constraintViolation.getRootBean();
+assert book == constraintViolation.getLeafBean();
+assert Author.class == constraintViolation.getBeanClass();
 //the offending value
-assert book.getAuthor().getLastName() == invalidConstraint.getValue();
+assert book.getAuthor().getLastName() == constraintViolation.getValue();
 //the offending property
-assert "author.lastName".equals( invalidConstraint.getPropertyPath() );
-assert invalidConstraint.getGroups().length == 0</programlisting>
+assert "author.lastName".equals( constraintViolation.getPropertyPath() );
+assert constraintViolation.getGroups().length == 0</programlisting>
       </section>
     </section>
 
@@ -3671,7 +3680,7 @@ public interface ElementDescriptor {
 
       <para><methodname>getPropertyPath</methodname> returns the property path
       as described in <xref
-      linkend="validationapi-invalidconstraint" />.</para>
+      linkend="validationapi-constraintviolation" />.</para>
 
       <para><classname>getConstraintDescriptors</classname> returns the
       <classname>ConstraintDescriptor</classname>s (see <xref
@@ -3733,9 +3742,9 @@ public interface ConstraintDescriptor {
     Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
     /**
-     * @return true if the constraint is annotated with @ReportAsSingleInvalidConstraint
+     * @return true if the constraint is annotated with @ReportAsViolationFromComposingConstraint
      */
-    boolean isReportAsSingleInvalidConstraint();
+    boolean isReportAsViolationFromComposingConstraint();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -4326,7 +4335,7 @@ public @interface Future {
           </row>
 
           <row>
-            <entry>javax.validation.InvalidConstraint</entry>
+            <entry>javax.validation.ConstraintViolation</entry>
 
             <entry>interface describing a given constraint failure on a given
             bean</entry>
