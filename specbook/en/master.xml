@@ -2496,7 +2496,7 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
       </section>
     </section>
 
-    <section>
+    <section id="bootstrapping">
       <title>Bootstrapping</title>
 
       <para>The bootstrapping API aims at providing a
@@ -3564,8 +3564,9 @@ public interface SpecializedBuilderFactory&lt;T extends ValidatorBuilder&lt;T&gt
       <title>Validator&lt;T&gt;</title>
 
       <para>The main API to access all metadata related to a given object is
-      <classname>Validator&lt;T&gt;</classname> (see XX for more information
-      on how to retrieve a <classname>Validator</classname> instance).</para>
+      <classname>Validator&lt;T&gt;</classname> (see <xref
+      linkend="bootstrapping" /> for more information on how to retrieve a
+      <classname>Validator</classname> instance).</para>
 
       <para>A <classname>Validator&lt;T&gt;</classname> instance is the
       metadata repository for <parameter>T</parameter> classes. It is
@@ -3592,13 +3593,13 @@ public interface Validator&lt;T&gt; {
     /**
      * return the class level constraints
      */
-    ElementDescriptor getConstraintsForBean();
+    BeanDescriptor getConstraintsForBean();
 
     /**
      * return the property level constraints for a given propertyName
      * or null if either the property does not exist or has no constraint
      */
-    ElementDescriptor getConstraintsForProperty(String propertyName);
+    PropertyDescriptor getConstraintsForProperty(String propertyName);
 
     /**
      * return the property names having at least a constraint defined
@@ -3611,12 +3612,12 @@ public interface Validator&lt;T&gt; {
       declared.</para>
 
       <para><methodname>getConstraintsForBean</methodname> returns an
-      <classname>ElementDescriptor</classname> object describing the bean
-      level constraints (see <xref
+      <classname>BeanDescriptor</classname> object describing the bean level
+      constraints (see <xref
       linkend="constraintdeclarationvalidationprocess-requirements-object" />).</para>
 
       <para><methodname>getConstraintsForProperty</methodname> returns an
-      <classname>ElementDescriptor</classname> object describing the property
+      <classname>PropertyDescriptor</classname> object describing the property
       level constraints (See <xref
       linkend="constraintdeclarationvalidationprocess-requirements-property" />).
       The property is uniquely identified by its name as per the JavaBeans
@@ -3631,9 +3632,10 @@ public interface Validator&lt;T&gt; {
     <section>
       <title>ElementDescriptor</title>
 
-      <para><classname>ElementDescriptor</classname> is the object used to
-      describe the list of constraints for a given element (whether it be a
-      field, a method or a class).</para>
+      <para><classname>ElementDescriptor</classname> is the root interface
+      describing elements hosting constraints. It is used to describe the list
+      of constraints for a given element (whether it be a field, a method or a
+      class).</para>
 
       <programlisting>/**
  * Describes a validated element (class, field or property).
@@ -3648,24 +3650,12 @@ public interface ElementDescriptor {
      *
      * @todo should it be Type or even completly removed
      */
-    Class getType();
-
-    /**
-     * @return Returns &lt;code&gt;true&lt;/code&gt; if the association is cascaded, &lt;code&gt;false&lt;/code&gt; otherwise.
-     */
-    boolean isCascaded();
+    Class&lt;?&gt; getType();
 
     /**
      * @return All the constraint descriptors for this element.
      */
     List&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
-
-    /**
-     * @return Property path from the root entity validated.
-     *
-     * @todo there is a problem in describing cyclic dependencies
-     */
-    String getPropertyPath();
 
 }</programlisting>
 
@@ -3673,20 +3663,68 @@ public interface ElementDescriptor {
       for a class, or the returned type for a property (TODO problem of
       generics resolution).</para>
 
-      <para>The <methodname>isCascaded</methodname> method returns
-      <literal>true</literal> of the property is marked with
-      <classname>@Valid</classname>. Class level element descriptors always
-      return <literal>false</literal>.</para>
-
-      <para><methodname>getPropertyPath</methodname> returns the property path
-      as described in <xref
-      linkend="validationapi-constraintviolation" />.</para>
-
       <para><classname>getConstraintDescriptors</classname> returns the
       <classname>ConstraintDescriptor</classname>s (see <xref
       linkend="constraintmetadata-constraintdescriptor" />), each
       <classname>ConstraintDescriptor</classname> describing one of the
       constraints declared on the given element.</para>
+    </section>
+
+    <section>
+      <title>BeanDescriptor</title>
+
+      <para>The <classname>BeanDescriptor</classname> interface describes a
+      constrained Java Bean. This interface is returned by
+      <methodname>Validator&lt;T&gt;.getConstraintsForBean()</methodname>.</para>
+
+      <programlisting>/**
+ * Describe a constrained Java Bean and the constraints associated to it.
+ * 
+ * @author Emmanuel Bernard
+ */
+public interface BeanDescriptor extends ElementDescriptor {
+}</programlisting>
+    </section>
+
+    <section>
+      <title>PropertyDescriptor</title>
+
+      <para>The <classname>PropertyDescriptor</classname> interface describes
+      a constrained property of a Java Bean. This interface is returned by
+      <methodname>Validator&lt;T&gt;.getConstraintsForProperty(String)</methodname>.
+      Constraints declared on the attribute and the getter of the same name
+      according to the Java Bean rules are returned by this descriptor.</para>
+
+      <programlisting>/**
+ * Describes a Java Bean property hosting validation constraints.
+ *
+ * Constraints placed on the attribute and the getter for a given property
+ * are all referenced by this object.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface PropertyDescriptor extends ElementDescriptor {
+    /**
+     * Is the property marked by the &lt;code&gt;@Valid&lt;/code&gt; annotation.
+     * @return true if the annotation is present
+     */
+    boolean isCascaded();
+
+    /**
+     * Name of the property acording to the Java Bean specification.
+     * @return property name
+     */
+    String getPropertyName();
+}</programlisting>
+
+      <para>The <methodname>isCascaded</methodname> method returns
+      <literal>true</literal> of the property is marked with
+      <classname>@Valid</classname>. Class level element descriptors always
+      return <literal>false</literal>.</para>
+
+      <para><methodname>getPropertyName</methodname> returns the property name
+      as described in <xref
+      linkend="validationapi-constraintviolation" />.</para>
     </section>
 
     <section id="constraintmetadata-constraintdescriptor">
@@ -4361,5 +4399,184 @@ validator.range=must be between {min} and {max}
 validator.size=size must be between {min} and {max}
 validator.email=not a well-formed email address
 validator.notEmpty=may not be null or empty</programlisting>
+  </appendix>
+
+  <appendix>
+    <title>Proposal for method-level validation </title>
+
+    <para>This is a proposition not yet present in the specification
+    officially but that is considered for inclusion.</para>
+
+    <para>A popular demand after the initial draft was to provide a method and
+    parameter level validation mechanism reusing the constraint descriptions
+    of the specification. This set of APIs is meant to be used by interceptor
+    frameworks such as:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>application frameworks like Web Beans</para>
+      </listitem>
+
+      <listitem>
+        <para>component frameworks like Enterprise Java Beans</para>
+      </listitem>
+
+      <listitem>
+        <para>aspect based frameworks</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>These framework can call the validation APIs to validate either the
+    parameter list or the returned value when a method is called (or more
+    precisely around a method invocation).</para>
+
+    <para>This extension of the Bean Validation API allows to reuse the core
+    engine as well as the constraint definition and declaration for such
+    method level validations.</para>
+
+    <para>The following APIs are added to
+    <classname>Validator&lt;T&gt;</classname>.</para>
+
+    <programlisting>public interface Validator&lt;T&gt; extends javax.validation.Validator&lt;T&gt; {
+    // [...]
+    
+    
+    /**
+     * Validate each parameter value based on the constraints described on
+     * the parameters of &lt;code&gt;method&lt;/code&gt;.
+     * 
+     * @param method the method whose parameters are currectly validated
+     * @param parameterValues the parameter values passed to the method for invocation
+     * @param groups groups targeted for validation
+     * 
+     * @return set of constraint violations
+     * 
+     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt; or if the Object[] 
+     * does not match the method signature
+     */
+    Set&lt;ConstraintViolation&gt; validateParameters(Method method, Object[] parameterValues, String... groups); 
+    
+    /**
+     * Validate the parameter value based on the constraints described on
+     * the parameterIndex-th parameter of &lt;code&gt;method&lt;/code&gt;.
+     * 
+     * @param method the method whose parameters are currectly validated
+     * @param parameterValue the parameter value passed to the parameterIndex-t parameter of method
+     * @param parameterIndex parameter index of the parameter validated in method
+     * @param groups groups targeted for validation
+     * 
+     * @return set of constraint violations
+     * 
+     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt; or if prameterIndex is out of bound
+     */
+    Set&lt;ConstraintViolation&gt; validateParameter(Method method, Object parameterValue, int parameterIndex, String... groups); 
+    
+    /**
+     * Validate each parameter value based on the constraints described on
+     * &lt;code&gt;method&lt;/code&gt;.
+     * 
+     * @param method the method whose result is validated
+     * @param returnedValue the value returned by the method invocation
+     * @param groups groups targeted for validation
+     * 
+     * @return set of constraint violations
+     * 
+     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt;
+     */
+    Set&lt;ConstraintViolation&gt; validateReturnedValue(Method method, Object returnedValue, String... groups); 
+    
+    /**
+     * Validate each parameter value based on the constraints described on
+     * the parameters of &lt;code&gt;constructor&lt;/code&gt;.
+     * 
+     * @param constructor the constructor whose parameters are currectly validated
+     * @param parameterValues the parameter values passed to the constructor for invocation
+     * @param groups groups targeted for validation
+     * 
+     * @return set of constraint violations
+     * 
+     * @throws IllegalArgumentException if the constructor does not belong to &lt;code&gt;T&lt;/code&gt; or if the Object[] 
+     * does not match the constructor signature
+     */
+    Set&lt;ConstraintViolation&gt; validateParameters(Constructor constructor, Object[] parameterValues, String... groups); 
+    
+    /**
+     * Validate the parameter value based on the constraints described on
+     * the parameterIndex-th parameter of &lt;code&gt;constructor&lt;/code&gt;.
+     * 
+     * @param constructor the method whose parameters are currectly validated
+     * @param parameterValue the parameter value passed to the parameterIndex-t parameter of constructor
+     * @param parameterIndex parameter index of the parameter validated in constructor
+     * @param groups groups targeted for validation
+     * 
+     * @return set of constraint violations
+     * 
+     * @throws IllegalArgumentException if the constructor does not belong to &lt;code&gt;T&lt;/code&gt; or if prameterIndex is out of bound
+     */
+    Set&lt;ConstraintViolation&gt; validateParameter(Constructor constructor, Object parameterValue, int parameterIndex, String... groups); 
+}</programlisting>
+
+    <para>The constraints declarations evaluated are the constraints hosted on
+    the parameters of the method or constructor. If
+    <classname>@Valid</classname> is placed on a parameter, the constraints
+    declared on the object itself are considered.</para>
+
+    <para><methodname>validateReturnedValue</methodname> evaluates the
+    constraints hosted on the method itself. If <classname>@Valid</classname>
+    is placed on the method, the constraints declared on the object itself are
+    considered.</para>
+
+    <programlisting>public @NotNull String saveItem(@Valid @NotNull Item item, @Max(23) BigDecimal price)</programlisting>
+
+    <para>In the previous example,</para>
+
+    <itemizedlist>
+      <listitem>
+        <para><literal>item</literal> is validated against
+        <classname>@NotNull</classname> and the object is validated by
+        <classname>Validator&lt;Item&gt;</classname> </para>
+      </listitem>
+
+      <listitem>
+        <para><literal>price</literal> is validated against @Max(23)</para>
+      </listitem>
+
+      <listitem>
+        <para>the result of <methodname>saveItem</methodname> is validated
+        against <classname>@NotNull</classname></para>
+      </listitem>
+    </itemizedlist>
+
+    <para>Note that the Bean Validation specification does not triggers the
+    validation call. An external framework is responsible for calling one of
+    the <methodname>validateParameters</methodname>,
+    <methodname>validateParameter</methodname> and
+    <methodname>validateReturnedValue</methodname> methods at the appropriate
+    time.</para>
+
+    <para>For completeness, Bean Validation exposes metadata around method
+    validation.</para>
+
+    <programlisting>public interface ParameterDescriptor extends ElementDescriptor { 
+    boolean isCascaded(); 
+    int getIndex(); 
+} 
+
+public interface MethodDescriptor extends ElementDescriptor { 
+    List&lt;ParameterDescriptor&gt; getParameterDescriptors(); //index aligned 
+    boolean isCascaded(); 
+} 
+
+public interface ConstructorDescriptor extends ElementDescriptor { 
+    List&lt;ParameterDescriptor&gt; getParameterDescriptors(); //index aligned 
+} 
+
+public interface classValidator&lt;T&gt; { 
+    MethodDescriptor getConstraintsForMethod(Method); 
+    MethodDescriptor getConstraintsForConstructor(Constructor); 
+    String[] getValidatedProperties(); 
+    Method[] getValidatedMethods(); 
+    Constructor[] getValidatedConstructors(); 
+} </programlisting>
   </appendix>
 </book>
