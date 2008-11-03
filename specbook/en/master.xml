@@ -858,7 +858,7 @@ public interface Context {
      * If isValid returns false, a ConstraintViolation object will be built per error message including the default one
      * if null apply to the current property or the bean the constraint is applied on, otherwise apply to the &lt;code&gt;property&lt;/code&gt; named
      * &lt;p/&gt;
-     * TODO exception or swallowed when bean-level instance is not present?
+     * TODO exception or swallowed when bean level instance is not present?
      *
      * @param message new unexpanded error message
      * @param property property name the ConstraintViolation is targeting
@@ -998,7 +998,7 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
      * returns false if the specified value does not conform to the definition
      * @exception IllegalArgumentException if the object is not of type String
      */
-    public boolean isValid(Object value) {
+    public boolean isValid(Object value, Context validationContext) {
         if ( value == null ) return true;
         if ( !( value instanceof String ) ) {
             throw new IllegalArgumentException("Expected String type");
@@ -1279,7 +1279,7 @@ public @interface GroupSequences {
         </listitem>
 
         <listitem>
-          <para>execute all method level validations (including the one
+          <para>execute all getter level validations (including the one
           expressed in interfaces and superclasses) matching the targeted
           group unless the given validation constraint has already been
           processed during this validation routine (as part of a previous
@@ -1287,7 +1287,7 @@ public @interface GroupSequences {
         </listitem>
 
         <listitem>
-          <para>execute all bean level validations (including the one
+          <para>execute all class level validations (including the one
           expressed in interfaces and superclasses) matching the targeted
           group unless the given validation constraint has already been
           processed during this validation routine (as part of a previous
@@ -2131,7 +2131,7 @@ public interface ConstraintViolation&lt;T&gt; {
       expansion).</para>
 
       <para>The <methodname>getRootBean</methodname> method returns the root
-      object being validated that leaded to the failing constraint (i.e. the
+      object being validated that led to the failing constraint (i.e. the
       object the client code passed to the
       <methodname>Validator.validate</methodname> method.</para>
 
@@ -2159,9 +2159,10 @@ public interface ConstraintViolation&lt;T&gt; {
         </listitem>
 
         <listitem>
-          <para>if the constraint is a property, the JavaBeans property name
-          (as defined by the JavaBeans <classname>Introspector</classname>
-          class) is the propertyPath</para>
+          <para>if the constraint is a getter level constraint, the JavaBeans
+          property name (as defined by the JavaBeans
+          <classname>Introspector</classname> class) is the
+          <literal>propertyPath</literal></para>
         </listitem>
 
         <listitem>
@@ -2441,7 +2442,7 @@ public interface MessageResolver {
         . The current locale is assumed English.</para>
 
         <programlisting>//ValidationMessages.properties
-myapp.creditcard.error=Your credit card number is not valid</programlisting>
+myapp.creditcard.error=credit card number not valid</programlisting>
 
         <para></para>
 
@@ -2461,7 +2462,7 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
               <row>
                 <entry>@NotNull</entry>
 
-                <entry>may not be null</entry>
+                <entry>must not be null</entry>
               </row>
 
               <row>
@@ -2471,22 +2472,23 @@ myapp.creditcard.error=Your credit card number is not valid</programlisting>
               </row>
 
               <row>
-                <entry>@Length(min=5, max=15, message="Key must have between
+                <entry>@Size(min=5, max=15, message="Key must have between
                 {min} and {max} characters")</entry>
 
                 <entry>Key must have between 5 and 15 characters</entry>
               </row>
 
               <row>
-                <entry>@Range(min=4, max=40)</entry>
+                <entry>@Digits(integer=9, fraction=2)</entry>
 
-                <entry>must be between 4 and 40</entry>
+                <entry>numeric value out of bounds (&lt;9 digits&gt;.&lt;2
+                digits&gt; expected)</entry>
               </row>
 
               <row>
                 <entry>@CreditCard(message={myapp.creditcard.error})</entry>
 
-                <entry>Your credit card number is not valid</entry>
+                <entry>credit card number not valid</entry>
               </row>
             </tbody>
           </tgroup>
@@ -2877,7 +2879,7 @@ public interface ACMEValidatorBuilder
 
         <para>When <methodname>ValidatorBuilder.build()</methodname> is
         called, the requested Bean Validation provider is determined and the
-        the result of
+        result of
         <code>validationProvider.buildValidatorFactory(ValidatorBuilderImplementor)</code>
         is returned. <classname>ValidatorBuilderImplementor</classname> gives
         access to the configuration artifacts passed to
@@ -3033,7 +3035,7 @@ public interface ValidationProviderResolver {
           <para>Persistence provider jars may be installed or made available
           in the same ways as other service providers, e.g. as extensions or
           added to the application classpath according to the guidelines in
-          the JAR file speciﬁcation.</para>
+          the JAR file specification.</para>
 
           <para>The default <classname>ValidationProviderResolver</classname>
           implementation will locate all the Bean Validation providers by
@@ -3797,7 +3799,7 @@ public interface ConstraintDescriptor {
       <para><methodname>getParameters</methodname> returns a map containing
       the annotation parameter names as a key, and the annotation parameter
       values as a value (this API is anticipated to be simpler to use by tools
-      that reflection over the annotation instance). If
+      than reflection over the annotation instance). If
       <classname>ConstraintDescriptor</classname> represents a composing
       annotation (see <xref
       linkend="constraintsdefinitionimplementation-constraintcomposition" />),
@@ -4106,7 +4108,7 @@ public @interface Max {
 @Retention(RUNTIME)
 @Documented
 public @interface Size {
-    String message() default "{constraint.min}";
+    String message() default "{constraint.size}";
     String[] groups() default {};
 
     /**
@@ -4391,14 +4393,16 @@ public @interface Future {
     <para>The properties listed below are resolved by the default message
     resolver.</para>
 
-    <programlisting>validator.length=length must be between {min} and {max}
-validator.max=must be less than or equal to {value}
-validator.min=must be greater than or equal to {value}
-validator.notNull=may not be null
-validator.range=must be between {min} and {max}
-validator.size=size must be between {min} and {max}
-validator.email=not a well-formed email address
-validator.notEmpty=may not be null or empty</programlisting>
+    <programlisting>constraint.null=must be null
+constraint.notNull=must not be mull
+constraint.assertTrue=assertion failed
+constraint.assertFalse=assertion failed
+constraint.min=must be greater than or equal to {value}
+constraint.max=must be less than or equal to {value}
+constraint.size=size must be between {min} and {max}
+constraint.digits=numeric value out of bounds (&lt;{integer} digits&gt;.&lt;{fraction} digits&gt; expected)
+constraint.past=must be a past date
+constraint.future=must be a future date</programlisting>
   </appendix>
 
   <appendix>
