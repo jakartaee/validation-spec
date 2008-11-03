@@ -775,11 +775,11 @@ public interface Constraint&lt;A extends Annotation&gt; {
      * Implement the validation constraint
      *
      * @param object object to validate
-     * @param validationContext context in which the constraint implementation is evaluated
+     * @param constraintContext context in which the constraint implementation is evaluated
      *
      * @return true if object pass the constraint
      */
-    boolean isValid(Object object, Context validationContext);
+    boolean isValid(Object object, Context constraintContext);
 }</programlisting>
       </example>
 
@@ -790,7 +790,7 @@ public interface Constraint&lt;A extends Annotation&gt; {
       is needed.</para>
 
       <warning>
-        <para>Should we restrict further? Should a cosntraint impl be
+        <para>Should we restrict further? Should a constraint impl be
         retrieved from the ConstraintFactory before each use? Metadata
         providing the instance has lead to this rule.</para>
       </warning>
@@ -807,20 +807,21 @@ public interface Constraint&lt;A extends Annotation&gt; {
       <literal>true</literal> otherwise. <literal>isValid</literal>
       implementations must be thread-safe.</para>
 
-      <para>The <classname>Context</classname> object passed to the
+      <para>The <classname>ConstraintContext</classname> object passed to the
       <methodname>isValid</methodname> method carries information and
       operations available in the context the constraint is validated
       to.</para>
 
       <example>
-        <title>Context interface passed to Constraint.isValid()</title>
+        <title>ConstraintContext interface passed to
+        Constraint.isValid()</title>
 
         <programlisting>/**
  * Provide contextual data and operation when applying a given constraint implementation
  *
  * @author Emmanuel Bernard
  */
-public interface Context {
+public interface ConstraintContext {
     /**
      * Disable default ConstraintViolation object generation.
      * Useful to set a different error message or generate a ConstraintViolation based on
@@ -891,20 +892,21 @@ public interface Context {
       type, an <literal>IllegalArgumentException</literal> should be
       raised.</para>
 
-      <para>The <classname>Context</classname> interface allows to redefine
-      the default message error generated when a constraint is not valid. By
-      default, every invalid constraint lead to the generation of an error
-      object represented by a <classname>ConstraintViolation</classname>
+      <para>The <classname>ConstraintContext</classname> interface allows to
+      redefine the default message error generated when a constraint is not
+      valid. By default, every invalid constraint lead to the generation of an
+      error object represented by a <classname>ConstraintViolation</classname>
       object. This object is build from the default error message as defined
       by the constraint declaration and the context the constraint declaration
       is placed on (bean, property, attribute).</para>
 
-      <para>The <classname>Context</classname> methods let the constraint
-      implementation disable the default error object generation and create
-      one or more custom ones. The unexpanded message passed as a parameter is
-      used to build the <classname>ConstraintViolation</classname> object (the
-      message resolution operation is applied to it). The property on which
-      the error object is applied is defined as following:</para>
+      <para>The <classname>ConstraintContext</classname> methods let the
+      constraint implementation disable the default error object generation
+      and create one or more custom ones. The unexpanded message passed as a
+      parameter is used to build the
+      <classname>ConstraintViolation</classname> object (the message
+      resolution operation is applied to it). The property on which the error
+      object is applied is defined as following:</para>
 
       <itemizedlist>
         <listitem>
@@ -930,7 +932,8 @@ public interface Context {
       </itemizedlist>
 
       <para>The property can be overridden by calling
-      <methodname>Context.addError(String, String)</methodname>.</para>
+      <methodname>ConstraintContext.addError(String,
+      String)</methodname>.</para>
     </section>
 
     <section id="constraintsdefinitionimplementation-constraintfactory">
@@ -998,7 +1001,7 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
      * returns false if the specified value does not conform to the definition
      * @exception IllegalArgumentException if the object is not of type String
      */
-    public boolean isValid(Object value, Context validationContext) {
+    public boolean isValid(Object value, ConstraintContext constraintContext) {
         if ( value == null ) return true;
         if ( !( value instanceof String ) ) {
             throw new IllegalArgumentException("Expected String type");
