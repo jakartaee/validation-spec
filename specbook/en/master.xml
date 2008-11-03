@@ -1248,17 +1248,26 @@ public @interface GroupSequences {
       linkend="constraintdeclarationvalidationprocess-validationroutine" /> ;
       if one of the groups processed in the sequence leads to one or more
       validation failures, the groups following in the sequence must not be
-      processed. Group sequences are recursively resolved: the user must make
-      sure no circular graph is defined by the group sequence definitions. For
-      a given class, the group sequences taken into account are the ones
-      placed on the class itself as well as the ones on all its superclasses
-      and all its interfaces. When an object graph is validated (through the
-      use of <literal>@Valid</literal>), the children elements of the graph
-      inherit the sequence definitions of their parent. Two group sequences
-      must not share the same group name in a given object graph (including
-      superclasses and interfaces). Group sequences must not use constraint
-      declaration group names as a name. In other words, constraint definition
-      groups cannot contain one of the group sequence names.</para>
+      processed. </para>
+
+      <para>A group sequence can contain other group sequence names in its
+      sequence. Group sequences are recursively resolved: the user must make
+      sure no circular graph is defined by the group sequence
+      definitions.</para>
+
+      <para>For a given class, the group sequences taken into account are the
+      ones placed on the class itself as well as the ones on all its
+      superclasses and all its interfaces. </para>
+
+      <para>When an object graph is validated (through the use of
+      <literal>@Valid</literal>), the children elements of the graph inherit
+      the sequence definitions of their parent. Two group sequences must not
+      share the same group name in a given object graph (including
+      superclasses and interfaces). </para>
+
+      <para>Group sequences must not use constraint declaration group names as
+      a name. In other words, constraint definition groups cannot contain one
+      of the group sequence names.</para>
 
       <para>Unless constrained by a group sequence, the order in which groups
       are validated is undefined.</para>
@@ -1820,7 +1829,7 @@ public interface Validator&lt;T&gt; {
      * validate all constraints on object
      *
      * @param object object to validate
-     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @param groups group name(s) (including group sequence names) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
      * @return constraint violations or an empty Set if none
      * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
@@ -1832,7 +1841,7 @@ public interface Validator&lt;T&gt; {
      *
      * @param object object to validate
      * @param propertyName property to validate
-     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @param groups group name(s) (including group sequence names) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
      * @return constraint violations or an empty Set if none
      * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
      */
@@ -1848,7 +1857,7 @@ public interface Validator&lt;T&gt; {
      *
      * @param propertyName property to validate
      * @param value property value to validate
-     * @param groups group name(s) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @param groups group name(s) (including group sequence names) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
      * @return constraint violations or an empty Set if none
      */
     Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(String propertyName, 
@@ -2161,7 +2170,7 @@ public interface ConstraintViolation&lt;T&gt; {
     /**
      * @return the value failing to pass the constraint.
      */
-    Object getValue();
+    Object getInvalidValue();
 
     /**
      * @return the list of groups that the triggered constraint applies on and which also are
@@ -2361,7 +2370,7 @@ assert book == constraintViolation.getRootBean();
 assert book == constraintViolation.getLeafBean();
 assert Book.class == constraintViolation.getBeanClass();
 //the offending value
-assert book.getTitle().equals( constraintViolation.getValue() );
+assert book.getTitle().equals( constraintViolation.getInvalidValue() );
 //the offending property
 assert "title".equals( constraintViolation.getPropertyPath() );
 assert constraintViolation.getGroups().length == 1 
@@ -2383,7 +2392,7 @@ assert book == constraintViolation.getRootBean();
 assert book == constraintViolation.getLeafBean();
 assert Author.class == constraintViolation.getBeanClass();
 //the offending value
-assert book.getAuthor().getLastName() == constraintViolation.getValue();
+assert book.getAuthor().getLastName() == constraintViolation.getInvalidValue();
 //the offending property
 assert "author.lastName".equals( constraintViolation.getPropertyPath() );
 assert constraintViolation.getGroups().length == 0</programlisting>
