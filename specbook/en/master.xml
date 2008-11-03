@@ -536,8 +536,9 @@ public @interface FrenchZipcode {
 }</programlisting>
       </example>
 
-      <para>Annotating an element with @FrenchZipcode is equivalent to
-      annotate it with @NotNull, @Size(min=5, max=5) and
+      <para>Annotating an element with <classname>@FrenchZipcode</classname>
+      is equivalent to annotate it with <classname>@NotNull</classname>,
+      <classname>@Size(min=5, max=5)</classname> and
       <classname>@FrenchZipcode</classname>. More formally, each constraint
       annotation hosted on a constraint annotation is applied to the target
       element and this recursively. Note that the main annotation and its
@@ -553,7 +554,7 @@ public @interface FrenchZipcode {
       invalid and the corresponding error report is generated. To mark a
       constraint as raising only the main constraint error report despite its
       use of composing constraints, use the
-      <classname>@ReportAsViolationFromComposingConstraint</classname>
+      <classname>@ReportAsViolationFromCompositeConstraint</classname>
       annotation.</para>
 
       <example>
@@ -562,7 +563,7 @@ public @interface FrenchZipcode {
 
         <programlisting>@NotNull
 @Size(min=5, max=5)
-@ReportAsViolationFromComposingConstraint
+@ReportAsViolationFromCompositeConstraint
 @ConstraintValidator(FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
@@ -574,7 +575,7 @@ public @interface FrenchZipcode {
       </example>
 
       <example>
-        <title>@ReportAsViolationFromComposingConstraint annotation
+        <title>@ReportAsViolationFromCompositeConstraint annotation
         definition</title>
 
         <programlisting>/**
@@ -584,7 +585,7 @@ public @interface FrenchZipcode {
  * 
  * @author Emmanuel Bernard
  */
-public @interface ReportAsViolationFromComposingConstraint {
+public @interface ReportAsViolationFromCompositeConstraint {
 }</programlisting>
       </example>
 
@@ -1368,7 +1369,11 @@ EBE: is that a problem?-->
       <para>The first example demonstrate how beans, fields and getters are
       annotated to express some constraints.</para>
 
-      <programlisting>@ZipCodeCityCoherenceChecker
+      <example>
+        <title>Place constraint declarations on the element to
+        validate</title>
+
+        <programlisting>@ZipCodeCityCoherenceChecker
 public class Address {
     @NotNull @Length(max=30)
     private String addressline1;
@@ -1413,6 +1418,7 @@ public class Address {
         this.city = city;
     }
 }</programlisting>
+      </example>
 
       <para>During the validation routine execution on an
       <classname>Address</classname> object,</para>
@@ -1446,7 +1452,10 @@ public class Address {
 
       <para>The second example demonstrates object graph validation</para>
 
-      <programlisting>public class Country {
+      <example>
+        <title>Define object graph validation</title>
+
+        <programlisting>public class Country {
     @NotNull
     private String name;
     @Length(max=2) private String ISO2Code;
@@ -1530,6 +1539,7 @@ public class Address {
         this.country = country;
     }
 }</programlisting>
+      </example>
 
       <para>During the validation routine execution on an
       <classname>Address</classname> object, constraints on
@@ -1542,9 +1552,26 @@ public class Address {
       <methodname>ISO3Code</methodname> are checked for
       <classname>Length</classname>.</para>
 
-      <para>The third example demonstrates superclass and inheritance.</para>
+      <para>Assuming that @NotEmpty is defined as such</para>
 
-      <programlisting>public interface Person {
+      <programlisting>@Documented
+@NotNull
+@Size(min=1)
+@ConstraintValidator(NotEmptyConstraint.class)
+@Target({ METHOD, FIELD })
+@Retention(RUNTIME)
+public @interface NotEmpty {
+    ...
+}</programlisting>
+
+      <para>The third example demonstrates superclass, inheritance and
+      composite constraints.</para>
+
+      <example>
+        <title>Use inheritance, constraints on superclasses and composite
+        constraints</title>
+
+        <programlisting>public interface Person {
     @NotEmpty
     String getFirstName();
 
@@ -1616,13 +1643,18 @@ public class PreferredGuest extends Customer {
         this.guestCreditCardNumber = guestCreditCardNumber;
     }
 }</programlisting>
+      </example>
 
-      <para>When validating a PreferredGuest the following constraints are
-      processed:</para>
+      <para>When validating a <classname>PreferredGuest</classname> the
+      following constraints are processed:</para>
 
       <itemizedlist>
         <listitem>
-          <para>NotEmpty on firstName, NotEmpty on lastName</para>
+          <para>NotEmpty, NotNull and Size(min=1) on firstName</para>
+        </listitem>
+
+        <listitem>
+          <para>NotEmpty, NotNull and Size(min=1) on lastName</para>
         </listitem>
 
         <listitem>
@@ -1637,7 +1669,11 @@ public class PreferredGuest extends Customer {
       <para>The fourth example demonstrates the influence of group
       sequence.</para>
 
-      <programlisting>public class Author {
+      <example>
+        <title>Use groups and group sequence to define constraint
+        ordering</title>
+
+        <programlisting>public class Author {
     @NotEmpty(groups="last")
     private String firstName;
     
@@ -1708,6 +1744,7 @@ public class Book {
         this.author = author;
     }
 }</programlisting>
+      </example>
 
       <para>Assuming the validation process of the following book
       instance:</para>
@@ -1722,7 +1759,8 @@ book.setAuthor( author );</programlisting>
 
       <itemizedlist>
         <listitem>
-          <para><classname>NotEmpty</classname> failure on the title
+          <para><classname>NotNull</classname> failure (from
+          <classname>NotEmpty</classname>) on the <literal>title</literal>
           field</para>
         </listitem>
       </itemizedlist>
@@ -1739,7 +1777,8 @@ author.setCompany("Some random publisher with a very very very long name");</pro
       <itemizedlist>
         <listitem>
           <para><methodname>author.firstName</methodname> fails to pass the
-          <classname>NotEmpty</classname> constraint</para>
+          <classname>Size(min=1)</classname> (from
+          <classname>NotEmpty</classname>) constraint</para>
         </listitem>
 
         <listitem>
@@ -1924,13 +1963,13 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 //town in North Wales</programlisting>
 
           <para>Assuming a <classname>Validator&lt;Address&gt;</classname>,
-          the following code will return three
+          the following code will return two
           <classname>ConstraintViolation</classname> objects. One for
           <literal>addressline1</literal> violating <literal>NotNull</literal>
           and one for <literal>city</literal> violating
           <literal>Length</literal>.</para>
 
-          <programlisting>validator.validate(address).size() == 3</programlisting>
+          <programlisting>validator.validate(address).size() == 2</programlisting>
 
           <para>The following code will return one
           <classname>ConstraintViolation</classname> since
@@ -1979,11 +2018,12 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
     ...
 }</programlisting>
 
-          <para>In the previous example, <classname>@NotEmpty</classname> on
-          <methodname>street1</methodname> applies to the group
-          <literal>minimal</literal>, <classname>@Length</classname> on
-          <methodname>street1</methodname> applies to the group
-          <literal>default</literal> and <classname>@NotEmpty </classname>on
+          <para>In the previous example, <classname>@NotEmpty</classname> (and
+          it's composing constraints) on <methodname>street1</methodname>
+          applies to the group <literal>minimal</literal>,
+          <classname>@Length</classname> on <methodname>street1</methodname>
+          applies to the group <literal>default</literal> and
+          <classname>@NotEmpty </classname>(and it's composing constraints) on
           <methodname>zipCode</methodname> applies to the groups
           <literal>default</literal> and <literal>minimal</literal>.</para>
 
@@ -1991,24 +2031,26 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
           <para>applies <classname>@Length</classname> on
           <methodname>street1</methodname>, <classname>@NotEmpty</classname>
-          on <methodname>city</methodname>, <classname>@NotEmpty</classname>
-          on <methodname>zipCode</methodname>. Particularly,
-          <classname>@NotEmpty</classname> on <methodname>street1</methodname>
-          is not applied.</para>
+          (and it's composing constraints) on <methodname>city</methodname>,
+          <classname>@NotEmpty</classname> (and it's composing constraints) on
+          <methodname>zipCode</methodname>. Particularly,
+          <classname>@NotEmpty</classname> (and it's composing constraints) on
+          <methodname>street1</methodname> are not applied.</para>
 
           <programlisting>validator.validate(address, "minimal");</programlisting>
 
-          <para>applies <classname>@NotEmpty</classname> on
-          <methodname>street1</methodname> and
-          <classname>@NotEmpty</classname> on
+          <para>applies <classname>@NotEmpty</classname> (and it's composing
+          constraints) on <methodname>street1</methodname> and
+          <classname>@NotEmpty</classname> (and it's composing constraints) on
           <methodname>zipCode</methodname></para>
 
           <programlisting>validator.validate(address, "minimal", "default");</programlisting>
 
-          <para>applies <classname>@NotEmpty</classname> and
-          <classname>@Length</classname> on <methodname>street1</methodname>,
-          <classname>@NotEmpty</classname> on <methodname>city</methodname>,
-          <classname>@NotEmpty</classname> on
+          <para>applies <classname>@NotEmpty</classname> (and it's composing
+          constraints) and <classname>@Length</classname> on
+          <methodname>street1</methodname>, <classname>@NotEmpty</classname>
+          (and it's composing constraints) on <methodname>city</methodname>,
+          <classname>@NotEmpty</classname> (and it's composing constraints) on
           <methodname>zipCode</methodname>. Note that if
           <methodname>zipCode</methodname> is indeed not empty, only one
           <classname>ConstraintViolation</classname> object will represent the
@@ -2037,23 +2079,25 @@ public class Address {
           <programlisting>validator.validate(address, "minimal", "total");</programlisting>
 
           <para>the validation process will process
-          <classname>NotEmpty</classname> and <classname>Length</classname>
-          from <methodname>street1</methodname> and
-          <classname>NotEmpty</classname> from
-          <methodname>zipCode</methodname>. If <classname>Length</classname>
-          from <methodname>street1</methodname> does not generate a failure,
-          then <classname>NotEmpty</classname> from
-          <methodname>city</methodname> will be processed. Note that
-          <classname>NotEmpty</classname> from
-          <methodname>zipCode</methodname> is not reprocessed as it has
-          already been processed before.</para>
+          <classname>NotEmpty</classname> (and it's composing constraints) and
+          <classname>Length</classname> from <methodname>street1</methodname>
+          and <classname>NotEmpty</classname> (and it's composing constraints)
+          from <methodname>zipCode</methodname>. If
+          <classname>Length</classname> from <methodname>street1</methodname>
+          does not generate a failure, then <classname>NotEmpty</classname>
+          (and it's composing constraints) from <methodname>city</methodname>
+          will be processed. Note that <classname>NotEmpty</classname> (and
+          it's composing constraints) from <methodname>zipCode</methodname>
+          are not reprocessed as they have already been processed
+          before.</para>
 
           <para>When running:</para>
 
           <programlisting>validator.validate(address, "total", "secondstep");</programlisting>
 
-          <para><classname>NotEmpty</classname> from
-          <methodname>city</methodname> and <classname>NotEmpty</classname>
+          <para><classname>NotEmpty</classname> (and it's composing
+          constraints) from <methodname>city</methodname> and
+          <classname>NotEmpty</classname> (and it's composing constraints)
           from <methodname>zipCode</methodname> will be processed even if
           <classname>Length</classname> from <methodname>street1</methodname>
           fails: while <literal>secondstep</literal> is in the
@@ -2218,6 +2262,22 @@ EBE rule #1 addresses that or am I off base?-->
       <section>
         <title>Example</title>
 
+        <para>These examples assume the following definition of
+        <classname>@NotEmpty</classname>.</para>
+
+        <programlisting>@Documented
+@NotNull
+@Size(min=1)
+@ReportAsViolationFromCompositeConstraint
+@ConstraintValidator(NotEmptyConstraint.class)
+@Target({ METHOD, FIELD })
+@Retention(RUNTIME)
+public @interface NotEmpty {
+    ...
+}</programlisting>
+
+        <para>and the following class definitions</para>
+
         <programlisting>public class Author {
     private String firstName;
     
@@ -2287,7 +2347,9 @@ Set&lt;ConstraintViolation&gt; constraintViolations = validator.validate(book);<
 
         <para><classname>ConstraintViolations</classname> is a set of size 2.
         One of the entries represents the failure of
-        <literal>NotEmpty</literal> on the <literal>title</literal>
+        <literal>NotEmpty</literal> (or more precisely
+        <classname>Size(min=1)</classname> a component of
+        <classname>NotEmpty</classname>) on the <literal>title</literal>
         property.</para>
 
         <para>The <classname>ConstraintViolation</classname> object for this
@@ -2302,8 +2364,7 @@ assert Book.class == constraintViolation.getBeanClass();
 assert book.getTitle().equals( constraintViolation.getValue() );
 //the offending property
 assert "title".equals( constraintViolation.getPropertyPath() );
-assert constraintViolation.getGroups().length == 1
-assert 
+assert constraintViolation.getGroups().length == 1 
 
 List expectedGroups = new ArrayList(1);
 expectedGroups.add("default");
@@ -2311,7 +2372,9 @@ for ( String group : constraintViolation.getGroups() ) {
     assert expectedGroups.contains(group);
 }</programlisting>
 
-        <para>The second failure, <literal>NotEmpty</literal> on the author's
+        <para>The second failure, <literal>NotEmpty</literal> (or more
+        precisely <classname>NotNull</classname> a component of
+        <classname>NotEmpty</classname>) on the author's
         <methodname>lastname</methodname>, will produce the following
         <classname>ConstraintViolation</classname> object:</para>
 
@@ -3785,9 +3848,9 @@ public interface ConstraintDescriptor {
     Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
     /**
-     * @return true if the constraint is annotated with @ReportAsViolationFromComposingConstraint
+     * @return true if the constraint is annotated with @ReportAsViolationFromCompositeConstraint
      */
-    boolean isReportAsViolationFromComposingConstraint();
+    boolean isReportAsViolationFromCompositeConstraint();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -3822,6 +3885,22 @@ public interface ConstraintDescriptor {
 
     <section>
       <title>Example</title>
+
+      <para>Assuming the following <classname>@NotEmpty</classname>
+      definition</para>
+
+      <programlisting>@Documented
+@NotNull
+@Size(min=1)
+@ReportAsViolationFromCompositeConstraint
+@ConstraintValidator(NotEmptyConstraint.class)
+@Target({ METHOD, FIELD })
+@Retention(RUNTIME)
+public @interface NotEmpty {
+    ...
+}</programlisting>
+
+      <para>and the following class definitions</para>
 
       <programlisting>public class Author {
     private String firstName;
@@ -3913,7 +3992,8 @@ ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDesc
                                                               .iterator().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //"firstlevelcheck" and "default"
-assert constraintDescriptor.getComposingConstraints().size() != 0;
+assert constraintDescriptor.getComposingConstraints().size() == 2;
+assert constraintDescriptor.isReportAsViolationFromCompositeConstraint() == true
 
 //@NotEmpty cannot be null
 boolean notNullPresence = false;
