@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.Betax</releaseinfo>
 
-    <pubdate>2008-10-10</pubdate>
+    <pubdate>2008-11-03</pubdate>
 
     <copyright>
       <year>2007, 2008</year>
@@ -48,11 +48,6 @@
     <itemizedlist>
       <listitem>
         <para>Message resolution and localization</para>
-      </listitem>
-
-      <listitem>
-        <para>Constraint metadata request API (feedback from consumer
-        frameworks including presentation, tools and so on)</para>
       </listitem>
 
       <listitem>
@@ -322,7 +317,7 @@ public @interface ConstraintValidator {
           <literal>message</literal> element of type
           <literal>String</literal>.</para>
 
-          <programlisting>String message() default "{validator.myConstraintFailure}";</programlisting>
+          <programlisting>String message() default "{constraint.myConstraintFailure}";</programlisting>
 
           <para>The <methodname>message</methodname> element value is used to
           create the error message. See <xref
@@ -389,7 +384,7 @@ public @interface ConstraintValidator {
 @Target({METHOD, FIELD})
 @Retention(RUNTIME)
 public @interface NotNull {
-    String message() default "{validator.notNull}";
+    String message() default "{constraint.notNull}";
     String[] groups() default {};
 }</programlisting>
         </example>
@@ -408,7 +403,7 @@ public @interface NotNull {
 public @interface Length {
     int min() default 0;
     int max() default Integer.MAX_VALUE;
-    String message() default "{validator.length}";
+    String message() default "{constraint.length}";
     String[] groups() default {};
 }</programlisting>
         </example>
@@ -426,7 +421,7 @@ public @interface Length {
 @Retention(RUNTIME)
 public @interface Min {
     int value();
-    String message() default "{validator.min}";
+    String message() default "{constraint.min}";
     String[] groups() default {};
 }</programlisting>
         </example>
@@ -468,7 +463,7 @@ public @interface Pattern {
     /** Flags parameter for Pattern.compile() */
     int flags() default 0;
 
-    String message() default "{validator.pattern}";
+    String message() default "{constraint.pattern}";
     String[] groups() default {};
 }
 
@@ -935,39 +930,6 @@ public interface ConstraintContext {
       <para>The property can be overridden by calling
       <methodname>ConstraintContext.addError(String,
       String)</methodname>.</para>
-    </section>
-
-    <section id="constraintsdefinitionimplementation-constraintfactory">
-      <title>The ConstraintFactory</title>
-
-      <para>Constraint validation implementation instances are created by a
-      <classname>ConstraintFactory</classname>.</para>
-
-      <programlisting>/**
- * This class manages the creation of constraint validators.
- */
-public interface ConstraintFactory {
-    /**
-     * Instantiate a Constraint.
-     *
-     * @return Returns a new Constraint instance
-     * The ConstraintFactory is &lt;b&gt;not&lt;/b&gt; responsible for calling Constraint#initialize
-     */
-    &lt;T extends Constraint&gt; T getInstance(Class&lt;T&gt; constraintClass);
-}</programlisting>
-
-      <para>The default <classname>ConstraintFactory</classname> provided by
-      the bean provider implementation uses the public constraint no-arg
-      constructor. A custom constraint factory can be provided for example to
-      benefit from a dependency injection control in constraint
-      implementations. Any constraint implementation relying on
-      <classname>ConstraintFactory</classname> behaviors specific to an
-      implementation (dependency injection, no no-arg constructor and so on)
-      are not considered portable, hence great care should be given before
-      walking that path.</para>
-
-      <!--[SCP: I think supporting dependency injection here violates the javadoc comment on Constraint.initialize() above]
-EBE fixed this by rewordingthe JavaDoc-->
 
       <section id="constraintsdefinitionimplementation-validationimplementation-example">
         <title>Example</title>
@@ -1028,6 +990,39 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
           </listitem>
         </itemizedlist>
       </section>
+    </section>
+
+    <section id="constraintsdefinitionimplementation-constraintfactory">
+      <title>The ConstraintFactory</title>
+
+      <para>Constraint validation implementation instances are created by a
+      <classname>ConstraintFactory</classname>.</para>
+
+      <programlisting>/**
+ * This class manages the creation of constraint validators.
+ */
+public interface ConstraintFactory {
+    /**
+     * Instantiate a Constraint.
+     *
+     * @return Returns a new Constraint instance
+     * The ConstraintFactory is &lt;b&gt;not&lt;/b&gt; responsible for calling Constraint#initialize
+     */
+    &lt;T extends Constraint&gt; T getInstance(Class&lt;T&gt; constraintClass);
+}</programlisting>
+
+      <para>The default <classname>ConstraintFactory</classname> provided by
+      the bean provider implementation uses the public constraint no-arg
+      constructor. A custom constraint factory can be provided for example to
+      benefit from a dependency injection control in constraint
+      implementations. Any constraint implementation relying on
+      <classname>ConstraintFactory</classname> behaviors specific to an
+      implementation (dependency injection, no no-arg constructor and so on)
+      are not considered portable, hence great care should be given before
+      walking that path.</para>
+
+      <!--[SCP: I think supporting dependency injection here violates the javadoc comment on Constraint.initialize() above]
+EBE fixed this by rewordingthe JavaDoc-->
     </section>
   </chapter>
 
@@ -1682,42 +1677,7 @@ public class PreferredGuest extends Customer {
         <title>Use groups and group sequence to define constraint
         ordering</title>
 
-        <programlisting>public class Author {
-    @NotEmpty(groups="last")
-    private String firstName;
-    
-    @NotEmpty(groups="first")
-    private String lastName;
-
-    @Length(max=30, groups="last")
-    private String company;
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public void setCompany(String company) {
-        this.company = company;
-    }
-}
-
-<emphasis role="bold">@GroupSequence(name="default", sequence={"first", "second", "last"})</emphasis>
+        <programlisting><emphasis role="bold">@GroupSequence(name="default", sequence={"first", "second", "last"})</emphasis>
 public class Book {
     <emphasis role="bold">@NotEmpty(groups="first")</emphasis>
     private String title;
@@ -1751,6 +1711,41 @@ public class Book {
 
     public void setAuthor(Author author) {
         this.author = author;
+    }
+}
+
+public class Author {
+    @NotEmpty(groups="last")
+    private String firstName;
+    
+    @NotEmpty(groups="first")
+    private String lastName;
+
+    @Length(max=30, groups="last")
+    private String company;
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
     }
 }</programlisting>
       </example>
@@ -2678,11 +2673,11 @@ Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);
         </example>
 
         <para>The <classname>ValidatorFactory</classname> object is
-        thread-safe contrary to individual <classname>Validator</classname>s.
-        Building <classname>Validator</classname> instances is typically a
-        cheap operation. Building a <classname>ValidatorFactory</classname> is
-        typically more expensive. Make sure to check your Bean Validation
-        implementation documentation for more accurate details.</para>
+        thread-safe. Building <classname>Validator</classname> instances is
+        typically a cheap operation. Building a
+        <classname>ValidatorFactory</classname> is typically more expensive.
+        Make sure to check your Bean Validation implementation documentation
+        for more accurate details.</para>
 
         <para>The second example shows how a container can customize some Bean
         Validator resource handling to match its own behavior.</para>
@@ -2777,14 +2772,13 @@ public interface ACMEValidatorFactoryBuilder extends ValidatorFactoryBuilder&lt;
         <classname>ValidatorFactory</classname>.</para>
 
         <para><classname>ValidatorFactory</classname> implementations must be
-        thread-safe (which is not the case of
-        <classname>Validator</classname>).
-        <classname>ValidatorFactory</classname> implementations are allowed to
-        cache and return the same <classname>Validator</classname> instances.
-        Thread safety must be guaranteed to Bean Validation clients as long as
-        they use <classname>Validator</classname> instances coming from the
-        same <methodname>ValidatorFactory.getValidator(Class)</methodname>
-        call in a non concurrent way.</para>
+        thread-safe. <classname>ValidatorFactory</classname> implementations
+        are allowed to cache and return the same
+        <classname>Validator</classname> instances. Thread safety must be
+        guaranteed to Bean Validation clients as long as they use
+        <classname>Validator</classname> instances coming from the same
+        <methodname>ValidatorFactory.getValidator(Class)</methodname> call in
+        a non concurrent way.</para>
 
         <example>
           <title>ValidatorFactory interface</title>
@@ -4039,8 +4033,8 @@ assert propertyDescriptor.isCascaded()</programlisting>
     database schema generation frameworks).</para>
 
     <para>All built-in constraints are in the
-    <package>javax.validation.constraints</package> package. Here is the list
-    of constraints and their declaration.</para>
+    <classname>javax.validation.constraints</classname> package. Here is the
+    list of constraints and their declaration.</para>
 
     <example>
       <title>@Null constraint</title>
