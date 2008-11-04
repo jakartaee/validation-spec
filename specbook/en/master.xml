@@ -3680,7 +3680,7 @@ public interface Validator&lt;T&gt; {
     /**
      * return the property names having at least a constraint defined
      */
-    Set&lt;String&gt; getValidatedProperties();<!--Add a method to return the GroupSequences-->
+    Set&lt;String&gt; getPropertiesWithConstraints();<!--Add a method to return the GroupSequences-->
 }</programlisting>
 
       <para><methodname>hasConstraints</methodname> returns true if the given
@@ -3700,9 +3700,9 @@ public interface Validator&lt;T&gt; {
       convention: field level and getter level constraints of the given name
       are all returned.</para>
 
-      <para><methodname>getValidatedProperties</methodname> returns the names
-      of the bean properties having at least one constraint or being cascaded
-      (<classname>@Valid</classname> annotation).</para>
+      <para><methodname>getPropertiesWithConstraints</methodname> returns the
+      names of the bean properties having at least one constraint or being
+      cascaded (<classname>@Valid</classname> annotation).</para>
     </section>
 
     <section>
@@ -3983,7 +3983,7 @@ assert bookBeanDescriptor.getConstraintDescriptors().size() == 0 //no constraint
 assert "".equals( bookBeanDescriptor.getPropertyPath() ); //root element
 
 //more specifically "author" and "title"
-assert bookValidator.getValidatedProperties().size() == 2;
+assert bookValidator.getPropertiesWithConstraints().size() == 2;
 
 //not a property
 assert bookValidator.getConstraintsForProperty("doesNotExist") == null; 
@@ -4666,12 +4666,12 @@ public interface ConstructorDescriptor extends ElementDescriptor {
     List&lt;ParameterDescriptor&gt; getParameterDescriptors(); //index aligned 
 } 
 
-public interface classValidator&lt;T&gt; { 
+public interface Validator&lt;T&gt; { 
     MethodDescriptor getConstraintsForMethod(Method); 
     MethodDescriptor getConstraintsForConstructor(Constructor); 
-    String[] getValidatedProperties(); 
-    Method[] getValidatedMethods(); 
-    Constructor[] getValidatedConstructors(); 
+    Set&lt;String&gt; getPropertiesWithConstraints(); 
+    Set&lt;Method&gt; getMethodsWithConstraints(); 
+    Set&lt;Constructor&gt; getConstructorsWithConstraints(); 
 } </programlisting>
   </appendix>
 </book>
