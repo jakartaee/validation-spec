@@ -2846,33 +2846,6 @@ public interface ValidatorFactory {
  * Receives configuration information, selects the appropriate
  * Bean Validation provider and build the appropriate
  * ValidatorFactory.
- *
- * The provider is selected in the following way:
- *  - if a specific ValidatorFactoryBuilder subclass is requested programmatically using Validation.builderType(), 
- * find the first provider matching it
- *  - if a specific ValidatorFactoryBuilder subclass is defined in META-INF/validation.xml, 
- * find the first provider matching it/**
- * Receives configuration information, selects the appropriate
- * Bean Validation provider and build the appropriate
- * ValidatorFactory.
- *
- * Usage:
- * &lt;pre&gt;
- * ValidatorFactoryBuilder&lt;?&gt; builder = //provided by one of the Validation bootstrap methods
- * ValidatorFactory = builder
- *         .messageResolver( new CustomMessageResolver() )
- *         .build();
- * &lt;/pre&gt;
- *
- * The ValidationProviderResolver is specified at ValidatorBuilder time (see {@link javax.validation.spi.ValidationProvider}).
- * If none is explicitely requested, the default ValidationProviderResolver is used.
- *
- * The provider is selected in the following way:
- *  - if a specific ValidatorBuilder subclass is requested programmatically using Validation.builderType(),
- * find the first provider matching it/**
- * Receives configuration information, selects the appropriate
- * Bean Validation provider and build the appropriate
- * ValidatorFactory.
  * &lt;p/&gt;
  * Usage:
  * &lt;pre&gt;
@@ -2897,42 +2870,42 @@ public interface ValidatorFactory {
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt; {
-	/**
-	 * Defines the message resolver used. Has priority over the configuration based message resolver.
-	 *
-	 * @param resolver message resolver implementation.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T messageResolver(MessageResolver resolver);
+    /**
+     * Defines the message resolver used. Has priority over the configuration based message resolver.
+     *
+     * @param resolver message resolver implementation.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T messageResolver(MessageResolver resolver);
 
-	/**
-	 * Defines the constraint factory. Has priority over the configuration based constraint factory.
-	 *
-	 * @param constraintFactory constraint factory inmplementation.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T constraintFactory(ConstraintFactory constraintFactory);
+    /**
+     * Defines the constraint factory. Has priority over the configuration based constraint factory.
+     *
+     * @param constraintFactory constraint factory inmplementation.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T constraintFactory(ConstraintFactory constraintFactory);
 
-	/**
-	 * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
-	 * If not specified, META-INF/validation.xml is used
-	 * &lt;p/&gt;
-	 * The stream should be closed by the client API after the ValidatorFactory has been returned
-	 *
-	 * @param stream configuration stream.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T configure(InputStream stream);
+    /**
+     * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
+     * If not specified, META-INF/validation.xml is used
+     * &lt;p/&gt;
+     * The stream should be closed by the client API after the ValidatorFactory has been returned
+     *
+     * @param stream configuration stream.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T configure(InputStream stream);
 
-	/**
-	 * Build a ValidatorFactory implementation.
-	 *
-	 * @return ValidatorFactory
-	 */
-	ValidatorFactory build();
+    /**
+     * Build a ValidatorFactory implementation.
+     *
+     * @return ValidatorFactory
+     */
+    ValidatorFactory build();
 }</programlisting>
         </example>
 
@@ -2978,27 +2951,27 @@ public interface ACMEValidatorFactoryBuilder
         <para>When <methodname>ValidatorFactoryBuilder.build()</methodname> is
         called, the requested Bean Validation provider is determined and the
         result of
-        <code>validationProvider.buildValidatorFactory(ValidatorBuilderImplementor)</code>
-        is returned. <classname>ValidatorBuilderImplementor</classname> gives
-        access to the configuration artifacts passed to
+        <code>validationProvider.buildValidatorFactory(ValidatorFactoryConfiguration)</code>
+        is returned. <classname>ValidatorFactoryConfiguration</classname>
+        gives access to the configuration artifacts passed to
         <classname>ValidatorFactoryBuilder</classname>. A typical
         implementation of <classname>ValidatorFactoryBuilder</classname> also
-        implements <classname>ValidatorBuilderImplementor</classname>, hence
+        implements <classname>ValidatorFactoryConfiguration</classname>, hence
         <code>this</code> can be passed to
-        <methodname>buildValidatorFactory(ValidatorBuilderImplementor)</methodname>.<!--talk about extensibility--></para>
+        <methodname>buildValidatorFactory(ValidatorFactoryConfiguration)</methodname>.<!--talk about extensibility--></para>
 
         <example>
-          <title>ValidatorBuilderImplementor interface</title>
+          <title>ValidatorFactoryConfiguration interface</title>
 
           <programlisting>/**
- * Contract between a &lt;code&gt;ValidationBuilder&lt;/code&gt; and a &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create
+ * Contract between a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; and a &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create
  * a &lt;code&gt;ValidatorFactory&lt;/code&gt;.
  * The configuration artifacts provided to the &lt;code&gt;ValidationBuilder&lt;/code&gt; are passed along.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
-public interface ValidatorBuilderImplementor {
+public interface ValidatorFactoryConfiguration {
     /**
      * Message resolver as defined by the client programmatically
      * or null if undefined.
@@ -3191,17 +3164,6 @@ public interface ValidationProviderResolver {
 
             <programlisting>/**
  * Contract between the validation bootstrap mechanism and the provider engine.
- *
- * Implementations must have a public no-arg constructor. The construction of a provider should be
- * as "lightweight" as possible. 
- *
- * @author Emmanuel Bernard
- * @author Hardy Ferentschik
- */
-public interface ValidationProvider {
-    /**
-     * @param builderClass targeted builder clas/**
- * Contract between the validation bootstrap mechanism and the provider engine.
  * &lt;p/&gt;
  * Implementations must have a public no-arg constructor. The construction of a provider should be
  * as "lightweight" as possible.
@@ -3210,54 +3172,54 @@ public interface ValidationProvider {
  * @author Hardy Ferentschik
  */
 public interface ValidationProvider {
-	/**
-	 * @param builderClass targeted builder class.
-	 *
-	 * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;builderClass&lt;/code&gt; is the Bean Validation Provider sub interface for ValidatorFactoryBuilder
-	 *         This sub interface uniquely identify a provider.
-	 */
-	boolean isSuitable(Class&lt;? extends ValidatorFactoryBuilder&lt;?&gt;&gt; builderClass);
+    /**
+     * @param builderClass targeted builder class.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;builderClass&lt;/code&gt; is the Bean Validation Provider sub interface for ValidatorFactoryBuilder
+     *         This sub interface uniquely identify a provider.
+     */
+    boolean isSuitable(Class&lt;? extends ValidatorFactoryBuilder&lt;?&gt;&gt; builderClass);
 
-	/**
-	 * Returns a ValidatorFactoryBuilder instance implementing the &lt;code&gt;builderType&lt;/code&gt; interface.
-	 * The ValidatorFactoryBuilder instance uses the current provider (&lt;code&gt;this&lt;/code&gt;) to build
-	 * the ValidatorFactory instance.
-	 * &lt;p/&gt;
-	 * This method can only be called on providers returning true on &lt;code&gt;#issuitable(builderType)&lt;/code&gt;
-	 *
-	 * @param builderClass the Builder class type
-	 * @param state bootstrap state
-	 *
-	 * @return specific validator builder implementation
-	 */
-	&lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; T createSpecializedValidatorFactoryBuilder(BootstrapState state, Class&lt;T&gt; builderClass);
+    /**
+     * Returns a ValidatorFactoryBuilder instance implementing the &lt;code&gt;builderType&lt;/code&gt; interface.
+     * The ValidatorFactoryBuilder instance uses the current provider (&lt;code&gt;this&lt;/code&gt;) to build
+     * the ValidatorFactory instance.
+     * &lt;p/&gt;
+     * This method can only be called on providers returning true on &lt;code&gt;#issuitable(builderType)&lt;/code&gt;
+     *
+     * @param builderClass the Builder class type
+     * @param state bootstrap state
+     *
+     * @return specific validator builder implementation
+     */
+    &lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; T createSpecializedValidatorFactoryBuilder(BootstrapState state, Class&lt;T&gt; builderClass);
 
-	/**
-	 * Returns a ValidatorFactoryBuilder instance. This instance is not bound to
-	 * use the current provider. The choice of provider follows the algorithm described
-	 * in {@link javax.validation.ValidatorFactoryBuilder}
-	 * &lt;p/&gt;
-	 * The ValidationProviderResolver used is provided by &lt;code&gt;state&lt;/code&gt;.
-	 * If null, the default ValidationProviderResolver is used.
-	 *
-	 * @param state bootstrap state
-	 *
-	 * @return validator builder implementation
-	 */
-	ValidatorFactoryBuilder&lt;?&gt; createGenericValidatorFactoryBuilder(BootstrapState state);
+    /**
+     * Returns a ValidatorFactoryBuilder instance. This instance is not bound to
+     * use the current provider. The choice of provider follows the algorithm described
+     * in {@link javax.validation.ValidatorFactoryBuilder}
+     * &lt;p/&gt;
+     * The ValidationProviderResolver used is provided by &lt;code&gt;state&lt;/code&gt;.
+     * If null, the default ValidationProviderResolver is used.
+     *
+     * @param state bootstrap state
+     *
+     * @return validator builder implementation
+     */
+    ValidatorFactoryBuilder&lt;?&gt; createGenericValidatorFactoryBuilder(BootstrapState state);
 
-	/**
-	 * Build a ValidatorFactory using the current provider implementation. The ValidationFactory
-	 * is assembled and follow the configuration passed using ValidatorBuilderImplementor.
-	 * &lt;p&gt;
-	 * The returned ValidatorFactory is properly initialized and ready for use.
-	 * &lt;/p&gt;
-	 *
-	 * @param configuration the configuration descriptor
-	 *
-	 * @return the instanciated ValidatorFactory
-	 */
-	ValidatorFactory buildValidatorFactory(ValidatorBuilderImplementor configuration);
+    /**
+     * Build a ValidatorFactory using the current provider implementation. The ValidationFactory
+     * is assembled and follow the configuration passed using ValidatorFactoryConfiguration.
+     * &lt;p&gt;
+     * The returned ValidatorFactory is properly initialized and ready for use.
+     * &lt;/p&gt;
+     *
+     * @param configuration the configuration descriptor
+     *
+     * @return the instanciated ValidatorFactory
+     */
+    ValidatorFactory buildValidatorFactory(ValidatorFactoryConfiguration configuration);
 }</programlisting>
           </example>
 
@@ -3436,59 +3398,59 @@ public interface ACMEValidatorFactoryBuilder
  */
 public class Validation {
 
-	/**
-	 * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The actual provider choice is given by the XML configuration. If the
-	 * XML configuration does not exsist the default is taken.
-	 * &lt;p/&gt;
-	 * The provider list is resolved using the {@link  javax.validation.bootstrap.DefaultValidationProviderResolver  DefaultValidationProviderResolver}.
-	 *
-	 * @return &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; instance.
-	 */
-	public static ValidatorFactoryBuilder&lt;?&gt; getBuilder() {
-		...
-	}
+    /**
+     * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The actual provider choice is given by the XML configuration. If the
+     * XML configuration does not exsist the default is taken.
+     * &lt;p/&gt;
+     * The provider list is resolved using the {@link  javax.validation.bootstrap.DefaultValidationProviderResolver  DefaultValidationProviderResolver}.
+     *
+     * @return &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; instance.
+     */
+    public static ValidatorFactoryBuilder&lt;?&gt; getBuilder() {
+        ...
+    }
 
-	/**
-	 * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The provider list is resolved using the strategy provided to the bootstrap state.
-	 * &lt;pre&gt;
-	 * ValidatorFactoryBuilder&amp;lt?&amp;gt; builder = Validation
-	 *    .defineBootstrapState()
-	 *    .providerResolver( new MyResolverStrategy() )
-	 *    .getBuilder();
-	 * ValidatorFactory factory = builder.build();
-	 * &lt;/pre&gt;
-	 * The actual provider choice is given by the XML configuration. If the XML configuration does not exsist the first
-	 * available provider will be returned.
-	 *
-	 * @return instance building a generic &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; compliant with the bootstrap state provided.
-	 */
-	public static GenericBuilderFactory defineBootstrapState() {
-		...
-	}
+    /**
+     * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The provider list is resolved using the strategy provided to the bootstrap state.
+     * &lt;pre&gt;
+     * ValidatorFactoryBuilder&amp;lt?&amp;gt; builder = Validation
+     *    .defineBootstrapState()
+     *    .providerResolver( new MyResolverStrategy() )
+     *    .getBuilder();
+     * ValidatorFactory factory = builder.build();
+     * &lt;/pre&gt;
+     * The actual provider choice is given by the XML configuration. If the XML configuration does not exsist the first
+     * available provider will be returned.
+     *
+     * @return instance building a generic &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; compliant with the bootstrap state provided.
+     */
+    public static GenericBuilderFactory defineBootstrapState() {
+        ...
+    }
 
-	/**
-	 * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; for a particular provider implementation.
-	 * Optionally override the provider resolution strategy used to determine the provider.
-	 * &lt;p/&gt;
-	 * Used by applications targeting a specific provider programmatically.
-	 * &lt;p/&gt;
-	 * &lt;pre&gt;
-	 * ACMEValidatorFactoryBuilder builder = Validation.builderType(ACMEValidatorFactoryBuilder.class)
-	 *     .providerResolver( new MyResolverStrategy() )
-	 *     .build();
-	 * &lt;/pre&gt;,
-	 * where &lt;code&gt;ACMEValidatorFactoryBuilder&lt;/code&gt; is the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface uniquely identifying
-	 * the ACME Bean Validation provider.
-	 *
-	 * @param builderType the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface uniquely defining the targeted provider.
-	 *
-	 * @return instance building a provider specific &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface implementation.
-	 *
-	 * @see #getBuilder()
-	 */
-	public static &lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; SpecializedBuilderFactory&lt;T&gt; builderType(Class&lt;T&gt; builderType) {
-		...
-	}
+    /**
+     * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; for a particular provider implementation.
+     * Optionally override the provider resolution strategy used to determine the provider.
+     * &lt;p/&gt;
+     * Used by applications targeting a specific provider programmatically.
+     * &lt;p/&gt;
+     * &lt;pre&gt;
+     * ACMEValidatorFactoryBuilder builder = Validation.builderType(ACMEValidatorFactoryBuilder.class)
+     *     .providerResolver( new MyResolverStrategy() )
+     *     .build();
+     * &lt;/pre&gt;,
+     * where &lt;code&gt;ACMEValidatorFactoryBuilder&lt;/code&gt; is the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface uniquely identifying
+     * the ACME Bean Validation provider.
+     *
+     * @param builderType the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface uniquely defining the targeted provider.
+     *
+     * @return instance building a provider specific &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface implementation.
+     *
+     * @see #getBuilder()
+     */
+    public static &lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; SpecializedBuilderFactory&lt;T&gt; builderType(Class&lt;T&gt; builderType) {
+        ...
+    }
 }</programlisting>
         </example>
 
@@ -3517,28 +3479,28 @@ public class Validation {
  * @author Emmanuel Bernard
  */
 public interface GenericBuilderFactory {
-	/**
-	 * Defines the provider resolution strategy.
-	 * This resolver returns the list of providers evaluated
-	 * to build the ValidationBuilder
-	 * &lt;p/&gt;
-	 * If no resolver is defined, the default ValidationProviderResolver
-	 * implementation is used.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
-	 */
-	GenericBuilderFactory providerResolver(ValidationProviderResolver resolver);
+    /**
+     * Defines the provider resolution strategy.
+     * This resolver returns the list of providers evaluated
+     * to build the ValidationBuilder
+     * &lt;p/&gt;
+     * If no resolver is defined, the default ValidationProviderResolver
+     * implementation is used.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     */
+    GenericBuilderFactory providerResolver(ValidationProviderResolver resolver);
 
-	/**
-	 * Returns a generic ValidatorFactoryBuilder implementation.
-	 * At this stage the provider used to build the ValidationFactory is not defined.
-	 * &lt;p/&gt;
-	 * The ValidatorFactoryBuilder implementation is provided by the first provider returned
-	 * by the ValidationProviderResolver strategy.
-	 *
-	 * @return a ValidatorFactoryBuilder implementation compliant with the bootstrap state
-	 */
-	ValidatorFactoryBuilder&lt;?&gt; getBuilder();
+    /**
+     * Returns a generic ValidatorFactoryBuilder implementation.
+     * At this stage the provider used to build the ValidationFactory is not defined.
+     * &lt;p/&gt;
+     * The ValidatorFactoryBuilder implementation is provided by the first provider returned
+     * by the ValidationProviderResolver strategy.
+     *
+     * @return a ValidatorFactoryBuilder implementation compliant with the bootstrap state
+     */
+    ValidatorFactoryBuilder&lt;?&gt; getBuilder();
 }</programlisting>
         </example>
 
@@ -3574,23 +3536,23 @@ public interface GenericBuilderFactory {
  */
 public interface SpecializedBuilderFactory&lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; {
 
-	/**
-	 * Optionally define the provider resolver implementation used.
-	 * If not defined, use the default ValidationProviderResolver
-	 *
-	 * @param resolver ValidationProviderResolver implementation used
-	 *
-	 * @return self
-	 */
-	public SpecializedBuilderFactory&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
+    /**
+     * Optionally define the provider resolver implementation used.
+     * If not defined, use the default ValidationProviderResolver
+     *
+     * @param resolver ValidationProviderResolver implementation used
+     *
+     * @return self
+     */
+    public SpecializedBuilderFactory&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
 
-	/**
-	 * Determine the provider implementation suitable for builderType and delegate the creation
-	 * of this specific ValidatorFactoryBuilder subclass to the provider.
-	 *
-	 * @return a ValidatorFactoryBuilder sub interface implementation
-	 */
-	public T getBuilder();
+    /**
+     * Determine the provider implementation suitable for builderType and delegate the creation
+     * of this specific ValidatorFactoryBuilder subclass to the provider.
+     *
+     * @return a ValidatorFactoryBuilder sub interface implementation
+     */
+    public T getBuilder();
 }</programlisting>
         </example>
 
