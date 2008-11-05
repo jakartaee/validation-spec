@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.Betax</releaseinfo>
 
-    <pubdate>2008-11-03</pubdate>
+    <pubdate>2008-11-04</pubdate>
 
     <copyright>
       <year>2007, 2008</year>
@@ -818,51 +818,54 @@ public interface Constraint&lt;A extends Annotation&gt; {
  * @author Emmanuel Bernard
  */
 public interface ConstraintContext {
-    /**
-     * Disable default ConstraintViolation object generation.
-     * Useful to set a different error message or generate a ConstraintViolation based on
-     * a different property
-     *
-     * @see #addErrorMessage(String)
-     * @see #addErrorMessage(String, String)
-     */
-    void disableDefaultError();
+	/**
+	 * Disable default error message and default ConstraintViolation object generation.
+	 * Useful to set a different error message or generate an ConstraintViolation based on
+	 * a different property
+	 *
+	 * @see #addError(String)
+	 * @see #addError(String, String)
+	 */
+	void disableDefaultError();
 
-    /**
-     * return the current unexpanded default message
-     * TODO: is it needed
-     */
-    String getDefaultErrorMessage();
+	/**
+	 * return the current unexpanded default message
+	 * TODO: is it needed
+	 */
+	String getDefaultErrorMessage();
 
-    /**
-     * Add a new unexpanded error message.
-     * &lt;p/&gt;
-     * If isValid returns false, a ConstraintViolation object will be built per error message
-     * including the default one unless #disableDefaultErrorMEssage() has been called.
-     * &lt;p/&gt;
-     * Aside from the error message, ConstraintViolation objects generated from such a call
-     * contains the same contextual information (root bean, path and so on)
-     * &lt;p/&gt;
-     * This method can be called multiple time. One ConstraintViolation instance per call is created.
-     *
-     * @param message new unexpanded error message
-     */
-    void addError(String message);
+	/**
+	 * Add a new unexpanded error message.
+	 * &lt;p/&gt;
+	 * If isValid returns false, a ConstraintViolation object will be built per error message
+	 * including the default one unless #disableDefaultErrorMEssage() has been called.
+	 * &lt;p/&gt;
+	 * Aside from the error message, ConstraintViolation objects generated from such a call
+	 * contains the same contextual information (root bean, path and so on)
+	 * &lt;p/&gt;
+	 * This method can be called multiple time. One ConstraintViolation instance per
+	 * call is created.
+	 *
+	 * @param message new unexpanded error message
+	 */
+	void addError(String message);
 
-    /**
-     * Add a new unexpanded error message to a given sub property.
-     * &lt;p/&gt;
-     * If isValid returns false, a ConstraintViolation object will be built per error message including the default one
-     * if null apply to the current property or the bean the constraint is applied on, otherwise apply to the &lt;code&gt;property&lt;/code&gt; named
-     * &lt;p/&gt;
-     * TODO exception or swallowed when bean level instance is not present?
-     *
-     * @param message new unexpanded error message
-     * @param property property name the ConstraintViolation is targeting
-     *
-     * @throws ValidationException when the property is not present on the bean level object
-     */
-    void addError(String message, String property);
+	/**
+	 * Add a new unexpanded error message to a given sub property.
+	 * &lt;p/&gt;
+	 * If isValid returns false, a ConstraintViolation object will be built
+	 * per error message including the default one
+	 * if null apply to the current property or the bean the constraint is applied on,
+	 * otherwise apply to the &lt;code&gt;property&lt;/code&gt; named
+	 * &lt;p/&gt;
+	 * TODO exception or swallowed when bean level instance is not present?
+	 *
+	 * @param message new unexpanded error message
+	 * @param property property name the ConstraintViolation is targeting
+	 *
+	 * @throws ValidationException when the property is not present on the bean level object
+	 */
+	void addError(String message, String property);
 
 }</programlisting>
       </example>
@@ -1818,49 +1821,54 @@ author.setCompany("Some random publisher with a very very very long name");</pro
       subclasses and the associated objects if any.</para>
 
       <programlisting>/**
- * Validate a given object type
- * 
+ * Validate a given object type.
+ *
  * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ * @todo Should Serializable be part of the definition?
  */
-public interface Validator&lt;T&gt; {
-    /**
-     * validate all constraints on object
-     *
-     * @param object object to validate
-     * @param groups group name(s) (including group sequence names) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
-     * @return constraint violations or an empty Set if none
-     * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
-     */
-    Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, String... groups);
+public interface Validator&lt;T&gt; extends Serializable {
+	/**
+	 * validate all constraints on object
+	 *
+	 * @param object object to validate
+	 * @param groups group name(s) (including group sequence names) targeted
+	 * for validation (default to &amp;lt;code&amp;gt;default&amp;lt;/code&amp;gt;)
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException e if object is null
+	 */
+	Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, String... groups);<!--should it be ignored-->
 
-    /**
-     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property of object
-     *
-     *
-     * @param object object to validate
-     * @param propertyName property to validate
-     * @param groups group name(s) (including group sequence names) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
-     * @return constraint violations or an empty Set if none
-     * @throws IllegalArgumentException e if object is null<!--TODO should it just be ignored?-->
-     */
-    Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object, 
-                                               String propertyName, 
-                                               String... groups);
+	/**
+	 * validate all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
+	 *
+	 * @param object object to validate
+	 * @param propertyName property to validate (ie field and getter constraints)
+	 * @param groups group name(s) (including group sequence names) targeted
+	 * for validation (default to &amp;lt;code&amp;gt;default&amp;lt;/code&amp;gt;)
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException e if object is null
+	 */
+	Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object, String propertyName, String... groups);
 
-    /**
-     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property 
-     * if the property value is &lt;code&gt;value&lt;/code&gt;
-     *
-     * TODO express limitations of ConstraintViolation in this case
-     *
-     * @param propertyName property to validate
-     * @param value property value to validate
-     * @param groups group name(s) (including group sequence names) targeted for validation (default to &lt;code&gt;default&lt;/code&gt;)
-     * @return constraint violations or an empty Set if none
-     */
-    Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(String propertyName, 
-                                            Object value, 
-                                            String... groups);
+	/**
+	 * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property
+	 * if the property value is &lt;code&gt;value&lt;/code&gt;
+	 * &lt;p/&gt;
+	 * TODO express limitations of ConstraintViolation in this case
+	 *
+	 * @param propertyName property to validate
+	 * @param value property value to validate
+	 * @param groups group name(s) (including group sequence names) targeted
+	 * for validation (default to &lt;code&gt;default&lt;/code&gt;)
+	 *
+	 * @return constraint violations or an empty Set if none
+	 */
+	Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(String propertyName, Object value, String... groups);
 
     [...]
 
@@ -2145,9 +2153,11 @@ public interface ConstraintViolation&lt;T&gt; {
 
 	/**
 	 * If a bean constraint, the bean instance the constraint is applied on
-	 * If a property constraint, the bean instance hosting the property the constraint is applied on
+	 * If a property constraint, the bean instance hosting the property the
+	 * constraint is applied on
 	 * 
-	 * @return the leaf bean the constraint is applied on or null if Validator#validateValue is used
+	 * @return the leaf bean the constraint is applied on or null if Validator#validateValue
+	 * is used
 	 */
 	Object getLeafBean();
 
@@ -2159,7 +2169,7 @@ public interface ConstraintViolation&lt;T&gt; {
 
 
 	/**
-	 * @return the bean type being validated.
+	 * @return the type of interface or class being validated.
 	 */
 	Class&lt;T&gt; getBeanClass();
 
@@ -2497,7 +2507,9 @@ public interface MessageResolver {
 	 *
 	 * @return Interpolated error message.
 	 */
-	String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value);
+	String interpolate(String message, 
+					   ConstraintDescriptor constraintDescriptor, 
+					   Object value);
 
 	/**
 	 * Interpolate the message from the constraint parameters and the actual validated object.
@@ -2510,7 +2522,10 @@ public interface MessageResolver {
 	 *
 	 * @return Interpolated error message.
 	 */
-	String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value, Locale locale);
+	String interpolate(String message, 
+					   ConstraintDescriptor constraintDescriptor, 
+					   Object value, 
+					   Locale locale);
 }</programlisting>
 
         <para><parameter>message</parameter> is the message descriptor as seen
@@ -2649,7 +2664,8 @@ public class LocaleSpecificMessageResolver implements MessageResolver {
     public String interpolate(String message, 
                               ConstraintDescriptor constraintDescriptor, 
                               Object value) {
-        return defaultResolver.interpolate(message, constraintDescriptor, value, this.defaultLocale);
+        return defaultResolver.interpolate(message, constraintDescriptor, 
+                                           value, this.defaultLocale);
     }
 
     // no real use, implemented for completeness
@@ -2692,13 +2708,15 @@ Validator&lt;Address&gt; validator =
         this.delegate = delegate; 
     }
 
-    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value) {
+    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
+                              Object value) {
         Locale locale = FacesContext.getCurrentInstance().getUIViewRoot().getLocale();
         return this.this.delegate.interpolate(
                         message, constraintDescriptor, value, locale );
     }
 
-    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value, Locale locale) {
+    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
+                              Object value, Locale locale) {
         return this.delegate.interpolate(message, constraintDescriptor, value, locale);
     }
 }
@@ -2898,11 +2916,13 @@ ValidatorFactory factory = acmeBuilder
 /**
  * ACME specific validator builder and configuration options
  */
-public interface ACMEValidatorFactoryBuilder extends ValidatorFactoryBuilder&lt;ACMEValidatorFactoryBuilder&gt; {
+public interface ACMEValidatorFactoryBuilder 
+                    extends ValidatorFactoryBuilder&lt;ACMEValidatorFactoryBuilder&gt; {
     /**
      * Programmatically add constraints. Specific to the ACME provider.
      */
-    ACMEValidatorFactoryBuilder addConstraint(Class&lt;?&gt; entity, ACMEConstraintDescriptor constraintDescriptor);
+    ACMEValidatorFactoryBuilder addConstraint(Class&lt;?&gt; entity, 
+                                              ACMEConstraintDescriptor constraintDescriptor);
 }</programlisting>
         </example>
 
@@ -2956,33 +2976,33 @@ Validator&lt;Address&gt; localizedAddressValidator =
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactory {
-	/**
-	 * return an initialized Validator instance for the specific class.
-	 * Validator instances can be pooled and shared by the implementation
-	 *
-	 * @param clazz the object class the validator validates
-	 */
-	&lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz);
+    /**
+     * return an initialized Validator instance for the specific class.
+     * Validator instances can be pooled and shared by the implementation
+     *
+     * @param clazz the object class the validator validates
+     */
+    &lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz);
 
-	/**
-	 * return an initialized Validator instance for the specific class.
-	 * Validator instances can be pooled and shared by the implementation
-	 *
-	 * The returned Validator instance must use the MessageResolver instance
-	 * passed as a parameter to resolve error messages. 
-	 *
-	 * @param clazz the object class the validator validates
-	 */
-	&lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz, MessageResolver messageResolver);
+    /**
+     * return an initialized Validator instance for the specific class.
+     * Validator instances can be pooled and shared by the implementation
+     *
+     * The returned Validator instance must use the MessageResolver instance
+     * passed as a parameter to resolve error messages. 
+     *
+     * @param clazz the object class the validator validates
+     */
+    &lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz, MessageResolver messageResolver);
 
-	/**
-	 * Returns the MessageResolver instance configured at initialization time
-	 * for the ValidatorFactory
-	 * This is the instance used by #getValidator(Class)
-	 *
-	 * @return MessageResolver instance
-	 */
-	MessageResolver getMessageResolver();
+    /**
+     * Returns the MessageResolver instance configured at initialization time
+     * for the ValidatorFactory
+     * This is the instance used by #getValidator(Class)
+     *
+     * @return MessageResolver instance
+     */
+    MessageResolver getMessageResolver();
 }</programlisting>
         </example>
 
@@ -3067,12 +3087,13 @@ public interface ValidatorFactory {
  *         .build();
  * &lt;/pre&gt;
  * &lt;p/&gt;
- * The ValidationProviderResolver is specified at ValidatorFactoryBuilder time (see {@link javax.validation.spi.ValidationProvider}).
+ * The ValidationProviderResolver is specified at ValidatorFactoryBuilder time
+ * (see {@link javax.validation.spi.ValidationProvider}).
  * If none is explicitely requested, the default ValidationProviderResolver is used.
  * &lt;p/&gt;
  * The provider is selected in the following way:
- * - if a specific ValidatorFactoryBuilder subclass is requested programmatically using Validation.builderType(),
- * find the first provider matching it
+ * - if a specific ValidatorFactoryBuilder subclass is requested programmatically using
+ * Validation.builderType(), find the first provider matching it
  * - if a specific ValidatorFactoryBuilder subclass is defined in META-INF/validation.xml,
  * find the first provider matching it
  * - otherwise, use the first provider returned by the ValidationProviderResolver
@@ -3083,7 +3104,8 @@ public interface ValidatorFactory {
  */
 public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt; {
 	/**
-	 * Defines the message resolver used. Has priority over the configuration based message resolver.
+	 * Defines the message resolver used. Has priority over the configuration
+	 * based message resolver.
 	 *
 	 * @param resolver message resolver implementation.
 	 *
@@ -3092,7 +3114,8 @@ public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt
 	T messageResolver(MessageResolver resolver);
 
 	/**
-	 * Defines the constraint factory. Has priority over the configuration based constraint factory.
+	 * Defines the constraint factory. Has priority over the configuration
+	 * based constraint factory.
 	 *
 	 * @param constraintFactory constraint factory inmplementation.
 	 *
@@ -3104,7 +3127,8 @@ public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt
 	 * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
 	 * If not specified, META-INF/validation.xml is used
 	 * &lt;p/&gt;
-	 * The stream should be closed by the client API after the ValidatorFactory has been returned
+	 * The stream should be closed by the client API after the
+	 * ValidatorFactory has been returned
 	 *
 	 * @param stream configuration stream.
 	 *
@@ -3186,37 +3210,38 @@ public interface ACMEValidatorFactoryBuilder
           <title>ValidatorFactoryConfiguration interface</title>
 
           <programlisting>/**
- * Contract between a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; and a &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create
- * a &lt;code&gt;ValidatorFactory&lt;/code&gt;.
- * The configuration artifacts provided to the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; are passed along.
+ * Contract between a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; and a
+ * &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create a &lt;code&gt;ValidatorFactory&lt;/code&gt;.
+ * The configuration artifacts provided to the
+ * &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; are passed along.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
 public interface ValidatorFactoryConfiguration {
-    /**
-     * Message resolver as defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return message provider instance or null if not defined
-     */
-    MessageResolver getMessageResolver();
+	/**
+	 * Message resolver as defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return message provider instance or null if not defined
+	 */
+	MessageResolver getMessageResolver();
 
-    /**
-     * Returns the configuration stream defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return the configuration input stream or null
-     */
-    InputStream getConfigurationStream();
+	/**
+	 * Returns the configuration stream defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return the configuration input stream or null
+	 */
+	InputStream getConfigurationStream();
 
-    /**
-     * Defines the constraint implementation factory as defined by the client programmatically
-     * or null if undefined
-     *
-     * @return factory instance or null if not defined
-     */
-    ConstraintFactory getConstraintFactory();
+	/**
+	 * Defines the constraint implementation factory as defined by
+	 * the client programmatically or null if undefined
+	 *
+	 * @return factory instance or null if not defined
+	 */
+	ConstraintFactory getConstraintFactory();
 }</programlisting>
         </example>
 
@@ -3293,7 +3318,8 @@ public interface ValidatorFactoryConfiguration {
             <programlisting>/**
  * Determine the list of Bean Validation providers available in the runtime environment
  * &lt;p&gt;
- * Bean Validation providers are identified by the presence of META-INF/services/javax.validation.spi.ValidationProvider
+ * Bean Validation providers are identified by the presence of 
+ * META-INF/services/javax.validation.spi.ValidationProvider
  * files following the Service Provider pattern described
  * &lt;a href="http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html#Service%20Provider"&gt;here&lt;/a&gt;
  * &lt;p/&gt;
@@ -3387,61 +3413,68 @@ public interface ValidationProviderResolver {
             <programlisting>/**
  * Contract between the validation bootstrap mechanism and the provider engine.
  * &lt;p/&gt;
- * Implementations must have a public no-arg constructor. The construction of a provider should be
- * as "lightweight" as possible.
+ * Implementations must have a public no-arg constructor. The construction of a provider
+ * should be as "lightweight" as possible.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
 public interface ValidationProvider {
-    /**
-     * @param builderClass targeted builder class.
-     *
-     * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;builderClass&lt;/code&gt; is the Bean Validation Provider sub interface for ValidatorFactoryBuilder
-     *         This sub interface uniquely identify a provider.
-     */
-    boolean isSuitable(Class&lt;? extends ValidatorFactoryBuilder&lt;?&gt;&gt; builderClass);
+	/**
+	 * This sub interface uniquely identify a provider.
+	 * 
+	 * @param builderClass targeted builder class.
+	 *
+	 * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;builderClass&lt;/code&gt; is the Bean Validation Provider sub
+	 *         interface for ValidatorFactoryBuilder
+	 */
+	boolean isSuitable(Class&lt;? extends ValidatorFactoryBuilder&lt;?&gt;&gt; builderClass);
 
-    /**
-     * Returns a ValidatorFactoryBuilder instance implementing the &lt;code&gt;builderType&lt;/code&gt; interface.
-     * The ValidatorFactoryBuilder instance uses the current provider (&lt;code&gt;this&lt;/code&gt;) to build
-     * the ValidatorFactory instance.
-     * &lt;p/&gt;
-     * This method can only be called on providers returning true on &lt;code&gt;#issuitable(builderType)&lt;/code&gt;
-     *
-     * @param builderClass the Builder class type
-     * @param state bootstrap state
-     *
-     * @return specific validator builder implementation
-     */
-    &lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; T createSpecializedValidatorFactoryBuilder(BootstrapState state, Class&lt;T&gt; builderClass);
+	/**
+	 * Returns a ValidatorFactoryBuilder instance implementing the
+	 * &lt;code&gt;builderType&lt;/code&gt; interface.
+	 * The ValidatorFactoryBuilder instance uses the current provider (&lt;code&gt;this&lt;/code&gt;)
+	 * to build the ValidatorFactory instance.
+	 * &lt;p/&gt;
+	 * This method can only be called on providers returning true on &lt;
+	 * code&gt;#issuitable(builderType)&lt;/code&gt;
+	 *
+	 * @param builderClass the Builder class type
+	 * @param state bootstrap state
+	 *
+	 * @return specific validator builder implementation
+	 */
+	&lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; T createSpecializedValidatorFactoryBuilder(
+			BootstrapState state,
+			Class&lt;T&gt; builderClass);
 
-    /**
-     * Returns a ValidatorFactoryBuilder instance. This instance is not bound to
-     * use the current provider. The choice of provider follows the algorithm described
-     * in {@link javax.validation.ValidatorFactoryBuilder}
-     * &lt;p/&gt;
-     * The ValidationProviderResolver used is provided by &lt;code&gt;state&lt;/code&gt;.
-     * If null, the default ValidationProviderResolver is used.
-     *
-     * @param state bootstrap state
-     *
-     * @return validator builder implementation
-     */
-    ValidatorFactoryBuilder&lt;?&gt; createGenericValidatorFactoryBuilder(BootstrapState state);
+	/**
+	 * Returns a ValidatorFactoryBuilder instance. This instance is not bound to
+	 * use the current provider. The choice of provider follows the algorithm described
+	 * in {@link javax.validation.ValidatorFactoryBuilder}
+	 * &lt;p/&gt;
+	 * The ValidationProviderResolver used is provided by &lt;code&gt;state&lt;/code&gt;.
+	 * If null, the default ValidationProviderResolver is used.
+	 *
+	 * @param state bootstrap state
+	 *
+	 * @return validator builder implementation
+	 */
+	ValidatorFactoryBuilder&lt;?&gt; createGenericValidatorFactoryBuilder(BootstrapState state);
 
-    /**
-     * Build a ValidatorFactory using the current provider implementation. The ValidatorFactory
-     * is assembled and follow the configuration passed using ValidatorFactoryConfiguration.
-     * &lt;p&gt;
-     * The returned ValidatorFactory is properly initialized and ready for use.
-     * &lt;/p&gt;
-     *
-     * @param configuration the configuration descriptor
-     *
-     * @return the instanciated ValidatorFactory
-     */
-    ValidatorFactory buildValidatorFactory(ValidatorFactoryConfiguration configuration);
+	/**
+	 * Build a ValidatorFactory using the current provider implementation. The
+	 * ValidatorFactory is assembled and follow the configuration passed
+	 * using ValidatorFactoryConfiguration.
+	 * &lt;p&gt;
+	 * The returned ValidatorFactory is properly initialized and ready for use.
+	 * &lt;/p&gt;
+	 *
+	 * @param configuration the configuration descriptor
+	 *
+	 * @return the instanciated ValidatorFactory
+	 */
+	ValidatorFactory buildValidatorFactory(ValidatorFactoryConfiguration configuration);
 }</programlisting>
           </example>
 
@@ -3455,7 +3488,8 @@ public interface ValidationProvider {
  */
 public interface BootstrapState {
     /**
-     * returns the user defined ValidationProviderResolver strategy instance or null if undefined
+     * returns the user defined ValidationProviderResolver strategy instance or null 
+     * if undefined
      *
      * @return ValidationProviderResolver instance or null
      */
@@ -3674,6 +3708,135 @@ public class Validation {
         ...
     }
 }</programlisting>
+
+          <programlisting>/**
+ * This class is the entry point for the Bean Validation framework. There are three ways
+ * to bootstrap the framework:
+ * &lt;ul&gt;
+ * &lt;li&gt;
+ * The easiest approach is to use the default Bean Validation provider.
+ * &lt;pre&gt;
+ * ValidatorFactory factory = Validation.getBuilder().build();
+ * &lt;/pre&gt;
+ * In this case {@link  javax.validation.bootstrap.DefaultValidationProviderResolver}
+ * will be used to locate available providers.
+ *
+ * The chosen provider is defined as followed:
+ * &lt;ul&gt;
+ * &lt;li&gt;if the XML configuration defines a provider, this provider is used&lt;/li&gt;
+ * &lt;li&gt;if the XML configuratio does not define a provider or if no XML configuration
+ * is present the first provider returned by the ValidationProviderResolver
+ * isntance is used.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/li&gt;
+ * &lt;li&gt;
+ * The second bootstrap approach allows to choose a custom
+ * &lt;code&gt;ValidationProviderResolver&lt;/code&gt;. The chosen
+ * &lt;code&gt;ValidationProvider&lt;/code&gt; is then determined in the same way
+ * as in the default bootstrapping case (see above).
+ * &lt;pre&gt;
+ * ValidatorFactoryBuilder&amp;lt?&amp;gt; builder = Validation
+ *    .defineBootstrapState()
+ *    .providerResolver( new MyResolverStrategy() )
+ *    .getBuilder();
+ * ValidatorFactory factory = builder.build();
+ * &lt;/pre&gt;
+ * &lt;/li&gt;
+ * 
+ * &lt;p/&gt;
+ * &lt;li&gt;
+ * The third approach allows you to specify explicitly and in
+ * a type safe fashion the expected provider by
+ * using its specific &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub-interface.
+ *
+ * Optionally you can choose a custom &lt;code&gt;ValidationProviderResolver&lt;/code&gt;.
+ * &lt;pre&gt;
+ * ACMEValidatorFactoryBuilder builder = Validation
+ *    .builderType(ACMEValidatorFactoryBuilder.class)
+ *    .providerResolver( new MyResolverStrategy() )  // optionally set the provider resolver
+ *    .getBuilder();
+ * ValidatorFactory factory = builder.build();
+ * &lt;/pre&gt;
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
+ * Note:&lt;br/&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;
+ * The ValidatorFactory object built by the bootstrap process should be cached
+ * and shared amongst Validator consumers.
+ * &lt;/li&gt;
+ * &lt;li&gt;
+ * This class is thread-safe.
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Feretnschik
+ * @see DefaultValidationProviderResolver
+ */
+public class Validation {
+
+	/**
+	 * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The actual provider
+	 * choice is given by the XML configuration. If the
+	 * XML configuration does not exsist the default is taken.
+	 * &lt;p/&gt;
+	 * The provider list is resolved using the
+	 * {@link  javax.validation.bootstrap.DefaultValidationProviderResolver}.
+	 *
+	 * @return &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; instance.
+	 */
+	public static ValidatorFactoryBuilder&lt;?&gt; getBuilder() {
+		...
+	}
+
+	/**
+	 * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The provider list is resolved
+	 * using the strategy provided to the bootstrap state.
+	 * &lt;pre&gt;
+	 * ValidatorFactoryBuilder&amp;lt?&amp;gt; builder = Validation
+	 *    .defineBootstrapState()
+	 *    .providerResolver( new MyResolverStrategy() )
+	 *    .getBuilder();
+	 * ValidatorFactory factory = builder.build();
+	 * &lt;/pre&gt;
+	 * The actual provider choice is given by the XML configuration. If the XML
+	 * configuration does not exsist the first available provider will be returned.
+	 *
+	 * @return instance building a generic &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;
+	 * compliant with the bootstrap state provided.
+	 */
+	public static GenericBuilderFactory defineBootstrapState() {
+		...
+	}
+
+	/**
+	 * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; for a particular provider implementation.
+	 * Optionally override the provider resolution strategy used to determine the provider.
+	 * &lt;p/&gt;
+	 * Used by applications targeting a specific provider programmatically.
+	 * &lt;p/&gt;
+	 * &lt;pre&gt;
+	 * ACMEValidatorFactoryBuilder builder = Validation.builderType(ACMEValidatorFactoryBuilder.class)
+	 *     .providerResolver( new MyResolverStrategy() )
+	 *     .build();
+	 * &lt;/pre&gt;,
+	 * where &lt;code&gt;ACMEValidatorFactoryBuilder&lt;/code&gt; is the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;
+	 * sub interface uniquely identifying the ACME Bean Validation provider.
+	 *
+	 * @param builderType the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface
+	 * uniquely defining the targeted provider.
+	 *
+	 * @return instance building a provider specific &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;
+	 * sub interface implementation.
+	 *
+	 * @see #getBuilder()
+	 */
+	public static &lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; 
+            SpecializedBuilderFactory&lt;T&gt; builderType(Class&lt;T&gt; builderType) {
+		...
+	}
+}</programlisting>
         </example>
 
         <para>The second entry point lets the client provide a custom
@@ -3746,35 +3909,36 @@ public interface GenericBuilderFactory {
           <title>SpecializedBuilderFactory interface</title>
 
           <programlisting>/**
- * Build implementations of builderType, the specific ValidatorFactoryBuilder sub interface uniquely identifying
- * a provider.
+ * Build implementations of builderType, the specific ValidatorFactoryBuilder
+ * sub interface uniquely identifying a provider.
  * &lt;p/&gt;
  * The requested provider is the first provider suitable for T (as defined in
- * {@link javax.validation.spi.ValidationProvider#isSuitable(Class)}). The list of providers evaluated is
- * returned by {@link ValidationProviderResolver}. If no ValidationProviderResolver is defined, the
+ * {@link javax.validation.spi.ValidationProvider#isSuitable(Class)}). The
+ * list of providers evaluated is returned by {@link ValidationProviderResolver}.
+ * If no ValidationProviderResolver is defined, the
  * default ValidationProviderResolver strategy is used.
  *
  * @author Emmanuel Bernard
  */
 public interface SpecializedBuilderFactory&lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; {
 
-    /**
-     * Optionally define the provider resolver implementation used.
-     * If not defined, use the default ValidationProviderResolver
-     *
-     * @param resolver ValidationProviderResolver implementation used
-     *
-     * @return self
-     */
-    public SpecializedBuilderFactory&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
+	/**
+	 * Optionally define the provider resolver implementation used.
+	 * If not defined, use the default ValidationProviderResolver
+	 *
+	 * @param resolver ValidationProviderResolver implementation used
+	 *
+	 * @return self
+	 */
+	public SpecializedBuilderFactory&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
 
-    /**
-     * Determine the provider implementation suitable for builderType and delegate the creation
-     * of this specific ValidatorFactoryBuilder subclass to the provider.
-     *
-     * @return a ValidatorFactoryBuilder sub interface implementation
-     */
-    public T getBuilder();
+	/**
+	 * Determine the provider implementation suitable for builderType and delegate
+	 * the creation of this specific ValidatorFactoryBuilder subclass to the provider.
+	 *
+	 * @return a ValidatorFactoryBuilder sub interface implementation
+	 */
+	public T getBuilder();
 }</programlisting>
         </example>
 
@@ -4036,55 +4200,55 @@ public interface PropertyDescriptor extends ElementDescriptor {
       given constraint declaration (i.e. a constraint annotation).</para>
 
       <programlisting>/**
- * Describes a single constraint.
+ * Describes a single constraint and its composing constraints.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
 public interface ConstraintDescriptor {
-    /**
-     * Returns the annotation describing the constraint declaration.
-     * If a composing constraint, parameter values are reflecting
-     * the overridden parameters from the main constraint
-     *
-     * @return The annotation for this constraint.
-     */
-    Annotation getAnnotation();
+	/**
+	 * Returns the annotation describing the constraint declaration.
+	 * If a composing constraint, parameter values are reflecting
+	 * the overridden parameters from the main constraint
+	 *
+	 * @return The annotation for this constraint.
+	 */
+	Annotation getAnnotation();
 
-    /**
-     * @return The groups the constraint is applied on.
-     */
-    Set&lt;String&gt; getGroups();
+	/**
+	 * @return The groups the constraint is applied on.
+	 */
+	Set&lt;String&gt; getGroups();
 
-    /**
-     * @return the constraint implementation class
-     */
-    Class&lt;? extends Constraint&gt; getContstraintClass();
+	/**
+	 * @return the constraint implementation class
+	 */
+	Class&lt;? extends Constraint&gt; getConstraintClass();
 
-    /**
-     * Returns a map containing the annotation paramter names as keys and the annotation parameter values
-     * as value.
-     * If a composing constraint, parameter values are reflecting
-     * the overridden parameters form the main constraint
-     *
-     * @return Returns a map containing the annotation paramter names as keys and the annotation parameter values
-     *         as value.
-     */
-    Map&lt;String, Object&gt; getParameters();
+	/**
+	 * Returns a map containing the annotation parameter names as keys and the
+	 * annotation parameter values as value.
+	 * If this constraint is used as part of a composed constraint, parameter
+	 * values are reflecting the overridden parameters form the main constraint.
+	 *
+	 * @return Returns a map containing the annotation paramter names as keys and the annotation parameter values
+	 *         as value.
+	 */
+	Map&lt;String, Object&gt; getParameters();
 
-    /**
-     * Return a set of ConstraintDescriptors. Each ConstraintDescriptor describes a composing
-     * constraint. ConstraintDescriptor instances of composing constraints reflect overridden
-     * parameter values in #getParameters() and #getAnnotation() 
-     *
-     * @return a set of ConstraintDescriptor object or an empty set
-     */
-    Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
+	/**
+	 * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each descriptor describes a composing
+	 * constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt; instances of composing constraints reflect overridden
+	 * parameter values in {@link #getParameters()}  and {@link #getAnnotation()}.
+	 *
+	 * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set in case there are no composing constraints.
+	 */
+	Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
-    /**
-     * @return true if the constraint is annotated with @ReportAsViolationFromCompositeConstraint
-     */
-    boolean isReportAsViolationFromCompositeConstraint();
+	/**
+	 * @return true if the constraint is annotated with @ReportAsViolationFromCompositeConstraint
+	 */
+	boolean isReportAsViolationFromCompositeConstraint();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -4352,7 +4516,8 @@ public @interface AssertFalse {
  *   - &lt;code&gt;BigInteger&lt;/code&gt;
  *   - &lt;code&gt;Number&lt;/code&gt;
  *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
- *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;
+ *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, 
+ * &lt;code&gt;double&lt;/code&gt;
  * TODO &lt;code&gt;byte&lt;/code&gt;
  *
  * Null elements are considered valid
@@ -4385,7 +4550,8 @@ public @interface Min {
  *   - &lt;code&gt;BigInteger&lt;/code&gt;
  *   - &lt;code&gt;Number&lt;/code&gt;
  *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
- *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;
+ *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, 
+ * &lt;code&gt;double&lt;/code&gt;
  * TODO &lt;code&gt;byte&lt;/code&gt;
  *
  * Null elements are considered valid
@@ -4450,7 +4616,8 @@ public @interface Size {
  *   - &lt;code&gt;BigInteger&lt;/code&gt;
  *   - &lt;code&gt;Number&lt;/code&gt;
  *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
- *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;
+ *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, 
+ * &lt;code&gt;double&lt;/code&gt;
  * TODO &lt;code&gt;byte&lt;/code&gt;  
  *
  * Null elements are considered valid
@@ -4772,10 +4939,11 @@ constraint.future=must be a future date</programlisting>
      * 
      * @return set of constraint violations
      * 
-     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt; or if the Object[] 
-     * does not match the method signature
+     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt;  
+     * or if the Object[] does not match the method signature
      */
-    Set&lt;ConstraintViolation&gt; validateParameters(Method method, Object[] parameterValues, String... groups); 
+    Set&lt;ConstraintViolation&gt; validateParameters(Method method, Object[] parameterValues, 
+            String... groups); 
     
     /**
      * Validate the parameter value based on the constraints described on
@@ -4788,9 +4956,11 @@ constraint.future=must be a future date</programlisting>
      * 
      * @return set of constraint violations
      * 
-     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt; or if prameterIndex is out of bound
+     * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt; 
+     * or if prameterIndex is out of bound
      */
-    Set&lt;ConstraintViolation&gt; validateParameter(Method method, Object parameterValue, int parameterIndex, String... groups); 
+    Set&lt;ConstraintViolation&gt; validateParameter(Method method, Object parameterValue, 
+            int parameterIndex, String... groups); 
     
     /**
      * Validate each parameter value based on the constraints described on
@@ -4804,7 +4974,8 @@ constraint.future=must be a future date</programlisting>
      * 
      * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt;
      */
-    Set&lt;ConstraintViolation&gt; validateReturnedValue(Method method, Object returnedValue, String... groups); 
+    Set&lt;ConstraintViolation&gt; validateReturnedValue(Method method, 
+            Object returnedValue, String... groups); 
     
     /**
      * Validate each parameter value based on the constraints described on
@@ -4816,10 +4987,11 @@ constraint.future=must be a future date</programlisting>
      * 
      * @return set of constraint violations
      * 
-     * @throws IllegalArgumentException if the constructor does not belong to &lt;code&gt;T&lt;/code&gt; or if the Object[] 
-     * does not match the constructor signature
+     * @throws IllegalArgumentException if the constructor does not belong to &lt;code&gt;T&lt;/code&gt;  
+     * or if the Object[] does not match the constructor signature
      */
-    Set&lt;ConstraintViolation&gt; validateParameters(Constructor constructor, Object[] parameterValues, String... groups); 
+    Set&lt;ConstraintViolation&gt; validateParameters(Constructor constructor, 
+            Object[] parameterValues, String... groups); 
     
     /**
      * Validate the parameter value based on the constraints described on
@@ -4832,9 +5004,11 @@ constraint.future=must be a future date</programlisting>
      * 
      * @return set of constraint violations
      * 
-     * @throws IllegalArgumentException if the constructor does not belong to &lt;code&gt;T&lt;/code&gt; or if prameterIndex is out of bound
+     * @throws IllegalArgumentException if the constructor does not belong to &lt;code&gt;T&lt;/code&gt; 
+     * or if prameterIndex is out of bound
      */
-    Set&lt;ConstraintViolation&gt; validateParameter(Constructor constructor, Object parameterValue, int parameterIndex, String... groups); 
+    Set&lt;ConstraintViolation&gt; validateParameter(Constructor constructor, Object parameterValue, 
+            int parameterIndex, String... groups); 
 }</programlisting>
 
     <para>The constraints declarations evaluated are the constraints hosted on
@@ -4912,24 +5086,33 @@ public interface Validator&lt;T&gt; {
     <programlisting>Java Persistence / Bean Validation integration proposal
 
 Integration between Java Persistence and Bean Validation (BV) happens at two levels:
-- as a metadata provider for DDL generation and generally speaking the behavior of the persistence provider
+- as a metadata provider for DDL generation and generally speaking the behavior of 
+the persistence provider
 - as a validation engine called on entity changes
 
 This proposal will describe both integration levels.
 
-This proposal imply some familiarity with the Bean Validation latest draft (attached). It is better to read it but alternatively you can read the following blogs:
-- http://in.relation.to/Bloggers/BeanValidationSneakPeekPartI (some parts might be a bit outdated)
-- http://in.relation.to/Bloggers/BeanValidationSneakPeekPartIICustomConstraints (some parts might be a bit outdated)
-- http://in.relation.to/Bloggers/BeanValidationSneakPeekPartIIIGroupsAndPartialValidation (some parts might be a bit outdated)
+This proposal imply some familiarity with the Bean Validation latest draft (attached). 
+It is better to read it but alternatively you can read the following blogs:
+- http://in.relation.to/Bloggers/BeanValidationSneakPeekPartI 
+(some parts might be a bit outdated)
+- http://in.relation.to/Bloggers/BeanValidationSneakPeekPartIICustomConstraints 
+(some parts might be a bit outdated)
+- http://in.relation.to/Bloggers/BeanValidationSneakPeekPartIIIGroupsAndPartialValidation 
+(some parts might be a bit outdated)
 - http://in.relation.to/Bloggers/BeanValidationReferenceImplementationAndBootstrapAPI
 - http://in.relation.to/Bloggers/ConstraintCompositionProposalInBeanValidationJSR303
 
 
 ** Metadata provider and DDL generation
 * main proposal
-Java Persistence consumes Bean Validation (BV) metadata to enhance persistence property metadata.
+Java Persistence consumes Bean Validation (BV) metadata to enhance persistence property 
+metadata.
 
-A Persistence provider must use the BV metadata of a given list of groups [1]. The default group is "default" (default BV group). The default group can be overridden by a JPA property javax.persistence.validation.group.metadata which contains the comma separated group names.
+A Persistence provider must use the BV metadata of a given list of groups [1]. 
+The default group is "default" (default BV group). The default group can be overridden 
+by a JPA property javax.persistence.validation.group.metadata which contains the comma 
+separated group names.
 Question: should the group be overridable as described?
 
 For each entity and for each persistent property in a given entity:
@@ -4938,28 +5121,51 @@ For each entity and for each persistent property in a given entity:
 - apply these constraints on the persistent property metadata
 
 Specifically:
-- @NotNull should be considered equivalent to @Column(nullable=false) / @JoinColumn(nullable=false)
-- @Size.max should be considered equivalent to @Column.length for String properties
-- @Digits (which contains integer and fraction) should be considered equivalent to @Column.precision = integer+fraction, @Column.scale = fraction for decimal columns
-The BV annotation metadata should have priority over JPA metadata (the reason being JPA has no sensible "unset" values on their annotations).
-Question: should we add @Unique mapping to @Column(unique=true)? @Unique cannot be tested at the Java level reliably. This is not part of the BV spec today.
+- @NotNull should be considered equivalent to @Column(nullable=false) / 
+@JoinColumn(nullable=false)
+- @Size.max should be considered equivalent to @Column.length 
+for String properties
+- @Digits (which contains integer and fraction) should be considered 
+equivalent to @Column.precision = integer+fraction, 
+@Column.scale = fraction for decimal columns
+The BV annotation metadata should have priority over JPA metadata 
+(the reason being JPA has no sensible "unset" values 
+on their annotations).
+Question: should we add @Unique mapping to @Column(unique=true)? 
+@Unique cannot be tested at the Java level reliably. This is not part 
+of the BV spec today.
 
-Persistence Provider should optionally recognize and try to apply the following constraints as well:
+Persistence Provider should optionally recognize and try to apply the 
+following constraints as well:
 - @Min / @Max on numeric columns (TODO String too?)
 - @Future / @Past on temporal columns
 - @Size for collections and array (not sure it is feasible).
 
-Persistence Providers can also apply non standard constraints to their metadata model. For example, provider ACME might recognize and understand @com.acme.validation.Email and apply it to the database model.
+Persistence Providers can also apply non standard constraints to their metadata model. 
+For example, provider ACME might recognize and understand @com.acme.validation.Email 
+and apply it to the database model.
 
-While most high level constraints will not be recognize, the BV built-in constraints will be the common language spoken by Persistence Providers. Any high level constraint can be composed of more modular constraints (constraint composition [2]).
+While most high level constraints will not be recognize, the BV built-in constraints 
+will be the common language spoken by Persistence Providers. Any high level constraint 
+can be composed of more modular constraints (constraint composition [2]).
 
 * additional proposition: consider JPA annotations as constraint definitions
-Some people have asked for BV to recognize Java Persistence annotations as legit constraint definitions. Besides making BV more complex, I am not sure of the actual benefit of such an approach. I am even doubtful of the value as a legacy migration too. It also raises multiple problems including how to define proper error messages and groups. This proposal seems to be a good candidate for BV provider extension if a provider is interested.
+Some people have asked for BV to recognize Java Persistence annotations as legit 
+constraint definitions. Besides making BV more complex, I am not sure of the 
+actual benefit of such an approach. I am even doubtful of the value as a legacy 
+migration too. It also raises multiple problems including how to define proper 
+error messages and groups. This proposal seems to be a good candidate for BV 
+provider extension if a provider is interested.
 
 * additional proposal
-In case of a constraint violation report detected and generated by the database (not null, etc), the Java persistence provider catches this report and translate it into a BV error report. From the perspective of the application, constraint errors are viewed through a unified layer. BV must provide some API to create a constraint violation error (constraintDescriptor.createConstraintViolation(...)).
+In case of a constraint violation report detected and generated by the database 
+(not null, etc), the Java persistence provider catches this report and translate 
+it into a BV error report. From the perspective of the application, constraint 
+errors are viewed through a unified layer. BV must provide some API to create a 
+constraint violation error (constraintDescriptor.createConstraintViolation(...)).
 
-While this proposal has a lot of value-add, I wonder how difficult it can be to implement this in persistence providers.
+While this proposal has a lot of value-add, I wonder how difficult it can be to 
+implement this in persistence providers.
 
 
 ** Using the Bean Validation (BV) engine inside a Java Persistence provider
@@ -4969,36 +5175,58 @@ Java Persistence delegates the validation of entities to BV on the following ent
 - pre update (an entity change must be valid before being propagated to the database)
 - pre remove (eg. a Customer still owning some Payments cannot be removed)
 
-These events are called at the same time as their respective callback methods after all callbacks have been called.
+These events are called at the same time as their respective callback methods after 
+all callbacks have been called.
 
-For each event type, a list of groups [1] is targeted for validation. By default, pre persist and pre update events vaildate the group "default" (default BV group) and pre remove does not validate any group. Each list can be overridden by a JPA property:
+For each event type, a list of groups [1] is targeted for validation. By default, 
+pre persist and pre update events vaildate the group "default" (default BV group) 
+and pre remove does not validate any group. Each list can be overridden 
+by a JPA property:
 - javax.persistence.validation.group.pre-persist for pre persist events
 - javax.persistence.validation.group.pre-update for pre update events
 - javax.persistence.validation.group.pre-remove for pre remove events
 
 Each property holds the list of targeted groups separated by a comma.
 
-When any of the pre-cited event is raised on an entity instance 'a' of type A, the persistence provider must validate 'a' by invoking a validator of type Validator&lt;A&gt; with the targeted groups. If the list of targeted groups is empty, no validation is performed. If the set of constraint violation is not empty, a ValidationException containing a reference to this set of violations is raised.
+When any of the pre-cited event is raised on an entity instance 'a' of type A, 
+the persistence provider must validate 'a' by invoking a validator of type 
+Validator&lt;A&gt; with the targeted groups. If the list of targeted groups is empty, 
+no validation is performed. If the set of constraint violation is not empty, 
+a ValidationException containing a reference to this set of violations is raised.
 
-Question: should we raise the exception at the first invalid object and stop (easy way) or should all objects in the PC and expeted to raise a pre-* event be passed to the pre-* events and their constraint violations merged into a single ValidationException
+Question: should we raise the exception at the first invalid object and stop 
+(easy way) or should all objects in the PC and expeted to raise a pre-* event 
+be passed to the pre-* events and their constraint violations merged into a 
+single ValidationException
 
 Question: should ValidationException be defined in JPA or BV?
 
 ** Special need from Java Persistence
 
-BV needs to determine if an association can be safely traversed and as such needs to know whether or not an entity / property is loaded or lazy. Java Persistence should expose a way to determine if a given association is loaded or not.
-Because BV must work on detached objects and on objects made of potentially multiple EMF, the current approach of hosting these methods on a EMF is limitative.
+BV needs to determine if an association can be safely traversed and as such needs 
+to know whether or not an entity / property is loaded or lazy. Java Persistence 
+should expose a way to determine if a given association is loaded or not.
+Because BV must work on detached objects and on objects made of potentially 
+multiple EMF, the current approach of hosting these methods on a EMF is limitative.
 TODO: A SPI must be defined in BV
 
 
 ** Platform integration
-BV metadata APIs and runtime are available from ValidatorFactory instances. It is recommended to cache ValidatorFactory instances and retrieve Validator&lt;T&gt; on demand.
+BV metadata APIs and runtime are available from ValidatorFactory instances. It 
+is recommended to cache ValidatorFactory instances and retrieve Validator&lt;T&gt; on demand.
 
-A ValidatorFactory is made available at the platform level by the Java EE container (at a standardized JNDI location). Alternatively, a ValidationFactory is created by the Persistence provider using the standard BV bootstrap approach at JPA initialization time. (TODO either approach is viable, we need to chose. The first approach is probably slightly better wrt Web Beans integration as we could define a ConstraintFactory that understand WB resource resolution).
+A ValidatorFactory is made available at the platform level by the Java EE container 
+(at a standardized JNDI location). Alternatively, a ValidationFactory is created by 
+the Persistence provider using the standard BV bootstrap approach at JPA initialization 
+time. (TODO either approach is viable, we need to chose. The first approach is probably 
+slightly better wrt Web Beans integration as we could define a ConstraintFactory that 
+understand WB resource resolution).
 
-Out of container, the Persistence provider must use the standard BV bootstrap approach at JPA initialization time if a Bean Validation provider is available.
+Out of container, the Persistence provider must use the standard BV bootstrap approach 
+at JPA initialization time if a Bean Validation provider is available.
 
-The BV / JPA integration features are enabled by default (provided a Bean Validation provider is available in the classpath). It is possible to disable them using
+The BV / JPA integration features are enabled by default (provided a Bean Validation 
+provider is available in the classpath). It is possible to disable them using
 javax.persistence.validation.mode metadata|event|all (should metadata be renamed DDL?)
 
 Such a flag can be defined in META-INF/persistence.xml (JPA level).
@@ -5019,7 +5247,11 @@ Such a flag can be defined in META-INF/persistence.xml (JPA level).
     <programlisting>Motivation
 --------------
 
-To provide bean based validation support in the view layer. This supports the DRY principle. The community have trialed this approach for a couple of years with Hibernate Validator and Seam or MyFaces extval. As Bean Validation, JSR 303, will be standardized for EE6, we propose to introduce changes to better support for delegating validation to an external validation framework and explicit support for Bean Validation to JSF2.
+To provide bean based validation support in the view layer. This supports the DRY principle. 
+The community have trialed this approach for a couple of years with Hibernate Validator 
+and Seam or MyFaces extval. As Bean Validation, JSR 303, will be standardized for EE6, 
+we propose to introduce changes to better support for delegating validation to an external 
+validation framework and explicit support for Bean Validation to JSF2.
 
 
 Proposal
@@ -5027,18 +5259,23 @@ Proposal
 
 A) GENERAL CHANGES
 
-1) Add a Boolean property to javax.faces.application.Application, and it's corresponding element in faces-config.xml
+1) Add a Boolean property to javax.faces.application.Application, and it's 
+corresponding element in faces-config.xml
 
 &lt;validate-empty-fields&gt;false&lt;/validate-empty-fields&gt;
 
 public abstract void setValidateEmptyFields(Boolean boolean);
 public abstract Boolean getValidateEmptyFields();
 
-which is by default false. If set to true all submitted fields will have any attached validators called, regardless of whether they are empty or not.
+which is by default false. If set to true all submitted fields will have any 
+attached validators called, regardless of whether they are empty or not.
 
 BACKWARDS COMPATIBILITY NOTE:
 
-JSF 2 validators must not fail on non-null empty values; for a JSF 1.2 validator to work with JSF2 and validate-empty-fields, it must be be safe to use with non-null, empty values. If a non-safe validator is used, validate-empty-fields should be set to false.
+JSF 2 validators must not fail on non-null empty values; for a JSF 1.2 validator 
+to work with JSF2 and validate-empty-fields, it must be be safe to use with non-null, 
+empty values. If a non-safe validator is used, validate-empty-fields should be set 
+to false.
 
 2) Add these elements:
 
@@ -5053,44 +5290,78 @@ public abstract Iterable&lt;String&gt; getDefaultValidatorIds();
 
 to javax.faces.application.Application.
 
-The JSF implementation should add the validator to all EditableValueHolders after any locally defined validators.
+The JSF implementation should add the validator to all EditableValueHolders after any 
+locally defined validators.
 
 B) SPECIFIC SUPPORT FOR JSR-303
 
-3) Add javax.faces.validator.ModelValidator with id javax.faces.Model. The property validationGroups on ModelValidator is used to allow the view designer to specify a comma separated list which groups should be validated. If the validationGroups attribute is omitted, the default group will be used. If the model validator is set as the default validator, this tag can be used to specify validation groups for this input.
+3) Add javax.faces.validator.ModelValidator with id javax.faces.Model. The property 
+validationGroups on ModelValidator is used to allow the view designer to specify a 
+comma separated list which groups should be validated. If the validationGroups 
+attribute is omitted, the default group will be used. If the model validator 
+is set as the default validator, this tag can be used to specify validation 
+groups for this input.
 
-The ModelValidator requires a version of EL which supports ValueExpression.getBase() and ValueExpression.getProperty(). The validate() method should inspect the parent EditableValueHolder and discover the ValueExpression specified for the "value" attribute, and from it the EL expression's resolved base and property.
+The ModelValidator requires a version of EL which supports ValueExpression.getBase() 
+and ValueExpression.getProperty(). The validate() method should inspect the parent 
+EditableValueHolder and discover the ValueExpression specified for the "value" 
+attribute, and from it the EL expression's resolved base and property.
 
-The ModelValidator should lazily acquire a copy of javax.validator.ValidatorFactory when the validate() method is called; it may keep an application scoped cache of it. ValidatorFactory.getValidator(base.getClass()) should be called to get the Validator instance, and Validator.validateValue(valueExpression.getProperty(), value, validationGroups); called to find any validation errors.
+The ModelValidator should lazily acquire a copy of javax.validator.ValidatorFactory 
+when the validate() method is called; it may keep an application scoped cache of it. 
+ValidatorFactory.getValidator(base.getClass()) should be called to get the Validator 
+instance, and Validator.validateValue(valueExpression.getProperty(), value, 
+validationGroups); called to find any validation errors.
 
-BeanValidator returns multiple validation constraint failures from a single validator, whilst JSF is limited to returning a single validation failure; lifting this constrain is outside the scope of JSF2, but may be addressed in the future. The model validator may take any constraint failure and use it to throw a ValidatorException. The FacesMessage created for the ValidatorException should have SEVERITY_ERROR, a message summary taken from the validation error message taken from the Bean Validation validation error and the detail message should be null.
+BeanValidator returns multiple validation constraint failures from a single validator, 
+whilst JSF is limited to returning a single validation failure; lifting this 
+constrain is outside the scope of JSF2, but may be addressed in the future. 
+The model validator may take any constraint failure and use it to throw a 
+ValidatorException. The FacesMessage created for the ValidatorException 
+should have SEVERITY_ERROR, a message summary taken from the validation 
+error message taken from the Bean Validation validation error and the 
+detail message should be null.
 
-4) Add a &lt;f:validateModel /&gt; tag. When nested in an EditableValueHolder this should add the ModelValidator
+4) Add a &lt;f:validateModel /&gt; tag. When nested in an EditableValueHolder 
+this should add the ModelValidator
 
-5) JSR-303 allows the user to validate a graph of objects, JSF will not support graph validation.
+5) JSR-303 allows the user to validate a graph of objects, JSF will not 
+support graph validation.
 
-6) An subtree of components, for example a form, can be validated by directly nesting a &lt;f:validateModel /&gt; element. Validating an entire form is especially useful if you are not using the ModelValidator as the default validator, or you want to set a validationGroup for the entire form. The &lt;f:validateModel /&gt; should not render a UIComponent. Any validationGroups specified at this level should be used when validating each component in the subtree. Any validationGroups defined on &lt;f:validateModel /&gt; nested in an EditableValueHolder take precedence over the validationGroups defined for the subtree.
+6) An subtree of components, for example a form, can be validated by directly 
+nesting a &lt;f:validateModel /&gt; element. Validating an entire form is especially 
+useful if you are not using the ModelValidator as the default validator, or you 
+want to set a validationGroup for the entire form. The &lt;f:validateModel /&gt; should 
+not render a UIComponent. Any validationGroups specified at this level should be 
+used when validating each component in the subtree. Any validationGroups defined 
+on &lt;f:validateModel /&gt; nested in an EditableValueHolder take precedence over the 
+validationGroups defined for the subtree.
 
-7) If JSF is running in EE then bean validation will be enabled by default.  An implementation may choose to enable Bean Validation by default in other environments. The javax.faces.Model validator will be added to the defaultValidators, and validate-empty-fields will be set to true on javax.faces.application.Application.
+7) If JSF is running in EE then bean validation will be enabled by default. 
+An implementation may choose to enable Bean Validation by default in other environments. 
+The javax.faces.Model validator will be added to the defaultValidators, 
+and validate-empty-fields will be set to true on javax.faces.application.Application.
 
 Emmanuel Bernard will take this to the EE EG.
 
-8) It is possible to disable the default validator for a field/a subtree by using the disabled attribute:
+8) It is possible to disable the default validator for a field/a subtree by 
+using the disabled attribute:
 
 &lt;h:inputText ...&gt;
   &lt;f:validateModel disabled="true" /&gt;
 &lt;/h:inputText&gt;
 
-This is useful when you are using the ModelValidator as the default validator, or validating an entire form
+This is useful when you are using the ModelValidator as the default validator, 
+or validating an entire form
 
 C) AJAX VALIDATION
 
-9 JSF2's Ajax support transparently supports Ajax validation for any JSF validator, including the ModelValidator. For example you could enable ajax validation for the onBlur event of an input field:
+9 JSF2's Ajax support transparently supports Ajax validation for any JSF validator, 
+including the ModelValidator. For example you could enable ajax validation for the 
+onBlur event of an input field:
 
 &lt;h:inputText value="#{item.name}"&gt;
    &lt;f:ajaxRequest execute="none" render="none" /&gt;
-&lt;/h:inputText&gt;
-
-</programlisting>
+&lt;/h:inputText&gt;</programlisting>
   </appendix>
 </book>
