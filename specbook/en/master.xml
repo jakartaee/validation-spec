@@ -2129,53 +2129,58 @@ public class Address {
  * well as the message describing the violation.
  *
  * @author Emmanuel Bernard
- * @todo add pointers to the metadata?
  * @todo the rational behind rootBean and propertyPath is to keep the context available to the user
  */
 public interface ConstraintViolation&lt;T&gt; {
 
-    /**
-     * @return The error message for this constraint violation.
-     */
-    String getMessage();
+	/**
+	 * @return The error message for this constraint violation.
+	 */
+	String getMessage();
 
-    /**
-     * @return The root bean being validated.
-     */
-    T getRootBean();
+	/**
+	 * @return The root bean being validated.
+	 */
+	T getRootBean();
 
-    /**
-     * If a bean constraint, the bean instance the constraint is applied on
-     * If a property constraint, the bean instance hosting the property the constraint is applied on
-     * 
-     * @return the leaf bean the constraint is applied on or null if Validator#validateValue is used
-     */
-    Object getLeafBean();
+	/**
+	 * If a bean constraint, the bean instance the constraint is applied on
+	 * If a property constraint, the bean instance hosting the property the constraint is applied on
+	 * 
+	 * @return the leaf bean the constraint is applied on or null if Validator#validateValue is used
+	 */
+	Object getLeafBean();
 
-    /**
-     * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
-     *         &lt;code&gt;null&lt;/code&gt; if the value is the &lt;code&gt;rootBean&lt;code&gt; itself.
-     */
-    String getPropertyPath();
+	/**
+	 * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
+	 *         &lt;code&gt;null&lt;/code&gt; if the value is the &lt;code&gt;rootBean&lt;code&gt; itself.
+	 */
+	String getPropertyPath();
 
 
-    /**
-     * @return the bean type being validated.
-     */
-    Class&lt;T&gt; getBeanClass();
+	/**
+	 * @return the bean type being validated.
+	 */
+	Class&lt;T&gt; getBeanClass();
 
-    /**
-     * @return the value failing to pass the constraint.
-     */
-    Object getInvalidValue();
+	/**
+	 * @return the value failing to pass the constraint.
+	 */
+	Object getInvalidValue();
 
-    /**
-     * @return the list of groups that the triggered constraint applies on and which also are
-     *         within the list of groups requested for validation.
-     *
-     * TODO: considering removal, if you think it's important, speak up
-     */
-    Set&lt;String&gt; getGroups();
+	/**
+	 * @return the list of groups that the triggered constraint applies on and which also are
+	 *         within the list of groups requested for validation.
+	 *
+	 * TODO: considering removal, if you think it's important, speak up
+	 */
+	Set&lt;String&gt; getGroups();
+
+	/**
+	 * Constraint metadata reported to fail
+	 * @return constraint metadata
+	 */
+	ConstraintDescriptor getConstraintDescriptor();
 }</programlisting>
 
       <para>The <methodname>getMessage</methodname> method returns the
@@ -2263,6 +2268,10 @@ EBE rule #1 addresses that or am I off base?-->
       validation.</para>
 
       <!--EBE: this notion is quite vague with the recursive group sequence-->
+
+      <para><methodname>getConstraintDescriptor</methodname> provides access
+      to the failing constraint metadata (see <xref
+      linkend="constraintmetadata-constraintdescriptor" />).</para>
 
       <section>
         <title>Example</title>
