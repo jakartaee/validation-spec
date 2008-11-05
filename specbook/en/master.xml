@@ -1122,11 +1122,12 @@ EBE fixed this by rewordingthe JavaDoc-->
         a unified list of constraint violations.</para>
 
         <para>Consider the situation where bean X contains a field of type Y.
-        By annotating field Y with the @Valid annotation, the Validator will
-        validate the contents of Y when X is validated. The exact type of the
-        field of type Y (subclass, implementation) is determined at runtime.
-        The constrain definitions for this particular subtype are used. This
-        ensure proper polymorphism behavior.</para>
+        By annotating field Y with the <classname>@Valid</classname>
+        annotation, the Validator will validate the contents of Y when X is
+        validated. The exact type of the field of type Y (subclass,
+        implementation) is determined at runtime. The constrain definitions
+        for this particular subtype are used. This ensure proper polymorphism
+        behavior.</para>
 
         <para>Collection-valued or array-valued fields and properties may also
         be decorated with the <classname>@Valid</classname> annotation. This
@@ -1818,10 +1819,15 @@ author.setCompany("Some random publisher with a very very very long name");</pro
 
       <para>A <classname>Validator&lt;T&gt;</classname> instance is able to
       validate instances of <classname>T</classname> classes, all its
-      subclasses and the associated objects if any.</para>
+      subclasses and the associated objects if any. It is recommended to let
+      <classname>Validator&lt;T&gt;</classname> instance caching to the
+      <classname>ValidatorFactory</classname>.
+      <classname>Validator&lt;T&gt;</classname> implementation are
+      thread-safe.</para>
 
       <programlisting>/**
  * Validate a given object type.
+ * Implementations of this interface must be thread-safe
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -2187,7 +2193,9 @@ public interface ConstraintViolation&lt;T&gt; {
     Set&lt;String&gt; getGroups();
 
     /**
-     * Constraint metadata reported to fail
+     * Constraint metadata reported to fail.
+     * The returned instance is immutable.
+     *
      * @return constraint metadata
      */
     ConstraintDescriptor getConstraintDescriptor();
@@ -2962,8 +2970,7 @@ Validator&lt;Address&gt; localizedAddressValidator =
 
         <para><classname>ValidatorFactory</classname> implementations must be
         thread-safe. <classname>ValidatorFactory</classname> implementations
-        are allowed to cache and return the same
-        <classname>Validator</classname> instances. </para>
+        can cache <classname>Validator</classname> instances if needed.</para>
 
         <example>
           <title>ValidatorFactory interface</title>
@@ -3022,7 +3029,7 @@ public interface ValidatorFactory {
         initialization of the <classname>ValidatorFactory</classname>. It is
         particularly useful to build a <classname>Validator</classname>
         specific <classname>MessageResolver</classname> wrapping the one from
-        the <classname>ValidatorFactory</classname>. </para>
+        the <classname>ValidatorFactory</classname>.</para>
 
         <para>See <xref
         linkend="validationapi-message-examples-specificlocale" /> for an
@@ -3098,7 +3105,7 @@ public interface ValidatorFactory {
  * find the first provider matching it
  * - otherwise, use the first provider returned by the ValidationProviderResolver
  * &lt;p/&gt;
- * Implementations are not meant to be thread safe
+ * Implementations are not meant to be thread-safe
  *
  * @author Emmanuel Bernard
  */
@@ -3593,123 +3600,6 @@ public interface ACMEValidatorFactoryBuilder
           <title>Validation methods available</title>
 
           <programlisting>/**
- * This class is the entry point for the Bean Validation framework. There are three ways to bootstrap the framework:
- * &lt;ul&gt;
- * &lt;li&gt;
- * The easiest approach is to use the default Bean Validation provider.
- * &lt;pre&gt;
- * ValidatorFactory factory = Validation.getBuilder().build();
- * &lt;/pre&gt;
- * In this case {@link  javax.validation.bootstrap.DefaultValidationProviderResolver  DefaultValidationProviderResolver}
- * will be used to locate available providers.
- *
- * The chosen provider is defined as followed:
- * &lt;ul&gt;
- * &lt;li&gt;if the XML configuration defines a provider, this provider is used&lt;/li&gt;
- * &lt;li&gt;if the XML configuratio does not define a provider or if no XML configuration is present the first provider
- * returned by the ValidationProviderResolver isntance is used.&lt;/li&gt;
- * &lt;/ul&gt;
- * &lt;/li&gt;
- * &lt;li&gt;
- * The second bootstrap approach allows to choose a custom &lt;code&gt;ValidationProviderResolver&lt;/code&gt;. The chosen
- * &lt;code&gt;ValidationProvider&lt;/code&gt; is then determined in the same way as in the default bootstrapping case (see above).
- * &lt;pre&gt;
- * ValidatorFactoryBuilder&amp;lt?&amp;gt; builder = Validation
- *    .defineBootstrapState()
- *    .providerResolver( new MyResolverStrategy() )
- *    .getBuilder();
- * ValidatorFactory factory = builder.build();
- * &lt;/pre&gt;
- * &lt;/li&gt;
- * 
- * &lt;p/&gt;
- * &lt;li&gt;
- * The third approach allows you to specify explicitly and in a type safe fashion the expected provider by
- * using its specific &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub-interface.
- *
- * Optionally you can choose a custom &lt;code&gt;ValidationProviderResolver&lt;/code&gt;.
- * &lt;pre&gt;
- * ACMEValidatorFactoryBuilder builder = Validation
- *    .builderType(ACMEValidatorFactoryBuilder.class)
- *    .providerResolver( new MyResolverStrategy() )  // optionally set the provider resolver
- *    .getBuilder();
- * ValidatorFactory factory = builder.build();
- * &lt;/pre&gt;
- * &lt;/li&gt;
- * &lt;/ul&gt;
- * Note:&lt;br/&gt;
- * &lt;ul&gt;
- * &lt;li&gt;
- * The ValidatorFactory object built by the bootstrap process should be cached and shared amongst
- * Validator consumers.
- * &lt;/li&gt;
- * &lt;li&gt;
- * This class is thread-safe.
- * &lt;/li&gt;
- * &lt;/ul&gt;
- *
- * @author Emmanuel Bernard
- * @author Hardy Feretnschik
- * @see DefaultValidationProviderResolver
- */
-public class Validation {
-
-    /**
-     * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The actual provider choice is given by the XML configuration. If the
-     * XML configuration does not exsist the default is taken.
-     * &lt;p/&gt;
-     * The provider list is resolved using the {@link  javax.validation.bootstrap.DefaultValidationProviderResolver  DefaultValidationProviderResolver}.
-     *
-     * @return &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; instance.
-     */
-    public static ValidatorFactoryBuilder&lt;?&gt; getBuilder() {
-        ...
-    }
-
-    /**
-     * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt;. The provider list is resolved using the strategy provided to the bootstrap state.
-     * &lt;pre&gt;
-     * ValidatorFactoryBuilder&amp;lt?&amp;gt; builder = Validation
-     *    .defineBootstrapState()
-     *    .providerResolver( new MyResolverStrategy() )
-     *    .getBuilder();
-     * ValidatorFactory factory = builder.build();
-     * &lt;/pre&gt;
-     * The actual provider choice is given by the XML configuration. If the XML configuration does not exsist the first
-     * available provider will be returned.
-     *
-     * @return instance building a generic &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; compliant with the bootstrap state provided.
-     */
-    public static GenericBuilderFactory defineBootstrapState() {
-        ...
-    }
-
-    /**
-     * Build a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; for a particular provider implementation.
-     * Optionally override the provider resolution strategy used to determine the provider.
-     * &lt;p/&gt;
-     * Used by applications targeting a specific provider programmatically.
-     * &lt;p/&gt;
-     * &lt;pre&gt;
-     * ACMEValidatorFactoryBuilder builder = Validation.builderType(ACMEValidatorFactoryBuilder.class)
-     *     .providerResolver( new MyResolverStrategy() )
-     *     .build();
-     * &lt;/pre&gt;,
-     * where &lt;code&gt;ACMEValidatorFactoryBuilder&lt;/code&gt; is the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface uniquely identifying
-     * the ACME Bean Validation provider.
-     *
-     * @param builderType the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface uniquely defining the targeted provider.
-     *
-     * @return instance building a provider specific &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; sub interface implementation.
-     *
-     * @see #getBuilder()
-     */
-    public static &lt;T extends ValidatorFactoryBuilder&lt;T&gt;&gt; SpecializedBuilderFactory&lt;T&gt; builderType(Class&lt;T&gt; builderType) {
-        ...
-    }
-}</programlisting>
-
-          <programlisting>/**
  * This class is the entry point for the Bean Validation framework. There are three ways
  * to bootstrap the framework:
  * &lt;ul&gt;
@@ -3998,8 +3888,11 @@ public interface SpecializedBuilderFactory&lt;T extends ValidatorFactoryBuilder&
           </listitem>
 
           <listitem>
-            <para><classname>Validator</classname> is not thread-safe and
-            should not be short lived</para>
+            <para><classname>Validator</classname> is thread-safe too and
+            should be considered a lightweight object.
+            <classname>ValidatorFactory</classname> would typically implement
+            appropriate <classname>Validator</classname> instance caching
+            strategies if needed.</para>
           </listitem>
         </itemizedlist>
 
@@ -4036,13 +3929,14 @@ public interface SpecializedBuilderFactory&lt;T extends ValidatorFactoryBuilder&
 
       <para>A <classname>Validator&lt;T&gt;</classname> instance is the
       metadata repository for <parameter>T</parameter> classes. It is
-      recommended to cache <classname>Validator&lt;T&gt;</classname>
-      instances. The Bean Validation provider has to guarantee that
-      concurrent, multi-threaded access to a
-      <classname>Validator&lt;T&gt;</classname> implementation is safe.</para>
+      recommended to let <classname>Validator&lt;T&gt;</classname> instance
+      caching to the <classname>ValidatorFactory</classname>.
+      <classname>Validator&lt;T&gt;</classname> implementation are
+      thread-safe.</para>
 
       <programlisting>/**
  * Validate a given object type
+ * Implementations of this interface must be thread-safe
  * 
  * @author Emmanuel Bernard
  */
@@ -4057,13 +3951,16 @@ public interface Validator&lt;T&gt; {
     boolean hasConstraints();
 
     /**
-     * return the class level constraints
+     * Return the class level constraints
+     * The returned object (and associated objects) are immutable
      */
     BeanDescriptor getConstraintsForClass();
 
     /**
-     * return the property level constraints for a given propertyName
+     * Return the property level constraints for a given propertyName
      * or null if either the property does not exist or has no constraint
+     * The returned object (and associated objects including ConstraintDescriptors) 
+     * are immutable.
      */
     PropertyDescriptor getConstraintsForProperty(String propertyName);
 
