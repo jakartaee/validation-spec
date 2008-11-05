@@ -775,7 +775,7 @@ public interface Constraint&lt;A extends Annotation&gt; {
      *
      * @return true if object pass the constraint
      */
-    boolean isValid(Object object, Context constraintContext);
+    boolean isValid(Object object, ConstraintContext constraintContext);
 }</programlisting>
       </example>
 
@@ -1243,7 +1243,7 @@ public @interface GroupSequences {
       linkend="constraintdeclarationvalidationprocess-validationroutine" /> ;
       if one of the groups processed in the sequence leads to one or more
       validation failures, the groups following in the sequence must not be
-      processed. </para>
+      processed.</para>
 
       <para>A group sequence can contain other group sequence names in its
       sequence. Group sequences are recursively resolved: the user must make
@@ -1252,13 +1252,13 @@ public @interface GroupSequences {
 
       <para>For a given class, the group sequences taken into account are the
       ones placed on the class itself as well as the ones on all its
-      superclasses and all its interfaces. </para>
+      superclasses and all its interfaces.</para>
 
       <para>When an object graph is validated (through the use of
       <literal>@Valid</literal>), the children elements of the graph inherit
       the sequence definitions of their parent. Two group sequences must not
       share the same group name in a given object graph (including
-      superclasses and interfaces). </para>
+      superclasses and interfaces).</para>
 
       <para>Group sequences must not use constraint declaration group names as
       a name. In other words, constraint definition groups cannot contain one
@@ -1279,7 +1279,7 @@ public @interface GroupSequences {
 
       <itemizedlist>
         <listitem>
-          <para>execute all field level validations (including the one
+          <para>execute all field level validations (including the ones
           expressed in interfaces and superclasses) matching the targeted
           group unless the given validation constraint has already been
           processed during this validation routine (as part of a previous
@@ -1287,7 +1287,7 @@ public @interface GroupSequences {
         </listitem>
 
         <listitem>
-          <para>execute all getter level validations (including the one
+          <para>execute all getter level validations (including the ones
           expressed in interfaces and superclasses) matching the targeted
           group unless the given validation constraint has already been
           processed during this validation routine (as part of a previous
@@ -1295,7 +1295,7 @@ public @interface GroupSequences {
         </listitem>
 
         <listitem>
-          <para>execute all class level validations (including the one
+          <para>execute all class level validations (including the ones
           expressed in interfaces and superclasses) matching the targeted
           group unless the given validation constraint has already been
           processed during this validation routine (as part of a previous
@@ -1305,7 +1305,7 @@ public @interface GroupSequences {
         <listitem>
           <para>execute all cascading validations (see <xref
           linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
-          including the one expressed in interfaces and superclasses</para>
+          including the ones expressed in interfaces and superclasses</para>
         </listitem>
       </itemizedlist>
 
@@ -2187,8 +2187,7 @@ public interface ConstraintViolation&lt;T&gt; {
 
       <para>The <methodname>getBeanClass</methodname> method returns the type
       of the current bean being validated and leading to the failure.
-      <methodname>getLeafBean</methodname> returns the value of this
-      bean.</para>
+      <methodname>getLeafBean</methodname> returns the bean itself.</para>
 
       <para>The <methodname>getValue</methodname> method returns the value
       (field, property or validated object) being passed to
@@ -2414,6 +2413,8 @@ assert constraintViolation.getGroups().length == 0</programlisting>
         or more message parameters. Message parameters are string literals
         enclosed in braces.<!--SCP need to define the string literal here--></para>
 
+        <programlisting>Value must be between {min} and {max}</programlisting>
+
         <section id="default-resolution-algorithm">
           <title>Algorithm</title>
 
@@ -2426,8 +2427,8 @@ assert constraintViolation.getGroups().length == 0</programlisting>
 
           <orderedlist>
             <listitem>
-              <para>A message parameter that matches the name of a property of
-              the constraint declaration is replaced by the value of that
+              <para>A message parameter that matches the name of an attribute
+              of the constraint declaration is replaced by the value of that
               property.</para>
 
               <!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
@@ -2438,11 +2439,14 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
             <listitem>
               <para>The message parameter is used as a key to search the
               <classname>ResourceBundle</classname> named
-              <literal>ValidationMessage</literal> (often materialized as the
+              <literal>ValidationMessages</literal> (often materialized as the
               property file
               <filename>/ValidationMessages.properties</filename> and its
-              locale variations). If a property is found, the message
-              parameter is replaced with the property.</para>
+              locale variations) using the default
+              <classname>Locale</classname> as provided by
+              <methodname>Locale.getDefault()</methodname>. If a property is
+              found, the message parameter is replaced with the
+              property.</para>
             </listitem>
 
             <listitem>
@@ -2459,26 +2463,47 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
         <title>Custom message resolution</title>
 
         <para>A custom message resolver may be provided (e.g., to resolve
-        contextual data, or to adjust the Locale used). A message resolver
-        implements the <classname>MessageResolver</classname>
-        interface.</para>
+        contextual data, or to adjust the default <classname>Locale
+        </classname>used). A message resolver implements the
+        <classname>MessageResolver</classname> interface.</para>
 
         <programlisting>/**
-* Interpolate a given validation message
-*
-* @author Emmanuel Bernard
-*/
+ * Interpolate a given constraint violation message.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
 public interface MessageResolver {
-    /**
-     * Generate a display message based on the constraint and its parameters.
-     */
-    String interpolate(String message, 
-                       ConstraintDescriptor constraintDescriptor, 
-                       Object value);
+	/**
+	 * Interpolate the message from the constraint parameters and the actual validated object.
+	 * The locale is defaulted according to the &lt;code&gt;MessageResolver&lt;/code&gt; implementation
+	 * See the implementation documentation for more detail.
+	 *
+	 * @param message The message to interpolate.
+	 * @param constraintDescriptor The constraint descriptor.
+	 * @param value The object being validated
+	 *
+	 * @return Interpolated error message.
+	 */
+	String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value);
+
+	/**
+	 * Interpolate the message from the constraint parameters and the actual validated object.
+	 * The Locale used is provided as a parameter
+	 *
+	 * @param message The message to interpolate.
+	 * @param constraintDescriptor The constraint descriptor.
+	 * @param value The object being validated
+	 * @param locale the locale targeted for the message
+	 *
+	 * @return Interpolated error message.
+	 */
+	String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value, Locale locale);
 }</programlisting>
 
         <para><parameter>message</parameter> is the message descriptor as seen
-        in <literal>@Annotation.message</literal></para>
+        in <literal>@ConstraintAnnotation.message</literal> or provided to the
+        <classname>ConstraintContext</classname> methods.</para>
 
         <para><parameter>constraintDescriptor</parameter> is the
         <classname>ConstraintDescriptor</classname> object representing the
@@ -2488,20 +2513,40 @@ public interface MessageResolver {
         <para><parameter>value</parameter> is the value being
         validated.</para>
 
-        <para><methodname>MessageResolver.interpolate()</methodname> is
-        invoked once for each constraint whose isValid() method returns
-        false.</para>
+        <para><methodname>MessageResolver.interpolate(String,
+        ConstraintDescriptor, Object)</methodname> is invoked by for each
+        constraint violation report generated. The default
+        <classname>Locale</classname> is implementation specific.</para>
+
+        <para><methodname>MessageResolver.interpolate(String,
+        ConstraintDescriptor, Object, Locale)</methodname> can be invoked by a
+        wrapping <classname>MessageResolver</classname> to enforce a specific
+        Locale value by bypassing or overriding the default
+        <classname>Locale</classname> strategy.</para>
 
         <para>A message resolver implementation shall be threadsafe.</para>
 
-        <para>The message resolver is injected to the validator instance
-        through
-        <methodname>validator.setMessageResolver(MessageResolver)</methodname>.</para>
+        <para>The message resolver is provided to the
+        <classname>ValidatorFactory</classname> at construction time using
+        <methodname>ValidatorFactoryBuilder.messageResolver(MessageResolver)</methodname>.
+        This message resolver is shared by all validators generated by this
+        <classname>ValidatorFactory</classname>.</para>
 
-        <!--SCP: should we support per-invocation message resolver override?-->
+        <para>It is possible to override the
+        <classname>MessageResolver</classname> implementation for a given
+        <classname>Validator</classname> instance by invoking
+        <methodname>ValidatorFactory.getValidator(Class&lt;?&gt;,
+        MessageResolver)</methodname>.</para>
+
+        <para>It is recommended that <classname>MessageResolver</classname>
+        implementations delegate final interpolation to the Bean Validation
+        default <classname>MessageResolver</classname> to ensure standard Bean
+        Validation interpolation rules are followed, The default
+        implementation is accessible through
+        <methodname>ValidatorFactoryBuilder.getDefaultMessageResolver()</methodname>.</para>
       </section>
 
-      <section>
+      <section id="validationapi-message-examples">
         <title>Examples</title>
 
         <para>These examples describe message interpolation based on the
@@ -2564,6 +2609,101 @@ myapp.creditcard.error=credit card number not valid</programlisting>
         </table>
 
         <!--SCP: add example of {value} here. Add use of MessageFormat style formatting-->
+
+        <para>Here is an approach to specify the <classname>Locale</classname>
+        value to choose on a given <classname>Validator</classname>.
+        <classname>Locale</classname> aware
+        <classname>MessageResolver</classname>. See <xref
+        linkend="bootstrapping" /> for more details on the APIs.</para>
+
+        <example id="validationapi-message-examples-specificlocale">
+          <title>Use MessageResolver to use a specific Locale value</title>
+
+          <programlisting>/**
+ * delegate to a MessageResolver implementation but enforece a given Locale
+ */
+public class LocaleSpecificMessageResolver implements MessageResolver {
+    private final MessageResolver defaultResolver;
+    private final Locale defaultLocale;
+
+    public LocaleSpecificMessageResolver(MessageResolver resolver, Locale locale) {
+        this.defaultLocale = locale;
+        this.defaultResolver = resolver;
+    }
+
+    /**
+     * enforece the locale passed to the resolver
+     */
+    public String interpolate(String message, 
+                              ConstraintDescriptor constraintDescriptor, 
+                              Object value) {
+        return defaultResolver.interpolate(message, constraintDescriptor, value, this.defaultLocale);
+    }
+
+    // no real use, implemented for completeness
+    public String interpolate(String message,
+                              ConstraintDescriptor constraintDescriptor,
+                              Object value,
+                              Locale locale) {
+        return defaultResolver.interpolate(message, constraintDescriptor, value, locale);
+    }
+}
+
+
+Locale locale = getMyCurrentLocale();
+Validator&lt;Address&gt; validator = 
+    validatorFactory.getValidator(
+                          Address.class,
+                          new LocaleSpecificMessageResolver(
+                                  validatorFactory.getMessageResolver(),
+                                  locale)
+    );</programlisting>
+        </example>
+
+        <para>Most of the time, however, the relevant
+        <classname>Locale</classname> will be provided by your application
+        framework transparently. This framework will implement its own version
+        of <classname>MessageResolver</classname> and pass it during the
+        <classname>ValidatorFactory</classname> configuration. The application
+        will not have to set the <classname>Locale</classname> itself. This
+        example shows how a web framework like Java Server Faces would
+        implement <classname>MessageResolver</classname> to provide a user
+        specific default locale.</para>
+
+        <example id="validationapi-message-examples-jsflocale">
+          <title>Java Server Faces possible MessageResolver</title>
+
+          <programlisting>public class JsfMessageResolver {
+    private final MessageResolver delegate;
+
+    public JsfMessageResolver(MessageResolver delegate) { 
+        this.delegate = delegate; 
+    }
+
+    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value) {
+        Locale locale = FacesContext.getCurrentInstance().getUIViewRoot().getLocale();
+        return this.this.delegate.interpolate(
+                        message, constraintDescriptor, value, locale );
+    }
+
+    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, Object value, Locale locale) {
+        return this.delegate.interpolate(message, constraintDescriptor, value, locale);
+    }
+}
+
+
+//Build the ValidatorFactory
+ValidatorFactoryBuilder builder = Validation.getBuilder();
+ValidatorFactory factory = builder
+          .messageResolver( new JsfMessageResolver( builder.getDefaultMessageResolver() ) )
+          .build();
+
+//JSF uses the factory to validate UI components using the specific MessageResolver
+Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);</programlisting>
+        </example>
+
+        <para>The application code will not even deal with Bean Validation
+        APIs.</para>
       </section>
     </section>
 
@@ -2658,9 +2798,9 @@ myapp.creditcard.error=credit card number not valid</programlisting>
         <para>The most simple approach is to use the default Bean Validation
         provider or the one defined in the XML configuration file. The
         bootstrap entry point returns a generic
-        <classname>ValidationBuilder</classname> instance on which we apply
-        the build operation. The <classname>ValidatorFactory</classname> is
-        then ready to provide <classname>Validator</classname>
+        <classname>ValidatorFactoryBuilder</classname> instance on which we
+        apply the build operation. The <classname>ValidatorFactory</classname>
+        is then ready to provide <classname>Validator</classname>
         instances.</para>
 
         <example>
@@ -2717,7 +2857,7 @@ ValidatorFactory factory = Validation
 Validator&lt;Address&gt; addressValidator = factory.getValidator(Address.class);</programlisting>
         </example>
 
-        <para>The last example shows how a client can choose a specific Bean
+        <para>The next example shows how a client can choose a specific Bean
         Validation provider and configure provider specific properties
         programmatically in a type-safe way.</para>
 
@@ -2754,6 +2894,23 @@ public interface ACMEValidatorFactoryBuilder extends ValidatorFactoryBuilder&lt;
 }</programlisting>
         </example>
 
+        <para>The last example shows how a Validator can use a specific
+        <classname>MessageResolver</classname> implementation</para>
+
+        <example>
+          <title>Use a specific MessageResolver instance for a given
+          Validator</title>
+
+          <programlisting>ValidatorFactory factory = ...;
+MessageResolver customResolver = new LocaleSpecificMessageResolver(
+    locale, 
+    factory.getMessageResolver()
+);
+
+Validator&lt;Address&gt; localizedAddressValidator = 
+    factory.getValidator(Address.class, customResolver);</programlisting>
+        </example>
+
         <para>We will now explore the various interfaces, their constraints
         and usage. We will go from the <classname>ValidatorFactory</classname>
         to the <classname>Validation</classname> class walking up the
@@ -2774,11 +2931,7 @@ public interface ACMEValidatorFactoryBuilder extends ValidatorFactoryBuilder&lt;
         <para><classname>ValidatorFactory</classname> implementations must be
         thread-safe. <classname>ValidatorFactory</classname> implementations
         are allowed to cache and return the same
-        <classname>Validator</classname> instances. Thread safety must be
-        guaranteed to Bean Validation clients as long as they use
-        <classname>Validator</classname> instances coming from the same
-        <methodname>ValidatorFactory.getValidator(Class)</methodname> call in
-        a non concurrent way.</para>
+        <classname>Validator</classname> instances. </para>
 
         <example>
           <title>ValidatorFactory interface</title>
@@ -2791,18 +2944,59 @@ public interface ACMEValidatorFactoryBuilder extends ValidatorFactoryBuilder&lt;
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactory {
-    /**
-     * return an initialized Validator instance for the specific class.
-     * Validator instances can be pooled and shared by the implementation
-     * In this scenario, the implementation must return thread-safe Validator implementations
-     *
-     */
-    &lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz);
+	/**
+	 * return an initialized Validator instance for the specific class.
+	 * Validator instances can be pooled and shared by the implementation
+	 *
+	 * @param clazz the object class the validator validates
+	 */
+	&lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz);
+
+	/**
+	 * return an initialized Validator instance for the specific class.
+	 * Validator instances can be pooled and shared by the implementation
+	 *
+	 * The returned Validator instance must use the MessageResolver instance
+	 * passed as a parameter to resolve error messages. 
+	 *
+	 * @param clazz the object class the validator validates
+	 */
+	&lt;T&gt; Validator&lt;T&gt; getValidator(Class&lt;T&gt; clazz, MessageResolver messageResolver);
+
+	/**
+	 * Returns the MessageResolver instance configured at initialization time
+	 * for the ValidatorFactory
+	 * This is the instance used by #getValidator(Class)
+	 *
+	 * @return MessageResolver instance
+	 */
+	MessageResolver getMessageResolver();
 }</programlisting>
         </example>
 
         <para>A <classname>ValidatorFactory</classname> is provided by a
         <classname>ValidatorFactoryBuilder</classname>.</para>
+
+        <para>The <classname>MessageResolver</classname> instance used by a
+        <classname>Validator</classname> instance can be overridden specified
+        using <methodname>ValidatorFactory.getValidator(Class&lt;?&gt;,
+        MessageResolver)</methodname>. The
+        <classname>MessageResolver</classname> passed as a parameter is used
+        instead of the <classname>ValidatorFactory</classname>'s
+        <classname>MessageResolver</classname>.</para>
+
+        <para><methodname>getMessageResolver()</methodname> returns the
+        <classname>MessageResolver</classname> instance configured during the
+        initialization of the <classname>ValidatorFactory</classname>. It is
+        particularly useful to build a <classname>Validator</classname>
+        specific <classname>MessageResolver</classname> wrapping the one from
+        the <classname>ValidatorFactory</classname>. </para>
+
+        <para>See <xref
+        linkend="validationapi-message-examples-specificlocale" /> for an
+        example using both <methodname>getValidator(CLass&lt;?&gt;,
+        MessageResolver)</methodname> and
+        <methodname>getMessageResolver()</methodname>.</para>
       </section>
 
       <section>
@@ -2827,6 +3021,18 @@ public interface ValidatorFactory {
             <para>the configuration <classname>InputStream</classname></para>
           </listitem>
         </itemizedlist>
+
+        <para>A <classname>ValidatorFactoryBuilder</classname> does provide a
+        <classname>MessageResolver</classname> implementation following the
+        default Bean Validation <classname>MessageResolver</classname> rules
+        as defined in <xref linkend="default-messageresolver" /> in
+        <methodname>getDefaultMessageResolver()</methodname>. Such an
+        implementation is useful to let a custom
+        <classname>MessageResolver</classname> delegates to the standard
+        <classname>MessageResolver</classname> (see <xref
+        linkend="custom-message-resolution" /> and an example making use of
+        <methodname>getDefaultMessageResolver()</methodname> in <xref
+        linkend="validationapi-message-examples-jsflocale" />).</para>
 
         <para>Clients call
         <methodname>ValidatorFactoryBuilder.build()</methodname> to retrieve
@@ -2864,42 +3070,52 @@ public interface ValidatorFactory {
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt; {
-    /**
-     * Defines the message resolver used. Has priority over the configuration based message resolver.
-     *
-     * @param resolver message resolver implementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T messageResolver(MessageResolver resolver);
+	/**
+	 * Defines the message resolver used. Has priority over the configuration based message resolver.
+	 *
+	 * @param resolver message resolver implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T messageResolver(MessageResolver resolver);
 
-    /**
-     * Defines the constraint factory. Has priority over the configuration based constraint factory.
-     *
-     * @param constraintFactory constraint factory inmplementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T constraintFactory(ConstraintFactory constraintFactory);
+	/**
+	 * Defines the constraint factory. Has priority over the configuration based constraint factory.
+	 *
+	 * @param constraintFactory constraint factory inmplementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T constraintFactory(ConstraintFactory constraintFactory);
 
-    /**
-     * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
-     * If not specified, META-INF/validation.xml is used
-     * &lt;p/&gt;
-     * The stream should be closed by the client API after the ValidatorFactory has been returned
-     *
-     * @param stream configuration stream.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T configure(InputStream stream);
+	/**
+	 * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
+	 * If not specified, META-INF/validation.xml is used
+	 * &lt;p/&gt;
+	 * The stream should be closed by the client API after the ValidatorFactory has been returned
+	 *
+	 * @param stream configuration stream.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T configure(InputStream stream);
 
-    /**
-     * Build a ValidatorFactory implementation.
-     *
-     * @return ValidatorFactory
-     */
-    ValidatorFactory build();
+	/**
+	 * Return an implementation of the MessageResolver interface following the
+	 * default MessageREsolver defined in the specification:
+	 *  - use the ValidationMessages resource bundle to load keys
+	 *  - use Locale.getDefault()
+	 *
+	 * @return default MessageResolver implementation compliant with the specification
+	 */
+	MessageResolver getDefaultMessageResolver();
+
+	/**
+	 * Build a ValidatorFactory implementation.
+	 *
+	 * @return ValidatorFactory
+	 */
+	ValidatorFactory build();
 }</programlisting>
         </example>
 
@@ -2960,7 +3176,7 @@ public interface ACMEValidatorFactoryBuilder
           <programlisting>/**
  * Contract between a &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; and a &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create
  * a &lt;code&gt;ValidatorFactory&lt;/code&gt;.
- * The configuration artifacts provided to the &lt;code&gt;ValidationBuilder&lt;/code&gt; are passed along.
+ * The configuration artifacts provided to the &lt;code&gt;ValidatorFactoryBuilder&lt;/code&gt; are passed along.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -3009,8 +3225,8 @@ public interface ValidatorFactoryConfiguration {
             described in the XML configuration (under
             <literal>validation.provider</literal>) if defined: the value of
             this element is the fully qualified class name of the
-            <classname>ValidationBuilder</classname> sub interface uniquely
-            identifying the provider.</para>
+            <classname>ValidatorFactoryBuilder</classname> sub interface
+            uniquely identifying the provider.</para>
           </listitem>
 
           <listitem>
@@ -3203,7 +3419,7 @@ public interface ValidationProvider {
     ValidatorFactoryBuilder&lt;?&gt; createGenericValidatorFactoryBuilder(BootstrapState state);
 
     /**
-     * Build a ValidatorFactory using the current provider implementation. The ValidationFactory
+     * Build a ValidatorFactory using the current provider implementation. The ValidatorFactory
      * is assembled and follow the configuration passed using ValidatorFactoryConfiguration.
      * &lt;p&gt;
      * The returned ValidatorFactory is properly initialized and ready for use.
@@ -3221,7 +3437,7 @@ public interface ValidationProvider {
             <title>BootstrapState interface</title>
 
             <programlisting>/**
- * Defines the state used to bootstrap the ValidationBuilder
+ * Defines the state used to bootstrap the ValidatorFactoryBuilder
  *
  * @author Emmanuel Bernard
  */
@@ -3245,7 +3461,7 @@ public interface BootstrapState {
           provider specific methods.</para>
 
           <example>
-            <title>Example of provider specific ValidationBuilder sub
+            <title>Example of provider specific ValidatorFactoryBuilder sub
             interface</title>
 
             <programlisting>/**
@@ -3292,8 +3508,8 @@ public interface ACMEValidatorFactoryBuilder
               <methodname>ValidationProvider.isSuitable(Class&lt;T extends
               ValidatorFactoryBuilder&lt;T&gt;&gt;)</methodname> returns true
               when the requested provider specific
-              <classname>ValidationBuilder</classname> sub interface is passed
-              as a parameter.</para>
+              <classname>ValidatorFactoryBuilder</classname> sub interface is
+              passed as a parameter.</para>
             </listitem>
           </itemizedlist>
 
@@ -3319,7 +3535,7 @@ public interface ACMEValidatorFactoryBuilder
         <classname>ValidatorFactoryBuilder</classname> not tied to any
         provider implementation. The first provider returned by the default
         <classname>ValidationProviderResolver</classname> is used to build the
-        <classname>ValidationBuilder</classname>.
+        <classname>ValidatorFactoryBuilder</classname>.
         <code>Validation.getBuilder()</code> is equivalent to
         <code>Validation.defineBootstrapState().getBuilder()</code>.</para>
 
@@ -3476,7 +3692,7 @@ public interface GenericBuilderFactory {
     /**
      * Defines the provider resolution strategy.
      * This resolver returns the list of providers evaluated
-     * to build the ValidationBuilder
+     * to build the ValidatorFactoryBuilder
      * &lt;p/&gt;
      * If no resolver is defined, the default ValidationProviderResolver
      * implementation is used.
@@ -3487,7 +3703,7 @@ public interface GenericBuilderFactory {
 
     /**
      * Returns a generic ValidatorFactoryBuilder implementation.
-     * At this stage the provider used to build the ValidationFactory is not defined.
+     * At this stage the provider used to build the ValidatorFactory is not defined.
      * &lt;p/&gt;
      * The ValidatorFactoryBuilder implementation is provided by the first provider returned
      * by the ValidationProviderResolver strategy.
@@ -3503,11 +3719,11 @@ public interface GenericBuilderFactory {
         <classname>ValidationProviderResolver</classname> implementation if
         needed. The entry point method, <methodname>builderType(Class&lt;T&gt;
         builderType)</methodname>, takes the provider specific
-        <classname>ValidationBuilder</classname> sub interface type and
+        <classname>ValidatorFactoryBuilder</classname> sub interface type and
         returns a <classname>SpecializedBuilderFactory</classname> object that
         guarantees to return an instance of the specific
-        <classname>ValidationBuilder</classname> sub interface. Thanks to the
-        use of generics, the client API does not have to cast to the
+        <classname>ValidatorFactoryBuilder</classname> sub interface. Thanks
+        to the use of generics, the client API does not have to cast to the
         <classname>ValidatorFactoryBuilder</classname> sub interface.</para>
 
         <para>A <classname>SpecializedBuilderFactory</classname> object can
@@ -3667,7 +3883,7 @@ public interface Validator&lt;T&gt; {
     /**
      * return the class level constraints
      */
-    BeanDescriptor getConstraintsForBean();
+    BeanDescriptor getConstraintsForClass();
 
     /**
      * return the property level constraints for a given propertyName
@@ -3685,7 +3901,7 @@ public interface Validator&lt;T&gt; {
       <parameter>T</parameter> class has at least one constraint
       declared.</para>
 
-      <para><methodname>getConstraintsForBean</methodname> returns an
+      <para><methodname>getConstraintsForClass</methodname> returns an
       <classname>BeanDescriptor</classname> object describing the bean level
       constraints (see <xref
       linkend="constraintdeclarationvalidationprocess-requirements-object" />).</para>
@@ -3749,7 +3965,7 @@ public interface ElementDescriptor {
 
       <para>The <classname>BeanDescriptor</classname> interface describes a
       constrained Java Bean. This interface is returned by
-      <methodname>Validator&lt;T&gt;.getConstraintsForBean()</methodname>.</para>
+      <methodname>Validator&lt;T&gt;.getConstraintsForClass()</methodname>.</para>
 
       <programlisting>/**
  * Describe a constrained Java Bean and the constraints associated to it.
@@ -4495,7 +4711,7 @@ constraint.future=must be a future date</programlisting>
   </appendix>
 
   <appendix>
-    <title>Proposal for method-level validation </title>
+    <title>Proposal for method-level validation</title>
 
     <para>This is a proposition not yet present in the specification
     officially but that is considered for inclusion.</para>
@@ -4627,7 +4843,7 @@ constraint.future=must be a future date</programlisting>
       <listitem>
         <para><literal>item</literal> is validated against
         <classname>@NotNull</classname> and the object is validated by
-        <classname>Validator&lt;Item&gt;</classname> </para>
+        <classname>Validator&lt;Item&gt;</classname></para>
       </listitem>
 
       <listitem>
@@ -4766,7 +4982,7 @@ TODO: A SPI must be defined in BV
 ** Platform integration
 BV metadata APIs and runtime are available from ValidatorFactory instances. It is recommended to cache ValidatorFactory instances and retrieve Validator&lt;T&gt; on demand.
 
-A ValidationFactory is made available at the platform level by the Java EE container (at a standardized JNDI location). Alternatively, a ValidationFactory is created by the Persistence provider using the standard BV bootstrap approach at JPA initialization time. (TODO either approach is viable, we need to chose. The first approach is probably slightly better wrt Web Beans integration as we could define a ConstraintFactory that understand WB resource resolution).
+A ValidatorFactory is made available at the platform level by the Java EE container (at a standardized JNDI location). Alternatively, a ValidationFactory is created by the Persistence provider using the standard BV bootstrap approach at JPA initialization time. (TODO either approach is viable, we need to chose. The first approach is probably slightly better wrt Web Beans integration as we could define a ConstraintFactory that understand WB resource resolution).
 
 Out of container, the Persistence provider must use the standard BV bootstrap approach at JPA initialization time if a Bean Validation provider is available.
 
