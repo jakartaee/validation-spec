@@ -252,7 +252,7 @@ EBE I started a thread on the ML => I don't think I like the move.-->
       <literal>javax.validation.ConstraintValidator</literal>.</para>
 
       <programlisting>/**
- * Link between an constraint annotation and its constraint validation implementation
+ * Link between a constraint annotation and its constraint validation implementation
  *
  * A given constraint annotation should be annotated by a @ConstraintValidator
  * annotation to refer to its constraint validation implementation
@@ -446,8 +446,8 @@ public @interface Min {
       constraint annotations as a list of annotations that are processed by
       the Bean Validation implementation. This means that each constraint
       specified in the value element is applied to the target. The annotation
-      must have a retention and can be applied on a type, field or
-      property.</para>
+      must have retention <literal>RUNTIME</literal> and can be applied on a
+      type, field or property.</para>
 
       <para>Each constraint annotation should be coupled with its
       corresponding multi-valued annotation.</para>
@@ -617,7 +617,7 @@ public @interface FrenchZipcode {
         parameters from the main annotation.</title>
 
         <programlisting>@NotNull
-@Size(min=5, max=5)    //arbitrary settings
+@Size    //arbitrary settings
 @ConstraintValidator(FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
@@ -699,7 +699,7 @@ public @interface OverridesParameter {
     /**
      * index of the targetted constraint declaration when using
      * multiple constraints of the same type.
-     * The index represent the index of the constraint in the value() array.
+     * The index represents the index of the constraint in the value() array.
      *
      * By default, no index is defined and the single constraint declaration
      * is targeted
@@ -769,11 +769,12 @@ public interface Constraint&lt;A extends Annotation&gt; {
 
     /**
      * Implement the validation constraint
+     * &lt;code&gt;object&lt;/code&gt; state must not be changed by a Constraint implementation
      *
      * @param object object to validate
      * @param constraintContext context in which the constraint implementation is evaluated
      *
-     * @return true if object pass the constraint
+     * @return false if &lt;code&gt;object&lt;/code&gt; does not pass the constraint
      */
     boolean isValid(Object object, ConstraintContext constraintContext);
 }</programlisting>
@@ -787,8 +788,9 @@ public interface Constraint&lt;A extends Annotation&gt; {
 
       <warning>
         <para>Should we restrict further? Should a constraint impl be
-        retrieved from the ConstraintFactory before each use? Metadata
-        providing the instance has lead to this rule.</para>
+        retrieved from the ConstraintFactory before each use? Providing the
+        constraint via the Metadata API was driving the undefined lifecycle
+        but we no longer return the impl via ConstraintDescriptor.</para>
       </warning>
 
       <!--EBE should we make explicit that instances cannot be shared if the annotations attributes are not the same?-->
@@ -802,6 +804,28 @@ public interface Constraint&lt;A extends Annotation&gt; {
       returns <literal>false</literal> if the value is not valid,
       <literal>true</literal> otherwise. <literal>isValid</literal>
       implementations must be thread-safe.</para>
+
+      <para>If the value parameter references an object with an unanticipated
+      type, an <literal>IllegalArgumentException</literal> should be raised.
+      The constraint validation implementation is not allowed to change the
+      state of the value passed to <methodname>isValid</methodname>.</para>
+
+      <note>
+        <para>While not mandatory, it is considered a good practice to split
+        the core constraint validation from the not null constraint validation
+        (for example, an <classname>@Email</classname> constraint will return
+        true on a null object, i.e. will not take care of the
+        <classname>@NotNull</classname> validation)</para>
+
+        <para><code>null</code> can have multiple meanings but is commonly
+        used to express that a value does not make sense, is not available or
+        is simply unknown. Those constraints on the value are orthogonal in
+        most cases to other constraints. For example a String, if present,
+        must be an email but can be null. Separating both concerns is a good
+        practice.</para>
+
+        <!--[SCP: I think this should be mandatory.] I don't think you can: for once, it would prevent from implementing @NotNull or @NotEmpty-->
+      </note>
 
       <para>The <classname>ConstraintContext</classname> object passed to the
       <methodname>isValid</methodname> method carries information and
@@ -869,27 +893,6 @@ public interface ConstraintContext {
 
 }</programlisting>
       </example>
-
-      <note>
-        <para>While not mandatory, it is considered a good practice to split
-        the core constraint validation from the not null constraint validation
-        (for example, an <classname>@Email</classname> constraint will return
-        true on a null object, i.e. will not take care of the
-        <classname>@NotNull</classname> validation)</para>
-
-        <para><code>null</code> can have multiple meanings but is commonly
-        used to express that a value does not make sense, is not available or
-        is simply unknown. Those constraints on the value are orthogonal in
-        most cases to other constraints. For example a String, if present,
-        must be an email but can be null. Separating both concerns is a good
-        practice.</para>
-
-        <!--[SCP: I think this should be mandatory.] I don't think you can: for once, it would prevent from implementing @NotNull or @NotEmpty-->
-      </note>
-
-      <para>If the value parameter references an object with an unanticipated
-      type, an <literal>IllegalArgumentException</literal> should be
-      raised.</para>
 
       <para>The <classname>ConstraintContext</classname> interface allows to
       redefine the default message error generated when a constraint is not
@@ -992,6 +995,69 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
             <para>returns <literal>true</literal> on a null parameter</para>
           </listitem>
         </itemizedlist>
+
+        <para>The next example shows how to use
+        <classname>ConstraintContext</classname>.</para>
+
+        <example>
+          <title>Use of ConstraintContext</title>
+
+          <programlisting>/**
+ * Check that a string length is between min and max
+ * Error messages are using either key:
+ *  - error.length.min if the min limit is reached
+ *  - error.length.max if the max limit is reached
+ */
+public class FineGrainedLengthConstraint implements Constraint&lt;Length&gt; {
+    private int min;
+    private int max;
+
+    /**
+     * Configure the constraint validator based on the elements
+     * specified at the time it was defined.
+     * @param constraint the constraint definition
+     */
+    public void initialize(Length constraint) {
+        min = constraint.min();
+        max = constraint.max();
+    }
+
+    /**
+     * Validate a specified value.
+     * returns false if the specified value does not conform to the definition
+     * @exception IllegalArgumentException if the object is not of type String
+     */
+    public boolean isValid(Object value, ConstraintContext constraintContext) {
+        if ( value == null ) return true;
+        if ( !( value instanceof String ) ) {
+            throw new IllegalArgumentException("Expected String type");
+        }
+        String string = (String) value;
+        int length = string.length();
+
+        //remove default error
+        constraintContext.disableDefaultError();
+
+        if (length &lt; min) {
+            //add min specific error
+            constraintContext.addError( "{error.length.min}" );
+            return false;
+        }
+        if (length &gt; max) {
+            //add max specific error
+            constraintContext.addError( "{error.length.max}" );
+            return false;
+        }
+        return true;
+    }
+}</programlisting>
+        </example>
+
+        <para>The default error message is disabled and replaced by a specific
+        error message depending on the type of constraint violation detected.
+        In this case, only one error report is returned at a given time but a
+        constraint validation implementation can return several error
+        reports.</para>
       </section>
     </section>
 
@@ -1126,7 +1192,7 @@ EBE fixed this by rewordingthe JavaDoc-->
         annotation, the Validator will validate the contents of Y when X is
         validated. The exact type of the field of type Y (subclass,
         implementation) is determined at runtime. The constrain definitions
-        for this particular subtype are used. This ensure proper polymorphism
+        for this particular subtype are used. This ensures proper polymorphism
         behavior.</para>
 
         <para>Collection-valued or array-valued fields and properties may also
@@ -1361,7 +1427,7 @@ EBE: is that a problem?-->
         association (i.e. object reference or collection / array of objects),
         dictates the Bean Validator implementation to apply recursively the
         bean validation routine on (each of) the associated object(s). This
-        mechanism is recursive: an associated object can itself contains
+        mechanism is recursive: an associated object can itself contain
         cascaded references. The Bean Validation implementation must ignore
         the cascading operation if the associated object instance has already
         been validated by the current validation routine, thus preventing
@@ -1377,7 +1443,7 @@ EBE: is that a problem?-->
     <section>
       <title>Examples</title>
 
-      <para>The first example demonstrate how beans, fields and getters are
+      <para>The first example demonstrates how beans, fields and getters are
       annotated to express some constraints.</para>
 
       <example>
@@ -1686,7 +1752,7 @@ public class PreferredGuest extends Customer {
 
         <programlisting><emphasis role="bold">@GroupSequence(name="default", sequence={"first", "second", "last"})</emphasis>
 public class Book {
-    <emphasis role="bold">@NotEmpty(groups="first")</emphasis>
+    @NotEmpty(groups="first")
     private String title;
 
     @Length(max=30, groups="second")
@@ -1857,7 +1923,7 @@ public interface Validator&lt;T&gt; extends Serializable {
      *
      * @return constraint violations or an empty Set if none
      *
-     * @throws IllegalArgumentException e if object is null
+     * @throws IllegalArgumentException e if object is null or if propertyName is not present
      */
     Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object, String propertyName, String... groups);
 
@@ -1873,6 +1939,7 @@ public interface Validator&lt;T&gt; extends Serializable {
      * for validation (default to &lt;code&gt;default&lt;/code&gt;)
      *
      * @return constraint violations or an empty Set if none
+     * @throws IllegalArgumentException e if propertyName is not present
      */
     Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(String propertyName, Object value, String... groups);
 
@@ -2073,7 +2140,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           (and it's composing constraints) on <methodname>city</methodname>,
           <classname>@NotEmpty</classname> (and it's composing constraints) on
           <methodname>zipCode</methodname>. Note that if
-          <methodname>zipCode</methodname> is indeed not empty, only one
+          <methodname>zipCode</methodname> is empty, only one
           <classname>ConstraintViolation</classname> object will represent the
           failure and the not empty validation will only be executed
           once.</para>
@@ -2215,8 +2282,8 @@ public interface ConstraintViolation&lt;T&gt; {
       of the current bean being validated and leading to the failure.
       <methodname>getLeafBean</methodname> returns the bean itself.</para>
 
-      <para>The <methodname>getValue</methodname> method returns the value
-      (field, property or validated object) being passed to
+      <para>The <methodname>getInvalidValue</methodname> method returns the
+      value (field, property or validated object) being passed to
       <methodname>isValid</methodname> and returning false.</para>
 
       <para>The <methodname>getPropertyPath</methodname> is defined by the
@@ -2292,7 +2359,7 @@ EBE rule #1 addresses that or am I off base?-->
       linkend="constraintmetadata-constraintdescriptor" />).</para>
 
       <section>
-        <title>Example</title>
+        <title>Examples</title>
 
         <para>These examples assume the following definition of
         <classname>@NotEmpty</classname>.</para>
@@ -2412,7 +2479,7 @@ for ( String group : constraintViolation.getGroups() ) {
 
         <programlisting>assert "lastname must not be null".equals( constraintViolation.getMessage() );
 assert book == constraintViolation.getRootBean();
-assert book == constraintViolation.getLeafBean();
+assert author == constraintViolation.getLeafBean();
 assert Author.class == constraintViolation.getBeanClass();
 //the offending value
 assert book.getAuthor().getLastName() == constraintViolation.getInvalidValue();
@@ -2655,7 +2722,7 @@ myapp.creditcard.error=credit card number not valid</programlisting>
           <title>Use MessageResolver to use a specific Locale value</title>
 
           <programlisting>/**
- * delegate to a MessageResolver implementation but enforece a given Locale
+ * delegate to a MessageResolver implementation but enforce a given Locale
  */
 public class LocaleSpecificMessageResolver implements MessageResolver {
     private final MessageResolver defaultResolver;
@@ -2719,7 +2786,7 @@ Validator&lt;Address&gt; validator =
     public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
                               Object value) {
         Locale locale = FacesContext.getCurrentInstance().getUIViewRoot().getLocale();
-        return this.this.delegate.interpolate(
+        return this.delegate.interpolate(
                         message, constraintDescriptor, value, locale );
     }
 
@@ -3444,7 +3511,7 @@ public interface ValidationProvider {
      * to build the ValidatorFactory instance.
      * &lt;p/&gt;
      * This method can only be called on providers returning true on &lt;
-     * code&gt;#issuitable(builderType)&lt;/code&gt;
+     * code&gt;#isSuitable(builderType)&lt;/code&gt;
      *
      * @param builderClass the Builder class type
      * @param state bootstrap state
@@ -3614,7 +3681,7 @@ public interface ACMEValidatorFactoryBuilder
  * The chosen provider is defined as followed:
  * &lt;ul&gt;
  * &lt;li&gt;if the XML configuration defines a provider, this provider is used&lt;/li&gt;
- * &lt;li&gt;if the XML configuratio does not define a provider or if no XML configuration
+ * &lt;li&gt;if the XML configuration does not define a provider or if no XML configuration
  * is present the first provider returned by the ValidationProviderResolver
  * isntance is used.&lt;/li&gt;
  * &lt;/ul&gt;
@@ -3974,12 +4041,12 @@ public interface Validator&lt;T&gt; {
       <parameter>T</parameter> class has at least one constraint
       declared.</para>
 
-      <para><methodname>getConstraintsForClass</methodname> returns an
+      <para><methodname>getConstraintsForClass</methodname> returns a
       <classname>BeanDescriptor</classname> object describing the bean level
       constraints (see <xref
       linkend="constraintdeclarationvalidationprocess-requirements-object" />).</para>
 
-      <para><methodname>getConstraintsForProperty</methodname> returns an
+      <para><methodname>getConstraintsForProperty</methodname> returns a
       <classname>PropertyDescriptor</classname> object describing the property
       level constraints (See <xref
       linkend="constraintdeclarationvalidationprocess-requirements-property" />).
@@ -4082,8 +4149,7 @@ public interface PropertyDescriptor extends ElementDescriptor {
 
       <para>The <methodname>isCascaded</methodname> method returns
       <literal>true</literal> of the property is marked with
-      <classname>@Valid</classname>. Class level element descriptors always
-      return <literal>false</literal>.</para>
+      <classname>@Valid</classname>. </para>
 
       <para><methodname>getPropertyName</methodname> returns the property name
       as described in <xref
@@ -4126,19 +4192,21 @@ public interface ConstraintDescriptor {
      * Returns a map containing the annotation parameter names as keys and the
      * annotation parameter values as value.
      * If this constraint is used as part of a composed constraint, parameter
-     * values are reflecting the overridden parameters form the main constraint.
+     * values are reflecting the overridden parameters from the main constraint.
      *
-     * @return Returns a map containing the annotation paramter names as keys and the annotation parameter values
-     *         as value.
+     * @return Returns a map containing the annotation paramter names as keys
+     *         and the annotation parameter values as value.
      */
     Map&lt;String, Object&gt; getParameters();
 
     /**
-     * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each descriptor describes a composing
-     * constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt; instances of composing constraints reflect overridden
-     * parameter values in {@link #getParameters()}  and {@link #getAnnotation()}.
+     * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each
+     * descriptor describes a composing constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt;
+     * instances of composing constraints reflect overridden parameter values in
+     * {@link #getParameters()}  and {@link #getAnnotation()}.
      *
-     * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set in case there are no composing constraints.
+     * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
+     *         in case there are no composing constraints.
      */
     Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
@@ -4265,7 +4333,6 @@ public class Book {
 assert bookValidator.hasConstraints();
 
 ElementDescriptor bookBeanDescriptor = bookValidator.getBeanConstraints();
-assert bookBeanDescriptor.getElementType() == ElementType.TYPE;
 assert bookBeanDescriptor.getConstraintDescriptors().size() == 0 //no constraint
 assert "".equals( bookBeanDescriptor.getPropertyPath() ); //root element
 
@@ -4278,7 +4345,6 @@ assert bookValidator.getConstraintsForProperty("doesNotExist") == null;
 assert bookValidator.getConstraintsForProperty("description") == null; 
 
 ElementDescriptor propertyDescriptor = bookValidator.getConstraintsForProperty("title");
-assert propertyDescriptor.getElementType() == ElementType.METHOD;
 assert propertyDescriptor.getConstraintDescriptors().size() == 2
 assert "title".equals( propertyDescriptor.getPropertyPath() );
 
@@ -4315,8 +4381,8 @@ assert propertyDescriptor.isCascaded()</programlisting>
     <title>Built-in Constraint definitions</title>
 
     <para>The specification defines a small set of built-in constraints. Their
-    usage is encourage both in regular constraint declarations and as
-    composing constraints. Using this set of constraint will enhance
+    usage is encouraged both in regular constraint declarations and as
+    composing constraints. Using this set of constraints will enhance
     portability of your constraints across constraint-consuming frameworks
     relying on the metadata API (such as client side validation frameworks or
     database schema generation frameworks).</para>
@@ -4607,7 +4673,7 @@ public @interface Future {
 
     <warning>
       <para>Add @Like, @AlphaNumerical? other subset of Regexp? Regexp seems
-      to generic and not descriptive enough.</para>
+      too generic and not descriptive enough.</para>
     </warning>
   </chapter>
 
