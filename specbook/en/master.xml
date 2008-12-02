@@ -2226,9 +2226,14 @@ public class Address {
 public interface ConstraintViolation&lt;T&gt; {
 
     /**
-     * @return The error message for this constraint violation.
-     */
-    String getMessage();
+	 * @return The interpolated error message for this constraint violation.
+	 */
+	String getInterpolatedMessage();
+
+	/**
+	 * @return The non-interpolated error message for this constraint violation.
+	 */
+	String getRawMessage();
 
     /**
      * @return The root bean being validated.
@@ -2279,10 +2284,16 @@ public interface ConstraintViolation&lt;T&gt; {
     ConstraintDescriptor getConstraintDescriptor();
 }</programlisting>
 
-      <para>The <methodname>getMessage</methodname> method returns the
-      expanded (localized) message for the failing constraint (See <xref
+      <para>The <methodname>getInterpolatedMessage</methodname> method returns
+      the expanded (localized) message for the failing constraint (See <xref
       linkend="validationapi-message" /> for more information on message
-      expansion).</para>
+      expansion). This can be used by clients to expose user friendly
+      messages.</para>
+
+      <para>The <methodname>getRawMessage</methodname> method returns the
+      non-interpolated error message (usually the message attribute on the
+      constraint declaration). Frameworks can use this as an error code
+      key.</para>
 
       <para>The <methodname>getRootBean</methodname> method returns the root
       object being validated that led to the failing constraint (i.e. the
@@ -2466,7 +2477,7 @@ Set&lt;ConstraintViolation&gt; constraintViolations = validator.validate(book);<
         failure passes the following assertions:</para>
 
         <programlisting>//assuming an english locale, the interpolated message is returned
-assert "may not be null or empty".equals( constraintViolation.getMessage() );
+assert "may not be null or empty".equals( constraintViolation.getInterpolatedMessage() );
 assert book == constraintViolation.getRootBean();
 assert book == constraintViolation.getLeafBean();
 assert Book.class == constraintViolation.getBeanClass();
@@ -2488,7 +2499,7 @@ for ( String group : constraintViolation.getGroups() ) {
         <methodname>lastname</methodname>, will produce the following
         <classname>ConstraintViolation</classname> object:</para>
 
-        <programlisting>assert "lastname must not be null".equals( constraintViolation.getMessage() );
+        <programlisting>assert "lastname must not be null".equals( constraintViolation.getInterpolatedMessage() );
 assert book == constraintViolation.getRootBean();
 assert author == constraintViolation.getLeafBean();
 assert Author.class == constraintViolation.getBeanClass();
