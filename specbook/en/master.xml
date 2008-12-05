@@ -346,19 +346,19 @@ public @interface ConstraintValidator {
           which processing groups the constraint definition is associated
           with.</para>
 
-          <programlisting>    String[] groups() default {};</programlisting>
+          <programlisting>    Class&lt;?&gt;[] groups() default {};</programlisting>
 
           <para>The default value must be an empty array.</para>
 
           <para>When using the constraint declaration, if no group is
-          specified, the <literal>default</literal> group is considered
-          declared. The validation will be evaluated if</para>
+          specified, the <literal>Default</literal> group is considered
+          declared. The validation will be evaluated if:</para>
 
           <itemizedlist>
             <listitem>
               <para>no group was specified at validation time (which defaults
-              to the <literal>default</literal> group) and the annotation is a
-              member of the <literal>default</literal> group</para>
+              to the <literal>Default</literal> group) and the annotation
+              declares of the <literal>default</literal> group</para>
             </listitem>
 
             <listitem>
@@ -399,7 +399,7 @@ public @interface ConstraintValidator {
 @Retention(RUNTIME)
 public @interface NotNull {
     String message() default "{constraint.notNull}";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
         </example>
 
@@ -418,7 +418,7 @@ public @interface Length {
     int min() default 0;
     int max() default Integer.MAX_VALUE;
     String message() default "{constraint.length}";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
         </example>
 
@@ -436,7 +436,7 @@ public @interface Length {
 public @interface Min {
     int value();
     String message() default "{constraint.min}";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
         </example>
 
@@ -478,7 +478,7 @@ public @interface Pattern {
     int flags() default 0;
 
     String message() default "{constraint.pattern}";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }
 
 @Documented
@@ -541,7 +541,7 @@ EBE: this is not specified, I don't think there is a need for-->}</programlistin
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
       </example>
 
@@ -579,7 +579,7 @@ public @interface FrenchZipcode {
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
       </example>
 
@@ -615,7 +615,7 @@ public @interface ReportAsViolationFromCompositeConstraint {
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
       </example>
 
@@ -638,7 +638,7 @@ public @interface FrenchZipcode {
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 
     @OverridesParameters( {
         @OverridesParameter(constraint=Size.class, parameter="min"),
@@ -677,7 +677,7 @@ public @interface FrenchZipcode {
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
-    String[] groups() default {};
+    Class&lt;?&gt;[] groups() default {};
 }</programlisting>
 
       <para>If a constraint type is used more than once as a composing
@@ -802,10 +802,10 @@ public interface Constraint&lt;A extends Annotation&gt; {
 
       <warning>
         <para>Should we restrict further? Should a constraint impl be
-        retrieved from the ConstraintFactory before each use? Providing the
-        constraint via the Metadata API was driving the undefined lifecycle
-        but we no longer return the implementation via
-        ConstraintDescriptor.</para>
+        retrieved from the <classname>ConstraintFactory</classname> before
+        each use? Providing the constraint via the Metadata API was driving
+        the undefined lifecycle but we no longer return the implementation via
+        <classname>ConstraintDescriptor</classname>.</para>
       </warning>
 
       <!--EBE should we make explicit that instances cannot be shared if the annotations attributes are not the same?-->
@@ -1166,8 +1166,6 @@ EBE fixed this by rewordingthe JavaDoc-->
         for objects holding constraint declarations to adhere a single state
         access strategy (either annotated fields or properties).</para>
 
-        <!--EBE steve, constraints can be applied on fields of primitive types. We use boxing.-->
-
         <para>When a field is annotated with a constraint declaration, field
         access strategy is used to access the state validated by such
         constraint.</para>
@@ -1268,9 +1266,11 @@ EBE fixed this by rewordingthe JavaDoc-->
     <section id="constraintdeclarationvalidationprocess-inheritance">
       <title>Inheritance (interface and superclass)</title>
 
-      <para>A constraint declaration can be placed on an interface. Constraint
-      declarations held on superclasses as well as interfaces are evaluated by
-      the Validator.</para>
+      <para>A constraint declaration can be placed on an interface. For a
+      given class, constraint declarations held on superclasses as well as
+      interfaces are evaluated by the Validator. Rules are formally described
+      in <xref
+      linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition" />.</para>
 
       <para>The effect of constraint declarations is cumulative. Constraints
       declared on a superclass getter will be validated along with any
@@ -1280,82 +1280,601 @@ EBE fixed this by rewordingthe JavaDoc-->
     <section id="constraintdeclarationvalidationprocess-groupsequence">
       <title>Group and group sequence</title>
 
-      <para>Groups are useful to define subsets of constraints for validation
-      purposes. Assigning constraints to groups provides the ability to do
-      partial validation of the group. The <methodname>groups</methodname>
-      element of the constraint annotation specifies the groups in which the
-      constraint participates. At validation time, an optional parameter can
-      be specified that narrows the set of groups to be validated.</para>
+      <para>A group defines a subset of constraints. Instead of validating all
+      constraints for a given object graph, only a subset is validated
+      depending on the group targeted. Each constraint declaration defines the
+      list of groups it belongs to. If no group is explicitly declared, a
+      constraint belongs to the <classname>Default</classname> group.</para>
 
-      <para>One important application for grouping is to control the order of
-      evaluation of constraints. There are often scenarios where a preliminary
-      set of constraints should be evaluated prior to other constraints. This
-      is useful in two scenarios:</para>
+      <para>Groups are represented by interfaces.</para>
 
-      <itemizedlist>
-        <listitem>
-          <para>the second group depends on a stable state to run
-          properly</para>
-        </listitem>
+      <example>
+        <title>Definition of groups</title>
 
-        <listitem>
-          <para>the second group is a heavy consumer of time, CPU or memory
-          and should be avoided if possible</para>
-        </listitem>
-      </itemizedlist>
+        <programlisting>/**
+ * Validation group checking a user is billable
+ * 
+ * @author Emmanuel Bernard
+ */
+public interface Billable {}
 
-      <para>To implement such ordering, one or more
-      <classname>@GroupSequence</classname> annotations can be added.</para>
+/**
+ * customer can buy without harrassing checking process
+ *  
+ * @author Emmanuel Bernard
+ */
+public interface BuyInOneClick {
+}</programlisting>
+      </example>
 
-      <programlisting>@Target({TYPE})
-@Retention(RUNTIME)
-public @interface GroupSequence {
-    String name();
-    String[] sequence();
-}
+      <para>A constraint can belong to one or more groups.</para>
 
-@Target({TYPE})
-@Retention(RUNTIME)
-public @interface GroupSequences {
-    GroupSequence[] value();
+      <example id="example-assigngrouptoconstraints">
+        <title>Assign groups to constraints</title>
+
+        <programlisting>/**
+ * User representation
+ * 
+ * @author Emmanuel Bernard
+ */
+public class User {
+    @NotNull
+    private String firstname;
+
+    @NotNull(groups = Default.class)
+    private String lastname;
+
+    @NotNull(groups = {Billable.class, BuyInOneClick.class})
+    private CreditCard defaultCreditCard;
+}</programlisting>
+      </example>
+
+      <para>During the validation call, one or more groups are validated. All
+      the constraints belonging to this set of group is evaluated on the
+      object graph. In <xref linkend="example-assigngrouptoconstraints" />,
+      <classname>@NotNull</classname> is checked on
+      <literal>defaultCreditCard</literal> when either the
+      <classname>Billable</classname> or <classname>BuyInOneClick</classname>
+      group is validated. <classname>@NotNull</classname> on
+      <literal>firstname</literal> and on <literal>lastname</literal> are
+      validated when the <classname>Default</classname> group is validated.
+      Reminder: constraints held on superclasses and interfaces are
+      considered.</para>
+
+      <para><classname>Default</classname> is a group predefined by the
+      specification</para>
+
+      <programlisting>package javax.validation.groups;
+
+/**
+ * Default Bean Validation group
+ *
+ * @author Emmanuel Bernard
+ * TODO should it be named DefaultGroup?
+ */
+public interface Default {
 }</programlisting>
 
-      <para><classname>@GroupSequence</classname> and
-      <classname>@GroupSequences</classname> are placed on the validated class
-      they should be applied on.</para>
+      <section id="constraintdeclarationvalidationprocess-groupsequence-groupinheritance">
+        <title>Group inheritance</title>
 
-      <para>Each group of a group sequence must be processed sequentially in
-      the order defined by <methodname>@GroupSequence.sequence</methodname>
-      when the group <methodname>@GroupSequence.name</methodname> is requested
-      ; processing a group is defined in <xref
-      linkend="constraintdeclarationvalidationprocess-validationroutine" /> ;
-      if one of the groups processed in the sequence leads to one or more
-      validation failures, the groups following in the sequence must not be
-      processed.</para>
+        <para>In some situations, a group is a super set of one or more
+        groups. This can be described by Bean Validation. A group can inherit
+        one or more groups by using interface inheritance.</para>
 
-      <para>A group sequence can contain other group sequence names in its
-      sequence. Group sequences are recursively resolved: the user must make
-      sure no circular graph is defined by the group sequence
-      definitions.</para>
+        <example>
+          <title>Groups can inherit other groups</title>
 
-      <para>For a given class, the group sequences taken into account are the
-      ones placed on the class itself as well as the ones on all its
-      superclasses and all its interfaces.</para>
+          <programlisting>/**
+ * Customer can buy without harrassing checking process
+ *
+ * @author Emmanuel Bernard
+ */
+public interface BuyInOneClick extends Default, Billable {
+}</programlisting>
+        </example>
 
-      <para>When an object graph is validated (through the use of
-      <literal>@Valid</literal>), the children elements of the graph inherit
-      the sequence definitions of their parent. Two group sequences must not
-      share the same group name in a given object graph (including
-      superclasses and interfaces).</para>
+        <para>For a given interface Z, constraints marked as belonging to the
+        group Z (ie where the annotation <methodname>groups</methodname>
+        property contains the interface Z) or any of the super interfaces of Z
+        (inherited groups) are considered part of the group.</para>
 
-      <para>Group sequences must not use constraint declaration group names as
-      a name. In other words, constraint definition groups cannot contain one
-      of the group sequence names.</para>
+        <para>In the following example:</para>
 
-      <para>Unless constrained by a group sequence, the order in which groups
-      are validated is undefined.</para>
+        <example>
+          <title>Use of a inherited group</title>
 
-      <!--Make explicit what happens if a group is part of a group sequence and also explicitly called in validator.validate()-->
+          <programlisting>/**
+ * User representation
+ *
+ * @author Emmanuel Bernard
+ */
+public class User {
+    @NotNull
+    private String firstname;
+
+    @NotNull(groups = Default.class)
+    private String lastname;
+
+    @NotNull(groups = {Billable.class})
+    private CreditCard defaultCreditCard;
+}</programlisting>
+        </example>
+
+        <para>validating the group <classname>BuyInOneClick</classname> will
+        lead to the following constraints checking:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><classname>@NotNull</classname> on
+            <literal>firstname</literal> and
+            <literal>lastname</literal></para>
+          </listitem>
+
+          <listitem>
+            <para><classname>@NotNull</classname> on
+            <literal>defaultCreditCard</literal></para>
+          </listitem>
+        </itemizedlist>
+
+        <para>because <classname>Default</classname> and
+        <classname>Billable</classname> are subinterfaces of
+        <classname>BuyInOneClick</classname>.</para>
+      </section>
+
+      <section id="constraintdeclarationvalidationprocess-groupsequence-groupsequence">
+        <title>Group sequence</title>
+
+        <para>By default, constraints are evaluated in no particular order and
+        this regardless of which groups they belong to. It is however useful
+        in some situations to to control the order of constraints evaluation.
+        There are often scenarios where a preliminary set of constraints
+        should be evaluated prior to other constraints. Here are two
+        examples:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>The second group depends on a stable state to run properly.
+            This stable state is verified by a previous group.</para>
+          </listitem>
+
+          <listitem>
+            <para>The second group is a heavy consumer of time, CPU or memory
+            and its evaluation should be avoided if possible.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>To implement such ordering, a group can be defined as a sequence
+        of other groups. Each group in a group sequence must be processed
+        sequentially in the order defined by
+        <methodname>@GroupSequence.sequence</methodname> when the group
+        defined as a sequence is requested. Processing a group is defined in
+        <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine" />
+        ; if one of the groups processed in the sequence leads to one or more
+        validation failures, the groups following in the sequence must not be
+        processed. This ensure that a set of constraint is evaluated only if
+        another set of constraint is valid.</para>
+
+        <para>Groups defining a sequence and groups composing a sequence must
+        not be involved in a cyclic dependency either directly or indirectly,
+        either through cascaded sequence definition or group
+        inheritance.</para>
+
+        <warning>
+          <para>Should we constraint group defining a sequence? Ie. can group
+          defining a sequence be used in constraint declarations explicitly?
+          Think about implications in the resolution algorithm.</para>
+        </warning>
+
+        <para>To define a group as a sequence, the interface must be annotated
+        with the <classname>@GroupSequence</classname> annotation.</para>
+
+        <programlisting>@Target({TYPE})
+@Retention(RUNTIME)
+public @interface GroupSequence {
+    Class&lt;?&gt;[] sequence();
+}</programlisting>
+
+        <para>Here is a usage example</para>
+
+        <example id="example-groupsequence">
+          <title>Make use of group sequence</title>
+
+          <programlisting>/**
+ * @author Emmanuel Bernard
+ */
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+    @NotNull @Size(max = 50)
+    private String street1;
+
+    @ZipCode
+    private String zipcode;
+
+    @NotNull @Size(max = 30)
+    private String city;
+
+    /**
+     * check conherence on the overall object
+     * Needs basic checking to be green first
+     */
+    public interface HighLevelCoherence {}
+
+    /**
+     * check both basic constraints and high level ones.
+     * high level constraints are not cheked if basic constraints fail
+     */
+    @GroupSequence(sequence = {Default.class, HighLevelCoherence.class})
+    public interface Complete {}
+}</programlisting>
+        </example>
+
+        <para>In <xref linkend="example-groupsequence" />, when the
+        <classname>Address.Complete</classname> group is validated, all
+        constraints belonging to the <classname>Default</classname> group are
+        validated. If any of them fail, the validation skips the
+        <classname>HighLevelCoherence</classname> group. If all
+        <classname>Default</classname> constraints pass,
+        <classname>HighLevelCoherence</classname> constraints are
+        evaluated.</para>
+
+        <note>
+          <para>A given constraint can belong to two groups ordered by a
+          sequence. In this case, the constraint is evaluated as part of the
+          first group and ignored in the subsequent group(s). See <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine" />
+          for more informations.</para>
+        </note>
+
+        <!--Make explicit what happens if a group is part of a group sequence and also explicitly called in validator.validate()-->
+      </section>
+
+      <section id="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup">
+        <title>Redefining the Default group for a class</title>
+
+        <para>In <xref linkend="example-groupsequence" />, validating the
+        <classname>Default</classname> group does not validate
+        <classname>HighLevelCoherence</classname> constraints. To ensure a
+        complete validation, a user must use the
+        <classname>Complete</classname> group. This breaks some of the
+        encapsulation you could expect. You can work around this by redefining
+        what the <classname>Default</classname> group means for a given class.
+        To redefine <classname>Default</classname> for a class, place a
+        <classname>@GroupSequence</classname> annotation on the class ; this
+        sequence expresses the sequence of groups that does substitute
+        <classname>Default</classname> for this class.</para>
+
+        <example id="example-overridedefaultgroup">
+          <title>Redefining Default group for Address</title>
+
+          <programlisting>/**
+ * @author Emmanuel Bernard
+ */
+@GroupSequence(sequence={Address.class, HighLevelCoherence.class})
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+    @NotNull @Size(max = 50)
+    private String street1;
+
+    @ZipCode
+    private String zipcode;
+
+    @NotNull @Size(max = 30)
+    private String city;
+
+    /**
+     * check conherence on the overall object
+     * Needs basic checking to be green first
+     */
+    public interface HighLevelCoherence {}
+}</programlisting>
+        </example>
+
+        <para>In <xref linkend="example-overridedefaultgroup" />, when an
+        address object is validated for the group
+        <classname>Default</classname>, all constraints belonging to the group
+        <classname>Default</classname> and hosted on
+        <classname>Address</classname> are evaluated. If none fails, all
+        <classname>HighLevelCoherence</classname> constraints present on
+        <classname>Address</classname> are evaluated. In other words, when
+        validating the <classname>Default</classname> group for
+        <classname>Address</classname>, the group sequence defined on the
+        <classname>Address</classname> class is used.</para>
+
+        <para>Since sequences cannot have circular dependencies, using
+        <classname>Default</classname> in the declaration of a sequence is not
+        an option. Constraints hosted on a class <classname>A</classname> and
+        belonging to the <classname>Default</classname> group (by default or
+        explicitly) implicitly belong to the group
+        <classname>A</classname>.</para>
+
+        <para>A sequence defined on a class <classname>A</classname> (ie.
+        redefining the <classname>Default</classname> groups for the class)
+        must contain the group <classname>A</classname>. In other words, the
+        default constraints hosted on a class must be part of the sequence
+        definition.</para>
+      </section>
+
+      <section id="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping">
+        <title>Implicit grouping</title>
+
+        <para>It is possible to implicitly group some constraints in the same
+        group without explicitly listing such a group in the constraint
+        declaration. Every constraint hosted on an interface
+        <classname>Z</classname> and part of the
+        <classname>Default</classname> group (implicitly or explicitly)
+        belongs to the group <classname>Z</classname>. This is useful to
+        validate the partial state of an object based on a role represented by
+        an interface. </para>
+
+        <example>
+          <title>Example of interface / group hosting constraints</title>
+
+          <programlisting>/**
+ * Auditable object contract
+ * 
+ * @author Emmanuel Bernard
+ */
+public interface Auditable {
+    @NotNull String getCreationDate();
+    @NotNull String getLastUpdate();
+    @NotNull String getLastModifier();
+    @NotNull String getLastReader();
+}
+
+/**
+ * Represents an order in the system
+ * 
+ * @author Emmanuel Bernard
+ */
+public class Order implements Auditable {
+    private String creationDate;
+    private String lastUpdate;
+    private String lastModifier;
+    private String lastReader;
+
+    private String orderNumber;
+
+    public String getCreationDate() {
+        return this.creationDate;
+    }
+
+    public String getLastUpdate() {
+        return this.lastUpdate;
+    }
+
+    public String getLastModifier() {
+        return this.lastModifier;
+    }
+
+    public String getLastReader() {
+        return this.lastReader;
+    }
+
+    @NotNull @Size(min=10, max=10)
+    public String getOrderNumber() {
+        return this.orderNumber;
+    }
+}</programlisting>
+        </example>
+
+        <para>When an order object is validated on the
+        <classname>Default</classname> group, the following constraints are
+        validated: <classname>@NotNull</classname> on
+        <methodname>getCreationDate</methodname>,
+        <methodname>getLastUpdate</methodname>,
+        <methodname>getLastModifier</methodname>,
+        <methodname>getLastReader</methodname>,
+        <methodname>getOrderNumber</methodname> and @Size on
+        <methodname>getOrderNumber</methodname> as all belong to the
+        <classname>Default</classname> group. </para>
+
+        <para>When an order object is validated on the
+        <classname>Auditable</classname> group, the following constraints are
+        validated: <classname>@NotNull</classname> on
+        <methodname>getCreationDate</methodname>,
+        <methodname>getLastUpdate</methodname>,
+        <methodname>getLastModifier</methodname>,
+        <methodname>getLastReader</methodname>. Only the constraints present
+        on <classname>Auditable</classname> (and any of its super interfaces)
+        and belonging to the Default group are validated when the group
+        <classname>Auditable</classname> is requested. It allows the caller to
+        validate that a given object can be safely audited even if the object
+        state itself is not valid.</para>
+      </section>
+
+      <section id="constraintdeclarationvalidationprocess-groupsequence-formaldefinition">
+        <title>Formal definitions</title>
+
+        <para>The formal rules defining groups are as followed. <emphasis>Text
+        in italic are comments about the rules.</emphasis></para>
+
+        <para>For every class <classname>X</classname>:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>A. For each superclass <classname>Y</classname> of
+            <classname>X</classname>, the group <classname>Y</classname>
+            contains all constraints of the group <classname>Y</classname> of
+            <classname>Y</classname></para>
+
+            <para><emphasis>this rule prepares formal concepts for recursive
+            discovery definition</emphasis></para>
+          </listitem>
+
+          <listitem>
+            <para>B. The group <classname>X</classname> contains the following
+            constraints:</para>
+
+            <para><emphasis>group <classname>X</classname> is a group used on
+            sequences redefining the default group on a class (see <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup" />)</emphasis></para>
+
+            <orderedlist>
+              <listitem>
+                <para>every constraint declared by the class
+                <classname>X</classname> which does not explicitly declare a
+                group or declare the group <classname>Default</classname>
+                explicitly.</para>
+
+                <para><emphasis>all <classname>Default</classname> constraints
+                hosted on <classname>X</classname></emphasis></para>
+              </listitem>
+
+              <listitem>
+                <para>every constraint declared by any interface implemented
+                by <classname>X</classname> and not annotated
+                <classname>@GroupSequence</classname> which does not
+                explicitly declare a group or declare the group
+                <classname>Default</classname> explicitly.</para>
+
+                <para><emphasis>all <classname>Default</classname> constraints
+                hosted on interfaces of <classname>X</classname>: constraints
+                are inherited by the class hierarchy</emphasis></para>
+              </listitem>
+
+              <listitem>
+                <para>if <classname>X</classname> has a direct superclass
+                <classname>Y</classname>, every constraint in the group
+                <classname>Y</classname></para>
+
+                <para><emphasis>all <classname>Default</classname> constraints
+                hosted on the superclasses of <classname>X</classname>:
+                constraints are inherited by the class
+                hierarchy</emphasis></para>
+              </listitem>
+            </orderedlist>
+          </listitem>
+
+          <listitem>
+            <para>C. If <classname>X</classname> has no
+            <classname>@GroupSequence</classname> annotation, the group
+            <classname>Default</classname> contains the following
+            constraints:</para>
+
+            <para><emphasis>this rule defines which constraints are evaluated
+            when validating <classname>Default</classname> on
+            <classname>X</classname>.</emphasis></para>
+
+            <orderedlist>
+              <listitem>
+                <para>every constraint in the group
+                <classname>X</classname></para>
+              </listitem>
+
+              <listitem>
+                <para>if <classname>X</classname> has a direct superclass
+                <classname>Y</classname>, every constraint in the group
+                <classname>Default</classname> of
+                <classname>Y</classname></para>
+
+                <para><emphasis>this rule is necessary in case
+                <classname>Y</classname> redefines the group
+                <classname>Default</classname></emphasis></para>
+              </listitem>
+            </orderedlist>
+          </listitem>
+
+          <listitem>
+            <para>D. If <classname>X</classname> does have a
+            <classname>@GroupSequence</classname> annotation, the group
+            <classname>Default</classname> contains every constraint belonging
+            to every group declared by the
+            <classname>@GroupSequence</classname> annotation.</para>
+
+            <para><emphasis>this rule describes how a class can redefine the
+            group <classname>Default</classname> for itself (see <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup" />)</emphasis></para>
+
+            <itemizedlist>
+              <listitem>
+                <para>the <classname>@GroupSequence</classname> annotation
+                must declare the group <classname>X</classname></para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>E. For every interface <classname>Z</classname>, the group
+            <classname>Z</classname> contains the following
+            constraints:</para>
+
+            <para>this rule defines how non <classname>Default</classname>
+            groups are defined</para>
+
+            <orderedlist>
+              <listitem>
+                <para>every constraint declared by the interface
+                <classname>Z</classname> which does not explicitly declare a
+                group or declare the group <classname>Default</classname>
+                explicitly.</para>
+
+                <para><emphasis>all Default constraints hosted on
+                <classname>X</classname>: this rule formally defines implicit
+                grouping per interface (see <xref
+                linkend="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping" />)</emphasis></para>
+              </listitem>
+
+              <listitem>
+                <para>every constraint declared by any superinterface not
+                annotated <classname>@GroupSequence</classname> of the
+                interface <classname>Z</classname> which does not explicitly
+                declare a group</para>
+
+                <para><emphasis>all <classname>Default</classname> constraints
+                hosted on interfaces of <classname>Z</classname>: groups can
+                be inherited (see <xref
+                linkend="constraintdeclarationvalidationprocess-groupsequence-groupinheritance" />)</emphasis>
+                </para>
+              </listitem>
+
+              <listitem>
+                <para>every constraint declared by the class
+                <classname>X</classname> which explicitly declares the group
+                <classname>Z</classname></para>
+
+                <para><emphasis>every constraint hosted by
+                <classname>X</classname> and marked as belonging to the group
+                <classname>Z</classname></emphasis></para>
+              </listitem>
+
+              <listitem>
+                <para>every constraint declared by any interface implemented
+                by <classname>X</classname> and not annotated
+                <classname>@GroupSequence</classname> which explicitly
+                declares the group <classname>Z</classname></para>
+
+                <para><emphasis>every constraint hosted by any interface of
+                <classname>X</classname> and marked as belonging to the group
+                <classname>Z</classname></emphasis></para>
+              </listitem>
+
+              <listitem>
+                <para>if <classname>X</classname> has a direct superclass
+                <classname>Y</classname>, every constraint in the group
+                <classname>Z</classname> of <classname>Y</classname></para>
+
+                <para><emphasis>every constraint hosted by any superclass of
+                <classname>X</classname> and marked as belonging to the group
+                <classname>Z</classname></emphasis></para>
+              </listitem>
+            </orderedlist>
+          </listitem>
+
+          <listitem>
+            <para>F. For every interface <classname>Z</classname> annotated
+            <classname>@GroupSequence</classname>, the group
+            <classname>Z</classname> contains every constraint belonging to
+            every group declared by the <classname>@GroupSequence</classname>
+            annotation.</para>
+
+            <para><emphasis>defines the composition side of group sequence but
+            does not define the ordering behavior of sequence (see <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupsequence" />)</emphasis></para>
+          </listitem>
+        </itemizedlist>
+      </section>
     </section>
 
     <section id="constraintdeclarationvalidationprocess-validationroutine">
@@ -1398,7 +1917,9 @@ public @interface GroupSequences {
       </itemizedlist>
 
       <para>Note that it implies that a given validation constraint will not
-      be processed more than once per validation.</para>
+      be processed more than once per validation. More than one group can be
+      validated during the same routine call provided that the ordering rules
+      defined by sequence definitions are respected.</para>
 
       <!--SCP: note that grouping, as currently defined cannot control depth of search in the graph
 EBE: correct, so far I don't think it's useful-->
@@ -1765,16 +2286,18 @@ public class PreferredGuest extends Customer {
         <title>Use groups and group sequence to define constraint
         ordering</title>
 
-        <programlisting><emphasis role="bold">@GroupSequence(name="default", sequence={"first", "second", "last"})</emphasis>
+        <programlisting><emphasis role="bold">@GroupSequence(sequence={First.class, Second.class, Last.class})</emphasis>
+public interface Complete {}
+
 public class Book {
-    @NotEmpty(groups="first")
+    @NotEmpty(groups=First.class)
     private String title;
 
-    @Length(max=30, groups="second")
+    @Length(max=30, groups=Second.class)
     private String subtitle;
 
     @Valid
-    @NotNull(groups="first")
+    @NotNull(groups=First.class)
     private Author author;
 
     public String getTitle() {
@@ -1803,13 +2326,13 @@ public class Book {
 }
 
 public class Author {
-    @NotEmpty(groups="last")
+    @NotEmpty(groups=Last.class)
     private String firstName;
     
-    @NotEmpty(groups="first")
+    @NotEmpty(groups=First.class)
     private String lastName;
 
-    @Length(max=30, groups="last")
+    @Length(max=30, groups=Last.class)
     private String company;
 
     public String getFirstName() {
@@ -1838,8 +2361,8 @@ public class Author {
 }</programlisting>
       </example>
 
-      <para>Assuming the validation process of the following book
-      instance:</para>
+      <para>Assuming the validation of the <classname>Complete</classname>
+      group on the following book instance:</para>
 
       <programlisting>Author author = new Author();
 author.setLastName( "Baudelaire" );
@@ -1859,7 +2382,8 @@ book.setAuthor( author );</programlisting>
 
       <para>As both <methodname>title</methodname> and
       <methodname>author.lastname</methodname> are checked as part of the
-      <literal>first</literal> group. If the instance is updated:</para>
+      <literal><classname>First</classname></literal> group. If the instance
+      is updated:</para>
 
       <programlisting>book.setTitle( "Les fleurs du mal" );
 author.setCompany("Some random publisher with a very very very long name");</programlisting>
@@ -1879,9 +2403,9 @@ author.setCompany("Some random publisher with a very very very long name");</pro
         </listitem>
       </itemizedlist>
 
-      <para>As the <literal>first</literal> and <literal>second</literal>
-      groups pass without failure, the <literal>last</literal> group is going
-      through validation.</para>
+      <para>As the <classname>First</classname> and
+      <classname>Second</classname> groups pass without failure, the
+      <classname>Last</classname> group is going through validation.</para>
     </section>
   </chapter>
 
@@ -1916,28 +2440,30 @@ public interface Validator {
      * validate all constraints on object
      *
      * @param object object to validate
-     * @param groups group name(s) (including group sequence names) targeted
-     * for validation (default to &amp;lt;code&amp;gt;default&amp;lt;/code&amp;gt;)
+     * @param groups groups targeted for validation
+     *               (default to {@link javax.validation.groups.Default})
      *
      * @return constraint violations or an empty Set if none
      *
      * @throws IllegalArgumentException e if object is null
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, String... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
     /**
      * validate all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
      *
      * @param object object to validate
      * @param propertyName property to validate (ie field and getter constraints)
-     * @param groups group name(s) (including group sequence names) targeted
-     * for validation (default to &amp;lt;code&amp;gt;default&amp;lt;/code&amp;gt;)
+     * @param groups groups targeted for validation
+     *               (default to {@link javax.validation.groups.Default})
      *
      * @return constraint violations or an empty Set if none
      *
      * @throws IllegalArgumentException e if object is null or if propertyName is not present
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object, String propertyName, String... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+                                                     String propertyName,
+                                                     Class&lt;?&gt;... groups);
 
     /**
      * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property
@@ -1947,13 +2473,16 @@ public interface Validator {
      *
      * @param propertyName property to validate
      * @param value property value to validate
-     * @param groups group name(s) (including group sequence names) targeted
-     * for validation (default to &lt;code&gt;default&lt;/code&gt;)
+     * @param groups groups targeted for validation
+     *               (default to {@link javax.validation.groups.Default})
      *
      * @return constraint violations or an empty Set if none
      * @throws IllegalArgumentException e if propertyName is not present
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType, String propertyName, Object value, String... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
+                                                  String propertyName,
+                                                  Object value,
+                                                  Class&lt;?&gt;... groups);
 
     /**
      * Return the descriptor object describing bean constraints
@@ -1972,8 +2501,8 @@ public interface Validator {
         <title>Validation methods</title>
 
         <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
-        validate(T object, String... groups)</methodname> is used to validate
-        a given object of type <classname>T</classname>. This method
+        validate(T object, Class&lt;?&gt;... groups)</methodname> is used to
+        validate a given object of type <classname>T</classname>. This method
         implements the logic described in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
         A Set containing all <classname>ConstraintViolation</classname>
@@ -1981,7 +2510,7 @@ public interface Validator {
         <classname>Set</classname> is returned otherwise.</para>
 
         <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
-        validateProperty(T object, String propertyName, String...
+        validateProperty(T object, String propertyName, Class&lt;?&gt;...
         groups)</methodname> validates a given field or property of an object.
         The property name is the JavaBeans property name (as defined by the
         JavaBeans <classname>Introspector</classname> class). This method
@@ -1993,7 +2522,7 @@ public interface Validator {
 
         <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
         validateValue(Class&lt;T&gt; beanType, String propertyName, Object
-        value, String... groups)</methodname> validates the property
+        value, Class&lt;?&gt;... groups)</methodname> validates the property
         referenced by <parameter>propertyName</parameter> present on
         <literal>beanType</literal> or any of its superclasses, if the
         property value were <parameter>value</parameter>. This method
@@ -2099,33 +2628,40 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
         <methodname>validateValue</methodname> methods will be applied during
         the <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />.
-        If no group is passed, the <literal>default</literal> group is
+        If no group is passed, the
+        <literal><classname>Default</classname></literal> group is
         assumed.</para>
 
         <section>
           <title>Examples</title>
 
-          <programlisting>public class Address {
-    @NotEmpty(groups = "minimal")
+          <programlisting>/** Validates a minimal set of constraints */
+public interface Minimal {}
+
+public class Address {
+
+    @NotEmpty(groups = Minimal.class)
     @Length(max=50)
     private String street1;
     
     @NotEmpty
     private String city;
 
-    @NotEmpty(groups = {"minimal", "default"})
+    @NotEmpty(groups = {Minimal.class, Default.class})
     private String zipCode;
     ...
 }</programlisting>
 
           <para>In the previous example, <classname>@NotEmpty</classname> (and
           it's composing constraints) on <methodname>street1</methodname>
-          applies to the group <literal>minimal</literal>,
+          applies to the group
+          <literal><classname>Minimal</classname></literal>,
           <classname>@Length</classname> on <methodname>street1</methodname>
           applies to the group <literal>default</literal> and
           <classname>@NotEmpty </classname>(and it's composing constraints) on
           <methodname>zipCode</methodname> applies to the groups
-          <literal>default</literal> and <literal>minimal</literal>.</para>
+          <literal><classname>Default</classname></literal> and
+          <literal><classname>Minimal</classname></literal>.</para>
 
           <programlisting>validator.validate(address);</programlisting>
 
@@ -2137,14 +2673,14 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <classname>@NotEmpty</classname> (and it's composing constraints) on
           <methodname>street1</methodname> are not applied.</para>
 
-          <programlisting>validator.validate(address, "minimal");</programlisting>
+          <programlisting>validator.validate(address, Minimal.class);</programlisting>
 
           <para>applies <classname>@NotEmpty</classname> (and it's composing
           constraints) on <methodname>street1</methodname> and
           <classname>@NotEmpty</classname> (and it's composing constraints) on
           <methodname>zipCode</methodname></para>
 
-          <programlisting>validator.validate(address, "minimal", "default");</programlisting>
+          <programlisting>validator.validate(address, Minimal.class, Default.class);</programlisting>
 
           <para>applies <classname>@NotEmpty</classname> (and it's composing
           constraints) and <classname>@Length</classname> on
@@ -2160,23 +2696,30 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <para>Let's look at a more complex example involving group
           sequence.</para>
 
-          <programlisting>@GroupSequence(name="total", sequence={"firststep", "secondstep"})
+          <programlisting>
 public class Address {
-    @NotEmpty(groups = "minimal")
-    @Length(max=50, groups="firststep")
+    @NotEmpty(groups = Minimal.class)
+    @Length(max=50, groups=firstStep.class)
     private String street1;
     
-    @NotEmpty(groups="secondstep")
+    @NotEmpty(groups="SecondStep.class)
     private String city;
 
-    @NotEmpty(groups = {"minimal", "secondstep"})
+    @NotEmpty(groups = {Minimal.class, SecondStep.class})
     private String zipCode;
     ...
+
+    public interface FirstStep {}
+
+    public interface SecondStep {}
+    
+    @GroupSequence(sequence={Firststep.class, SecondStep.class})
+    public interface Total {}
 }</programlisting>
 
           <para>When running:</para>
 
-          <programlisting>validator.validate(address, "minimal", "total");</programlisting>
+          <programlisting>validator.validate(address, Minimal.class, Total.class);</programlisting>
 
           <para>the validation process will process
           <classname>NotEmpty</classname> (and it's composing constraints) and
@@ -2193,17 +2736,18 @@ public class Address {
 
           <para>When running:</para>
 
-          <programlisting>validator.validate(address, "total", "secondstep");</programlisting>
+          <programlisting>validator.validate(address, Total.class, SecondStep.class);</programlisting>
 
           <para><classname>NotEmpty</classname> (and it's composing
           constraints) from <methodname>city</methodname> and
           <classname>NotEmpty</classname> (and it's composing constraints)
           from <methodname>zipCode</methodname> will be processed even if
           <classname>Length</classname> from <methodname>street1</methodname>
-          fails: while <literal>secondstep</literal> is in the
-          <literal>total</literal> group sequence and hence should not be
-          triggered if <literal>firststep</literal> has a failure, it also has
-          been requested outside the sequence (in this case
+          fails: while <literal><classname>SecondStep</classname></literal> is
+          in the <literal><classname>Total</classname></literal> group
+          sequence and hence should not be triggered if
+          <literal><classname>FirstStep</classname></literal> has a failure,
+          it also has been requested outside the sequence (in this case
           explicitly).</para>
         </section>
       </section>
@@ -2268,16 +2812,17 @@ public interface ConstraintViolation&lt;T&gt; {
      *
      * TODO: considering removal, if you think it's important, speak up
      */
-    Set&lt;String&gt; getGroups();
+    Set&lt;Class&lt;?&gt;&gt; getGroups();
 
     /**
      * Constraint metadata reported to fail.
      * The returned instance is immutable.
-     *
+     * 
      * @return constraint metadata
      */
     ConstraintDescriptor getConstraintDescriptor();
-}</programlisting>
+}
+</programlisting>
 
       <para>The <methodname>getInterpolatedMessage</methodname> method returns
       the expanded (localized) message for the failing constraint (See <xref
@@ -2425,7 +2970,7 @@ public @interface NotEmpty {
 }
 
 public class Book {
-    @NotEmpty(groups={"firstlevelcheck", "default"})
+    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
     private String title;
 
     @Valid
@@ -2478,8 +3023,8 @@ assert "title".equals( constraintViolation.getPropertyPath() );
 assert constraintViolation.getGroups().length == 1 
 
 List expectedGroups = new ArrayList(1);
-expectedGroups.add("default");
-for ( String group : constraintViolation.getGroups() ) {
+expectedGroups.add(Default.class);
+for ( Class&lt;?&gt; group : constraintViolation.getGroups() ) {
     assert expectedGroups.contains(group);
 }</programlisting>
 
@@ -4191,7 +4736,7 @@ public interface ConstraintDescriptor {
     /**
      * @return The groups the constraint is applied on.
      */
-    Set&lt;String&gt; getGroups();
+    Set&lt;Class&lt;?&gt;&gt; getGroups();
 
     /**
      * @return the constraint implementation class
@@ -4244,7 +4789,7 @@ public interface ConstraintDescriptor {
       linkend="constraintsdefinitionimplementation-constraintcomposition" />),
       the returned map must reflect parameter overriding.</para>
 
-      <para><methodname>getGroups</methodname> returns the group names, the
+      <para><methodname>getGroups</methodname> returns the groups the
       constraint is supposed to be applied upon.</para>
 
       <para><methodname>getConstraintClass</methodname> returns the class
@@ -4313,7 +4858,7 @@ public class Book {
     @NotNull
     private Author author;
 
-    @NotEmpty(groups={"firstlevelcheck", "default"})
+    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
     @Length(max=30)
     public String getTitle() {
         return title;
@@ -4363,7 +4908,7 @@ assert "title".equals( propertyDescriptor.getPropertyName() );
 ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
                                                               .iterator().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
-assert constraintDescriptor.getGroups().size() == 2; //"firstlevelcheck" and "default"
+assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
 assert constraintDescriptor.getComposingConstraints().size() == 2;
 assert constraintDescriptor.isReportAsViolationFromCompositeConstraint() == true
 
@@ -4407,7 +4952,7 @@ assert propertyDescriptor.isCascaded()</programlisting>
 
       <programlisting>/**
  * The annotated element must be null.
- * Accepts any type. 
+ * Accepts any type.
  *
  * @author Emmanuel Bernard
  */
@@ -4415,8 +4960,9 @@ assert propertyDescriptor.isCascaded()</programlisting>
 @Retention(RUNTIME)
 @Documented
 public @interface Null {
-    String message() default "{constraint.null}";
-    String[] groups() default {};
+	String message() default "{validator.null}";
+
+	Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4424,7 +4970,7 @@ public @interface Null {
       <title>@NotNull constraint</title>
 
       <programlisting>/**
- * The annotated element must not be null.
+ * The annotated element must not be &lt;code&gt;null&lt;/code&gt;.
  * Accepts any type.
  *
  * @author Emmanuel Bernard
@@ -4433,8 +4979,9 @@ public @interface Null {
 @Retention(RUNTIME)
 @Documented
 public @interface NotNull {
-    String message() default "{constraint.notNull}";
-    String[] groups() default {};
+	String message() default "{validator.notNull}";
+
+	Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4443,9 +4990,9 @@ public @interface NotNull {
 
       <programlisting>/**
  * The annotated element must be true.
- * Supported types are &lt;code&gt;boolean&lt;/code&gt; and &lt;code&gt;Boolean&lt;/code&gt; 
- *
- * Null elements are considered valid
+ * Supported types are &lt;code&gt;boolean&lt;/code&gt; and &lt;code&gt;Boolean&lt;/code&gt;
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
@@ -4453,8 +5000,9 @@ public @interface NotNull {
 @Retention(RUNTIME)
 @Documented
 public @interface AssertTrue {
-    String message() default "{constraint.assertTrue}";
-    String[] groups() default {};
+	String message() default "{validator.assertTrue}";
+
+	Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4464,8 +5012,8 @@ public @interface AssertTrue {
       <programlisting>/**
  * The annotated element must be false.
  * Supported types are &lt;code&gt;boolean&lt;/code&gt; and &lt;code&gt;Boolean&lt;/code&gt;
- *
- * Null elements are considered valid
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
@@ -4473,8 +5021,9 @@ public @interface AssertTrue {
 @Retention(RUNTIME)
 @Documented
 public @interface AssertFalse {
-    String message() default "{constraint.assertFalse}";
-    String[] groups() default {};
+	String message() default "{validator.assertFalse}";
+
+	Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4484,31 +5033,35 @@ public @interface AssertFalse {
       <programlisting>/**
  * The annotated element must be a number whose value must be greater or
  * equal than the specificed minimum
- * 
+ * &lt;p/&gt;
  * Supported types are:
- *   - &lt;code&gt;BigDecimal&lt;/code&gt;
- *   - &lt;code&gt;BigInteger&lt;/code&gt;
- *   - &lt;code&gt;Number&lt;/code&gt;
- *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
- *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, 
- * &lt;code&gt;double&lt;/code&gt;
- * TODO &lt;code&gt;byte&lt;/code&gt;
- *
- * Null elements are considered valid
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;Number&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;,
+ * &lt;code&gt;double&lt;/code&gt;&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid
  *
  * @author Emmanuel Bernard
+ * @todo support byte ?!
+ * @todo Is string supported or not?
  */
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
 public @interface Min {
-    String message() default "{constraint.min}";
-    String[] groups() default {};
+	String message() default "{validator.min}";
 
-    /**
-     * @return Value the element must be higher or equal to
-     */
-    long value();
+	Class&lt;?&gt;[] groups() default { };
+
+	/**
+	 * @return Value the element must be higher or equal to
+	 */
+	long value();
 }</programlisting>
     </example>
 
@@ -4518,31 +5071,35 @@ public @interface Min {
       <programlisting>/**
  * The annotated element must be a number whose value must be lower or
  * equal than the specificed maximum.
- *
+ * &lt;p/&gt;
  * Supported types are:
- *   - &lt;code&gt;BigDecimal&lt;/code&gt;
- *   - &lt;code&gt;BigInteger&lt;/code&gt;
- *   - &lt;code&gt;Number&lt;/code&gt;
- *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
- *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, 
- * &lt;code&gt;double&lt;/code&gt;
- * TODO &lt;code&gt;byte&lt;/code&gt;
- *
- * Null elements are considered valid
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;Number&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;,
+ * &lt;code&gt;double&lt;/code&gt;&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid
  *
  * @author Emmanuel Bernard
+ * @todo support byte ?!
+ * @todo Is string supported or not?
  */
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
 public @interface Max {
-    String message() default "{constraint.max}";
-    String[] groups() default {};
+	String message() default "{validator.max}";
 
-    /**
-     * @return Value the element must be lower or equal to
-     */
-    long value();
+	Class&lt;?&gt;[] groups() default { };
+
+	/**
+	 * @return Value the element must be lower or equal to
+	 */
+	long value();
 }</programlisting>
     </example>
 
@@ -4553,11 +5110,12 @@ public @interface Max {
  * The annotated element size must be between the specified boundaries (included).
  *
  * Supported types are:
- *   - &lt;code&gt;String&lt;/code&gt; (string length is evaludated)
- *   - &lt;code&gt;Collection&lt;/code&gt; (collection size is evaluated)
- *   - Array (array length is evaludated)
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;String&lt;/code&gt; (string length is evaludated)&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;Collection&lt;/code&gt; (collection size is evaluated)&lt;/li&gt;
+ * &lt;li&gt;Array (array length is evaludated)&lt;/li&gt;
  *
- * Null elements are considered valid
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
@@ -4565,18 +5123,18 @@ public @interface Max {
 @Retention(RUNTIME)
 @Documented
 public @interface Size {
-    String message() default "{constraint.size}";
-    String[] groups() default {};
+	String message() default "{validator.min}";
+	Class&lt;?&gt;[] groups() default {};
 
-    /**
-     * @return size the element must be higher or equal to
-     */
-    int min() default Integer.MIN_VALUE;
+	/**
+	 * @return size the element must be higher or equal to
+	 */
+	int min() default Integer.MIN_VALUE;
 
-    /**
-     * @return size the element must be lower or equal to
-     */
-    int max() default Integer.MAX_VALUE;
+	/**
+	 * @return size the element must be lower or equal to
+	 */
+	int max() default Integer.MAX_VALUE;
 }</programlisting>
     </example>
 
@@ -4586,34 +5144,38 @@ public @interface Size {
       <programlisting>/**
  * The annotated element must be a number within accepted range
  * Supported types are:
- *   - &lt;code&gt;BigDecimal&lt;/code&gt;
- *   - &lt;code&gt;BigInteger&lt;/code&gt;
- *   - &lt;code&gt;Number&lt;/code&gt;
- *   - &lt;code&gt;String&lt;/code&gt; (TODO should we keep it?)
- *   - &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;, 
- * &lt;code&gt;double&lt;/code&gt;
- * TODO &lt;code&gt;byte&lt;/code&gt;  
- *
- * Null elements are considered valid
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;Number&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;,
+ * &lt;code&gt;double&lt;/code&gt;&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid
  *
  * @author Emmanuel Bernard
+ * @todo support byte ?!
+ * @todo Is string supported or not?
  */
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
 public @interface Digits {
-    String message() default "{constraint.digits}";
-    String[] groups() default {};
+	String message() default "{validator.digits}";
 
-    /**
-     * @return maximum number of integral digits accepted for this number
-     */
-    int integer();
+	Class&lt;?&gt;[] groups() default { };
 
-    /**
-     * @return maximum number of fractional digits accepted for this numbe
-     */
-    int fraction();
+	/**
+	 * @return maximum number of integral digits accepted for this number
+	 */
+	int integer();
+
+	/**
+	 * @return maximum number of fractional digits accepted for this numbe
+	 */
+	int fraction();
 }</programlisting>
     </example>
 
@@ -4625,15 +5187,17 @@ public @interface Digits {
  * Now is defined as the current time according to the virtual machine
  * The calendar used if the compared type is of type &lt;code&gt;Calendar&lt;/code&gt;
  * is the calendar based on the current timezone and the current locale.
- *
+ * &lt;p/&gt;
  * TODO what are the implications
- * 
+ * &lt;p/&gt;
  * Supported types are:
- *  - &lt;code&gt;java.util.Date&lt;/code&gt;
- *  - &lt;code&gt;java.util.Calendar&lt;/code&gt;
- *  - TODO new date/time JSR types?
- *
- * Null elements are considered valid
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;java.util.Date&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;java.util.Calendar&lt;/code&gt;&lt;/li&gt;
+ * &lt;/ul&gt;
+ * - TODO new date/time JSR types?
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
@@ -4641,8 +5205,9 @@ public @interface Digits {
 @Retention(RUNTIME)
 @Documented
 public @interface Past {
-    String message() default "{constraint.past}";
-    String[] groups() default {};
+	String message() default "{validator.past}";
+
+	Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4654,15 +5219,17 @@ public @interface Past {
  * Now is defined as the current time according to the virtual machine
  * The calendar used if the compared type is of type &lt;code&gt;Calendar&lt;/code&gt;
  * is the calendar based on the current timezone and the current locale.
- *
+ * &lt;p/&gt;
  * TODO what are the implications
- *
+ * &lt;p/&gt;
  * Supported types are:
- *  - &lt;code&gt;java.util.Date&lt;/code&gt;
- *  - &lt;code&gt;java.util.Calendar&lt;/code&gt;
- *  - TODO new date/time JSR types?
- *
- * Null elements are considered valid
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;java.util.Date&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;java.util.Calendar&lt;/code&gt;&lt;/li&gt;
+ * &lt;/ul&gt;
+ * - TODO new date/time JSR types?
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
@@ -4670,8 +5237,9 @@ public @interface Past {
 @Retention(RUNTIME)
 @Documented
 public @interface Future {
-    String message() default "{constraint.future}";
-    String[] groups() default {};
+	String message() default "{validator.future}";
+
+	Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4759,7 +5327,7 @@ public @interface Future {
 
             <entry>Constraints can belong to one or more group or context.
             Useful to apply a subset of the constraints for a given use case.
-            By default, the <literal>default</literal> group is used.</entry>
+            By default, the <literal>Default</literal> group is used.</entry>
           </row>
 
           <row>
@@ -4919,7 +5487,7 @@ constraint.future=must be a future date</programlisting>
      */
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(Class&lt;T&gt; clazz, Method method,
                                                        Object[] parameterValues,
-                                                       String... groups);
+                                                       Class&lt;?&gt;... groups);
 
     /**
      * Validate the parameter value based on the constraints described on
@@ -4938,7 +5506,7 @@ constraint.future=must be a future date</programlisting>
      */
     &lt;T&gt; Set&lt;ConstraintViolation&gt; validateParameter(Class&lt;T&gt; clazz, Method method,
                                                    Object parameterValue,
-                                                   int parameterIndex, String... groups);
+                                                   int parameterIndex, Class&lt;?&gt;... groups);
 
     /**
      * Validate each parameter value based on the constraints described on
@@ -4954,7 +5522,7 @@ constraint.future=must be a future date</programlisting>
      * @throws IllegalArgumentException if the method does not belong to &lt;code&gt;T&lt;/code&gt;
      */
     &lt;T&gt; Set&lt;ConstraintViolation&gt; validateReturnedValue(Class&lt;T&gt; clazz, Method method,
-                                                       Object returnedValue, String... groups);
+                                                       Object returnedValue, Class&lt;?&gt;... groups);
 
     /**
      * Validate each parameter value based on the constraints described on
@@ -4971,7 +5539,7 @@ constraint.future=must be a future date</programlisting>
      *         or if the Object[] does not match the constructor signature
      */
     &lt;T&gt; Set&lt;ConstraintViolation&gt; validateParameters(Class&lt;T&gt; clazz, Constructor constructor,
-                                                    Object[] parameterValues, String... groups);
+                                                    Object[] parameterValues, Class&lt;?&gt;... groups);
 
     /**
      * Validate the parameter value based on the constraints described on
@@ -4991,7 +5559,7 @@ constraint.future=must be a future date</programlisting>
      */
     &lt;T&gt; Set&lt;ConstraintViolation&gt; validateParameter(Class&lt;T&gt; clazz, Constructor constructor,
                                                    Object parameterValue, int parameterIndex,
-                                                   String... groups);</programlisting>
+                                                   Class&lt;?&gt;... groups);</programlisting>
 
     <para>The constraints declarations evaluated are the constraints hosted on
     the parameters of the method or constructor. If
@@ -5015,7 +5583,8 @@ constraint.future=must be a future date</programlisting>
       </listitem>
 
       <listitem>
-        <para><literal>price</literal> is validated against @Max(23)</para>
+        <para><literal>price</literal> is validated against
+        <classname>@Max(23)</classname></para>
       </listitem>
 
       <listitem>
@@ -5092,9 +5661,9 @@ Java Persistence consumes Bean Validation (BV) metadata to enhance persistence p
 metadata.
 
 A Persistence provider must use the BV metadata of a given list of groups [1]. 
-The default group is "default" (default BV group). The default group can be overridden 
+The default group is Default (default BV group). The Default group can be overridden 
 by a JPA property javax.persistence.validation.group.metadata which contains the comma 
-separated group names.
+separated groups (fully qualified class name).
 Question: should the group be overridable as described?
 
 For each entity and for each persistent property in a given entity:
@@ -5161,14 +5730,15 @@ These events are called at the same time as their respective callback methods af
 all callbacks have been called.
 
 For each event type, a list of groups [1] is targeted for validation. By default, 
-pre persist and pre update events vaildate the group "default" (default BV group) 
+pre persist and pre update events vaildate the group Default (default BV group) 
 and pre remove does not validate any group. Each list can be overridden 
 by a JPA property:
 - javax.persistence.validation.group.pre-persist for pre persist events
 - javax.persistence.validation.group.pre-update for pre update events
 - javax.persistence.validation.group.pre-remove for pre remove events
 
-Each property holds the list of targeted groups separated by a comma.
+Each property holds the list of targeted groups (fully qualified class name) 
+separated by a comma.
 
 When any of the pre-cited event is raised on an entity instance 'a' of type A, 
 the persistence provider must validate 'a' by invoking a validator of type 
