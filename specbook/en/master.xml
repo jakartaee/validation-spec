@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.Betax</releaseinfo>
 
-    <pubdate>2008-12-02</pubdate>
+    <pubdate>2008-12-05</pubdate>
 
     <copyright>
       <year>2007, 2008</year>
@@ -1606,7 +1606,7 @@ public class Address {
         <classname>Default</classname> group (implicitly or explicitly)
         belongs to the group <classname>Z</classname>. This is useful to
         validate the partial state of an object based on a role represented by
-        an interface. </para>
+        an interface.</para>
 
         <example>
           <title>Example of interface / group hosting constraints</title>
@@ -1668,7 +1668,7 @@ public class Order implements Auditable {
         <methodname>getLastReader</methodname>,
         <methodname>getOrderNumber</methodname> and @Size on
         <methodname>getOrderNumber</methodname> as all belong to the
-        <classname>Default</classname> group. </para>
+        <classname>Default</classname> group.</para>
 
         <para>When an order object is validated on the
         <classname>Auditable</classname> group, the following constraints are
@@ -1825,8 +1825,7 @@ public class Order implements Auditable {
                 <para><emphasis>all <classname>Default</classname> constraints
                 hosted on interfaces of <classname>Z</classname>: groups can
                 be inherited (see <xref
-                linkend="constraintdeclarationvalidationprocess-groupsequence-groupinheritance" />)</emphasis>
-                </para>
+                linkend="constraintdeclarationvalidationprocess-groupsequence-groupinheritance" />)</emphasis></para>
               </listitem>
 
               <listitem>
@@ -1886,19 +1885,19 @@ public class Order implements Auditable {
 
       <itemizedlist>
         <listitem>
-          <para>execute all field level validations (including the ones
-          expressed in interfaces and superclasses) matching the targeted
-          group unless the given validation constraint has already been
-          processed during this validation routine (as part of a previous
-          group match)</para>
+          <para>for all traversable fields, execute all field level
+          validations (including the ones expressed in interfaces and
+          superclasses) matching the targeted group unless the given
+          validation constraint has already been processed during this
+          validation routine (as part of a previous group match)</para>
         </listitem>
 
         <listitem>
-          <para>execute all getter level validations (including the ones
-          expressed in interfaces and superclasses) matching the targeted
-          group unless the given validation constraint has already been
-          processed during this validation routine (as part of a previous
-          group match)</para>
+          <para>for all traversable getters, execute all getter level
+          validations (including the ones expressed in interfaces and
+          superclasses) matching the targeted group unless the given
+          validation constraint has already been processed during this
+          validation routine (as part of a previous group match)</para>
         </listitem>
 
         <listitem>
@@ -1910,11 +1909,14 @@ public class Order implements Auditable {
         </listitem>
 
         <listitem>
-          <para>execute all cascading validations (see <xref
+          <para>for all traversable association, execute all cascading
+          validations (see <xref
           linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
           including the ones expressed in interfaces and superclasses</para>
         </listitem>
       </itemizedlist>
+
+      <para>Traversable field, getter and association are defined in</para>
 
       <para>Note that it implies that a given validation constraint will not
       be processed more than once per validation. More than one group can be
@@ -1973,6 +1975,231 @@ EBE: is that a problem?-->
         when a failing constraint on an associated object is found, reflects
         the path to reach the object from the root validated object (See <xref
         linkend="validationapi-constraintviolation" />).</para>
+      </section>
+
+      <section id="constraintdeclarationvalidationprocess-validationroutine-traversable">
+        <title>Traversable property</title>
+
+        <para>In some cases, the state of some properties should not be
+        accessed. For example, if a property loaded by a Java Persistence
+        provider is a lazy property or a lazy association, accessing its state
+        would trigger a load from the database. An undesired behavior.</para>
+
+        <para>Bean Validation offers a way to control which property can and
+        cannot be accessed via the <classname>TraversableResolver</classname>
+        contract.</para>
+
+        <programlisting>/**
+ * Contract determining if a property can be accessed by the Bean Validation provider
+ * This contract is called for each property either validated or traversed
+ * 
+ * A traversable resolver implementation must me thread-safe
+ *
+ * @author Emmanuel Bernard
+ */
+public interface TraversableResolver {
+    /**
+     * Determine if a property can be traversed by Bean Validation.
+     *
+     * @param traversableObject object hosting traversableProperty
+     * @param traversableProperty name of the traqversable property
+     * @param rootBeanType type of the root object passed to the Validator.
+     * @param pathToTraversableObject path from the root object to the traversableObject
+     *        (using the path specification defined by Bean Validator)     
+     * @param elementType either FIELD or METHOD
+     *
+     * @return true if the property is traversable by Bean Validation
+     */
+    boolean isTraversable(Object traversableObject,
+                          String traversableProperty,
+                          Class&lt;?&gt; rootBeanType,
+                          String pathToTraversableObject,
+                          ElementType elementType);
+}</programlisting>
+
+        <para><literal>traversableObject</literal> is the object instance
+        being evaluated.</para>
+
+        <para><literal>traversableProperty</literal> is the name of the
+        property hosted by the <methodname>traversableObject</methodname>
+        being considered for traversal. The name of a property is defined in
+        <xref
+        linkend="constraintdeclarationvalidationprocess-requirements-property" />.</para>
+
+        <para><literal>rootBeanType</literal> is the class of the root being
+        validated (and passed to the <methodname>validate</methodname>
+        method).</para>
+
+        <para><literal>pathToTraversableObject</literal> is the path from the
+        <methodname>rootBeanType</methodname> down to the
+        <methodname>traversableObject</methodname> (it is an empty string if
+        the <methodname>rootBeanPath</methodname> is the
+        <methodname>traversableObject</methodname>). The path is described
+        following the conventions described in <xref
+        linkend="validationapi-constraintviolation" />
+        (<methodname>getPropertyPath</methodname>).</para>
+
+        <para><literal>elementType</literal> is the
+        <classname>java.lang.annotation.ElementType</classname> the annotation
+        is placed on. It can be either <literal>FIELD</literal> or
+        <literal>METHOD</literal>. Any other value is not expected.</para>
+
+        <para>The Bean Validation provider must not access the state of a
+        property, nor validate its constraints if the property is not
+        traversable. A property is traversable if
+        <classname>TraversableResolver</classname> returns true for this
+        property.</para>
+
+        <para>Assuming the following object graph</para>
+
+        <programlisting>public class Country {
+    @NotNull
+    private String name;
+    @Length(max=2) private String ISO2Code;
+    @Length(max=3) private String ISO3Code;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getISO2Code() {
+        return ISO2Code;
+    }
+
+    public void setISO2Code(String ISO2Code) {
+        this.ISO2Code = ISO2Code;
+    }
+
+    public String getISO3Code() {
+        return ISO3Code;
+    }
+
+    public void setISO3Code(String ISO3Code) {
+        this.ISO3Code = ISO3Code;
+    }
+}
+
+public class Address {
+    @NotNull @Length(max=30)
+    private String addressline1;
+    @Length(max=30)
+    private String addressline2;
+    @Length(max=11)
+    private String zipCode;
+    <emphasis role="bold">@NotNull @Valid</emphasis>
+    private Country country;
+
+    private String city;
+
+    public String getAddressline1() {
+        return addressline1;
+    }
+
+    public void setAddressline1(String addressline1) {
+        this.addressline1 = addressline1;
+    }
+
+    public String getAddressline2() {
+        return addressline2;
+    }
+
+    public void setAddressline2(String addressline2) {
+        this.addressline2 = addressline2;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    @Length(max=30) @NotNull
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public Country getCountry() {
+        return country;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+}</programlisting>
+
+        <para>and assuming the validation operation is applied on an address
+        object, the Bean Validation provider will call the
+        <classname>TraversableResolver</classname> instance to ensure that the
+        <literal>ISO3Code</literal> property is traversable with the following
+        parameter values:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><literal>traversableObject</literal>: country. The instance
+            returned by <code>address.getCountry()</code>.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>traversableProperty</literal>: "ISO3Code". The name
+            of the property of <literal>traversableObject</literal> being
+            verified.</para>
+          </listitem>
+
+          <listitem>
+            <para>rootBeanType: Address.class. The type of the root object
+            being validated.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>pathtoTraversableObject</literal>: "country". The
+            path from address to the country instance.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>elementType</literal>:
+            <classname>ElementType.FIELD</classname>. The country property is
+            annotated on the field.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>Applications using Java Persistence to persist their graph would
+        typically use a traversable resolver implementation to avoid crossing
+        uninitialized state boundaries. Here is a possible
+        implementation.</para>
+
+        <example>
+          <title>Java Persistence aware TraversableResolver</title>
+
+          <programlisting>public class JPATraversableResolver implements TraversableResolver {
+
+    boolean isTraversable(Object traversableObject,
+                          String traversableProperty,
+                          Class&lt;?&gt; rootBeanType,
+                          String pathToTraversableObject,
+                          ElementType elementType) {
+
+        return Persistence.isLoaded(traversableObject, traversableProperty);
+    }
+}
+
+isLoaded(entity, attributeName)</programlisting>
+        </example>
+
+        <para>The traversable resolver used by default in a Bean Validation
+        provides returns true for all properties. In other words, all
+        properties are considered traversable. See <xref
+        linkend="bootstrapping" /> for passing a custom
+        <classname>TraversableResolver</classname>.</para>
       </section>
     </section>
 
@@ -3310,11 +3537,13 @@ public class LocaleSpecificMessageResolver implements MessageResolver {
 
 
 Locale locale = getMyCurrentLocale();
-Validator validator = 
-    validatorFactory.getValidator(new LocaleSpecificMessageResolver(
+MessageResolver resolver = new LocaleSpecificMessageResolver(
                                        validatorFactory.getMessageResolver(),
-                                       locale)
-    );</programlisting>
+                                       locale);
+
+Validator validator = validatorFactory.defineValidatorState()
+                                      .messageResolver(resolver)
+                                      .getValidator();</programlisting>
         </example>
 
         <para>Most of the time, however, the relevant
@@ -3482,14 +3711,15 @@ Validator validator = factory.getValidator();</programlisting>
         Validator resource handling to match its own behavior.</para>
 
         <example>
-          <title>Customize message resolution and constraint factory
-          implementation</title>
+          <title>Customize message resolution, traversable resolver and
+          constraint factory implementation</title>
 
           <programlisting>//some customization from a container like Web Beans
 ValidatorFactory factory = Validation
        .getBuilder()
           .messageResolver( new WBMessageResolver() )
           .constraintFactory( new WBComponentConstraintFactory() )
+          .traversableResolver( new JPAAwareTraversableResolver() )
           .build();
 
 //cache the factory somewhere
@@ -3569,8 +3799,13 @@ MessageResolver customResolver = new LocaleSpecificMessageResolver(
 );
 
 Validator localizedValidator = 
-    factory.getValidator(customResolver);</programlisting>
+    factory.defineValidatorState()
+                   .messageResolver(customResolver)
+                   .getValidator();</programlisting>
         </example>
+
+        <para>In the same flow, a custom traversable resolver can be
+        passed.</para>
 
         <para>We will now explore the various interfaces, their constraints
         and usage. We will go from the <classname>ValidatorFactory</classname>
@@ -3604,44 +3839,83 @@ Validator localizedValidator =
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactory {
-    /**
-     * return an initialized Validator instance.
-     * Validator instances can be pooled and shared by the implementation
-     *
-     */
-    Validator getValidator();
-
-    /**
-     * return an initialized Validator instance.
-     * Validator instances can be pooled and shared by the implementation
-     *
-     * The returned Validator instance must use the MessageResolver instance
-     * passed as a parameter to resolve error messages. 
-     *
-     */
-    Validator getValidator(MessageResolver messageResolver);
-
-    /**
-     * Returns the MessageResolver instance configured at initialization time
-     * for the ValidatorFactory
-     * This is the instance used by #getValidator(Class)
-     *
-     * @return MessageResolver instance
-     */
-    MessageResolver getMessageResolver();
+	/**
+	 * return an initialized Validator instance using the default factory instances
+	 * for message resolver and traversable resolver.
+	 *
+	 * Validator instances can be pooled and shared by the implementation
+	 */
+	Validator getValidator();
+	
+	/**
+	 * Define the validator state and return a
+	 * Validator compliant with this state
+	 *
+	 * @return a ValidatorBuilder
+	 */
+	ValidatorBuilder defineValidatorState();
+	
+	/**
+	 * Returns the MessageResolver instance configured at initialization time
+	 * for the ValidatorFactory
+	 * This is the instance used by #getValidator(Class)
+	 *
+	 * @return MessageResolver instance
+	 */
+	MessageResolver getMessageResolver();
 }</programlisting>
         </example>
 
         <para>A <classname>ValidatorFactory</classname> is provided by a
         <classname>ValidatorFactoryBuilder</classname>.</para>
 
-        <para>The <classname>MessageResolver</classname> instance used by a
-        <classname>Validator</classname> instance can be overridden specified
-        using
-        <methodname>ValidatorFactory.getValidator(MessageResolver)</methodname>.
-        The <classname>MessageResolver</classname> passed as a parameter is
-        used instead of the <classname>ValidatorFactory</classname>'s
-        <classname>MessageResolver</classname>.</para>
+        <para><classname>ValidatorBuilder</classname> returned by
+        <methodname>defineValidatorState</methodname> can be used to customize
+        the state in which the <classname>Validator</classname> must be
+        initialized. This is used to customize the
+        <classname>MessageResolver</classname> or the
+        <classname>TraversableResolver</classname>.</para>
+
+        <example>
+          <title>ValidatorBuilder interface</title>
+
+          <programlisting>/**
+ * Return a Validator corresponding to the initialized state.
+ * 
+ * @author Emmanuel Bernard
+ */
+public interface ValidatorBuilder {
+	/**
+	 * Defines the message resolver implementation used by the Validator.
+	 * If unset, the message resolver of the ValidatorFactory is used.
+	 *
+	 * @return self following the chaining method pattern
+	 */
+	ValidatorBuilder messageResolver(MessageResolver messageResolver);
+
+	/**
+	 * Defines the traversable resolver implementation used by the Validator.
+	 * If unset, the traversable resolver of the ValidatorFactory is used.
+	 *
+	 * @return self following the chaining method pattern
+	 */
+	ValidatorBuilder traversableResolver(TraversableResolver traversableResolver);
+
+	/**
+	 * return an initialized Validator instance respecting the defined state
+	 * Validator instances can be pooled and shared by the implementation
+	 */
+	Validator getValidator();
+
+}</programlisting>
+        </example>
+
+        <para>The <classname>MessageResolver</classname> or the
+        <classname>TraversableResolver</classname> passed to the
+        <classname>ValidatorBuilder</classname> are used instead of the
+        <classname>ValidatorFactory</classname>'s
+        <classname>MessageResolver</classname> or
+        <classname>TraversableResolver</classname> instances.</para>
 
         <para><methodname>getMessageResolver()</methodname> returns the
         <classname>MessageResolver</classname> instance configured during the
@@ -3650,11 +3924,20 @@ public interface ValidatorFactory {
         specific <classname>MessageResolver</classname> wrapping the one from
         the <classname>ValidatorFactory</classname>.</para>
 
+        <example>
+          <title>Use of ValidatorFactory</title>
+
+          <programlisting>ValidatorFactory factory = ...
+Validator validatorUsingDefaults = factory.getValidator();
+Validator validatorUsingCustomTraversable = factory
+                     .defineValidatorState()
+                     .traversableResolver( new JPATraversableResolver() )
+                     .getValidator();</programlisting>
+        </example>
+
         <para>See <xref
         linkend="validationapi-message-examples-specificlocale" /> for an
-        example using both
-        <methodname>getValidator(`MessageResolver)</methodname> and
-        <methodname>getMessageResolver()</methodname>.</para>
+        example using <methodname>getMessageResolver()</methodname>.</para>
       </section>
 
       <section>
@@ -3669,6 +3952,10 @@ public interface ValidatorFactory {
         <itemizedlist>
           <listitem>
             <para>the message resolver strategy instance</para>
+          </listitem>
+
+          <listitem>
+            <para>the traversable resolver strategy instance</para>
           </listitem>
 
           <listitem>
@@ -3729,55 +4016,65 @@ public interface ValidatorFactory {
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt; {
-    /**
-     * Defines the message resolver used. Has priority over the configuration
-     * based message resolver.
-     *
-     * @param resolver message resolver implementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T messageResolver(MessageResolver resolver);
+	/**
+	 * Defines the message resolver used. Has priority over the configuration
+	 * based message resolver.
+	 *
+	 * @param resolver message resolver implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T messageResolver(MessageResolver resolver);
 
-    /**
-     * Defines the constraint factory. Has priority over the configuration
-     * based constraint factory.
-     *
-     * @param constraintFactory constraint factory inmplementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T constraintFactory(ConstraintFactory constraintFactory);
+	/**
+	 * Defines the traversable resolver used. Has priority over the configuration
+	 * based traversable resolver.
+	 *
+	 * @param resolver traversable resolver implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T traversableResolver(TraversableResolver resolver);
 
-    /**
-     * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
-     * If not specified, META-INF/validation.xml is used
-     * &lt;p/&gt;
-     * The stream should be closed by the client API after the
-     * ValidatorFactory has been returned
-     *
-     * @param stream configuration stream.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T configure(InputStream stream);
+	/**
+	 * Defines the constraint factory. Has priority over the configuration
+	 * based constraint factory.
+	 *
+	 * @param constraintFactory constraint factory inmplementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T constraintFactory(ConstraintFactory constraintFactory);
 
-    /**
-     * Return an implementation of the MessageResolver interface following the
-     * default MessageREsolver defined in the specification:
-     *  - use the ValidationMessages resource bundle to load keys
-     *  - use Locale.getDefault()
-     *
-     * @return default MessageResolver implementation compliant with the specification
-     */
-    MessageResolver getDefaultMessageResolver();
+	/**
+	 * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
+	 * If not specified, META-INF/validation.xml is used
+	 * &lt;p/&gt;
+	 * The stream should be closed by the client API after the
+	 * ValidatorFactory has been returned
+	 *
+	 * @param stream configuration stream.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T configure(InputStream stream);
 
-    /**
-     * Build a ValidatorFactory implementation.
-     *
-     * @return ValidatorFactory
-     */
-    ValidatorFactory build();
+	/**
+	 * Return an implementation of the MessageResolver interface following the
+	 * default MessageREsolver defined in the specification:
+	 *  - use the ValidationMessages resource bundle to load keys
+	 *  - use Locale.getDefault()
+	 *
+	 * @return default MessageResolver implementation compliant with the specification
+	 */
+	MessageResolver getDefaultMessageResolver();
+
+	/**
+	 * Build a ValidatorFactory implementation.
+	 *
+	 * @return ValidatorFactory
+	 */
+	ValidatorFactory build();
 }</programlisting>
         </example>
 
@@ -3845,29 +4142,37 @@ public interface ACMEValidatorFactoryBuilder
  * @author Hardy Ferentschik
  */
 public interface ValidatorFactoryConfiguration {
-    /**
-     * Message resolver as defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return message provider instance or null if not defined
-     */
-    MessageResolver getMessageResolver();
+	/**
+	 * Message resolver as defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return message provider instance or null if not defined
+	 */
+	MessageResolver getMessageResolver();
 
-    /**
-     * Returns the configuration stream defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return the configuration input stream or null
-     */
-    InputStream getConfigurationStream();
+	/**
+	 * Returns the configuration stream defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return the configuration input stream or null
+	 */
+	InputStream getConfigurationStream();
 
-    /**
-     * Defines the constraint implementation factory as defined by
-     * the client programmatically or null if undefined
-     *
-     * @return factory instance or null if not defined
-     */
-    ConstraintFactory getConstraintFactory();
+	/**
+	 * Defines the constraint implementation factory as defined by
+	 * the client programmatically or null if undefined
+	 *
+	 * @return factory instance or null if not defined
+	 */
+	ConstraintFactory getConstraintFactory();
+
+	/**
+	 * Traversable resolver as defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return traversable provider instance or null if not defined
+	 */
+	TraversableResolver getTraversableResolver();
 }</programlisting>
         </example>
 
@@ -3915,6 +4220,18 @@ public interface ValidatorFactoryConfiguration {
           <para>Should we add a ignore XML method? to bypass the XMl file
           configuration?</para>
         </warning>
+
+        <para>Here is an example of
+        <classname>ValidatorFactoryBuilder</classname> use.</para>
+
+        <example>
+          <title>Use ValidatorFactoryBuilder</title>
+
+          <programlisting>ValidatorFactoryBuilder factoryBuilder = ...
+ValidatorFactory factory = factoryBuilder.messageResolver( new WBMessageResolver() )
+              .traversableResolver( new JPAAwareTraversableResolver() )
+              .build();</programlisting>
+        </example>
       </section>
 
       <section>
@@ -4960,9 +5277,9 @@ assert propertyDescriptor.isCascaded()</programlisting>
 @Retention(RUNTIME)
 @Documented
 public @interface Null {
-	String message() default "{validator.null}";
+    String message() default "{validator.null}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -4979,9 +5296,9 @@ public @interface Null {
 @Retention(RUNTIME)
 @Documented
 public @interface NotNull {
-	String message() default "{validator.notNull}";
+    String message() default "{validator.notNull}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -5000,9 +5317,9 @@ public @interface NotNull {
 @Retention(RUNTIME)
 @Documented
 public @interface AssertTrue {
-	String message() default "{validator.assertTrue}";
+    String message() default "{validator.assertTrue}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -5021,9 +5338,9 @@ public @interface AssertTrue {
 @Retention(RUNTIME)
 @Documented
 public @interface AssertFalse {
-	String message() default "{validator.assertFalse}";
+    String message() default "{validator.assertFalse}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -5054,14 +5371,14 @@ public @interface AssertFalse {
 @Retention(RUNTIME)
 @Documented
 public @interface Min {
-	String message() default "{validator.min}";
+    String message() default "{validator.min}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * @return Value the element must be higher or equal to
-	 */
-	long value();
+    /**
+     * @return Value the element must be higher or equal to
+     */
+    long value();
 }</programlisting>
     </example>
 
@@ -5092,14 +5409,14 @@ public @interface Min {
 @Retention(RUNTIME)
 @Documented
 public @interface Max {
-	String message() default "{validator.max}";
+    String message() default "{validator.max}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * @return Value the element must be lower or equal to
-	 */
-	long value();
+    /**
+     * @return Value the element must be lower or equal to
+     */
+    long value();
 }</programlisting>
     </example>
 
@@ -5123,18 +5440,18 @@ public @interface Max {
 @Retention(RUNTIME)
 @Documented
 public @interface Size {
-	String message() default "{validator.min}";
-	Class&lt;?&gt;[] groups() default {};
+    String message() default "{validator.min}";
+    Class&lt;?&gt;[] groups() default {};
 
-	/**
-	 * @return size the element must be higher or equal to
-	 */
-	int min() default Integer.MIN_VALUE;
+    /**
+     * @return size the element must be higher or equal to
+     */
+    int min() default Integer.MIN_VALUE;
 
-	/**
-	 * @return size the element must be lower or equal to
-	 */
-	int max() default Integer.MAX_VALUE;
+    /**
+     * @return size the element must be lower or equal to
+     */
+    int max() default Integer.MAX_VALUE;
 }</programlisting>
     </example>
 
@@ -5163,19 +5480,19 @@ public @interface Size {
 @Retention(RUNTIME)
 @Documented
 public @interface Digits {
-	String message() default "{validator.digits}";
+    String message() default "{validator.digits}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * @return maximum number of integral digits accepted for this number
-	 */
-	int integer();
+    /**
+     * @return maximum number of integral digits accepted for this number
+     */
+    int integer();
 
-	/**
-	 * @return maximum number of fractional digits accepted for this numbe
-	 */
-	int fraction();
+    /**
+     * @return maximum number of fractional digits accepted for this numbe
+     */
+    int fraction();
 }</programlisting>
     </example>
 
@@ -5205,9 +5522,9 @@ public @interface Digits {
 @Retention(RUNTIME)
 @Documented
 public @interface Past {
-	String message() default "{validator.past}";
+    String message() default "{validator.past}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
@@ -5237,9 +5554,9 @@ public @interface Past {
 @Retention(RUNTIME)
 @Documented
 public @interface Future {
-	String message() default "{validator.future}";
+    String message() default "{validator.future}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 }</programlisting>
     </example>
 
