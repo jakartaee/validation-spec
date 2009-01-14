@@ -891,7 +891,7 @@ public interface ConstraintContext {
     String getDefaultErrorMessage();
 
     /**
-     * Add a new unexpanded error message.
+     * Add a new error message. This error message will be interpolated.
      * &lt;p/&gt;
      * If isValid returns false, a ConstraintViolation object will be built per error message
      * including the default one unless #disableDefaultErrorMEssage() has been called.
@@ -907,19 +907,21 @@ public interface ConstraintContext {
     void addError(String message);
 
     /**
-     * Add a new unexpanded error message to a given sub property.
+     * Add a new error message to a given sub property &lt;code&gt;property&lt;/code&gt;.
+     * This error message will be interpolated.
      * &lt;p/&gt;
      * If isValid returns false, a ConstraintViolation object will be built
-     * per error message including the default one
-     * if null apply to the current property or the bean the constraint is applied on,
-     * otherwise apply to the &lt;code&gt;property&lt;/code&gt; named
+     * per error message including the default one unless #disableDefaultErrorMEssage()
+     * has been called.
+     * If the constraint being validated is not a class-level constraint,
+     * a ValidationException is raised.
+     *
      * &lt;p/&gt;
-     * TODO exception or swallowed when bean level instance is not present?
      *
      * @param message new unexpanded error message
      * @param property property name the ConstraintViolation is targeting
      *
-     * @throws ValidationException when the property is not present on the bean level object
+     * @throws ValidationException if the constraint is not set on a class-level
      */
     void addError(String message, String property);
 
@@ -1321,15 +1323,11 @@ EBE fixed this by rewordingthe JavaDoc-->
 
         <programlisting>/**
  * Validation group checking a user is billable
- * 
- * @author Emmanuel Bernard
  */
 public interface Billable {}
 
 /**
  * customer can buy without harrassing checking process
- *  
- * @author Emmanuel Bernard
  */
 public interface BuyInOneClick {
 }</programlisting>
@@ -1342,8 +1340,6 @@ public interface BuyInOneClick {
 
         <programlisting>/**
  * User representation
- * 
- * @author Emmanuel Bernard
  */
 public class User {
     @NotNull
@@ -1395,8 +1391,6 @@ public interface Default {
 
           <programlisting>/**
  * Customer can buy without harrassing checking process
- *
- * @author Emmanuel Bernard
  */
 public interface BuyInOneClick extends Default, Billable {
 }</programlisting>
@@ -1416,8 +1410,6 @@ public interface BuyInOneClick extends Default, Billable {
 
           <programlisting>/**
  * User representation
- *
- * @author Emmanuel Bernard
  */
 public class User {
     @NotNull
@@ -1511,10 +1503,7 @@ public @interface GroupSequence {
         <example id="example-groupsequence">
           <title>Make use of group sequence</title>
 
-          <programlisting>/**
- * @author Emmanuel Bernard
- */
-@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+          <programlisting>@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
 public class Address {
     @NotNull @Size(max = 50)
     private String street1;
@@ -1578,10 +1567,7 @@ public class Address {
         <example id="example-overridedefaultgroup">
           <title>Redefining Default group for Address</title>
 
-          <programlisting>/**
- * @author Emmanuel Bernard
- */
-@GroupSequence(sequence={Address.class, HighLevelCoherence.class})
+          <programlisting>@GroupSequence(sequence={Address.class, HighLevelCoherence.class})
 @ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
 public class Address {
     @NotNull @Size(max = 50)
@@ -1643,8 +1629,6 @@ public class Address {
 
           <programlisting>/**
  * Auditable object contract
- * 
- * @author Emmanuel Bernard
  */
 public interface Auditable {
     @NotNull String getCreationDate();
@@ -1655,8 +1639,6 @@ public interface Auditable {
 
 /**
  * Represents an order in the system
- * 
- * @author Emmanuel Bernard
  */
 public class Order implements Auditable {
     private String creationDate;
@@ -2025,9 +2007,9 @@ EBE: is that a problem?-->
 
         <programlisting>/**
  * Contract determining if a property can be accessed by the Bean Validation provider
- * This contract is called for each property either validated or traversed
- * 
- * A traversable resolver implementation must me thread-safe
+ * This contract is called for each property either validated or traversed.
+ *
+ * A traversable resolver implementation must me thread-safe.
  *
  * @author Emmanuel Bernard
  */
@@ -2035,14 +2017,14 @@ public interface TraversableResolver {
     /**
      * Determine if a property can be traversed by Bean Validation.
      *
-     * @param traversableObject object hosting traversableProperty
-     * @param traversableProperty name of the traqversable property
+     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;.
+     * @param traversableProperty name of the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
-     * @param pathToTraversableObject path from the root object to the traversableObject
-     *        (using the path specification defined by Bean Validator)     
-     * @param elementType either FIELD or METHOD
+     * @param pathToTraversableObject path from the root object to the &lt;code&gt;traversableProperty&lt;/code&gt;
+     *        (using the path specification defined by Bean Validator).
+     * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
      *
-     * @return true if the property is traversable by Bean Validation
+     * @return &lt;code&gt;true&lt;/code&gt; if the property is traversable by Bean Validation, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isTraversable(Object traversableObject,
                           String traversableProperty,
@@ -2207,11 +2189,6 @@ public class Address {
           </listitem>
         </itemizedlist>
 
-        <para>Applications using Java Persistence to persist their graph would
-        typically use a traversable resolver implementation to avoid crossing
-        uninitialized state boundaries. Here is a possible
-        implementation.</para>
-
         <example>
           <title>Java Persistence aware TraversableResolver</title>
 
@@ -2229,10 +2206,25 @@ public class Address {
         </example>
 
         <para>The traversable resolver used by default in a Bean Validation
-        provides returns true for all properties. In other words, all
-        properties are considered traversable. See <xref
-        linkend="bootstrapping" /> for passing a custom
-        <classname>TraversableResolver</classname>.</para>
+        behaves as followed:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>if Java Persistence is available in the runtime environment,
+            a property is considered traversable if Java Persistence considers
+            the property as loaded. A typical implementation will use
+            <code>Persistence.isLoaded(Object, String)</code> to implement
+            such contract. </para>
+          </listitem>
+
+          <listitem>
+            <para>if Java Persistence is not available in the runtime
+            environment, all properties are considered traversable.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>See <xref linkend="bootstrapping" /> to know how to pass a
+        custom <classname>TraversableResolver</classname>.</para>
       </section>
     </section>
 
@@ -4289,8 +4281,6 @@ public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt
           <programlisting>/**
  * Unique identifier of the ACME provider
  * also host some provider specific configuration methods
- *
- * @author Emmanuel Bernard
  */
 public interface ACMEValidatorFactoryBuilder 
     extends ValidatorFactoryBuilder&lt;ACMEValidatorFactoryBuilder&gt; {
@@ -4646,8 +4636,6 @@ public interface BootstrapState {
             <programlisting>/**
  * Unique identifier of the ACME provider
  * also host some provider specific configuration methods
- *
- * @author Emmanuel Bernard
  */
 public interface ACMEValidatorFactoryBuilder 
     extends ValidatorFactoryBuilder&lt;ACMEValidatorFactoryBuilder&gt; {
@@ -6152,6 +6140,142 @@ public interface BeanDescriptor {
     can be brought to the EE ecosystem.</para>
 
     <programlisting>Java Persistence / Bean Validation integration proposal
+
+Integration between Java Persistence and Bean Validation (BV) happens at two levels:
+- as a metadata provider for DDL generation and generally speaking the behavior of
+the persistence provider. This approach will be treated in a different email.
+- as a validation engine called on entity changes
+
+
+** Using the Bean Validation (BV) engine inside a Java Persistence provider
+
+Java Persistence delegates the validation of entities to Bean Validation on the following 
+entity events:
+- pre persist (an entity must be valid to be inserted in the DB)
+- pre update (an entity change must be valid before being propagated to the database)
+- pre remove (eg. a Customer still owning some Payments cannot be removed)
+
+These events are called at the same time as their respective callback methods after
+all callbacks have been called.
+
+For each event type, a list of groups is targeted for validation. By default,
+pre persist and pre update events validate the group Default (default BV group)
+and pre remove does not validate any group. Each list can be overridden
+by a JPA property:
+- javax.persistence.validation.group.pre-persist for pre persist events
+- javax.persistence.validation.group.pre-update for pre update events
+- javax.persistence.validation.group.pre-remove for pre remove events
+
+Question: should JPA introduce the following groups
+/** Defaut validation group used when an entity is persisted */
+public interface Persist extends Default {}
+
+/** Defaut validation group used when an entity is updated */
+public interface Update extends Default {}
+
+/** Defaut validation group used when an entity is removed */
+public interface Remove {}
+
+
+Each property holds the list of targeted groups (fully qualified class name)
+separated by a comma.
+
+When any of the pre-cited event is raised on an entity instance 'a' of type A,
+the persistence provider must validate 'a' by invoking a validator with the
+targeted groups. If the list of targeted groups is empty,
+no validation is performed. If the set of constraint violation is not empty,
+a javax.validation.ValidationException containing a reference to this set of violations is raised.
+
+
+** Special need from Java Persistence
+
+Validator instances used to validate entities on pre-* events must use a TraversableResolver
+implementing the following logic:
+- Lazy properties or associations must not be traversed
+- Single or multi valued associations pointing to entities must not be traversed
+
+A typical implementation could rely on 
+Persistence.isLoaded(Object objectHostingTheProperty, String property)
+to determine the load state of the entity properties.
+In the situation where only a singe (ie the default) persistence provider is available
+in the classpath, the container can implement a potentially optimized TraversableResolver
+that does not rely on Persistence.isLoaded(Object objectHostingTheProperty, String property).
+
+The TraversableResolver instance is passed to Bean Validation through
+ValidatorFactory.defineValidatorState().traversableResolver(jpaSpecificTR).getValidator()
+
+These rules guarantee that:
+- no lazy property nor association will be loaded by side effect
+- no entity will be validated more than once even if it is reachable through @Valid several
+times by entities changing state. This keeps JPA cascading and BV orthogonal.
+
+
+** Interaction between Persistence and Validation Providers
+BV metadata APIs and runtime are available from ValidatorFactory instances. It
+is recommended to cache ValidatorFactory instances and retrieve Validator on demand.
+ValidatorFactory provides metadata informations to the JPA provider, it will be built at
+or before EntityManagerFactory initialization.
+
+Providing the ValidatorFactory
+-- in EE
+A ValidatorFactory is made available at the platform level by the Java EE container. This
+ValidatorFactory instance is passed to the persistence provider via the configuration
+Map of PersistenceProvider.createContainerEntityManagerFactory(PersistenceUnitInfo, Map).
+The property name is
+javax.persistence.validation.factory (Persistence.VALIDATOR_FACTORY)
+Note that the container must pass an instance of VF.
+
+
+-- in SE
+Out of container, the Persistence provider access to the ValidatorFactory in two ways:
+ - it is provided by the application via the configuration Map of
+    Persistence.createEntityManagerFaactory(Map). The property name is
+    javax.persistence.validation.factory  (Persistence.VALIDATOR_FACTORY)
+ - if not provided by the user, and if Bean Validation is present in the classpath, 
+    the ValidatorFactory is instantiated using the default bootstrap
+    approach ie Validation.getBuilder().build() which uses the configuration
+     defined in META-INF/validation.xml
+
+
+By default:
+ - if a Bean Validation provider is present in the environment, the JPA provider
+enables the Bean Validation integration features. 
+ - if no BeanValidation provider is present in the environment, the JPA provider
+disable the Bean Validation integration features.
+This default behavior is known as the "auto" mode.
+
+QUESTION: should auto encompass ddl the undefined ddl modification behaviors 
+to prevent future backward compatibility headache?
+
+When the mode "callback" is activated, the JPA provider
+enables the callback based Bean Validation integration features or raises an exception if
+no Bean Validation provider is present in the environment.
+
+QUESTION: callback or event?
+
+When the mode "none" is activated, the JPA provider
+does not enable  the Bean Validation integration features.
+
+The validation  mode which defaults to "auto" can be defined via a property
+javax.persistence.validation.mode  (Persistence.VALIDATION_MODE)
+
+Such a flag can be defined via the configuration Map at EMF creation time
+or in META-INF/persistence.xml
+
+//add constants
+public Persistence {
+    /** property key receiving a ValidatorFactory instance as value */
+    public static final String VALIDATOR_FACTORY = "javax.persistence.validation.factory"
+
+    /** property key receiving the validation mode as a String*/
+    public static final String VALIDATOR_FACTORY = "javax.persistence.validation.mode"
+
+   [...]
+}
+</programlisting>
+
+    <programlisting>********* OLD do not read **************
+Java Persistence / Bean Validation integration proposal
 
 Integration between Java Persistence and Bean Validation (BV) happens at two levels:
  - as a metadata provider for DDL generation and generally speaking the behavior of 
