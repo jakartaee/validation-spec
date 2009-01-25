@@ -7,12 +7,12 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Beta2 Public Draft</releaseinfo>
+    <releaseinfo>1.0.Beta3.209090120</releaseinfo>
 
-    <pubdate>2008-12-15</pubdate>
+    <pubdate>2009-01-20</pubdate>
 
     <copyright>
-      <year>2007, 2008</year>
+      <year>2007-2009</year>
 
       <holder>Red Hat Middleware, LLC and Steve Peterson</holder>
     </copyright>
@@ -2214,7 +2214,7 @@ public class Address {
             a property is considered traversable if Java Persistence considers
             the property as loaded. A typical implementation will use
             <code>Persistence.isLoaded(Object, String)</code> to implement
-            such contract. </para>
+            such contract.</para>
           </listitem>
 
           <listitem>
@@ -6500,9 +6500,12 @@ Proposal
 ------------
 A) GENERAL CHANGES
 
-1) Add a context-param, javax.faces.VALIDATE_EMPTY_FIELDS, by default false. 
+1) Add a context-param, javax.faces.VALIDATE_EMPTY_FIELDS, by default auto. 
 If true, all submitted fields will be validated. This is necessary to delegate 
 validation of whether a field can be null/empty to the model validator.
+If false, empty values will not be passed to the validators.
+If auto, the default will be true only if Bean Validation
+is in the environment, false otherwise (keeps backward compatibility)
 
 BACKWARDS COMPATIBILITY NOTE:
 
@@ -6527,10 +6530,18 @@ to javax.faces.application.Application.
 The JSF implementation should add the validator to all
 EditableValueHolders after any locally defined validators.
 
+If Bean Validation is present in the environment, and if no default 
+validator is explicitly specified (either via face-confg.xml or via 
+programmatic API), the validator with id javax.faces.Bean is 
+considered the default validator.
+NOTE: if an application or a container override the default validator 
+list (face-config.xml or programmatic API) and wish to keep integration 
+with Bean Validation, it must manually add javax.faces.Bean to the list.
+
 B) SPECIFIC SUPPORT FOR JSR-303
 
-3) Add javax.faces.validator.ModelValidator with id
-javax.faces.Model. The property validationGroups on ModelValidator is
+3) Add javax.faces.validator.BeanValidator with id
+javax.faces.Bean. The property validationGroups on BeanValidator is
 used to allow the view designer to specify a comma separated list of
 groups which should be validated. A group is represented by the fully
 qualified class name of its interface. If the validationGroups attribute is
@@ -6538,7 +6549,7 @@ omitted, the Default (javax.validation.groups.Default) group will be used.
 If the model validator is set as the default validator, this tag can be 
 used to specify validation groups for this input.
 
-The ModelValidator requires a version of EL which supports
+The BeanValidator requires a version of EL which supports
 ValueExpression.getReference(elContext).getProperty(). The validate() method should inspect 
 the parent EditableValueHolder and discover the ValueExpression specified 
 for the "value" attribute, and from it the EL expression's resolved 
@@ -6548,14 +6559,14 @@ ValueReference ref = valueExpression.getReference(elContext);
 String property = ref.getProperty();
 Object base = ref.getBase();
 
-The ModelValidator should lazily acquire a copy of
-javax.validator.ValidatorFactory when the validate() method is called;
+The BeanValidator acquires 
+javax.validator.ValidatorFactory as defined in 5;
 it may keep an application scoped cache of it.
-The Validator instance should acquired as defined in 4) and
+The Validator instance should be acquired as defined in 4) and
 Validator.validateValue(property, value,
 validationGroups); called to find any validation errors.
 
-BeanValidator returns multiple validation constraint failures from a
+Bean Validation returns multiple validation constraint failures from a
 single validator, whilst JSF is limited to returning a single validation
 failure; lifting this constrain is outside the scope of JSF2, but may be
 addressed in the future.  The model validator may take any constraint
@@ -6605,45 +6616,55 @@ Validator validator = validatorFactory
           .messageResolver(jsfMessageResolver)
           .getValidator();
 
-5) ValidatorFactory are retrieved as followed
-In EE, the VF is available at the following JNDI point TBD
-In SE, the ValidatorFactory is created using the standard bootstrap strategy
+5) ValidatorFactory are retrieved using the following algorithm:
+ - if the servlet context contains a ValidatorFactory instance under the attribute named 
+javax.faces.validator.beanValidator.ValidatorFactory, this instance is used by
+JSF to acquire Validator instances
+ - if the servlet context does not contain such entry, JSF looks for a Bean Validation
+provider in the classpath. If present, the standard Bean Validation bootstrap strategy 
+is used. If not present, Bean Validation integration is disabled.
 
-ValidatorFactory vf = Validation.getBuilder().build();
+The standard Bean Validation bootstrap procedure is shown here
+ValidatorFactory validatorFactory = Validation.getBuilder().build();
+
+If the BeanValidator is used and no ValidatorFactory can be retrieved,
+an exception is raised.
+
+VALIDATOR_FACTORY_KEY is a static final String hosted on BeanValidator whose value 
+is javax.faces.validator.beanValidator.ValidatorFactory
 
 
-6) Add a &lt;f:validateModel /&gt; tag. When nested in an EditableValueHolder
-this should add the ModelValidator
+6) Add a &lt;f:validateBean /&gt; tag. When nested in an EditableValueHolder
+this should add the BeanValidator
 
 7) JSR-303 allows the user to validate a graph of objects, JSF will not
 support graph validation.
 
 8) An subtree of components, for example a form, can be validated by
-directly nesting a &lt;f:validateModel /&gt; element. Validating an entire
-form is especially useful if you are not using the ModelValidator as the
+directly nesting a &lt;f:validateBean /&gt; element. Validating an entire
+form is especially useful if you are not using the BeanValidator as the
 default validator, or you want to set a validationGroup for the entire
-form. The &lt;f:validateModel /&gt; should not render a UIComponent. Any
+form. The &lt;f:validateBean /&gt; should not render a UIComponent. Any
 validationGroups specified at this level should be used when validating
 each component in the subtree. Any validationGroups defined on
-&lt;f:validateModel /&gt; nested in an EditableValueHolder take precedence
+&lt;f:validateBean /&gt; nested in an EditableValueHolder take precedence
 over the validationGroups defined for the subtree.
 
-9) If JSF is running in EE then bean validation will be enabled by
-default.  An implementation may choose to enable Bean Validation by
-default in other environments.  The javax.faces.Model validator will be
-added to the defaultValidators, and validate-empty-fields will be set to
-true on javax.faces.application.Application.  Emmanuel Bernard will take
-this to the EE EG.
+9) If JSF is running in EE then bean validation will be present in the
+environment and activated in JSF (see rules 1) and 2) ).
+The EE container will also make ValidatorFactory available as an 
+attribute in the ServletContext at
+"javax.faces.validator.beanValidator.ValidatorFactory"
 
 10) It is possible to disable the default validator for a field/a subtree
-by using the disabled attribute: &lt;h:inputText ...&gt; &lt;f:validateModel
+by using the disabled attribute: &lt;h:inputText ...&gt; &lt;f:validateBean
 disabled="true" /&gt; &lt;/h:inputText&gt; This is useful when you are using the
 ModelValidator as the default validator, or validating an entire form
 
 C) AJAX VALIDATION
 
 11) JSF2's Ajax support transparently supports Ajax validation for any JSF
-validator, including the ModelValidator. For example you could enable
+validator, including the BeanValidator. For example you could enable
 ajax validation for the onBlur event of an input field:
 
 &lt;h:inputText value="#{item.name}"&gt;
@@ -6661,16 +6682,13 @@ ajax validation for the onBlur event of an input field:
 
     <para>Java Persistence and Java Server Faces have deep integration
     proposals with Bean Validation. Java Connector Architecture is a potential
-    client. Web Beans is a likely client providing Validator and
-    <classname>ValidatorFactory</classname> injection.</para>
-
-    <para>To tight everything together in a unified way for the Java EE
-    application developer, some integration at the Java EE level would be
-    beneficial. This proposal draws the main lines.</para>
-
-    <para><classname>ValidatorFactory</classname> is responsible for providing
-    <classname>Validator</classname> instances which execute the validation
-    logic.</para>
+    client. <classname>Validator</classname> and
+    <classname>ValidatorFactory</classname> are very good candidates for
+    injectable Java EE resources (<classname>ValidatorFactory</classname> is
+    responsible for providing <classname>Validator</classname> instances which
+    execute the validation logic). To tight everything together in a unified
+    way for the Java EE application developer, some integration at the Java EE
+    level would be beneficial.</para>
 
     <para>A <classname>ValidatorFactory</classname> is built by the EE
     container and exposed to applications as well as services like JPA, JSF
@@ -6680,77 +6698,30 @@ ajax validation for the onBlur event of an input field:
     <classname>ValidatorFactory</classname> for a given deployment unit.
     <emphasis>Should we mandate it?</emphasis>.</para>
 
-    <para>The container passes the <classname>ValidatorFactory</classname> to
-    the JPA provider via the <classname>PersistenceUnitInfo</classname>
-    contract during the <classname>EntityManagerFactory</classname> creation.
-    The container exposes the <classname>ValidatorFactory</classname> via JNDI
-    at the following standard name (TBD). Services and applications can access
-    the <classname>ValidatorFactory</classname> via JNDI. The factory is
-    available for the lifetime of the deployment.</para>
+    <para>The container passes the <classname>ValidatorFactory</classname>
+    instance to the JPA provider via the configuration Map of
+    <code>PersistenceProvider.createContainerEntityManagerFactory(PersistenceUnitInfo,
+    Map)</code>. The property name is
+    <literal>javax.persistence.validation.factory</literal>
+    (<literal>Persistence.VALIDATOR_FACTORY</literal>).</para>
 
-    <para>In addition, injection aware services should allow injection of
+    <para>The container places the <classname>ValidatorFactory</classname>
+    instance into the <classname>ServletContext</classname> in the following
+    attribute name entry
+    <literal>javax.faces.validator.beanValidator.ValidatorFactory</literal>.
+    JSF 2 implementations are required to look in this entry for any
+    <classname>ValidatorFactory</classname> and use it.</para>
+
+    <para>In addition, <classname>Validator</classname> and
+    <classname>ValidatorFactory</classname> should be considered as Java EE
+    resources: injection aware services should allow injection of
     <classname>Validator</classname> instances as well as
     <classname>ValidatorFactory</classname> instances.
-    <classname>@Resource</classname> can be used for this (we lose the ability
-    for custom Validator state to the price of ease of use). If
+    <classname>@Resource</classname> is used for this. If
     <classname>Validator</classname> instances are injected, the default
     validation context is used. In other words,
     <classname>Validator</classname> are provided by
-    <code>validatorFactory.getValidator()</code>.</para>
-
-    <para>To ensure smooth integration with applications using Java
-    Persistence, a custom <classname>TraversableResolver</classname> must be
-    provided. Object graphs loaded by JPA can be validated at various levels
-    by the application including the component level (EJB and Web Beans) or
-    the presentation level (servlets). Object graph loaded by JPA are often
-    partially loaded. It is not desirable for the Bean Validation provider to
-    cross the lazy state boundaries of the graph. To prevent such boundary
-    crossing, a <classname>TraversableResolver</classname> fulfilling the
-    following contract is used:</para>
-
-    <itemizedlist>
-      <listitem>
-        <para>A property of a object is considered traversable if no
-        Persistence provider present on the platform considers the property as
-        lazy</para>
-      </listitem>
-    </itemizedlist>
-
-    <para>This can be achieved by using the JPA
-    <code>Persistence.isLoaded(Object bean, String property)</code> method but
-    containers knowing that only the default persistence provider is available
-    on the platform can provide a <classname>TraversableResolver</classname>
-    implementation not relying on this public method.</para>
-
-    <para>The <classname>ValidationFactory</classname> should be created as
-    followed</para>
-
-    <programlisting>ValidatorFactory factory = Validation.getBuilder()
-                  .traversableResolver(jpaBoundariesAwareTraversableResolver)
-                  .build();</programlisting>
-
-    <para>Here is a possible JPA-aware
-    <classname>TraversableResolver</classname> implementation:</para>
-
-    <programlisting>public class JPATraversableResolver implements TraversableResolver {
-
-    boolean isTraversable(Object traversableObject,
-                          String traversableProperty,
-                          Class&lt;?&gt; rootBeanType,
-                          String pathToTraversableObject,
-                          ElementType elementType) {
-
-        return Persistence.isLoaded(traversableObject, traversableProperty);
-    }
-}</programlisting>
-
-    <para>The <classname>ValidatorFactory</classname> creation and the
-    <classname>TraversableResolver</classname> implementation are the
-    responsibility of the container.</para>
-
-    <para>If the container knows the bean validation service is not used by
-    the application nor any of the services, it can avoid the initialization
-    and publication of the <classname>ValidatorFactory</classname> (note this
-    is probably fairly useless).</para>
+    <code>validatorFactory.getValidator()</code>. The factory is available for
+    the lifetime of the deployment.</para>
   </appendix>
 </book>
