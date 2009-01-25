@@ -3444,14 +3444,15 @@ assert constraintViolation.getGroups().length == 0</programlisting>
     </section>
 
     <section id="validationapi-message">
-      <title>Message resolution</title>
+      <title>Message interpolation</title>
 
       <section id="default-messageresolver">
-        <title>Default message resolution</title>
+        <title>Default message interpolation</title>
 
-        <para>A conforming implementation includes a default message resolver.
-        This message resolver shall use the algorithm defined here to resolve
-        message descriptors into human-readable messages.</para>
+        <para>A conforming implementation includes a default message
+        interpolator. This message interpolator shall use the algorithm
+        defined here to interpolate message descriptors into human-readable
+        messages.</para>
 
         <para>Each constraint defines a message descriptor via its
         <methodname>message</methodname> property. Every constraint definition
@@ -3473,57 +3474,78 @@ assert constraintViolation.getGroups().length == 0</programlisting>
         <section id="default-resolution-algorithm">
           <title>Algorithm</title>
 
-          <para>The default message resolver begins by retrieving the message
-          descriptor from the constraint. Message parameters are then replaced
-          by repeatedly executing the steps listed below until no replacements
-          are performed.</para>
-
-          <!--SCP: Do we want to allow MessageFormat style formatting here?-->
+          <para>The default message interpolator uses the following steps:<!--SCP: Do we want to allow MessageFormat style formatting here?--></para>
 
           <orderedlist>
             <listitem>
-              <para>A message parameter that matches the name of an attribute
-              of the constraint declaration is replaced by the value of that
-              attribute.</para>
-
-              <!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
-If the value being valudated is null, the string 'null' is used as a replacement string
-EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it conflicts with value the default annotation name-->
-            </listitem>
-
-            <listitem>
-              <para>The message parameter is used as a key to search the
+              <para>Message parameters are extracted from the message string
+              and used as keys to search the
               <classname>ResourceBundle</classname> named
               <literal>ValidationMessages</literal> (often materialized as the
               property file
               <filename>/ValidationMessages.properties</filename> and its
-              locale variations) using the default
-              <classname>Locale</classname> as provided by
-              <methodname>Locale.getDefault()</methodname>. If a property is
-              found, the message parameter is replaced with the property
-              value.</para>
+              locale variations) using the defined locale (see below). If a
+              property is found, the message parameter is replaced with the
+              property value in the message string. Step 1 is applied
+              recursively until no replacement is performed (ie. a message
+              parameter value can itself contain a message parameter).</para>
             </listitem>
 
             <listitem>
-              <para>The message parameter is used as a key to search the
-              default message resolver's built-in message properties. If a
-              property is found, the message parameter is replaced with the
-              property value.</para>
+              <para>Message parameters are extracted from the message string
+              and used as keys to search the Bean Validation provider's
+              built-in <classname>ResourceBundle</classname> using the defined
+              locale (see below). If a property is found, the message
+              parameter is replaced with the property value in the message
+              string. Contrary to step 1, step 2 is not processed
+              recursively.</para>
+            </listitem>
+
+            <listitem>
+              <para>If step 2 triggers a replacement, then step 1 is applied
+              again. Otherwise step 4 is performed.</para>
+            </listitem>
+
+            <listitem>
+              <para>Message parameters are extracted from the message string.
+              Those matching the name of an attribute of the constraint
+              declaration are replaced by the value of that attribute.<!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
+If the value being valudated is null, the string 'null' is used as a replacement string
+EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it conflicts with value the default annotation name--></para>
             </listitem>
           </orderedlist>
 
-          <para>Built-in message properties are provided by the Bean
-          Validation provider.</para>
+          <para>The defined locale is as followed:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>if the locale is passed to the interpolator method
+              i<methodname>nterpolate(String, CosntraintDescriptor, Object,
+              Locale)</methodname>, this <classname>Locale</classname>
+              instance is used.</para>
+            </listitem>
+
+            <listitem>
+              <para>otherwise, the default <classname>Locale</classname> as
+              provided by <methodname>Locale.getDefault()</methodname> is
+              used. </para>
+            </listitem>
+          </itemizedlist>
+
+          <para>The proposed algorithm ensures that custom resource bundle
+          always have priority over built-in resource bundle at all level of
+          the recursive resolution. It also ensures that constraint
+          declarations attributes values are not expanded further.</para>
         </section>
       </section>
 
       <section id="custom-message-resolution">
-        <title>Custom message resolution</title>
+        <title>Custom message interpolation</title>
 
-        <para>A custom message resolver may be provided (e.g., to resolve
-        contextual data, or to adjust the default <classname>Locale
-        </classname>used). A message resolver implements the
-        <classname>MessageResolver</classname> interface.</para>
+        <para>A custom message interpolator may be provided (e.g., to
+        interpolate contextual data, or to adjust the default
+        <classname>Locale </classname>used). A message interpolator implements
+        the <classname>MessageInterpolator</classname> interface.</para>
 
         <programlisting>/**
  * Interpolate a given constraint violation message.
@@ -3531,37 +3553,37 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
-public interface MessageResolver {
-    /**
-     * Interpolate the message from the constraint parameters and the actual validated object.
-     * The locale is defaulted according to the &lt;code&gt;MessageResolver&lt;/code&gt; implementation
-     * See the implementation documentation for more detail.
-     *
-     * @param message The message to interpolate.
-     * @param constraintDescriptor The constraint descriptor.
-     * @param value The object being validated
-     *
-     * @return Interpolated error message.
-     */
-    String interpolate(String message, 
-                       ConstraintDescriptor constraintDescriptor, 
-                       Object value);
+public interface MessageInterpolator {
+	/**
+	 * Interpolate the message from the constraint parameters and the actual validated object.
+	 * The locale is defaulted according to the &lt;code&gt;MessageInterpolator&lt;/code&gt; implementation
+	 * See the implementation documentation for more detail.
+	 *
+	 * @param message The message to interpolate.
+	 * @param constraintDescriptor The constraint descriptor.
+	 * @param value The object being validated
+	 *
+	 * @return Interpolated error message.
+	 */
+	String interpolate(String message,
+					   ConstraintDescriptor constraintDescriptor,
+					   Object value);
 
-    /**
-     * Interpolate the message from the constraint parameters and the actual validated object.
-     * The Locale used is provided as a parameter
-     *
-     * @param message The message to interpolate.
-     * @param constraintDescriptor The constraint descriptor.
-     * @param value The object being validated
-     * @param locale the locale targeted for the message
-     *
-     * @return Interpolated error message.
-     */
-    String interpolate(String message, 
-                       ConstraintDescriptor constraintDescriptor, 
-                       Object value, 
-                       Locale locale);
+	/**
+	 * Interpolate the message from the constraint parameters and the actual validated object.
+	 * The Locale used is provided as a parameter
+	 *
+	 * @param message The message to interpolate.
+	 * @param constraintDescriptor The constraint descriptor.
+	 * @param value The object being validated
+	 * @param locale the locale targeted for the message
+	 *
+	 * @return Interpolated error message.
+	 */
+	String interpolate(String message,
+					   ConstraintDescriptor constraintDescriptor,
+					   Object value,
+					   Locale locale);
 }</programlisting>
 
         <para><parameter>message</parameter> is the message descriptor as seen
@@ -3576,43 +3598,45 @@ public interface MessageResolver {
         <para><parameter>value</parameter> is the value being
         validated.</para>
 
-        <para><methodname>MessageResolver.interpolate(String,
+        <para><methodname>MessageInterpolator.interpolate(String,
         ConstraintDescriptor, Object)</methodname> is invoked by for each
         constraint violation report generated. The default
         <classname>Locale</classname> is implementation specific.</para>
 
-        <para><methodname>MessageResolver.interpolate(String,
+        <para><methodname>MessageInterpolator.interpolate(String,
         ConstraintDescriptor, Object, Locale)</methodname> can be invoked by a
-        wrapping <classname>MessageResolver</classname> to enforce a specific
-        <classname>Locale</classname> value by bypassing or overriding the
-        default <classname>Locale</classname> strategy.</para>
+        wrapping <classname>MessageInterpolator</classname> to enforce a
+        specific <classname>Locale</classname> value by bypassing or
+        overriding the default <classname>Locale</classname> strategy.</para>
 
-        <para>A message resolver implementation shall be threadsafe.</para>
+        <para>A message interpolator implementation shall be
+        threadsafe.</para>
 
-        <para>The message resolver is provided to the
+        <para>The message interpolator is provided to the
         <classname>ValidatorFactory</classname> at construction time using
-        <methodname>ValidatorFactoryBuilder.messageResolver(MessageResolver)</methodname>.
-        This message resolver is shared by all validators generated by this
-        <classname>ValidatorFactory</classname>.</para>
+        <methodname>ValidatorFactoryBuilder.messageInterpolator(MessageInterpolator)</methodname>.
+        This message interpolator is shared by all validators generated by
+        this <classname>ValidatorFactory</classname>.</para>
 
         <para>It is possible to override the
-        <classname>MessageResolver</classname> implementation for a given
+        <classname>MessageInterpolator</classname> implementation for a given
         <classname>Validator</classname> instance by invoking
-        <methodname>ValidatorFactory.defineValidatorState().messageResolver(messageResolver).getValidator()</methodname>.</para>
+        <methodname>ValidatorFactory.defineValidatorState().messageInterpolator(messageInterpolator).getValidator()</methodname>.</para>
 
-        <para>It is recommended that <classname>MessageResolver</classname>
-        implementations delegate final interpolation to the Bean Validation
-        default <classname>MessageResolver</classname> to ensure standard Bean
+        <para>It is recommended that
+        <classname>MessageInterpolator</classname> implementations delegate
+        final interpolation to the Bean Validation default
+        <classname>MessageInterpolator</classname> to ensure standard Bean
         Validation interpolation rules are followed, The default
         implementation is accessible through
-        <methodname>ValidatorFactoryBuilder.getDefaultMessageResolver()</methodname>.</para>
+        <methodname>ValidatorFactoryBuilder.getDefaultMessageInterpolator()</methodname>.</para>
       </section>
 
       <section id="validationapi-message-examples">
         <title>Examples</title>
 
         <para>These examples describe message interpolation based on the
-        default message resolver's built-in messages (see <xref
+        default message interpolator's built-in messages (see <xref
         linkend="standard-resolver-messages" />), and the
         <filename>ValidationMessages.properties</filename> file shown in table
         <xref linkend="table-messageinterpolation" />. The current locale is
@@ -3676,31 +3700,32 @@ myapp.creditcard.error=credit card number not valid</programlisting>
         <para>Here is an approach to specify the <classname>Locale</classname>
         value to choose on a given <classname>Validator</classname>.
         <classname>Locale</classname> aware
-        <classname>MessageResolver</classname>. See <xref
+        <classname>MessageInterpolator</classname>. See <xref
         linkend="bootstrapping" /> for more details on the APIs.</para>
 
         <example id="validationapi-message-examples-specificlocale">
-          <title>Use MessageResolver to use a specific Locale value</title>
+          <title>Use MessageInterpolator to use a specific Locale
+          value</title>
 
           <programlisting>/**
- * delegates to a MessageResolver implementation but enforce a given Locale
+ * delegates to a MessageInterpolator implementation but enforce a given Locale
  */
-public class LocaleSpecificMessageResolver implements MessageResolver {
-    private final MessageResolver defaultResolver;
+public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
+    private final MessageInterpolator defaultInterpolator;
     private final Locale defaultLocale;
 
-    public LocaleSpecificMessageResolver(MessageResolver resolver, Locale locale) {
+    public LocaleSpecificMessageInterpolator(MessageInterpolator interpolator, Locale locale) {
         this.defaultLocale = locale;
-        this.defaultResolver = resolver;
+        this.defaultInterpolator = interpolator;
     }
 
     /**
-     * enforece the locale passed to the resolver
+     * enforece the locale passed to the interpolator
      */
     public String interpolate(String message, 
                               ConstraintDescriptor constraintDescriptor, 
                               Object value) {
-        return defaultResolver.interpolate(message, constraintDescriptor, 
+        return defaultInterpolator.interpolate(message, constraintDescriptor, 
                                            value, this.defaultLocale);
     }
 
@@ -3709,39 +3734,39 @@ public class LocaleSpecificMessageResolver implements MessageResolver {
                               ConstraintDescriptor constraintDescriptor,
                               Object value,
                               Locale locale) {
-        return defaultResolver.interpolate(message, constraintDescriptor, value, locale);
+        return defaultInterpolator.interpolate(message, constraintDescriptor, value, locale);
     }
 }
 
 
 Locale locale = getMyCurrentLocale();
-MessageResolver resolver = new LocaleSpecificMessageResolver(
-                                       validatorFactory.getMessageResolver(),
+MessageInterpolator interpolator = new LocaleSpecificMessageInterpolator(
+                                       validatorFactory.getMessageInterpolator(),
                                        locale);
 
 Validator validator = validatorFactory.defineValidatorState()
-                                      .messageResolver(resolver)
+                                      .messageInterpolator(interpolator)
                                       .getValidator();</programlisting>
         </example>
 
         <para>Most of the time, however, the relevant
         <classname>Locale</classname> will be provided by your application
         framework transparently. This framework will implement its own version
-        of <classname>MessageResolver</classname> and pass it during the
+        of <classname>MessageInterpolator</classname> and pass it during the
         <classname>ValidatorFactory</classname> configuration. The application
         will not have to set the <classname>Locale</classname> itself. This
         example shows how a container framework would implement
-        <classname>MessageResolver</classname> to provide a user specific
+        <classname>MessageInterpolator</classname> to provide a user specific
         default locale.<!--TODO Rework this example as it is not reality--></para>
 
         <example id="validationapi-message-examples-jsflocale">
-          <title>Contextual container possible MessageResolver
+          <title>Contextual container possible MessageInterpolator
           implementation</title>
 
-          <programlisting>public class ContextualMessageResolver {
-    private final MessageResolver delegate;
+          <programlisting>public class ContextualMessageInterpolator {
+    private final MessageInterpolator delegate;
 
-    public ContextualMessageResolver(MessageResolver delegate) { 
+    public ContextualMessageInterpolator(MessageInterpolator delegate) { 
         this.delegate = delegate; 
     }
 
@@ -3762,10 +3787,10 @@ Validator validator = validatorFactory.defineValidatorState()
 //Build the ValidatorFactory
 ValidatorFactoryBuilder builder = Validation.getBuilder();
 ValidatorFactory factory = builder
-    .messageResolver( new ContextualMessageResolver( builder.getDefaultMessageResolver() ) )
+    .messageInterpolator( new ContextualMessageInterpolator( builder.getDefaultMessageInterpolator() ) )
     .build();
 
-//The container uses the factory to validate constraints using the specific MessageResolver
+//The container uses the factory to validate constraints using the specific MessageInterpolator
 Validator validator = factory.getValidator();</programlisting>
         </example>
       </section>
@@ -3893,7 +3918,7 @@ Validator validator = factory.getValidator();</programlisting>
           <programlisting>//some customization from a container like Web Beans
 ValidatorFactory factory = Validation
        .getBuilder()
-          .messageResolver( new WBMessageResolver() )
+          .messageInterpolator( new WBMessageInterpolator() )
           .constraintFactory( new WBComponentConstraintFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
           .build();
@@ -3933,7 +3958,7 @@ Validator validator = factory.getValidator();</programlisting>
           <programlisting>ValidatorFactory factory = Validation
        .builderType( ACMEValidatorFactoryBuilder.class )  //chose a specific provider
        .getBuilder()
-          .messageResolver( new ContainerMessageResolver() ) //default configuration option
+          .messageInterpolator( new ContainerMessageInterpolator() ) //default configuration option
           .addConstaint(Address.class, customConstraintDescriptor) //ACME specific method
           .build();
 
@@ -3943,7 +3968,7 @@ ACMEValidatorFactoryBuilder acmeBuilder = Validation
        .getBuilder();
 
 ValidatorFactory factory = acmeBuilder
-          .messageResolver( new ContainerMessageResolver() ) //default configuration option
+          .messageInterpolator( new ContainerMessageInterpolator() ) //default configuration option
           .addConstaint(Address.class, customConstraintDescriptor) //ACME specific method
           .build();
 
@@ -3962,22 +3987,22 @@ public interface ACMEValidatorFactoryBuilder
         </example>
 
         <para>The last example shows how a <classname>Validator</classname>
-        can use a specific <classname>MessageResolver</classname>
+        can use a specific <classname>MessageInterpolator</classname>
         implementation</para>
 
         <example>
-          <title>Use a specific MessageResolver instance for a given
+          <title>Use a specific MessageInterpolator instance for a given
           Validator</title>
 
           <programlisting>ValidatorFactory factory = ...;
-MessageResolver customResolver = new LocaleSpecificMessageResolver(
+MessageInterpolator customInterpolator = new LocaleSpecificMessageInterpolator(
     locale, 
-    factory.getMessageResolver()
+    factory.getMessageInterpolator()
 );
 
 Validator localizedValidator = 
     factory.defineValidatorState()
-                   .messageResolver(customResolver)
+                   .messageInterpolator(customInterpolator)
                    .getValidator();</programlisting>
         </example>
 
@@ -3996,7 +4021,7 @@ Validator localizedValidator =
         <para><classname>ValidatorFactory</classname> objects build and
         provide initialized instances of <classname>Validator</classname> to
         Bean Validation clients. Each <classname>Validator</classname>
-        instance is configured for a given context (message resolver,
+        instance is configured for a given context (message interpolator,
         traversable resolver). Clients should cache
         <classname>ValidatorFactory</classname> objects and reuse them for
         optimal performances. The API is designed to allow implementors to
@@ -4018,31 +4043,32 @@ Validator localizedValidator =
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactory {
-    /**
-     * return an initialized Validator instance using the default factory instances
-     * for message resolver and traversable resolver.
-     *
-     * Validator instances can be pooled and shared by the implementation
-     */
-    Validator getValidator();
-    
-    /**
-     * Define the validator state and return a
-     * Validator compliant with this state
-     *
-     * @return a ValidatorBuilder
-     */
-    ValidatorBuilder defineValidatorState();
-    
-    /**
-     * Returns the MessageResolver instance configured at initialization time
-     * for the ValidatorFactory
-     * This is the instance used by #getValidator(Class)
-     *
-     * @return MessageResolver instance
-     */
-    MessageResolver getMessageResolver();
-}</programlisting>
+	/**
+	 * return an initialized Validator instance using the default factory instances
+	 * for message interpolator and traversable resolver.
+	 *
+	 * Validator instances can be pooled and shared by the implementation
+	 */
+	Validator getValidator();
+
+	/**
+	 * Define the validator state and return a
+	 * Validator compliant with this state
+	 *
+	 * @return a ValidatorBuilder
+	 */
+	ValidatorBuilder defineValidatorState();
+
+	/**
+	 * Returns the MessageInterpolator instance configured at initialization time
+	 * for the ValidatorFactory
+	 * This is the instance used by #getValidator(Class)
+	 *
+	 * @return MessageInterpolator instance
+	 */
+	MessageInterpolator getMessageInterpolator();
+}
+</programlisting>
         </example>
 
         <para>A <classname>ValidatorFactory</classname> is provided by a
@@ -4052,7 +4078,7 @@ public interface ValidatorFactory {
         <methodname>defineValidatorState</methodname> can be used to customize
         the state in which the <classname>Validator</classname> must be
         initialized. This is used to customize the
-        <classname>MessageResolver</classname> or the
+        <classname>MessageInterpolator</classname> or the
         <classname>TraversableResolver</classname>.</para>
 
         <example>
@@ -4064,44 +4090,44 @@ public interface ValidatorFactory {
  * @author Emmanuel Bernard
  */
 public interface ValidatorBuilder {
-    /**
-     * Defines the message resolver implementation used by the Validator.
-     * If unset, the message resolver of the ValidatorFactory is used.
-     *
-     * @return self following the chaining method pattern
-     */
-    ValidatorBuilder messageResolver(MessageResolver messageResolver);
+	/**
+	 * Defines the message interpolator implementation used by the Validator.
+	 * If unset, the message interpolator of the ValidatorFactory is used.
+	 *
+	 * @return self following the chaining method pattern
+	 */
+	ValidatorBuilder messageInterpolator(MessageInterpolator messageInterpolator);
 
-    /**
-     * Defines the traversable resolver implementation used by the Validator.
-     * If unset, the traversable resolver of the ValidatorFactory is used.
-     *
-     * @return self following the chaining method pattern
-     */
-    ValidatorBuilder traversableResolver(TraversableResolver traversableResolver);
+	/**
+	 * Defines the traversable resolver implementation used by the Validator.
+	 * If unset, the traversable resolver of the ValidatorFactory is used.
+	 *
+	 * @return self following the chaining method pattern
+	 */
+	ValidatorBuilder traversableResolver(TraversableResolver traversableResolver);
 
-    /**
-     * return an initialized Validator instance respecting the defined state
-     * Validator instances can be pooled and shared by the implementation
-     */
-    Validator getValidator();
+	/**
+	 * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
+	 * Validator instances can be pooled and shared by the implementation.
+	 */
+	Validator getValidator();
 
 }</programlisting>
         </example>
 
-        <para>The <classname>MessageResolver</classname> or the
+        <para>The <classname>MessageInterpolator</classname> or the
         <classname>TraversableResolver</classname> passed to the
         <classname>ValidatorBuilder</classname> are used instead of the
         <classname>ValidatorFactory</classname>'s
-        <classname>MessageResolver</classname> or
+        <classname>MessageInterpolator</classname> or
         <classname>TraversableResolver</classname> instances.</para>
 
-        <para><methodname>getMessageResolver()</methodname> returns the
-        <classname>MessageResolver</classname> instance configured during the
-        initialization of the <classname>ValidatorFactory</classname>. It is
-        particularly useful to build a <classname>Validator</classname>
-        specific <classname>MessageResolver</classname> wrapping the one from
-        the <classname>ValidatorFactory</classname>.</para>
+        <para><methodname>getMessageInterpolator()</methodname> returns the
+        <classname>MessageInterpolator</classname> instance configured during
+        the initialization of the <classname>ValidatorFactory</classname>. It
+        is particularly useful to build a <classname>Validator</classname>
+        specific <classname>MessageInterpolator</classname> wrapping the one
+        from the <classname>ValidatorFactory</classname>.</para>
 
         <example>
           <title>Use of ValidatorFactory</title>
@@ -4116,7 +4142,8 @@ Validator validatorUsingCustomTraversable = factory
 
         <para>See <xref
         linkend="validationapi-message-examples-specificlocale" /> for an
-        example using <methodname>getMessageResolver()</methodname>.</para>
+        example using
+        <methodname>getMessageInterpolator()</methodname>.</para>
       </section>
 
       <section>
@@ -4130,7 +4157,7 @@ Validator validatorUsingCustomTraversable = factory
 
         <itemizedlist>
           <listitem>
-            <para>the message resolver strategy instance</para>
+            <para>the message interpolator strategy instance</para>
           </listitem>
 
           <listitem>
@@ -4147,15 +4174,15 @@ Validator validatorUsingCustomTraversable = factory
         </itemizedlist>
 
         <para>A <classname>ValidatorFactoryBuilder</classname> does provide a
-        <classname>MessageResolver</classname> implementation following the
-        default Bean Validation <classname>MessageResolver</classname> rules
-        as defined in <xref linkend="default-messageresolver" /> in
-        <methodname>getDefaultMessageResolver()</methodname>. Such an
+        <classname>MessageInterpolator</classname> implementation following
+        the default Bean Validation <classname>MessageInterpolator</classname>
+        rules as defined in <xref linkend="default-messageresolver" /> in
+        <methodname>getDefaultMessageInterpolator()</methodname>. Such an
         implementation is useful to let a custom
-        <classname>MessageResolver</classname> delegates to the standard
-        <classname>MessageResolver</classname> (see <xref
+        <classname>MessageInterpolator</classname> delegates to the standard
+        <classname>MessageInterpolator</classname> (see <xref
         linkend="custom-message-resolution" /> and an example making use of
-        <methodname>getDefaultMessageResolver()</methodname> in <xref
+        <methodname>getDefaultMessageInterpolator()</methodname> in <xref
         linkend="validationapi-message-examples-jsflocale" />).</para>
 
         <para>Clients call
@@ -4175,7 +4202,7 @@ Validator validatorUsingCustomTraversable = factory
  * &lt;pre&gt;
  * ValidatorFactoryBuilder&lt;?&gt; builder = //provided by one of the Validation bootstrap methods
  * ValidatorFactory = builder
- *         .messageResolver( new CustomMessageResolver() )
+ *         .messageInterpolator( new CustomMessageInterpolator() )
  *         .build();
  * &lt;/pre&gt;
  * &lt;p/&gt;
@@ -4195,65 +4222,65 @@ Validator validatorUsingCustomTraversable = factory
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt; {
-    /**
-     * Defines the message resolver used. Has priority over the configuration
-     * based message resolver.
-     *
-     * @param resolver message resolver implementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T messageResolver(MessageResolver resolver);
+	/**
+	 * Defines the message interpolator used. Has priority over the configuration
+	 * based message interpolator.
+	 *
+	 * @param interpolator message interpolator implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T messageInterpolator(MessageInterpolator interpolator);
 
-    /**
-     * Defines the traversable resolver used. Has priority over the configuration
-     * based traversable resolver.
-     *
-     * @param resolver traversable resolver implementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T traversableResolver(TraversableResolver resolver);
+	/**
+	 * Defines the traversable resolver used. Has priority over the configuration
+	 * based traversable resolver.
+	 *
+	 * @param resolver traversable resolver implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T traversableResolver(TraversableResolver resolver);
 
-    /**
-     * Defines the constraint factory. Has priority over the configuration
-     * based constraint factory.
-     *
-     * @param constraintFactory constraint factory inmplementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T constraintFactory(ConstraintFactory constraintFactory);
+	/**
+	 * Defines the constraint factory. Has priority over the configuration
+	 * based constraint factory.
+	 *
+	 * @param constraintFactory constraint factory inmplementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T constraintFactory(ConstraintFactory constraintFactory);
 
-    /**
-     * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
-     * If not specified, META-INF/validation.xml is used
-     * &lt;p/&gt;
-     * The stream should be closed by the client API after the
-     * ValidatorFactory has been returned
-     *
-     * @param stream configuration stream.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T configure(InputStream stream);
+	/**
+	 * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
+	 * If not specified, META-INF/validation.xml is used
+	 * &lt;p/&gt;
+	 * The stream should be closed by the client API after the
+	 * ValidatorFactory has been returned
+	 *
+	 * @param stream configuration stream.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T configure(InputStream stream);
 
-    /**
-     * Return an implementation of the MessageResolver interface following the
-     * default MessageREsolver defined in the specification:
-     *  - use the ValidationMessages resource bundle to load keys
-     *  - use Locale.getDefault()
-     *
-     * @return default MessageResolver implementation compliant with the specification
-     */
-    MessageResolver getDefaultMessageResolver();
+	/**
+	 * Return an implementation of the MessageInterpolator interface following the
+	 * default MessageInterpolator defined in the specification:
+	 *  - use the ValidationMessages resource bundle to load keys
+	 *  - use Locale.getDefault()
+	 *
+	 * @return default MessageInterpolator implementation compliant with the specification
+	 */
+	MessageInterpolator getDefaultMessageInterpolator();
 
-    /**
-     * Build a ValidatorFactory implementation.
-     *
-     * @return ValidatorFactory
-     */
-    ValidatorFactory build();
+	/**
+	 * Build a ValidatorFactory implementation.
+	 *
+	 * @return ValidatorFactory
+	 */
+	ValidatorFactory build();
 }</programlisting>
         </example>
 
@@ -4320,37 +4347,37 @@ public interface ACMEValidatorFactoryBuilder
  * @author Hardy Ferentschik
  */
 public interface ValidatorFactoryConfiguration {
-    /**
-     * Message resolver as defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return message provider instance or null if not defined
-     */
-    MessageResolver getMessageResolver();
+	/**
+	 * Message interpolator as defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return message provider instance or null if not defined
+	 */
+	MessageInterpolator getMessageInterpolator();
 
-    /**
-     * Returns the configuration stream defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return the configuration input stream or null
-     */
-    InputStream getConfigurationStream();
+	/**
+	 * Returns the configuration stream defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return the configuration input stream or null
+	 */
+	InputStream getConfigurationStream();
 
-    /**
-     * Defines the constraint implementation factory as defined by
-     * the client programmatically or null if undefined
-     *
-     * @return factory instance or null if not defined
-     */
-    ConstraintFactory getConstraintFactory();
+	/**
+	 * Defines the constraint implementation factory as defined by
+	 * the client programmatically or null if undefined
+	 *
+	 * @return factory instance or null if not defined
+	 */
+	ConstraintFactory getConstraintFactory();
 
-    /**
-     * Traversable resolver as defined by the client programmatically
-     * or null if undefined.
-     *
-     * @return traversable provider instance or null if not defined
-     */
-    TraversableResolver getTraversableResolver();
+	/**
+	 * Traversable resolver as defined by the client programmatically
+	 * or null if undefined.
+	 *
+	 * @return traversable provider instance or null if not defined
+	 */
+	TraversableResolver getTraversableResolver();
 }</programlisting>
         </example>
 
@@ -4407,7 +4434,7 @@ public interface ValidatorFactoryConfiguration {
 
           <programlisting>ValidatorFactoryBuilder factoryBuilder = ...
 ValidatorFactory factory = factoryBuilder
-              .messageResolver( new WBMessageResolver() )
+              .messageInterpolator( new WBMessageInterpolator() )
               .traversableResolver( new JPAAwareTraversableResolver() )
               .build();</programlisting>
         </example>
@@ -5868,7 +5895,7 @@ public @interface Future {
           </row>
 
           <row>
-            <entry>Message resolver</entry>
+            <entry>Message interpolator</entry>
 
             <entry>Algorithm used to build the end user message associated to
             a constraint failure. Typically useful for i18n</entry>
@@ -5917,10 +5944,10 @@ public @interface Future {
   </appendix>
 
   <appendix id="standard-resolver-messages">
-    <title>Standard resolver messages</title>
+    <title>Standard ResourceBundle messages</title>
 
     <para>The properties listed below are resolved by the default message
-    resolver.</para>
+    interpolator.</para>
 
     <programlisting>validator.null=must be null
 validator.notNull=must not be mull
@@ -6576,16 +6603,16 @@ summary taken from the validation error message taken from the Bean
 Validation validation error and the detail message should be null.
 
 4) To ensure proper localization of the messages, JSF should provide a
-custom BV MessageResolver resolving the Locale according to JSF defaults
-and delegating to the default MessageResolver as defined in 
-ValidationFactory.getMessageResolver()
+custom BV MessageInterpolator resolving the Locale according to JSF defaults
+and delegating to the default MessageInterpolator as defined in 
+ValidationFactory.getMessageInterpolator()
 
 A possible implementation is described as followed
 
-public class JsfMessageResolver {
-    private final MessageResolver delegate;
+public class JsfMessageInterpolator {
+    private final MessageInterpolator delegate;
 
-    public JsfMessageResolver(MessageResolver delegate) { 
+    public JsfMessageInterpolator(MessageInterpolator delegate) { 
         this.delegate = delegate; 
     }
 
@@ -6603,17 +6630,17 @@ public class JsfMessageResolver {
 }
 
 Assuming a ValidatorFactory, JSF receives a Validator instance by providing the custom message
-resolver to the validator state.
+interpolator to the validator state.
 
 //could be cached
-MessageResolver jsfMessageResolver = new JsfMessageResolver( 
-                  validatorFactory.getMessageResolver() );
+MessageInterpolator jsfMessageInterpolator = new JsfMessageInterpolator( 
+                  validatorFactory.getMessageInterpolator() );
 
 //...
 
 Validator validator = validatorFactory
           .defineValidatorState()
-          .messageResolver(jsfMessageResolver)
+          .messageInterpolator(jsfMessageInterpolator)
           .getValidator();
 
 5) ValidatorFactory are retrieved using the following algorithm:
