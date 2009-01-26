@@ -279,21 +279,23 @@ EBE I started a thread on the ML => I don't think I like the move.-->
       <literal>javax.validation.ConstraintValidator</literal>.</para>
 
       <programlisting>/**
- * Link between a constraint annotation and its constraint validation implementation
+ * Link between a constraint annotation and it's constraint validation implementation.
+ * &lt;p/&gt;
+ * An given constraint annotation should be annotated by a @ConstraintValidator
+ * annotation which refers to its constraint validation implementation.
  *
- * A given constraint annotation should be annotated by a @ConstraintValidator
- * annotation to refer to its constraint validation implementation
- *<!--TODO SCP:  Do we want to just call this Validator? 
-EBE thread started on the ML but validator is the name of the main API, maybe ConstraintValidator-->
+ * @author Emmanuel Bernard (emmanuel at hibernate.org)
+ * @author Gavin King
+ * @author Hardy Ferentschik
  */
 @Documented
-@Target({ANNOTATION_TYPE})
+@Target({ ANNOTATION_TYPE })
 @Retention(RUNTIME)
-public @interface ConstraintValidator {
-    /**
-     * Constraint validation implementation
-     */
-    Class&lt;? extends Constraint&gt; value();
+public @interface Constraint {
+	/**
+	 * @return The class implementing the constraint validation logic
+	 */
+	public Class&lt;? extends ConstraintValidator&gt; validatedBy();
 }</programlisting>
 
       <para>Constraint annotations can target any of the following
@@ -409,7 +411,7 @@ public @interface ConstraintValidator {
           <title>@NotNull constraint definition</title>
 
           <programlisting>@Documented
-@ConstraintValidator(NotNullConstraint.class)
+@Constraint(validatedBy = NotNullConstraintValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
 public @interface NotNull {
@@ -426,7 +428,7 @@ public @interface NotNull {
           <title>@Length constraint definition</title>
 
           <programlisting>@Documented
-@ConstraintValidator(LengthConstraint.class)
+@Constraint(validatedBy = LengthConstraintValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
 public @interface Length {
@@ -445,7 +447,7 @@ public @interface Length {
           <title>@Min constraint definition</title>
 
           <programlisting>@Documented
-@ConstraintValidator(MinConstraint.class)
+@Constraint(validatedBy = MinConstraintValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
 public @interface Min {
@@ -471,20 +473,20 @@ public @interface Min {
 
       <para>To support this, the bean validation provider treats regular
       annotations (annotations not annotated by
-      <classname>@ConstraintValidator</classname>) but whose a
-      <literal>value</literal> element has a return type of an array of
-      constraint annotations in a special way. Each element in the
-      <literal>value</literal> array are processed by the Bean Validation
-      implementation as regular constraint annotations. This means that each
-      constraint specified in the value element is applied to the target. The
-      annotation must have retention <literal>RUNTIME</literal> and can be
-      applied on a type, field, property or an other annotation.</para>
+      <classname>@Constraint</classname>) but whose a <literal>value</literal>
+      element has a return type of an array of constraint annotations in a
+      special way. Each element in the <literal>value</literal> array are
+      processed by the Bean Validation implementation as regular constraint
+      annotations. This means that each constraint specified in the value
+      element is applied to the target. The annotation must have retention
+      <literal>RUNTIME</literal> and can be applied on a type, field, property
+      or an other annotation.</para>
 
       <para>Note to constraint designers. Each constraint annotation should be
       coupled with its corresponding multi-valued annotation.</para>
 
       <programlisting>@Documented
-@ConstraintValidator(PatternValidator.class)
+@Constraint(validatedBy = PatternValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
 public @interface Pattern {
@@ -553,7 +555,7 @@ EBE: this is not specified, I don't think there is a need for-->}</programlistin
 
         <programlisting>@NotNull
 @Size(min=5, max=5)
-@ConstraintValidator(FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
 @Retention(RUNTIME)
@@ -564,7 +566,7 @@ public @interface FrenchZipcode {
       </example>
 
       <para>Annotating an element with <classname>@FrenchZipcode</classname>
-      is equivalent to annotateing it with <classname>@NotNull</classname>,
+      is equivalent to annotating it with <classname>@NotNull</classname>,
       <classname>@Size(min=5, max=5)</classname> and
       <classname>@FrenchZipcode</classname>. More formally, each constraint
       annotation hosted on a constraint annotation is applied to the target
@@ -591,7 +593,7 @@ public @interface FrenchZipcode {
         <programlisting>@NotNull
 @Size(min=5, max=5)
 @ReportAsViolationFromCompositeConstraint
-@ConstraintValidator(FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
 @Retention(RUNTIME)
@@ -626,7 +628,7 @@ public @interface ReportAsViolationFromCompositeConstraint {
 
         <programlisting>@NotNull
 @Size(min=5, max=5)
-@ConstraintValidator(FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
 @Retention(RUNTIME)
@@ -649,7 +651,7 @@ public @interface FrenchZipcode {
 
         <programlisting>@NotNull
 @Size
-@ConstraintValidator(FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
 @Retention(RUNTIME)
@@ -688,7 +690,7 @@ public @interface FrenchZipcode {
 
       <programlisting>@NotNull
 @Size(min=9, max=9, message="Zipcode should be of size {max}")
-@ConstraintValidator(FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
 @Retention(RUNTIME)
@@ -771,10 +773,11 @@ public @interface OverridesParameter {
 
       <para>A constraint validation implementation performs the validation of
       a target class, field, or method. The implementation class is specified
-      by the <literal>value</literal> element of the
-      <classname>ConstraintValidator</classname> annotation that decorates the
+      by the <literal>validatedBy</literal> element of the
+      <classname>@Contraint</classname> annotation that decorates the
       constraint definition. The constraint validation implementation
-      implements the <classname>Constraint</classname> interface.</para>
+      implements the <classname>ConstraintValidator</classname>
+      interface.</para>
 
       <example>
         <title>Constraint interface</title>
@@ -785,44 +788,44 @@ public @interface OverridesParameter {
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
-public interface Constraint&lt;A extends Annotation&gt; {
-    /**
-     * Validator parameters for a given constraint definition
-     * Annotations parameters are passed as key/value into parameters
-     * &lt;p/&gt;
-     * This method is guaranteed to be called before any of the other Constraint 
-     * implementation methods
-     *
-     * @param constraintAnnotation parameters for a given constraint definition
-     */
-    void initialize(A constraintAnnotation);
+public interface ConstraintValidator&lt;A extends Annotation&gt; {
+	/**
+	 * Validator parameters for a given constraint definition
+	 * Annotations parameters are passed as key/value into parameters
+	 * &lt;p/&gt;
+	 * This method is guaranteed to be called before any of the other Constraint
+	 * implementation methods
+	 *
+	 * @param constraintAnnotation parameters for a given constraint definition
+	 */
+	void initialize(A constraintAnnotation);
 
-    /**
-     * Implement the validation constraint
-     * &lt;code&gt;object&lt;/code&gt; state must not be changed by a Constraint implementation
-     *
-     * @param object object to validate
-     * @param constraintContext context in which the constraint implementation is evaluated
-     *
-     * @return false if &lt;code&gt;object&lt;/code&gt; does not pass the constraint
-     */
-    boolean isValid(Object object, ConstraintContext constraintContext);
+	/**
+	 * Implement the validation constraint.
+	 * &lt;code&gt;object&lt;/code&gt; state must not be changed by a Constraint implementation
+	 *
+	 * @param object object to validate
+	 * @param constraintValidatorContext context in which the constraint is evaluated
+	 *
+	 * @return false if &lt;code&gt;object&lt;/code&gt; does not pass the constraint
+	 */
+	boolean isValid(Object object, ConstraintValidatorContext constraintValidatorContext);
 }</programlisting>
       </example>
 
       <para>The life cycle of a constraint validation implementation instance
       is undefined. Compliant implementations are allowed to cache
-      <classname>Constraint</classname> instances retrieved from the
-      <classname>ConstraintFactory</classname> or request them every time it
-      is needed.</para>
+      <classname>ConstraintValidator</classname> instances retrieved from the
+      <classname>ConstraintValidatorFactory</classname> or request them every
+      time it is needed.</para>
 
       <warning>
         <para>Should we restrict further? Should a constraint implementation
         instance be retrieved from the
-        <classname>ConstraintFactory</classname> before each use? Providing
-        the constraint via the Metadata API was driving the undefined
-        lifecycle rule but we no longer return the implementation via
-        <classname>ConstraintDescriptor</classname>.</para>
+        <classname>ConstraintValidatorFactory</classname> before each use?
+        Providing the constraint via the Metadata API was driving the
+        undefined lifecycle rule but we no longer return the implementation
+        via <classname>ConstraintDescriptor</classname>.</para>
       </warning>
 
       <!--EBE should we make explicit that instances cannot be shared if the annotations attributes are not the same?-->
@@ -859,88 +862,87 @@ public interface Constraint&lt;A extends Annotation&gt; {
         <!--[SCP: I think this should be mandatory.] I don't think you can: for once, it would prevent from implementing @NotNull or @NotEmpty-->
       </note>
 
-      <para>The <classname>ConstraintContext</classname> object passed to the
-      <methodname>isValid</methodname> method carries information and
-      operations available in the context the constraint is validated
-      to.</para>
+      <para>The <classname>ConstraintValidatorContext</classname> object
+      passed to the <methodname>isValid</methodname> method carries
+      information and operations available in the context the constraint is
+      validated to.</para>
 
       <example>
-        <title>ConstraintContext interface passed to
-        Constraint.isValid()</title>
+        <title>ConstraintValidatorContext interface passed to
+        ConstraintValidator.isValid()</title>
 
         <programlisting>/**
- * Provide contextual data and operations when applying a given constraint validation
+ * Provide contextual data and operation when applying a given constraint validator implementation
  *
  * @author Emmanuel Bernard
  */
-public interface ConstraintContext {
-    /**
-     * Disable default error message and default ConstraintViolation object generation.
-     * Useful to set a different error message or generate an ConstraintViolation based on
-     * a different property
-     *
-     * @see #addError(String)
-     * @see #addError(String, String)
-     */
-    void disableDefaultError();
+public interface ConstraintValidatorContext {
+	/**
+	 * Disable default error message and default ConstraintViolation object generation.
+	 * Useful to set a different error message or generate an ConstraintViolation based on
+	 * a different property
+	 *
+	 * @see #addError(String)
+	 * @see #addError(String, String)
+	 */
+	void disableDefaultError();
 
-    /**
-     * return the current unexpanded default message
-     * TODO: is it needed
-     */
-    String getDefaultErrorMessage();
+	/**
+	 * @return the current unexpanded default message
+	 */
+	String getDefaultErrorMessage();
 
-    /**
-     * Add a new error message. This error message will be interpolated.
-     * &lt;p/&gt;
-     * If isValid returns false, a ConstraintViolation object will be built per error message
-     * including the default one unless #disableDefaultErrorMEssage() has been called.
-     * &lt;p/&gt;
-     * Aside from the error message, ConstraintViolation objects generated from such a call
-     * contains the same contextual information (root bean, path and so on)
-     * &lt;p/&gt;
-     * This method can be called multiple time. One ConstraintViolation instance per
-     * call is created.
-     *
-     * @param message new unexpanded error message
-     */
-    void addError(String message);
+	/**
+	 * Add a new error message. This error message will be interpolated.
+	 * &lt;p/&gt;
+	 * If isValid returns false, a ConstraintViolation object will be built per error message
+	 * including the default one unless #disableDefaultErrorMEssage() has been called.
+	 * &lt;p/&gt;
+	 * Aside from the error message, ConstraintViolation objects generated from such a call
+	 * contains the same contextual information (root bean, path and so on)
+	 * &lt;p/&gt;
+	 * This method can be called multiple time. One ConstraintViolation instance per
+	 * call is created.
+	 *
+	 * @param message new unexpanded error message
+	 */
+	void addError(String message);
 
-    /**
-     * Add a new error message to a given sub property &lt;code&gt;property&lt;/code&gt;.
-     * This error message will be interpolated.
-     * &lt;p/&gt;
-     * If isValid returns false, a ConstraintViolation object will be built
-     * per error message including the default one unless #disableDefaultErrorMEssage()
-     * has been called.
-     * If the constraint being validated is not a class-level constraint,
-     * a ValidationException is raised.
-     *
-     * &lt;p/&gt;
-     *
-     * @param message new unexpanded error message
-     * @param property property name the ConstraintViolation is targeting
-     *
-     * @throws ValidationException if the constraint is not set on a class-level
-     */
-    void addError(String message, String property);
+	/**
+	 * Add a new error message to a given sub property &lt;code&gt;property&lt;/code&gt;.
+	 * This error message will be interpolated.
+	 * &lt;p/&gt;
+	 * If isValid returns false, a ConstraintViolation object will be built
+	 * per error message including the default one unless #disableDefaultErrorMEssage()
+	 * has been called.
+	 * If the constraint being validated is not a class-level constraint,
+	 * a ValidationException is raised.
+	 *
+	 * &lt;p/&gt;
+	 *
+	 * @param message new unexpanded error message
+	 * @param property property name the ConstraintViolation is targeting
+	 *
+	 * @throws ValidationException if the constraint is not set on a class-level
+	 */
+	void addError(String message, String property);
 
 }</programlisting>
       </example>
 
-      <para>The <classname>ConstraintContext</classname> interface allows to
-      redefine the default message error generated when a constraint is not
-      valid. By default, each invalid constraint leads to the generation of
-      one error object represented by a
+      <para>The <classname>ConstraintValidatorContext</classname> interface
+      allows to redefine the default message error generated when a constraint
+      is not valid. By default, each invalid constraint leads to the
+      generation of one error object represented by a
       <classname>ConstraintViolation</classname> object. This object is build
       from the default error message as defined by the constraint declaration
       and the context in which the constraint declaration is placed on (bean,
       property, attribute).</para>
 
-      <para>The <classname>ConstraintContext</classname> methods let the
-      constraint implementation disable the default error object generation
-      and create one or more custom ones. The unexpanded message passed as a
-      parameter is used to build the
+      <para>The <classname>ConstraintValidatorContext</classname> methods let
+      the constraint implementation disable the default error object
+      generation and create one or more custom ones. The unexpanded message
+      passed as a parameter is used to build the
       <classname>ConstraintViolation</classname> object (the message
       resolution operation is applied to it). The property on which the error
       object is applied is defined as following:</para>
@@ -983,7 +985,7 @@ public interface ConstraintContext {
  * Check that a string length is between min and max
  *
  */
-public class LengthConstraint implements Constraint&lt;Length&gt; {
+public class LengthConstraintValidator implements ConstraintValidator&lt;Length&gt; {
     private int min;
     private int max;
 <!--SCP: does this take a Map as its input to support XML descriptor, or do we map the XML descriptor into a Length instance?
@@ -1006,7 +1008,7 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
      * returns false if the specified value does not conform to the definition
      * @exception IllegalArgumentException if the object is not of type String
      */
-    public boolean isValid(Object value, ConstraintContext constraintContext) {
+    public boolean isValid(Object value, ConstraintValidatorContext context) {
         if ( value == null ) return true;
         if ( !( value instanceof String ) ) {
             throw new IllegalArgumentException("Expected String type");
@@ -1033,10 +1035,10 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
         </itemizedlist>
 
         <para>The next example shows how to use
-        <classname>ConstraintContext</classname>.</para>
+        <classname>ConstraintValidatorContext</classname>.</para>
 
         <example>
-          <title>Use of ConstraintContext</title>
+          <title>Use of ConstraintValidatorContext</title>
 
           <programlisting>/**
  * Check that a string length is between min and max
@@ -1044,7 +1046,8 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
  *  - constraint.length.min if the min limit is reached
  *  - constraint.length.max if the max limit is reached
  */
-public class FineGrainedLengthConstraint implements Constraint&lt;Length&gt; {
+public class FineGrainedLengthConstraintValidator 
+             implements ConstraintValidator&lt;Length&gt; {
     private int min;
     private int max;
 
@@ -1063,7 +1066,7 @@ public class FineGrainedLengthConstraint implements Constraint&lt;Length&gt; {
      * returns false if the specified value does not conform to the definition
      * @exception IllegalArgumentException if the object is not of type String
      */
-    public boolean isValid(Object value, ConstraintContext constraintContext) {
+    public boolean isValid(Object value, ConstraintValidatorContext context) {
         if ( value == null ) return true;
         if ( !( value instanceof String ) ) {
             throw new IllegalArgumentException("Expected String type");
@@ -1072,16 +1075,16 @@ public class FineGrainedLengthConstraint implements Constraint&lt;Length&gt; {
         int length = string.length();
 
         //remove default error
-        constraintContext.disableDefaultError();
+        context.disableDefaultError();
 
         if (length &lt; min) {
             //add min specific error
-            constraintContext.addError( "{constraint.length.min}" );
+            context.addError( "{constraint.length.min}" );
             return false;
         }
         if (length &gt; max) {
             //add max specific error
-            constraintContext.addError( "{constraint.length.max}" );
+            context.addError( "{constraint.length.max}" );
             return false;
         }
         return true;
@@ -1098,36 +1101,38 @@ public class FineGrainedLengthConstraint implements Constraint&lt;Length&gt; {
     </section>
 
     <section id="constraintsdefinitionimplementation-constraintfactory">
-      <title>The ConstraintFactory</title>
+      <title>The ConstraintValidatorFactory</title>
 
       <para>Constraint validation implementation instances are created by a
-      <classname>ConstraintFactory</classname>.</para>
+      <classname>ConstraintValidatorFactory</classname>.</para>
 
       <programlisting>/**
- * This class manages the creation of constraint validators.
+ * Instantiate a &lt;code&gt;ConstraintValidator&lt;/code&gt; instance from its class.
+ * The &lt;code&gt;ConstraintValidatorFactory&lt;/code&gt; is &lt;b&gt;not&lt;/b&gt; responsible for calling {@link ConstraintValidator#initialize(java.lang.annotation.Annotation)}.
+ *
+ * @author Dhanji R. Prasanna
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
  */
-public interface ConstraintFactory {
-    /**
-     * Instantiate a Constraint.
-     *
-     * @return Returns a new Constraint instance
-     * The ConstraintFactory is &lt;b&gt;not&lt;/b&gt; responsible for calling Constraint#initialize
-     */
-    &lt;T extends Constraint&gt; T getInstance(Class&lt;T&gt; constraintClass);
+public interface ConstraintValidatorFactory {
+
+	/**
+	 * @param key The class of the constraint validator to instantiate.
+	 *
+	 * @return An constraint validator instance of the specified class.
+	 */
+	&lt;T extends ConstraintValidator&gt; T getInstance(Class&lt;T&gt; key);
 }</programlisting>
 
-      <para>The default <classname>ConstraintFactory</classname> provided by
-      the Bean Validation provider implementation uses the public constraint
-      no-arg constructor. A custom constraint factory can be provided for
-      example to benefit from dependency injection control in constraint
-      implementations. Any constraint implementation relying on
-      <classname>ConstraintFactory</classname> behaviors specific to an
-      implementation (dependency injection, no no-arg constructor and so on)
-      are not considered portable, hence great care should be given before
+      <para>The default <classname>ConstraintValidatorFactory</classname>
+      provided by the Bean Validation provider implementation uses the public
+      constraint no-arg constructor. A custom constraint validator factory can
+      be provided for example to benefit from dependency injection control in
+      constraint implementations. Any constraint implementation relying on
+      <classname>ConstraintValidatorFactory</classname> behaviors specific to
+      an implementation (dependency injection, no no-arg constructor and so
+      on) are not considered portable, hence great care should be given before
       walking that path.</para>
-
-      <!--[SCP: I think supporting dependency injection here violates the javadoc comment on Constraint.initialize() above]
-EBE fixed this by rewordingthe JavaDoc-->
     </section>
   </chapter>
 
@@ -2423,7 +2428,7 @@ public class Address {
       <programlisting>@Documented
 @NotNull
 @Size(min=1)
-@ConstraintValidator(NotEmptyConstraint.class)
+@Constraint(validatedBy = NotEmptyConstraintValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
@@ -2964,8 +2969,7 @@ public class Address {
           <para>Let's look at a more complex example involving group
           sequence.</para>
 
-          <programlisting>
-public class Address {
+          <programlisting>public class Address {
     @NotEmpty(groups = Minimal.class)
     @Length(max=50, groups=FirstStep.class)
     private String street1;
@@ -3323,7 +3327,7 @@ public class Review {
 @NotNull
 @Size(min=1)
 @ReportAsViolationFromCompositeConstraint
-@ConstraintValidator(NotEmptyConstraint.class)
+@Constraint(validatedBy = NotEmptyConstraintValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
@@ -3919,7 +3923,7 @@ Validator validator = factory.getValidator();</programlisting>
 ValidatorFactory factory = Validation
        .getBuilder()
           .messageInterpolator( new WBMessageInterpolator() )
-          .constraintFactory( new WBComponentConstraintFactory() )
+          .constraintValidatorFactory( new WBComponentConstraintValidatorFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
           .build();
 
@@ -4243,14 +4247,14 @@ public interface ValidatorFactoryBuilder&lt;T extends ValidatorFactoryBuilder&gt
 	T traversableResolver(TraversableResolver resolver);
 
 	/**
-	 * Defines the constraint factory. Has priority over the configuration
+	 * Defines the constraint validator factory. Has priority over the configuration
 	 * based constraint factory.
 	 *
-	 * @param constraintFactory constraint factory inmplementation.
+	 * @param constraintValidatorFactory constraint factory inmplementation.
 	 *
 	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
 	 */
-	T constraintFactory(ConstraintFactory constraintFactory);
+	T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
 
 	/**
 	 * Configure the ValidatorFactory based on &lt;code&gt;stream&lt;/code&gt;
@@ -4364,12 +4368,12 @@ public interface ValidatorFactoryConfiguration {
 	InputStream getConfigurationStream();
 
 	/**
-	 * Defines the constraint implementation factory as defined by
+	 * Defines the constraint validator implementation factory as defined by
 	 * the client programmatically or null if undefined
 	 *
 	 * @return factory instance or null if not defined
 	 */
-	ConstraintFactory getConstraintFactory();
+	ConstraintValidatorFactory getConstraintValidatorFactory();
 
 	/**
 	 * Traversable resolver as defined by the client programmatically
@@ -5249,51 +5253,51 @@ public interface PropertyDescriptor extends ElementDescriptor {
  * @author Hardy Ferentschik
  */
 public interface ConstraintDescriptor {
-    /**
-     * Returns the annotation describing the constraint declaration.
-     * If a composing constraint, parameter values are reflecting
-     * the overridden parameters from the main constraint
-     *
-     * @return The annotation for this constraint.
-     */
-    Annotation getAnnotation();
+	/**
+	 * Returns the annotation describing the constraint declaration.
+	 * If a composing constraint, parameter values are reflecting
+	 * the overridden parameters from the main constraint
+	 *
+	 * @return The annotation for this constraint.
+	 */
+	Annotation getAnnotation();
 
-    /**
-     * @return The groups the constraint is applied on.
-     */
-    Set&lt;Class&lt;?&gt;&gt; getGroups();
+	/**
+	 * @return The groups the constraint is applied on.
+	 */
+	Set&lt;Class&lt;?&gt;&gt; getGroups();
 
-    /**
-     * @return the constraint implementation class
-     */
-    Class&lt;? extends Constraint&gt; getConstraintClass();
+	/**
+	 * @return the constraint validation implementation class
+	 */
+	Class&lt;? extends ConstraintValidator&gt; getConstraintValidatorClass();
 
-    /**
-     * Returns a map containing the annotation parameter names as keys and the
-     * annotation parameter values as value.
-     * If this constraint is used as part of a composed constraint, parameter
-     * values are reflecting the overridden parameters from the main constraint.
-     *
-     * @return Returns a map containing the annotation paramter names as keys
-     *         and the annotation parameter values as value.
-     */
-    Map&lt;String, Object&gt; getParameters();
+	/**
+	 * Returns a map containing the annotation parameter names as keys and the
+	 * annotation parameter values as value.
+	 * If this constraint is used as part of a composed constraint, parameter
+	 * values are reflecting the overridden parameters from the main constraint.
+	 *
+	 * @return Returns a map containing the annotation paramter names as keys
+	 *         and the annotation parameter values as value.
+	 */
+	Map&lt;String, Object&gt; getParameters();
 
-    /**
-     * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each
-     * descriptor describes a composing constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt;
-     * instances of composing constraints reflect overridden parameter values in
-     * {@link #getParameters()}  and {@link #getAnnotation()}.
-     *
-     * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
-     *         in case there are no composing constraints.
-     */
-    Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
+	/**
+	 * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each
+	 * descriptor describes a composing constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt;
+	 * instances of composing constraints reflect overridden parameter values in
+	 * {@link #getParameters()}  and {@link #getAnnotation()}.
+	 *
+	 * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
+	 *         in case there are no composing constraints.
+	 */
+	Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
-    /**
-     * @return true if the constraint is annotated with @ReportAsViolationFromCompositeConstraint
-     */
-    boolean isReportAsViolationFromCompositeConstraint();
+	/**
+	 * @return true if the constraint is annotated with @ReportAsViolationFromCompositeConstraint
+	 */
+	boolean isReportAsViolationFromCompositeConstraint();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -5317,8 +5321,8 @@ public interface ConstraintDescriptor {
       <para><methodname>getGroups</methodname> returns the groups the
       constraint is supposed to be applied upon.</para>
 
-      <para><methodname>getConstraintClass</methodname> returns the class
-      implementing the constraint.</para>
+      <para><methodname>getConstraintValidatorClass</methodname> returns the
+      class implementing the constraint.</para>
 
       <warning>
         <para>Would <methodname>getConstraintImplementation()</methodname> be
@@ -5336,7 +5340,7 @@ public interface ConstraintDescriptor {
 @NotNull
 @Size(min=1)
 @ReportAsViolationFromCompositeConstraint
-@ConstraintValidator(NotEmptyConstraint.class)
+@Constraint(validatedBy = NotEmptyConstraintValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
@@ -5910,7 +5914,7 @@ public @interface Future {
           </row>
 
           <row>
-            <entry>javax.validation.Constraint</entry>
+            <entry>javax.validation.ConstraintVAlidator</entry>
 
             <entry>interface implemented by a constraint validation
             implementation</entry>
