@@ -3614,7 +3614,7 @@ public interface MessageInterpolator {
         <para>It is possible to override the
         <classname>MessageInterpolator</classname> implementation for a given
         <classname>Validator</classname> instance by invoking
-        <methodname>ValidatorFactory.defineValidatorState().messageInterpolator(messageInterpolator).getValidator()</methodname>.</para>
+        <methodname>ValidatorFactory.usingContext().messageInterpolator(messageInterpolator).getValidator()</methodname>.</para>
 
         <para>It is recommended that
         <classname>MessageInterpolator</classname> implementations delegate
@@ -3737,7 +3737,7 @@ MessageInterpolator interpolator = new LocaleSpecificMessageInterpolator(
                                        validatorFactory.getMessageInterpolator(),
                                        locale);
 
-Validator validator = validatorFactory.defineValidatorState()
+Validator validator = validatorFactory.usingContext()
                                       .messageInterpolator(interpolator)
                                       .getValidator();</programlisting>
         </example>
@@ -3992,7 +3992,7 @@ MessageInterpolator customInterpolator = new LocaleSpecificMessageInterpolator(
 );
 
 Validator localizedValidator = 
-    factory.defineValidatorState()
+    factory.usingContext()
                    .messageInterpolator(customInterpolator)
                    .getValidator();</programlisting>
         </example>
@@ -4043,12 +4043,12 @@ public interface ValidatorFactory {
 	Validator getValidator();
 
 	/**
-	 * Define the validator state and return a
+	 * Define the validator context and return a
 	 * Validator compliant with this state
 	 *
-	 * @return a ValidatorBuilder
+	 * @return a ValidatorContext
 	 */
-	ValidatorBuilder defineValidatorState();
+	ValidatorContext usingContext();
 
 	/**
 	 * Returns the MessageInterpolator instance configured at initialization time
@@ -4058,36 +4058,35 @@ public interface ValidatorFactory {
 	 * @return MessageInterpolator instance
 	 */
 	MessageInterpolator getMessageInterpolator();
-}
-</programlisting>
+}</programlisting>
         </example>
 
         <para>A <classname>ValidatorFactory</classname> is provided by a
         <classname>Configuration</classname>.</para>
 
-        <para><classname>ValidatorBuilder</classname> returned by
-        <methodname>defineValidatorState</methodname> can be used to customize
-        the state in which the <classname>Validator</classname> must be
+        <para><classname>ValidatorContext</classname> returned by
+        <methodname>usingContext</methodname> can be used to customize the
+        state in which the <classname>Validator</classname> must be
         initialized. This is used to customize the
         <classname>MessageInterpolator</classname> or the
         <classname>TraversableResolver</classname>.</para>
 
         <example>
-          <title>ValidatorBuilder interface</title>
+          <title>ValidatorContext interface</title>
 
           <programlisting>/**
  * Return a Validator corresponding to the initialized state.
  * 
  * @author Emmanuel Bernard
  */
-public interface ValidatorBuilder {
+public interface ValidatorContext {
 	/**
 	 * Defines the message interpolator implementation used by the Validator.
 	 * If unset, the message interpolator of the ValidatorFactory is used.
 	 *
 	 * @return self following the chaining method pattern
 	 */
-	ValidatorBuilder messageInterpolator(MessageInterpolator messageInterpolator);
+	ValidatorContext messageInterpolator(MessageInterpolator messageInterpolator);
 
 	/**
 	 * Defines the traversable resolver implementation used by the Validator.
@@ -4095,20 +4094,19 @@ public interface ValidatorBuilder {
 	 *
 	 * @return self following the chaining method pattern
 	 */
-	ValidatorBuilder traversableResolver(TraversableResolver traversableResolver);
+	ValidatorContext traversableResolver(TraversableResolver traversableResolver);
 
 	/**
 	 * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
 	 * Validator instances can be pooled and shared by the implementation.
 	 */
 	Validator getValidator();
-
 }</programlisting>
         </example>
 
         <para>The <classname>MessageInterpolator</classname> or the
         <classname>TraversableResolver</classname> passed to the
-        <classname>ValidatorBuilder</classname> are used instead of the
+        <classname>ValidatorContext</classname> are used instead of the
         <classname>ValidatorFactory</classname>'s
         <classname>MessageInterpolator</classname> or
         <classname>TraversableResolver</classname> instances.</para>
@@ -4126,7 +4124,7 @@ public interface ValidatorBuilder {
           <programlisting>ValidatorFactory factory = ...
 Validator validatorUsingDefaults = factory.getValidator();
 Validator validatorUsingCustomTraversable = factory
-                     .defineValidatorState()
+                     .usingContext()
                      .traversableResolver( new JPATraversableResolver() )
                      .getValidator();</programlisting>
         </example>
@@ -6220,7 +6218,7 @@ in the classpath, the container can implement a potentially optimized Traversabl
 that does not rely on Persistence.isLoaded(Object objectHostingTheProperty, String property).
 
 The TraversableResolver instance is passed to Bean Validation through
-ValidatorFactory.defineValidatorState().traversableResolver(jpaSpecificTR).getValidator()
+ValidatorFactory.usingContext().traversableResolver(jpaSpecificTR).getValidator()
 
 These rules guarantee that:
 - no lazy property nor association will be loaded by side effect
@@ -6430,7 +6428,7 @@ This TraversableResolver implementation is provided and injected by the persiste
 provider. This implementation is not exposed.
 
 The TraversableResolver instance is passed to Bean Validation through
-ValidatorFactory.defineValidatorState().traversableResolver(jpaSpecificTR).getValidator();
+ValidatorFactory.usingContext().traversableResolver(jpaSpecificTR).getValidator();
 The Validator instance retrieved is used by the persistence provider to validate the 
 entities on pre-* events.
 
@@ -6630,7 +6628,7 @@ MessageInterpolator jsfMessageInterpolator = new JsfMessageInterpolator(
 //...
 
 Validator validator = validatorFactory
-          .defineValidatorState()
+          .usingContext()
           .messageInterpolator(jsfMessageInterpolator)
           .getValidator();
 
