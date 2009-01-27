@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Beta3.209090120</releaseinfo>
+    <releaseinfo>1.0.Beta3.20090126</releaseinfo>
 
-    <pubdate>2009-01-20</pubdate>
+    <pubdate>2009-01-26</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -5109,17 +5109,22 @@ public interface Validator {
  */
 public interface ElementDescriptor {
 
-    /**
-     * @return Statically defined returned type.
-     *
-     * @todo should it be Type or even completly removed
-     */
-    Class&lt;?&gt; getType();
+	/**
+	 * return true if at least one constraint declaration is present on the element.
+	 */
+	boolean hasConstraints();
 
-    /**
-     * @return All the constraint descriptors for this element.
-     */
-    List&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
+	/**
+	 * @return Statically defined returned type.
+	 *
+	 * @todo should it be Type or even completly removed
+	 */
+	Class&lt;?&gt; getType();
+
+	/**
+	 * @return All the constraint descriptors for this element.
+	 */
+	List&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
 
 }</programlisting>
 
@@ -5132,6 +5137,10 @@ public interface ElementDescriptor {
       linkend="constraintmetadata-constraintdescriptor" />), each
       <classname>ConstraintDescriptor</classname> describing one of the
       constraints declared on the given element.</para>
+
+      <para><methodname>hasConstraints</methodname> returns true if the
+      element (class, field or property) holds at lease one constraint
+      declaration.</para>
     </section>
 
     <section>
@@ -5147,30 +5156,40 @@ public interface ElementDescriptor {
  * @author Emmanuel Bernard
  */
 public interface BeanDescriptor extends ElementDescriptor {
-    /**
-     * return true if at least one constraint declaration is present for the given bean
-     * or if one property is marked for validation cascade
-     */
-    boolean hasConstraints();
+	/**
+	 * Returns true if the bean involves validation:
+	 *  - a constraint is hosted on the bean itself
+	 *  - a constraint is hosted on one of the bean properties
+	 *  - or a bean property is marked for cascade (@Valid)
+	 *
+	 * @return true if the bean nvolves validation
+	 *
+	 */
+	boolean isBeanConstrained();
 
-    /**
-     * Return the property level constraints for a given propertyName
-     * or null if either the property does not exist or has no constraint
-     * The returned object (and associated objects including ConstraintDescriptors)
+	/**
+	 * Return the property level constraints for a given propertyName
+	 * or null if either the property does not exist or has no constraint
+	 * The returned object (and associated objects including ConstraintDescriptors)
      * are immutable.
-     *
-     * @param propertyName property evaludated
-     */
-    PropertyDescriptor getConstraintsForProperty(String propertyName);
+	 *
+	 * @param propertyName property evaludated
+	 */
+	PropertyDescriptor getConstraintsForProperty(String propertyName);
 
-    /**
-     * return the property names having at least a constraint defined
-     */
-    Set&lt;String&gt; getPropertiesWithConstraints();
+	/**
+	 * return the property names having at least a constraint defined or marked
+	 * as cascaded (@Valid)
+	 */
+	Set&lt;String&gt; getConstrainedProperties();
 }</programlisting>
 
-      <para><methodname>hasConstraints</methodname> returns true if the given
-      class has at least one constraint declared.</para>
+      <para><methodname>isBeanConstrained</methodname> returns true if the
+      given class (and superclasses and interfaces) host at least one
+      validation declaration (either constraint or
+      <classname>@Valid</classname> annotation). If the method returns false,
+      the Bean Validation engine can safely ignore the bean as it will not be
+      impacted by validation.</para>
 
       <para><methodname>getConstraintsForProperty</methodname> returns a
       <classname>PropertyDescriptor</classname> object describing the property
@@ -5180,7 +5199,7 @@ public interface BeanDescriptor extends ElementDescriptor {
       convention: field level and getter level constraints of the given name
       are all returned.</para>
 
-      <para><methodname>getPropertiesWithConstraints</methodname> returns the
+      <para><methodname>getConstrainedProperties</methodname> returns the
       names of the bean properties having at least one constraint or being
       cascaded (<classname>@Valid</classname> annotation).</para>
     </section>
@@ -5403,12 +5422,14 @@ public class Book {
 
       <programlisting>BeanDescriptor bookDescriptor = validator.getConstraintsForClass(Book.class);
 
-assert bookDescriptor.hasConstraints();
+assert ! bookDescriptor.hasConstraints();
+
+assert bookDescriptor.isBeanConstrained();
 
 assert bookDescriptor.getConstraintDescriptors().size() == 0 //no bean-level constraint
 
 //more specifically "author" and "title"
-assert bookDescriptor.getPropertiesWithConstraints().size() == 2;
+assert bookDescriptor.getConstrainedProperties().size() == 2;
 
 //not a property
 assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null; 
@@ -6141,9 +6162,9 @@ public interface ConstructorDescriptor extends ElementDescriptor {
 public interface BeanDescriptor { 
     MethodDescriptor getConstraintsForMethod(Method); 
     MethodDescriptor getConstraintsForConstructor(Constructor); 
-    Set&lt;String&gt; getPropertiesWithConstraints(); 
-    Set&lt;Method&gt; getMethodsWithConstraints(); 
-    Set&lt;Constructor&gt; getConstructorsWithConstraints(); 
+    Set&lt;String&gt; getConstrainedProperties(); 
+    Set&lt;Method&gt; getConstrainedMethods(); 
+    Set&lt;Constructor&gt; getConstrainedConstructors(); 
 } </programlisting>
   </appendix>
 
