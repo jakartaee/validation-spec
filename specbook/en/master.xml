@@ -582,8 +582,7 @@ public @interface FrenchZipcode {
       invalid and the corresponding error report is generated. To mark a
       constraint as raising only the main constraint error report despite its
       use of composing constraints, use the
-      <classname>@ReportAsViolationFromCompositeConstraint</classname>
-      annotation.</para>
+      <classname>@ReportAsSingleViolation</classname> annotation.</para>
 
       <example>
         <title>If any of the composing constraint fails, the error report
@@ -591,7 +590,7 @@ public @interface FrenchZipcode {
 
         <programlisting>@NotNull
 @Size(min=5, max=5)
-@ReportAsViolationFromCompositeConstraint
+@ReportAsSingleViolation
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
 @Target({ANNOTATION_TYPE, METHOD, FIELD})
@@ -602,9 +601,8 @@ public @interface FrenchZipcode {
 }</programlisting>
       </example>
 
-      <para>The definition of
-      <classname>@ReportAsViolationFromCompositeConstraint</classname> is as
-      followed.</para>
+      <para>The definition of <classname>@ReportAsSingleViolation</classname>
+      is as followed.</para>
 
       <programlisting>/**
  * A constraint annotation annotated with this annotation
@@ -613,7 +611,7 @@ public @interface FrenchZipcode {
  * 
  * @author Emmanuel Bernard
  */
-public @interface ReportAsViolationFromCompositeConstraint {
+public @interface ReportAsSingleViolation {
 }</programlisting>
 
       <para>Composing annotations can define parameters and message (aside
@@ -3586,7 +3584,7 @@ public class Review {
         <programlisting>@Documented
 @NotNull
 @Size(min=1)
-@ReportAsViolationFromCompositeConstraint
+@ReportAsSingleViolation
 @Constraint(validatedBy = NotEmptyConstraintValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
@@ -5765,9 +5763,9 @@ public interface ConstraintDescriptor {
 	Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
 
 	/**
-	 * @return true if the constraint is annotated with @ReportAsViolationFromCompositeConstraint
+	 * @return true if the constraint is annotated with @ReportAsSingleViolation
 	 */
-	boolean isReportAsViolationFromCompositeConstraint();
+	boolean isReportAsSingleViolation();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -5805,7 +5803,7 @@ public interface ConstraintDescriptor {
       <programlisting>@Documented
 @NotNull
 @Size(min=1)
-@ReportAsViolationFromCompositeConstraint
+@ReportAsSingleViolation
 @Constraint(validatedBy = NotEmptyConstraintValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
@@ -5909,7 +5907,7 @@ ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDesc
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
 assert constraintDescriptor.getComposingConstraints().size() == 2;
-assert constraintDescriptor.isReportAsViolationFromCompositeConstraint() == true
+assert constraintDescriptor.isReportAsSingleViolation() == true
 
 //@NotEmpty cannot be null
 boolean notNullPresence = false;
@@ -7649,7 +7647,7 @@ Such a flag can be defined in META-INF/persistence.xml (JPA level).
 --------------
 
 To provide bean based validation support in the view layer. This
-supports the DRY principle.  The community have trialed this approach
+supports the DRY principle.  The community has trialed this approach
 for a couple of years with Hibernate Validator and Seam or MyFaces
 extval. As Bean Validation, JSR 303, will be standardized for EE6, we
 propose to introduce changes to better support for delegating validation
@@ -7683,7 +7681,7 @@ used, validate-empty-fields should be set to false.
 and
 
 public abstract void addDefaultValidatorId(String validatorId);
-public abstract Iterable&lt;String&gt; getDefaultValidatorIds();
+public abstract Iterator&lt;String&gt; getDefaultValidatorIds();
 
 to javax.faces.application.Application.
 
@@ -7742,7 +7740,7 @@ ValidationFactory.getMessageInterpolator()
 
 A possible implementation is described as followed
 
-public class JsfMessageInterpolator {
+public class class JsfMessageInterpolator implements MessageInterpolator {
     private final MessageInterpolator delegate;
 
     public JsfMessageInterpolator(MessageInterpolator delegate) { 
@@ -7751,7 +7749,7 @@ public class JsfMessageInterpolator {
 
     public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
                               Object value) {
-        Locale locale = FacesContext.getCurrentInstance().getUIViewRoot().getLocale();
+        Locale locale = FacesContext.getCurrentInstance().getViewRoot().getLocale();
         return this.delegate.interpolate(
                         message, constraintDescriptor, value, locale );
     }
