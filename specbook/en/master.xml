@@ -1338,7 +1338,7 @@ public interface ConstraintValidatorFactory {
       can be applied to a type, on any of the type's fields or on any of the
       JavaBeans-compliant properties.</para>
 
-      <para>When a constraint is defined on a type, the type instance being
+      <para>When a constraint is defined on a class, the class instance being
       validated is passed to the constraint Validator. When a constraint is
       defined on a field, the value of the field is passed to the constraint
       Validator. When a constraint is defined on a getter, the result of the
@@ -2954,70 +2954,71 @@ author.setCompany("Some random publisher with a very very very long name");</pro
       <classname>Validator</classname> implementations are thread-safe.</para>
 
       <programlisting>/**
- * Validate bean instances
- * Implementations of this interface must be thread-safe
+ * Validate bean instances. Implementations of this interface must be thread-safe.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  * @todo Should Serializable be part of the definition?
  */
 public interface Validator {
-    /**
-     * validate all constraints on object
-     *
-     * @param object object to validate
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException e if object is null
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on object.
+	 *
+	 * @param object object to validate
+	 * @param groups groups targeted for validation
+	 *               (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
-    /**
-     * validate all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
-     *
-     * @param object object to validate
-     * @param propertyName property to validate (ie field and getter constraints)
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException e if object is null or if propertyName is not present
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
-                                                     String propertyName,
-                                                     Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
+	 *
+	 * @param object object to validate
+	 * @param propertyName property to validate (ie field and getter constraints)
+	 * @param groups groups targeted for validation
+	 *               (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null or if propertyName is not present
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+													 String propertyName,
+													 Class&lt;?&gt;... groups);
 
-    /**
-     * validate all constraints on &lt;code&gt;propertyName&lt;/code&gt; property
-     * if the property value is &lt;code&gt;value&lt;/code&gt;
-     * &lt;p/&gt;
-     * TODO express limitations of ConstraintViolation in this case
-     *
-     * @param propertyName property to validate
-     * @param value property value to validate
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     * @throws IllegalArgumentException e if propertyName is not present
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
-                                                  String propertyName,
-                                                  Object value,
-                                                  Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on &lt;code&gt;propertyName&lt;/code&gt; property
+	 * if the property value is &lt;code&gt;value&lt;/code&gt;
+	 * &lt;p/&gt;
+	 * TODO express limitations of ConstraintViolation in this case
+	 *
+	 * @param beanType the bean type
+	 * @param propertyName property to validate
+	 * @param value property value to validate
+	 * @param groups groups targeted for validation
+	 *               (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 * @throws IllegalArgumentException if propertyName is not present
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
+												  String propertyName,
+												  Object value,
+												  Class&lt;?&gt;... groups);
 
-    /**
-     * Return the descriptor object describing bean constraints
-     * The returned object (and associated objects including ConstraintDescriptors)
+	/**
+	 * Return the descriptor object describing bean constraints
+	 * The returned object (and associated objects including ConstraintDescriptors)
      * are immutable.
-     *
-     * @param clazz class type evaluated
-     */
-    BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
+	 *
+	 * @param clazz class type evaluated
+	 * @return the bean descriptor for the specified class.
+	 */
+	BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 }</programlisting>
 
       <para><methodname>getConstraintsForClass</methodname> is described in
@@ -3865,7 +3866,7 @@ public interface MessageInterpolator {
         validated.</para>
 
         <para><methodname>MessageInterpolator.interpolate(String,
-        ConstraintDescriptor, Object)</methodname> is invoked by for each
+        ConstraintDescriptor, Object)</methodname> is invoked for each
         constraint violation report generated. The default
         <classname>Locale</classname> is implementation specific.</para>
 
@@ -3876,7 +3877,7 @@ public interface MessageInterpolator {
         overriding the default <classname>Locale</classname> strategy.</para>
 
         <para>A message interpolator implementation shall be
-        threadsafe.</para>
+        thread-safe.</para>
 
         <para>The message interpolator is provided to the
         <classname>ValidatorFactory</classname> at construction time using
@@ -4229,7 +4230,7 @@ Validator validator = factory.getValidator();</programlisting>
        .byProvider( ACMEConfiguration.class )  //chose a specific provider
        .configure()
           .messageInterpolator( new ContainerMessageInterpolator() ) //default configuration option
-          .addConstaint(Address.class, customConstraintDescriptor) //ACME specific method
+          .addConsttaint(Address.class, customConstraintDescriptor) //ACME specific method
           .buildValidatorFactory();
 
 //same initialization decomposing calls
@@ -4239,7 +4240,7 @@ ACMEConfiguration acmeConfiguration = Validation
 
 ValidatorFactory factory = acmeConfiguration
           .messageInterpolator( new ContainerMessageInterpolator() ) //default configuration option
-          .addConstaint(Address.class, customConstraintDescriptor) //ACME specific method
+          .addConstraint(Address.class, customConstraintDescriptor) //ACME specific method
           .buildValidatorFactory();
 
 
@@ -4250,7 +4251,7 @@ public interface ACMEConfiguration
                     extends Configuration&lt;ACMEConfiguration&gt; {
     /**
      * Programmatically add constraints. Specific to the ACME provider.
-     */
+     *r
     ACMEConfiguration addConstraint(Class&lt;?&gt; entity, 
                                     ACMEConstraintDescriptor constraintDescriptor);
 }</programlisting>
@@ -4545,7 +4546,7 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
     T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
 
     /**
-     * Add a stream describing constaint mapping in the Bean Validation
+     * Add a stream describing constraint mapping in the Bean Validation
      * XML format.
      * &lt;p/&gt;
      * The stream should be closed by the client API after the
