@@ -44,7 +44,7 @@
     <para>This specification is in public final draft stage. The content of
     this specification is expected to be very stable and don't change unless
     minor adjustment are needed or uncovered when writing the reference
-    implementation. </para>
+    implementation.</para>
 
     <para>The JSR 303 expert group is seeking for feedbacks from the community
     on this specification. Direct feedbacks to <ulink
@@ -799,14 +799,14 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
 
 	/**
 	 * Implement the validation logic.
-	 * &lt;code&gt;object&lt;/code&gt; state must not be changed by a Constraint implementation
+	 * &lt;code&gt;value&lt;/code&gt; state must not be changed by a Constraint implementation
 	 *
-	 * @param object object to validate
+	 * @param value object to validate
 	 * @param constraintValidatorContext context in which the constraint is evaluated
 	 *
-	 * @return false if &lt;code&gt;object&lt;/code&gt; does not pass the constraint
+	 * @return false if &lt;code&gt;value&lt;/code&gt; does not pass the constraint
 	 */
-	boolean isValid(T object, ConstraintValidatorContext constraintValidatorContext);
+	boolean isValid(T value, ConstraintValidatorContext constraintValidatorContext);
 }</programlisting>
       </example>
 
@@ -890,7 +890,7 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
       However, constraint designer are encouraged to make use of specialized
       <classname>ConstraintValidator</classname> implementations and delegate
       the type routing to the type matching algorithm described in <xref
-      linkend="typevalidatorresolution" />. </para>
+      linkend="typevalidatorresolution" />.</para>
 
       <para>The constraint validation implementation is not allowed to change
       the state of the value passed to
@@ -939,7 +939,7 @@ public interface ConstraintValidatorContext {
 	void disableDefaultError();
 
 	/**
-	 * @return the current unexpanded default message
+	 * @return the current uninterpolated default message
 	 */
 	String getDefaultErrorMessage();
 
@@ -955,7 +955,7 @@ public interface ConstraintValidatorContext {
 	 * This method can be called multiple time. One ConstraintViolation instance per
 	 * call is created.
 	 *
-	 * @param message new unexpanded error message
+	 * @param message new uninterpolated error message
 	 */
 	void addError(String message);
 
@@ -968,7 +968,7 @@ public interface ConstraintValidatorContext {
 	 * has been called.
 	 * &lt;p/&gt;
 	 *
-	 * @param message new unexpanded error message
+	 * @param message new uninterpolated error message
 	 * @param property property name the ConstraintViolation is targeting
 	 */
 	void addError(String message, String property);
@@ -986,8 +986,8 @@ public interface ConstraintValidatorContext {
 
       <para>The <classname>ConstraintValidatorContext</classname> methods let
       the constraint implementation disable the default error object
-      generation and create one or more custom ones. The unexpanded message
-      passed as a parameter is used to build the
+      generation and create one or more custom ones. The uninterpolated
+      message passed as a parameter is used to build the
       <classname>ConstraintViolation</classname> object (the message
       interpolation operation is applied to it). The property on which the
       error object is applied is defined as following:</para>
@@ -1757,8 +1757,8 @@ public class Order implements Auditable {
             <orderedlist>
               <listitem>
                 <para>every constraint declared by the class
-                <classname>X</classname> which does not explicitly declare a
-                group or declare the group <classname>Default</classname>
+                <classname>X</classname> which does not declare a group or
+                does declare the group <classname>Default</classname>
                 explicitly.</para>
 
                 <para><emphasis>all <classname>Default</classname> constraints
@@ -1769,7 +1769,7 @@ public class Order implements Auditable {
                 <para>every constraint declared by any interface implemented
                 by <classname>X</classname> and not annotated
                 <classname>@GroupSequence</classname> which does not
-                explicitly declare a group or declare the group
+                explicitly declare a group or does declare the group
                 <classname>Default</classname> explicitly.</para>
 
                 <para><emphasis>all <classname>Default</classname> constraints
@@ -1851,7 +1851,7 @@ public class Order implements Auditable {
               <listitem>
                 <para>every constraint declared by the interface
                 <classname>Z</classname> which does not explicitly declare a
-                group or declare the group <classname>Default</classname>
+                group or does declare the group <classname>Default</classname>
                 explicitly.</para>
 
                 <para><emphasis>all <classname>Default</classname> constraints
@@ -1924,8 +1924,8 @@ public class Order implements Auditable {
       <title>Validation routine</title>
 
       <para>For a given group to validate, the validation routine applied on a
-      given bean instance is expected to execute the constraint
-      validations:</para>
+      given bean instance is expected to execute the constraint validations in
+      no particular order unless specified:</para>
 
       <itemizedlist>
         <listitem>
@@ -1965,14 +1965,14 @@ public class Order implements Auditable {
 
       <para>Note that it implies that a given validation constraint will not
       be processed more than once per validation. More than one group can be
-      validated during the same routine loop call provided that the ordering
-      rules defined by sequence definitions are respected.</para>
+      validated according to the above rules provided that the ordering rules
+      defined by sequence definitions are respected.</para>
 
       <!--SCP: note that grouping, as currently defined cannot control depth of search in the graph
 EBE: correct, so far I don't think it's useful-->
 
       <para>The object validation routine is described as such. For each
-      constraint declaration and in the previously defined order:</para>
+      constraint declaration:</para>
 
       <itemizedlist>
         <listitem>
@@ -3364,9 +3364,9 @@ public interface ConstraintViolation&lt;T&gt; {
 }</programlisting>
 
       <para>The <methodname>getInterpolatedMessage</methodname> method returns
-      the expanded (localized) message for the failing constraint (see <xref
-      linkend="validationapi-message" /> for more information on message
-      expansion). This can be used by clients to expose user friendly
+      the inerpolated (localized) message for the failing constraint (see
+      <xref linkend="validationapi-message" /> for more information on message
+      interpolator). This can be used by clients to expose user friendly
       messages.</para>
 
       <para>The <methodname>getRawMessage</methodname> method returns the
@@ -3382,6 +3382,14 @@ public interface ConstraintViolation&lt;T&gt; {
       <para>The <methodname>getInvalidValue</methodname> method returns the
       value (field, property or validated object) being passed to
       <methodname>isValid</methodname>.</para>
+
+      <para><methodname>groups</methodname> returns the intersection of the
+      groups the triggered constraint applies on and the groups requested for
+      validation.<!--EBE: this notion is quite vague with the recursive group sequence--></para>
+
+      <para><methodname>getConstraintDescriptor</methodname> provides access
+      to the failing constraint metadata (see <xref
+      linkend="constraintmetadata-constraintdescriptor" />).</para>
 
       <para>The <methodname>getPropertyPath</methodname> is built according to
       the following rules:</para>
@@ -3453,8 +3461,8 @@ public interface ConstraintViolation&lt;T&gt; {
             <listitem>
               <para>nothing is concatenated to the
               <literal>propertyPath</literal>, it is considered complete. If
-              the <literal>propertyPath</literal> is empty, "" is
-              returned</para>
+              the <literal>propertyPath</literal> is empty, "" is returned
+              (typically a class-level constraint on the root object)</para>
             </listitem>
           </itemizedlist>
         </listitem>
@@ -3572,16 +3580,6 @@ public class Review {
           </tbody>
         </tgroup>
       </table>
-
-      <para><methodname>groups</methodname> returns the intersection of the
-      groups the triggered constraint applies on and the groups requested for
-      validation.</para>
-
-      <!--EBE: this notion is quite vague with the recursive group sequence-->
-
-      <para><methodname>getConstraintDescriptor</methodname> provides access
-      to the failing constraint metadata (see <xref
-      linkend="constraintmetadata-constraintdescriptor" />).</para>
 
       <section>
         <title>Examples</title>
@@ -3809,7 +3807,7 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
           <para>The proposed algorithm ensures that custom resource bundle
           always have priority over built-in resource bundle at all level of
           the recursive resolution. It also ensures that constraint
-          declarations attributes values are not expanded further.</para>
+          declarations attributes values are not interpolated further.</para>
         </section>
       </section>
 
@@ -4367,27 +4365,29 @@ public interface ValidatorFactory {
  * @author Emmanuel Bernard
  */
 public interface ValidatorContext {
-    /**
-     * Defines the message interpolator implementation used by the Validator.
-     * If unset, the message interpolator of the ValidatorFactory is used.
-     *
-     * @return self following the chaining method pattern
-     */
-    ValidatorContext messageInterpolator(MessageInterpolator messageInterpolator);
+	/**
+	 * Defines the message interpolator implementation used by the Validator.
+	 * If not set or if null is passed as a parameter,
+	 * the message interpolator of the ValidatorFactory is used.
+	 *
+	 * @return self following the chaining method pattern
+	 */
+	ValidatorContext messageInterpolator(MessageInterpolator messageInterpolator);
 
-    /**
-     * Defines the traversable resolver implementation used by the Validator.
-     * If unset, the traversable resolver of the ValidatorFactory is used.
-     *
-     * @return self following the chaining method pattern
-     */
-    ValidatorContext traversableResolver(TraversableResolver traversableResolver);
+	/**
+	 * Defines the traversable resolver implementation used by the Validator.
+	 * If not set or if null is passed as a parameter,
+	 * the traversable resolver of the ValidatorFactory is used.
+	 *
+	 * @return self following the chaining method pattern
+	 */
+	ValidatorContext traversableResolver(TraversableResolver traversableResolver);
 
-    /**
-     * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
-     * Validator instances can be pooled and shared by the implementation.
-     */
-    Validator getValidator();
+	/**
+	 * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
+	 * Validator instances can be pooled and shared by the implementation.
+	 */
+	Validator getValidator();
 }</programlisting>
         </example>
 
@@ -4491,12 +4491,12 @@ Validator validatorUsingCustomTraversable = factory
  *         .buildValidatorFactory();
  * &lt;/pre&gt;
  * &lt;p/&gt;
- *
+ * &lt;p/&gt;
  * By default, the configuration information is retrieved from
  * META-INF/validation.xml
  * It is possible to override the configuration retrieved from the XML file
  * by using one or more of the Configuration methods.
- *
+ * &lt;p/&gt;
  * The ValidationProviderResolver is specified at Configuration time
  * (see {@link javax.validation.spi.ValidationProvider}).
  * If none is explicitely requested, the default ValidationProviderResolver is used.
@@ -4514,97 +4514,119 @@ Validator validatorUsingCustomTraversable = factory
  */
 public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
 
-    /**
-     * Ignore data from the META-INF/validation.xml file if this
-     * method is called.
-     * This method is typically useful for containers that parse
-     * META-INF/validation.xml themselves and pass the information
-     * via the Configuration methods.
-     */
-    T ignoreXmlConfiguration();
-    /**
-     * Defines the message interpolator used. Has priority over the configuration
-     * based message interpolator.
-     *
-     * @param interpolator message interpolator implementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T messageInterpolator(MessageInterpolator interpolator);
+	/**
+	 * Ignore data from the META-INF/validation.xml file if this
+	 * method is called.
+	 * This method is typically useful for containers that parse
+	 * META-INF/validation.xml themselves and pass the information
+	 * via the Configuration methods.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T ignoreXmlConfiguration();
 
-    /**
-     * Defines the traversable resolver used. Has priority over the configuration
-     * based traversable resolver.
-     *
-     * @param resolver traversable resolver implementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T traversableResolver(TraversableResolver resolver);
+	/**
+	 * Defines the message interpolator used. Has priority over the configuration
+	 * based message interpolator.
+	 * If null is passed, the default message interpolator 
+	 * (defined in XML or the specification default)
+	 * is used.
+	 *
+	 * @param interpolator message interpolator implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T messageInterpolator(MessageInterpolator interpolator);
 
-    /**
-     * Defines the constraint validator factory. Has priority over the configuration
-     * based constraint factory.
-     *
-     * @param constraintValidatorFactory constraint factory inmplementation.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
+	/**
+	 * Defines the traversable resolver used. Has priority over the configuration
+	 * based traversable resolver.
+	 * If null is passed, the default traversable resolver
+	 * (defined in XML or the specification default)
+	 * is used.
+	 *
+	 * @param resolver traversable resolver implementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T traversableResolver(TraversableResolver resolver);
 
-    /**
-     * Add a stream describing constraint mapping in the Bean Validation
-     * XML format.
-     * &lt;p/&gt;
-     * The stream should be closed by the client API after the
-     * ValidatorFactory has been built. The Bean Validation provider
-     * must not close the stream.
-     *
-     * @param stream XML mapping stream.
-     *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     */
-    T addMapping(InputStream stream);
+	/**
+	 * Defines the constraint validator factory. Has priority over the configuration
+	 * based constraint factory.
+	 * If null is passed, the default constraint validator factory
+	 * (defined in XML or the specification default)
+	 * is used.
+	 *
+	 * @param constraintValidatorFactory constraint factory inmplementation.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 */
+	T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
 
-    /**
-     * Add a provider specific property. This property is equivalent to
-     * XML Configuration properties.
-     * If the underlying provider does not know how to handle the property,
-     * it must silently ignore it.
-     *
-     * Note: Using this non type-safe method is generally not recommended.
-     *
-     * It is more appropriate to use, if available, the type-safe equivalent provided
-     * by a specific provider in its Configuration subclass.
-     * &lt;code&gt;ValidatorFactory factory = Validation.byProvider(ACMEConfiguration.class)
-     *        .configure()
-     *           .providerSpecificProperty(ACMEState.FAST)
-     *           .buildValidatorFactory();
-     * &lt;/code&gt;
-     * This method is typically used by containers parsing META-INF/validation.xml
-     * themselves and injecting the state to the Configuration object.
-     *
-     * If a property with a given name is defined both via this method and in the
-     * XML configuration, the value set programmatically has priority.
-     */
-    T addProperty(String name, String value);
+	/**
+	 * Add a stream describing constraint mapping in the Bean Validation
+	 * XML format.
+	 * &lt;p/&gt;
+	 * The stream should be closed by the client API after the
+	 * &lt;code&gt;ValidatorFactory&lt;/code&gt; has been built. The Bean Validation provider
+	 * must not close the stream.
+	 *
+	 * @param stream XML mapping stream.
+	 *
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 * @throws IllegalArgumentException if &lt;code&gt;stream&lt;/code&gt; is null
+	 */
+	T addMapping(InputStream stream);
 
-    /**
-     * Return an implementation of the MessageInterpolator interface following the
-     * default MessageInterpolator defined in the specification:
-     *  - use the ValidationMessages resource bundle to load keys
-     *  - use Locale.getDefault()
-     *
-     * @return default MessageInterpolator implementation compliant with the specification
-     */
-    MessageInterpolator getDefaultMessageInterpolator();
+	/**
+	 * Add a provider specific property. This property is equivalent to
+	 * XML Configuration properties.
+	 * If the underlying provider does not know how to handle the property,
+	 * it must silently ignore it.
+	 * &lt;p/&gt;
+	 * Note: Using this non type-safe method is generally not recommended.
+	 * &lt;p/&gt;
+	 * It is more appropriate to use, if available, the type-safe equivalent provided
+	 * by a specific provider in its Configuration subclass.
+	 * &lt;code&gt;ValidatorFactory factory = Validation.byProvider(ACMEConfiguration.class)
+	 * .configure()
+	 * .providerSpecificProperty(ACMEState.FAST)
+	 * .buildValidatorFactory();
+	 * &lt;/code&gt;
+	 * This method is typically used by containers parsing META-INF/validation.xml
+	 * themselves and injecting the state to the Configuration object.
+	 * &lt;p/&gt;
+	 * If a property with a given name is defined both via this method and in the
+	 * XML configuration, the value set programmatically has priority.
+	 *
+	 * If null is passed as a value, the value defined in XML is used. If no value
+	 * is defined in XML, the property is considered unset.
+	 *
+	 * @param name property name.
+	 * @param value property value.
+	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+	 *
+	 * @throws IllegalArgumentException if &lt;code&gt;name&lt;/code&gt; is null
+	 */
+	T addProperty(String name, String value);
 
-    /**
-     * Build a ValidatorFactory implementation.
-     *
-     * @return ValidatorFactory
-     */
-    ValidatorFactory buildValidatorFactory();
+	/**
+	 * Return an implementation of the MessageInterpolator interface following the
+	 * default MessageInterpolator defined in the specification:
+	 * - use the ValidationMessages resource bundle to load keys
+	 * - use Locale.getDefault()
+	 *
+	 * @return default MessageInterpolator implementation compliant with the specification
+	 */
+	MessageInterpolator getDefaultMessageInterpolator();
+
+	/**
+	 * Build a ValidatorFactory implementation.
+	 *
+	 * @return ValidatorFactory
+	 */
+	ValidatorFactory buildValidatorFactory();
 }</programlisting>
         </example>
 
@@ -4657,11 +4679,15 @@ public interface ACMEConfiguration
         <classname>Configuration</classname>. Generally speaking,
         programmatically defined elements have priority over XML defined
         configuration elements (read the Configuration JavaDoc and see <xref
-        linkend="xml-config" /> for more information). A typical
-        implementation of <classname>Configuration</classname> also implements
-        <classname>ConfigurationState</classname>, hence <code>this</code> can
-        be passed to
-        <methodname>buildValidatorFactory(ConfigurationState)</methodname>.</para>
+        linkend="xml-config" /> for more information).</para>
+
+        <note>
+          <para>A typical implementation of
+          <classname>Configuration</classname> also implements
+          <classname>ConfigurationState</classname>, hence <code>this</code>
+          can be passed to
+          <methodname>buildValidatorFactory(ConfigurationState)</methodname>.</para>
+        </note>
 
         <para>Streams represented in the XML configuration and opened by the
         <classname>Configuration</classname> implementation must be closed by
@@ -4684,74 +4710,74 @@ public interface ACMEConfiguration
  */
 public interface ConfigurationState {
 
-    /**
-     * returns true if Configuration.ignoreXMLConfiguration() has been called
-     * In this case, the ValiatorFactory must ignore META-INF/validation.xml
-     * @return true if META-INF/validation.xml should be ignored
-     */
-    boolean isIgnoreXmlConfiguration();
+	/**
+	 * returns true if Configuration.ignoreXMLConfiguration() has been called
+	 * In this case, the ValiatorFactory must ignore META-INF/validation.xml
+	 * @return true if META-INF/validation.xml should be ignored
+	 */
+	boolean isIgnoreXmlConfiguration();
 
-    /**
-     * Message interpolator as defined in the following decresing priority:
-     *  - set via the Configuration programmatic API
-     *  - defined in META-INF/validation.xml provided that ignoredXmlConfiguration
-     * is false. In this case the instance is created via its no-arg constructor.
-     *  - null if undefined.
-     *
-     * @return message provider instance or null if not defined
-     */
-    MessageInterpolator getMessageInterpolator();
+	/**
+	 * Message interpolator as defined in the following decreasing priority:
+	 *  - set via the Configuration programmatic API
+	 *  - defined in META-INF/validation.xml provided that ignoredXmlConfiguration
+	 * is false. In this case the instance is created via its no-arg constructor.
+	 *  - null if undefined.
+	 *
+	 * @return message provider instance or null if not defined
+	 */
+	MessageInterpolator getMessageInterpolator();
 
-    /**
-     * Returns a set of stream corresponding to:
-     *  - mapping XML streams passed programmatically in Configuration
-     *  - mapping XML stream located in the resources defined in
-     * META-INF/validation.xml (constraint-mapping element)
-     *
-     * Streams represented in the XML configuration and opened by the 
-     * configuration implementation must be closed by the configuration
-     * implementation after the ValidatorFactory creation (or if an exception
-     * occurs).
-     *
-     * @return set of input stream
-     */
-    Set&lt;InputStream&gt; getMappingStreams();
+	/**
+	 * Returns a set of stream corresponding to:
+	 *  - mapping XML streams passed programmatically in Configuration
+	 *  - mapping XML stream located in the resources defined in
+	 * META-INF/validation.xml (constraint-mapping element)
+	 *
+	 * Streams represented in the XML configuration and opened by the 
+	 * configuration implementation must be closed by the configuration
+	 * implementation after the ValidatorFactory creation (or if an exception
+	 * occurs).
+	 *
+	 * @return set of input stream
+	 */
+	Set&lt;InputStream&gt; getMappingStreams();
 
-    /**
-     * ConstraintValidatorFactory implementation as defined in the following
-     * decreasing priority:
-     *  - set via the Configuration programmatic API
-     *  - defined in META-INF/validation.xml provided that ignoredXmlConfiguration
-     * is false. In this case the instance is created via its no-arg constructor.
-     *  - null if undefined.
-     *
-     * @return factory instance or null if not defined
-     */
-    ConstraintValidatorFactory getConstraintValidatorFactory();
+	/**
+	 * ConstraintValidatorFactory implementation as defined in the following
+	 * decreasing priority:
+	 *  - set via the Configuration programmatic API
+	 *  - defined in META-INF/validation.xml provided that ignoredXmlConfiguration
+	 * is false. In this case the instance is created via its no-arg constructor.
+	 *  - null if undefined.
+	 *
+	 * @return factory instance or null if not defined
+	 */
+	ConstraintValidatorFactory getConstraintValidatorFactory();
 
-    /**
-     * TraversableResolver as defined in the following decresing priority:
-     *  - set via the Configuration programmatic API
-     *  - defined in META-INF/validation.xml provided that ignoredXmlConfiguration
-     * is false. In this case the instance is created via its no-arg constructor.
-     *  - null if undefined.
-     *
-     * @return traversable provider instance or null if not defined
-     */
-    TraversableResolver getTraversableResolver();
+	/**
+	 * TraversableResolver as defined in the following decreasing priority:
+	 *  - set via the Configuration programmatic API
+	 *  - defined in META-INF/validation.xml provided that ignoredXmlConfiguration
+	 * is false. In this case the instance is created via its no-arg constructor.
+	 *  - null if undefined.
+	 *
+	 * @return traversable provider instance or null if not defined
+	 */
+	TraversableResolver getTraversableResolver();
 
-    /**
-     * return  non type-safe properties defined via:
-     *  - Configuration.addProperty(String, String)
-     *  - META-INF/validation.xml provided that ignoredXmlConfiguration
-     * is false.
-     *
-     * If a property is defined both programmatically and in XML,
-     * the value defined programmatically has priority 
-     *
-     * @return Map whose key is the property key and the value the property value
-     */
-    Map&lt;String, String&gt; getProperties();
+	/**
+	 * return  non type-safe properties defined via:
+	 *  - Configuration.addProperty(String, String)
+	 *  - META-INF/validation.xml provided that ignoredXmlConfiguration
+	 * is false.
+	 *
+	 * If a property is defined both programmatically and in XML,
+	 * the value defined programmatically has priority 
+	 *
+	 * @return Map whose key is the property key and the value the property value
+	 */
+	Map&lt;String, String&gt; getProperties();
 }</programlisting>
         </example>
 
@@ -4769,8 +4795,9 @@ public interface ConfigurationState {
             <para>Use the provider implementation associated with the
             <classname>Configuration</classname> implementation described in
             the XML configuration (under
-            <literal>validation.provider</literal>) if defined: the value of
-            this element is the fully qualified class name of the
+            <literal>validation-config.default-provider</literal> see <xref
+            linkend="xml-config" />) if defined: the value of this element is
+            the fully qualified class name of the
             <classname>Configuration</classname> sub interface uniquely
             identifying the provider.</para>
           </listitem>
@@ -5337,7 +5364,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
     public ProviderSpecificBootstrap&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
 
     /**
-     * Determine the provider implementation suitable for configurationType and delegate
+     * Determine the provider implementation suitable for T and delegate
      * the creation of this specific Configuration subclass to the provider.
      *
      * @return a Configuration sub interface implementation
@@ -5415,20 +5442,19 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
 
         <para><literal>message-interpolator</literal>: represents the fully
         qualified class name of the <classname>MessageInterpolator</classname>
+        implementation. When defined in XML, the implementation must have a
+        public no-arg constructor. This element is optional.</para>
+
+        <para><literal>traversable-resolver</literal>: represents the fully
+        qualified class name of the <classname>TraversableResolver</classname>
         implementation. This implementation must have a public no-arg
         constructor. This element is optional.</para>
 
-        <para><literal>traversable-resolver</literal>: represents the fully
-        qualified class name of the
-        <classname>TravedrsableResolver</classname> implementation. This
-        implementation must have a public no-arg constructor. This element is
-        optional.</para>
-
         <para><literal>constraint-validator-factory</literal>: represents the
         fully qualified class name of the
-        <classname>ConstraintValidatorFactory</classname> implementation. This
-        implementation must have a public no-arg constructor. This element is
-        optional.</para>
+        <classname>ConstraintValidatorFactory</classname> implementation. When
+        defined in XML, the implementation must have a public no-arg
+        constructor. This element is optional.</para>
 
         <para><literal>constraint-mapping</literal>: represents the resource
         path of an XML mapping file. More than one
@@ -5453,7 +5479,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
         priority.</para>
 
         <example>
-          <title>META-INF/validation.xml file</title>
+          <title>Example of META-INF/validation.xml file</title>
 
           <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
 &lt;validation-config
@@ -5579,22 +5605,25 @@ public interface Validator {
  */
 public interface ElementDescriptor {
 
-    /**
-     * return true if at least one constraint declaration is present on the element.
-     */
-    boolean hasConstraints();
+	/**
+	 * return true if at least one constraint declaration is present on the element.
+	 */
+	boolean hasConstraints();
 
-    /**
-     * @return Statically defined returned type.
-     *
-     * @todo should it be Type or even completly removed
-     */
-    Class&lt;?&gt; getType();
+	/**
+	 * @return Statically defined returned type.
+	 *
+	 * @todo should it be Type or even completly removed
+	 */
+	Class&lt;?&gt; getType();
 
-    /**
-     * @return All the constraint descriptors for this element.
-     */
-    Set&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
+	/**
+	 * Return all constraint descriptors for this element or an
+	 * empty Set if none are present.
+	 *
+	 * @return Set of constraint descriptors for this element
+	 */
+	Set&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
 }</programlisting>
 
       <para><methodname>getType</methodname> returns either the object type
@@ -5625,32 +5654,34 @@ public interface ElementDescriptor {
  * @author Emmanuel Bernard
  */
 public interface BeanDescriptor extends ElementDescriptor {
-    /**
-     * Returns true if the bean involves validation:
-     *  - a constraint is hosted on the bean itself
-     *  - a constraint is hosted on one of the bean properties
-     *  - or a bean property is marked for cascade (@Valid)
-     *
-     * @return true if the bean nvolves validation
-     *
-     */
-    boolean isBeanConstrained();
+	/**
+	 * Returns true if the bean involves validation:
+	 *  - a constraint is hosted on the bean itself
+	 *  - a constraint is hosted on one of the bean properties
+	 *  - or a bean property is marked for cascade (@Valid)
+	 *
+	 * @return true if the bean nvolves validation
+	 *
+	 */
+	boolean isBeanConstrained();
 
-    /**
-     * Return the property level constraints for a given propertyName
-     * or null if either the property does not exist or has no constraint
-     * The returned object (and associated objects including ConstraintDescriptors)
+	/**
+	 * Return the property descriptor for a given property.
+	 * Return null if the property does not exist or has no
+	 * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
+	 * 
+	 * The returned object (and associated objects including ConstraintDescriptors)
      * are immutable.
-     *
-     * @param propertyName property evaludated
-     */
-    PropertyDescriptor getConstraintsForProperty(String propertyName);
+	 *
+	 * @param propertyName property evaludated
+	 */
+	PropertyDescriptor getConstraintsForProperty(String propertyName);
 
-    /**
-     * return the property names having at least a constraint defined or marked
-     * as cascaded (@Valid)
-     */
-    Set&lt;String&gt; getConstrainedProperties();
+	/**
+	 * return the property names having at least a constraint defined or marked
+	 * as cascaded (@Valid)
+	 */
+	Set&lt;String&gt; getConstrainedProperties();
 }</programlisting>
 
       <para><methodname>isBeanConstrained</methodname> returns true if the
@@ -5736,6 +5767,10 @@ public interface ConstraintDescriptor {
 	Annotation getAnnotation();
 
 	/**
+	 * The Set of groups the constraint is applied on.
+	 * If the constraint declares no group, the &lt;code&gt;Default&lt;/code&gt; 
+	 * group is returned.
+	 * 
 	 * @return The groups the constraint is applied on.
 	 */
 	Set&lt;Class&lt;?&gt;&gt; getGroups();
@@ -5795,7 +5830,9 @@ public interface ConstraintDescriptor {
       overriding.</para>
 
       <para><methodname>getGroups</methodname> returns the groups the
-      constraint is supposed to be applied upon.</para>
+      constraint is supposed to be applied upon. If no group is set on the
+      constraint declaration, the <classname>Default</classname> group is
+      returned.</para>
 
       <para><methodname>getConstraintValidatorClasses</methodname> returns the
       <classname>ConstraintValidator</classname> classes associated with the
