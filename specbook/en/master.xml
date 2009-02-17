@@ -5832,7 +5832,8 @@ public interface ConstraintDescriptor {
       <para><methodname>getGroups</methodname> returns the groups the
       constraint is supposed to be applied upon. If no group is set on the
       constraint declaration, the <classname>Default</classname> group is
-      returned.</para>
+      returned. The groups of a composing constraint are the groups of the
+      composed constraint.</para>
 
       <para><methodname>getConstraintValidatorClasses</methodname> returns the
       <classname>ConstraintValidator</classname> classes associated with the
@@ -5967,7 +5968,7 @@ assert notNullPresence;
 constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Length.class );
 assert constraintDescriptor.getParameters().get("max") == 30; 
-assert constraintDescriptor.getGroups().length == 0;
+assert constraintDescriptor.getGroups().length == 1;
 
 propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
 assert propertyDescriptor.getConstraintDescriptors().size() == 1
@@ -6286,17 +6287,97 @@ public @interface Future {
 }</programlisting>
     </example>
 
+    <example>
+      <title>@Pattern constraint</title>
+
+      <programlisting>/**
+ * The annotated String must match the following regular expression.
+ * The regular expression follows the Java regular expression conventions
+ * see {@link java.util.regex.Pattern}.
+ *
+ * Accepts String.
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface Pattern {
+	/**
+	 * regular expression to match
+	 */
+	String regexp();
+
+	/**
+	 * Flags considered when resolving the regular expression
+	 */
+	Flag[] flags() default {};
+
+	/**
+	 * error message template
+	 */
+	String message() default "{validator.past}";
+
+	/**
+	 * groups the constraint belongs to
+	 */
+	Class&lt;?&gt;[] groups() default { };
+
+	/**
+	 * Possible Regexp flags
+	 */
+	public static enum Flag {
+		/**
+		 * Enables Unix lines mode
+		 * @see java.util.regex.Pattern#UNIX_LINES
+		 */
+		UNIX_LINES,
+
+		/** 
+		 * Enables case-insensitive matching
+		 * @see java.util.regex.Pattern#CASE_INSENSITIVE
+		 */
+		CASE_INSENSITIVE,
+
+		/**
+		 * Permits whitespace and comments in pattern
+		 * @see java.util.regex.Pattern#COMMENTS
+		 */
+		COMMENTS,
+
+		/**
+		 * Enables multiline mode
+		 * @see java.util.regex.Pattern#MULTILINE
+		 */
+		MULTILINE,
+
+		/**
+		 * Enables dotall mode
+		 * @see java.util.regex.Pattern#DOTALL
+		 */
+		DOTALL,
+
+		/**
+		 * Enables Unicode-aware case folding
+		 * @see java.util.regex.Pattern#UNICODE_CASE
+		 */
+		UNICODE_CASE,
+
+		/**
+		 * Enables canonical equivalence
+		 * @see java.util.regex.Pattern#CANON_EQ
+		 */
+		CANON_EQ,
+	}
+}</programlisting>
+    </example>
+
     <para>Built-in annotations are not annotated with
     <classname>@ConstraintValidator</classname> to avoid any dependency
     between the specification API and a specific implementation. Each Bean
     Validation provider must recognize built-in constraint annotations as
     valid constraint definitions and provide a compliant constraint
     implementation for each.</para>
-
-    <warning>
-      <para>Add @Like, @AlphaNumerical? other subset of Regexp? Regexp seems
-      too generic and not descriptive enough.</para>
-    </warning>
   </chapter>
 
   <chapter>
