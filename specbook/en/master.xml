@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Beta3</releaseinfo>
+    <releaseinfo>1.0.Beta.20090217</releaseinfo>
 
-    <pubdate>2009-02-11</pubdate>
+    <pubdate>2009-02-17</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -3305,71 +3305,71 @@ public class Address {
  * well as the message describing the violation.
  *
  * @author Emmanuel Bernard
- * @todo the rational behind rootBean and propertyPath is to keep the context 
+ * @todo the rational behind rootBean and propertyPath is to keep the context
  *       available to the user
  */
 public interface ConstraintViolation&lt;T&gt; {
 
-    /**
-     * @return The interpolated error message for this constraint violation.
-     */
-    String getInterpolatedMessage();
+	/**
+	 * @return The interpolated error message for this constraint violation.
+	 */
+	String getMessage();
 
-    /**
-     * @return The non-interpolated error message for this constraint violation.
-     */
-    String getRawMessage();
+	/**
+	 * @return The non-interpolated error message for this constraint violation.
+	 */
+	String getMessageTemplate();
 
-    /**
-     * @return The root bean being validated.
-     */
-    T getRootBean();
+	/**
+	 * @return The root bean being validated.
+	 */
+	T getRootBean();
 
-    /**
-     * If a bean constraint, the bean instance the constraint is applied on
-     * If a property constraint, the bean instance hosting the property the
-     * constraint is applied on
-     * 
-     * @return the leaf bean the constraint is applied on or null if Validator#validateValue
-     * is used
-     */
-    Object getLeafBean();
+	/**
+	 * If a bean constraint, the bean instance the constraint is applied on
+	 * If a property constraint, the bean instance hosting the property the
+	 * constraint is applied on
+	 * 
+	 * @return the leaf bean the constraint is applied on or null if Validator#validateValue
+	 * is used
+	 */
+	Object getLeafBean();
 
-    /**
-     * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
-     *         &lt;code&gt;null&lt;/code&gt; if the value is the &lt;code&gt;rootBean&lt;code&gt; itself.
-     */
-    String getPropertyPath();
+	/**
+	 * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
+	 *         &lt;code&gt;null&lt;/code&gt; if the value is the &lt;code&gt;rootBean&lt;code&gt; itself.
+	 */
+	String getPropertyPath();
 
-    /**
-     * @return the value failing to pass the constraint.
-     */
-    Object getInvalidValue();
+	/**
+	 * @return the value failing to pass the constraint.
+	 */
+	Object getInvalidValue();
 
-    /**
-     * @return the list of groups that the triggered constraint applies on and which also are
-     *         within the list of groups requested for validation.
-     *
-     * TODO: considering removal, if you think it's important, speak up
-     */
-    Set&lt;Class&lt;?&gt;&gt; getGroups();
+	/**
+	 * @return the list of groups that the triggered constraint applies on and which also are
+	 *         within the list of groups requested for validation.
+	 *
+	 * TODO: considering removal, if you think it's important, speak up
+	 */
+	Set&lt;Class&lt;?&gt;&gt; getGroups();
 
-    /**
-     * Constraint metadata reported to fail.
-     * The returned instance is immutable.
-     * 
-     * @return constraint metadata
-     */
-    ConstraintDescriptor getConstraintDescriptor();
+	/**
+	 * Constraint metadata reported to fail.
+	 * The returned instance is immutable.
+	 * 
+	 * @return constraint metadata
+	 */
+	ConstraintDescriptor getConstraintDescriptor();
 }</programlisting>
 
-      <para>The <methodname>getInterpolatedMessage</methodname> method returns
-      the inerpolated (localized) message for the failing constraint (see
-      <xref linkend="validationapi-message" /> for more information on message
+      <para>The <methodname>getMessage</methodname> method returns the
+      interpolated (localized) message for the failing constraint (see <xref
+      linkend="validationapi-message" /> for more information on message
       interpolator). This can be used by clients to expose user friendly
       messages.</para>
 
-      <para>The <methodname>getRawMessage</methodname> method returns the
+      <para>The <methodname>getMessageTemplate</methodname> method returns the
       non-interpolated error message (usually the <literal>message</literal>
       attribute on the constraint declaration). Frameworks can use this as an
       error code key.</para>
@@ -3678,7 +3678,7 @@ Set&lt;ConstraintViolation&gt; constraintViolations = validator.validate(book);<
         failure passes the following assertions:</para>
 
         <programlisting>//assuming an english locale, the interpolated message is returned
-assert "may not be null or empty".equals( constraintViolation.getInterpolatedMessage() );
+assert "may not be null or empty".equals( constraintViolation.getMessage() );
 assert book == constraintViolation.getRootBean();
 assert book == constraintViolation.getLeafBean();
 //the offending value
@@ -3700,7 +3700,7 @@ for ( Class&lt;?&gt; group : constraintViolation.getGroups() ) {
         <classname>ConstraintViolation</classname> object satisfying the
         following assertions:</para>
 
-        <programlisting>assert "lastname must not be null".equals( constraintViolation.getInterpolatedMessage() );
+        <programlisting>assert "lastname must not be null".equals( constraintViolation.getMessage() );
 assert book == constraintViolation.getRootBean();
 assert author == constraintViolation.getLeafBean();
 //the offending value
