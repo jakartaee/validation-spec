@@ -1499,9 +1499,8 @@ public class User {
         <para>To implement such ordering, a group can be defined as a sequence
         of other groups. Each group in a group sequence must be processed
         sequentially in the order defined by
-        <methodname>@GroupSequence.sequence</methodname> when the group
-        defined as a sequence is requested. Processing a group is defined in
-        <xref
+        <methodname>@GroupSequence.</methodname>value when the group defined
+        as a sequence is requested. Processing a group is defined in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         ; if one of the groups processed in the sequence generates one or more
         constraint violation, the groups following in the sequence must not be
@@ -1525,7 +1524,7 @@ public class User {
         <programlisting>@Target({TYPE})
 @Retention(RUNTIME)
 public @interface GroupSequence {
-    Class&lt;?&gt;[] sequence();
+    Class&lt;?&gt;[] value();
 }</programlisting>
 
         <para>Here is a usage example</para>
@@ -1554,7 +1553,7 @@ public class Address {
      * check both basic constraints and high level ones.
      * high level constraints are not cheked if basic constraints fail
      */
-    @GroupSequence(sequence = {Default.class, HighLevelCoherence.class})
+    @GroupSequence({Default.class, HighLevelCoherence.class})
     public interface Complete {}
 }</programlisting>
         </example>
@@ -1597,7 +1596,7 @@ public class Address {
         <example id="example-overridedefaultgroup">
           <title>Redefining Default group for Address</title>
 
-          <programlisting>@GroupSequence(sequence={Address.class, HighLevelCoherence.class})
+          <programlisting>@GroupSequence({Address.class, HighLevelCoherence.class})
 @ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
 public class Address {
     @NotNull @Size(max = 50)
@@ -2819,7 +2818,7 @@ public class CommonGuest extends customer {}</programlisting>
         <title>Use groups and group sequence to define constraint
         ordering</title>
 
-        <programlisting><emphasis role="bold">@GroupSequence(sequence={First.class, Second.class, Last.class})</emphasis>
+        <programlisting><emphasis role="bold">@GroupSequence({First.class, Second.class, Last.class})</emphasis>
 public interface Complete {}
 
 public class Book {
@@ -3251,7 +3250,7 @@ public class Address {
 
     public interface SecondStep {}
     
-    @GroupSequence(sequence={Firststep.class, SecondStep.class})
+    @GroupSequence({Firststep.class, SecondStep.class})
     public interface Total {}
 }</programlisting>
 
