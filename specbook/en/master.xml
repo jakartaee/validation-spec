@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Beta.20090217</releaseinfo>
+    <releaseinfo>1.0.Beta.20090220</releaseinfo>
 
-    <pubdate>2009-02-17</pubdate>
+    <pubdate>2009-02-20</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -1499,8 +1499,15 @@ public class User {
         <para>To implement such ordering, a group can be defined as a sequence
         of other groups. Each group in a group sequence must be processed
         sequentially in the order defined by
-        <methodname>@GroupSequence.</methodname>value when the group defined
-        as a sequence is requested. Processing a group is defined in <xref
+        <methodname>@GroupSequence.value</methodname> when the group defined
+        as a sequence is requested. Note that a group member of a sequence can
+        itself be composed of several groups via inheritance or sequence
+        definition. In this case, each composed group must respect the
+        sequence order as well.</para>
+
+        <para>TODO example</para>
+
+        <para>Processing a group is defined in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         ; if one of the groups processed in the sequence generates one or more
         constraint violation, the groups following in the sequence must not be
@@ -1512,11 +1519,13 @@ public class User {
         either through cascaded sequence definition or group
         inheritance.</para>
 
-        <warning>
-          <para>Should we constraint group defining a sequence? Ie. can group
-          defining a sequence be used in constraint declarations explicitly?
-          Think about implications in the resolution algorithm.</para>
-        </warning>
+        <para>Groups defining a sequence should not directly inherit other
+        groups. In other words, the interface hosting the group sequence
+        should not have any super interface.</para>
+
+        <para>Groups defining a sequence should not be used directly in
+        constraint declarations. In other words, the interface hosting the
+        group sequence should not be used in a constraint declaration.</para>
 
         <para>To define a group as a sequence, the interface must be annotated
         with the <classname>@GroupSequence</classname> annotation.</para>
@@ -1727,7 +1736,7 @@ public class Order implements Auditable {
       </section>
 
       <section id="constraintdeclarationvalidationprocess-groupsequence-formaldefinition">
-        <title>Formal definitions</title>
+        <title>Formal group definitions</title>
 
         <para>The formal rules defining groups are as followed. <emphasis>Text
         in italic are comments about the rules.</emphasis></para>
@@ -1773,7 +1782,9 @@ public class Order implements Auditable {
 
                 <para><emphasis>all <classname>Default</classname> constraints
                 hosted on interfaces of <classname>X</classname>: constraints
-                are inherited by the class hierarchy</emphasis></para>
+                are inherited by the class hierarchy. Interfaces marked as
+                <classname>@GroupSequence</classname> are
+                ignored.</emphasis></para>
               </listitem>
 
               <listitem>
@@ -1916,6 +1927,98 @@ public class Order implements Auditable {
             linkend="constraintdeclarationvalidationprocess-groupsequence-groupsequence" />)</emphasis></para>
           </listitem>
         </itemizedlist>
+
+        <para>When a given group <classname>G</classname> (represented by an
+        interface <classname>G</classname>) is requested for the validation of
+        a class <classname>X</classname>:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>constraints belonging to the group <classname>G</classname>
+            are evaluated</para>
+          </listitem>
+
+          <listitem>
+            <para>if the interface <classname>G</classname> is not annotated
+            <classname>@GroupSequence</classname>, every group represented by
+            the super interface of <classname>G</classname> are requested for
+            validation</para>
+          </listitem>
+
+          <listitem>
+            <para>if the interface <classname>G</classname> is annotated with
+            <classname>@GroupSequence</classname>, every group represented by
+            the interfaces declared by the
+            <classname>@GroupSequence</classname> annotation are requested for
+            validation</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>the validation of groups declared to the
+                <classname>@GroupSequence</classname> must happen in the
+                sequencing order declared by
+                <classname>@GroupSequence</classname>: the sequencing order is
+                propagated to the groups composing the sequenced group (via
+                inheritance or group sequence)</para>
+              </listitem>
+
+              <listitem>
+                <para>if a group validation triggers the failure of one or
+                more constraints, groups following in the sequence must not be
+                evaluated.</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+
+          <listitem>
+            <para>if the group <classname>G</classname> represents the
+            <classname>Default</classname> group of <classname>X</classname>
+            overridden by <classname>@GroupSequence</classname>, operations
+            are equivalent</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>When the <classname>Default</classname> group of a given class
+        <classname>X</classname> is overridden via
+        <classname>@GroupSequence</classname>, its validation is as
+        followed:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>every group represented by the interfaces declared by the
+            <classname>@GroupSequence</classname> annotation are requested for
+            validation</para>
+
+            <itemizedlist>
+              <listitem>
+                <para>the validation of groups declared to the
+                <classname>@GroupSequence</classname> must happen in the
+                sequencing order declared by
+                <classname>@GroupSequence</classname>: the sequencing order is
+                propagated to the groups composing the sequenced group (via
+                inheritance or group sequence)</para>
+              </listitem>
+
+              <listitem>
+                <para>if a group validation triggers the failure of one or
+                more constraints, groups following in the sequence must not be
+                evaluated.</para>
+              </listitem>
+            </itemizedlist>
+          </listitem>
+        </itemizedlist>
+
+        <para>Unless defined by a <classname>@GroupSequence</classname>,
+        evaluation ordering is not constrained. In particular, several groups
+        can be validated in the same pass. If a group definition leads to a
+        circular sequencing order between groups, an exception is
+        raised.</para>
+
+        <note>
+          <para>A group <classname>G</classname> sequenced (directly or
+          indirectly) to be executed before itself is not considered a
+          circular reference.</para>
+        </note>
       </section>
     </section>
 
