@@ -2602,7 +2602,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
                 <entry><code>@Size SerializableCollection getAddresses() { ...
                 }</code></entry>
 
-                <entry><classname>AmbiguousConstraintUsageException</classname>
+                <entry><classname>UnexpectedTypeException</classname>:
                 <classname>SerializableCollection</classname> is a subtype of
                 both <classname>Collection</classname> and
                 <classname>Serializable</classname> and neither
@@ -2614,9 +2614,9 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
               <row>
                 <entry><code>@Size String getName() { ... }</code></entry>
 
-                <entry><classname>UnexpectedTypeForConstraintException</classname>
-                none of the <classname>ConstraintValidator</classname> types
-                are supertypes of <classname>String</classname>.</entry>
+                <entry><classname>UnexpectedTypeException</classname>: none of
+                the <classname>ConstraintValidator</classname> types are
+                supertypes of <classname>String</classname>.</entry>
               </row>
             </tbody>
           </tgroup>
@@ -5867,16 +5867,18 @@ public interface Validator {
 
     [...] //See 4.1
 
-    /**
+	/**
 	 * Return the descriptor object describing bean constraints
 	 * The returned object (and associated objects including ConstraintDescriptors)
-     * are immutable.
+	 * are immutable.
 	 *
 	 * @param clazz class type evaluated
+	 *
 	 * @return the bean descriptor for the specified class.
+	 *
 	 * @throws ValidationException if a non recoverable error happens
 	 *                             during the metadata discovery or if some
-	 *                             constraints are invalid. 
+	 *                             constraints are invalid.
 	 */
 	BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);<!--Add a method to return the GroupSequences-->
 }</programlisting>
@@ -7002,7 +7004,7 @@ public @interface Pattern {
           </itemizedlist>
 
           <para>If the name of the field does not correspond to a field in the
-          given bean a <classname>ConfigurationException</classname> is
+          given bean a <classname>ValidationException</classname> is
           raised.</para>
 
           <example>
@@ -7062,7 +7064,7 @@ public @interface Pattern {
           </itemizedlist>
 
           <para>If the name of the property does not correspond to a property
-          in the given bean a <classname>ConfigurationException</classname> is
+          in the given bean a <classname>ValidationException</classname> is
           raised.</para>
 
           <example>
@@ -7101,7 +7103,7 @@ public @interface Pattern {
           mandatory and represents the name of the element in the constraint
           declaration. <quote>message</quote>, <quote>groups</quote> are not
           permitted names, use the <literal>message</literal> or
-          <literal>groups</literal> elements instead. Otherwise an
+          <literal>groups</literal> elements instead. Otherwise a
           <classname>ValidationException</classname> is raised.</para>
 
           <para>If the element represents a primitive type, a class or an
@@ -7676,7 +7678,9 @@ public class ConstraintViolationException extends ValidationException {
 
       <para>If a constraint definition does not respect the Bean Validation
       rules or is inconsistent, a
-      <classname>ConstraintDefinitionException</classname> is raised. </para>
+      <classname>ConstraintDefinitionException</classname> is raised.
+      <classname>ConstraintDefinitionException</classname> is a subclass of
+      <classname>ValidationException</classname>.</para>
 
       <para>This exception can be raised during validation or when the
       metadata model for the class hosting this constraint is
@@ -7694,7 +7698,10 @@ public class ConstraintViolationException extends ValidationException {
       <classname>UnexpectedTypeException</classname></title>
 
       <para>When a constraint declaration is illegal,
-      <classname>ConstraintDeclarationException</classname> is raised. </para>
+      <classname>ConstraintDeclarationException</classname> is raised.</para>
+
+      <para><classname>ConstraintDeclarationException</classname> is a
+      subclass of <classname>ValidationException</classname>.</para>
 
       <para>When the return type of a property cannot be processed for a given
       constraint, an <classname>UnexpectedTypeException</classname> is raised.
@@ -7702,6 +7709,9 @@ public class ConstraintViolationException extends ValidationException {
       <classname>ConstraintValidator</classname> or too many
       <classname>ConstraintValidator</classname>s match the return type (see
       <xref linkend="typevalidatorresolution" />).</para>
+
+      <para><classname>UnexpectedTypeException</classname> is a subclass of
+      <classname>ConstraintDeclarationException</classname>.</para>
 
       <para>This exception can be raised during validation or when the
       metadata model for the class hosting this constraint is
@@ -7720,6 +7730,9 @@ public class ConstraintViolationException extends ValidationException {
       <para>When a group definition is illegal,
       <classname>GroupDefinitionException</classname> is raised. This
       typically arises when a cyclic group dependency is discovered.</para>
+
+      <para><classname>GroupDefinitionException</classname> is a subclass of
+      <classname>ValidationException</classname>.</para>
 
       <note>
         <para>These exception cases can generally be determined at compile
