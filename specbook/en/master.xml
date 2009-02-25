@@ -1026,25 +1026,62 @@ public interface ConstraintValidatorContext {
       generation and create one or more custom ones. The non-interpolated
       message passed as a parameter is used to build the
       <classname>ConstraintViolation</classname> object (the message
-      interpolation operation is applied to it). The property on which the
-      error object is applied is defined as following:</para>
+      interpolation operation is applied to it). </para>
 
-      <itemizedlist>
-        <listitem>
-          <para>if property is not overridden, the current context the
-          constraint is declared on is used (bean or property)</para>
-        </listitem>
-
-        <listitem>
-          <para>if the property is overridden, the current context the
-          constraint is declared on the property passed as a parameter
-          relative to the constraint declaration being evaluated</para>
-        </listitem>
-      </itemizedlist>
-
-      <para>The property can be overridden by calling
+      <para>By default, the <literal>propertyPath</literal> exposed on the
+      <classname>ConstraintViolation</classname> represents the path to the
+      bean or property hosting the constraint. The leaf of the
+      <literal>propertyPath</literal> can be adjusted by use of
       <methodname>ConstraintValidatorContext.addError(String,
-      String)</methodname>.</para>
+      String)</methodname>. In this case, <literal>propertyPath</literal> is
+      the concatenation of the default propertyPath value,
+      <literal>.</literal> (dot) and the <literal>property</literal> string
+      passed to the <methodname>addError</methodname> method.</para>
+
+      <table>
+        <title>propertyPath examples</title>
+
+        <tgroup cols="3">
+          <thead>
+            <row>
+              <entry>Constraint</entry>
+
+              <entry>addError call</entry>
+
+              <entry>propertyPath</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><classname>@NotNull</classname> constraint on the
+              property <literal>address</literal></entry>
+
+              <entry><code>addError("is not null")</code></entry>
+
+              <entry><code>address</code></entry>
+            </row>
+
+            <row>
+              <entry><classname>@SafeAddress</classname> constraint on the
+              property <literal>address</literal></entry>
+
+              <entry><code>addError("is not safe")</code></entry>
+
+              <entry><code>address</code></entry>
+            </row>
+
+            <row>
+              <entry><classname>@SafeAddress</classname> constraint on the
+              property <literal>address</literal></entry>
+
+              <entry><code>addError("is not safe", "zipCode")</code></entry>
+
+              <entry><code>address.zipCode</code></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
 
       <section id="constraintsdefinitionimplementation-validationimplementation-example">
         <title>Example</title>
