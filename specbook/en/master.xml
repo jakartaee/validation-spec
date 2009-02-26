@@ -3588,7 +3588,7 @@ public interface ConstraintViolation&lt;T&gt; {
 	 * 
 	 * @return constraint metadata
 	 */
-	ConstraintDescriptor getConstraintDescriptor();
+	ConstraintDescriptor&lt;?&gt; getConstraintDescriptor();
 }</programlisting>
 
       <para>The <methodname>getMessage</methodname> method returns the
@@ -4081,7 +4081,7 @@ public interface MessageInterpolator {
 	 * @return Interpolated error message.
 	 */
 	String interpolate(String message,
-					   ConstraintDescriptor constraintDescriptor,
+					   ConstraintDescriptor&lt;?&gt; constraintDescriptor,
 					   Object value);
 
 	/**
@@ -4096,7 +4096,7 @@ public interface MessageInterpolator {
 	 * @return Interpolated error message.
 	 */
 	String interpolate(String message,
-					   ConstraintDescriptor constraintDescriptor,
+					   ConstraintDescriptor&lt;?&gt; constraintDescriptor,
 					   Object value,
 					   Locale locale);
 }</programlisting>
@@ -4114,14 +4114,14 @@ public interface MessageInterpolator {
         validated.</para>
 
         <para><methodname>MessageInterpolator.interpolate(String,
-        ConstraintDescriptor, Object)</methodname> is invoked for each
-        constraint violation report generated. The default
+        ConstraintDescriptor&lt;?&gt;, Object)</methodname> is invoked for
+        each constraint violation report generated. The default
         <classname>Locale</classname> is implementation specific.</para>
 
         <para><methodname>MessageInterpolator.interpolate(String,
-        ConstraintDescriptor, Object, Locale)</methodname> can be invoked by a
-        wrapping <classname>MessageInterpolator</classname> to enforce a
-        specific <classname>Locale</classname> value by bypassing or
+        ConstraintDescriptor&lt;?&gt;, Object, Locale)</methodname> can be
+        invoked by a wrapping <classname>MessageInterpolator</classname> to
+        enforce a specific <classname>Locale</classname> value by bypassing or
         overriding the default <classname>Locale</classname> strategy.</para>
 
         <para>A message interpolator implementation shall be
@@ -4242,7 +4242,7 @@ public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
      * enforece the locale passed to the interpolator
      */
     public String interpolate(String message, 
-                              ConstraintDescriptor constraintDescriptor, 
+                              ConstraintDescriptor&lt;?&gt; constraintDescriptor, 
                               Object value) {
         return defaultInterpolator.interpolate(message, constraintDescriptor, 
                                            value, this.defaultLocale);
@@ -4250,7 +4250,7 @@ public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
 
     // no real use, implemented for completeness
     public String interpolate(String message,
-                              ConstraintDescriptor constraintDescriptor,
+                              ConstraintDescriptor&lt;?&gt; constraintDescriptor,
                               Object value,
                               Locale locale) {
         return defaultInterpolator.interpolate(message, constraintDescriptor, value, locale);
@@ -4289,14 +4289,14 @@ Validator validator = validatorFactory.usingContext()
         this.delegate = delegate; 
     }
 
-    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
+    public String interpolate(String message, ConstraintDescriptor&lt;?&gt; constraintDescriptor, 
                               Object value) {
         Locale locale = Container.getManager().getUserLocale();
         return this.delegate.interpolate(
                         message, constraintDescriptor, value, locale );
     }
 
-    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
+    public String interpolate(String message, ConstraintDescriptor&lt;?&gt; constraintDescriptor, 
                               Object value, Locale locale) {
         return this.delegate.interpolate(message, constraintDescriptor, value, locale);
     }
@@ -5970,7 +5970,7 @@ public interface ElementDescriptor {
 	 *
 	 * @return Set of constraint descriptors for this element
 	 */
-	Set&lt;ConstraintDescriptor&gt; getConstraintDescriptors();
+	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
 }</programlisting>
 
       <para><methodname>getType</methodname> returns either the object type
@@ -6099,11 +6099,12 @@ public interface PropertyDescriptor extends ElementDescriptor {
 
       <programlisting>/**
  * Describes a single constraint and its composing constraints.
+ * T is the constraint's annotation type.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
-public interface ConstraintDescriptor {
+public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 	/**
 	 * Returns the annotation describing the constraint declaration.
 	 * If a composing constraint, parameter values are reflecting
@@ -6111,13 +6112,13 @@ public interface ConstraintDescriptor {
 	 *
 	 * @return The annotation for this constraint.
 	 */
-	Annotation getAnnotation();
+	T getAnnotation();
 
 	/**
 	 * The Set of groups the constraint is applied on.
-	 * If the constraint declares no group, the &lt;code&gt;Default&lt;/code&gt; 
+	 * If the constraint declares no group, the &lt;code&gt;Default&lt;/code&gt;
 	 * group is returned.
-	 * 
+	 *
 	 * @return The groups the constraint is applied on.
 	 */
 	Set&lt;Class&lt;?&gt;&gt; getGroups();
@@ -6127,8 +6128,8 @@ public interface ConstraintDescriptor {
 	 *
 	 * @return list of the constraint validation implementation classes.
 	 */
-	List&lt;Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt;&gt;
-	getConstraintValidatorClasses();
+	List&lt;Class&lt;? extends ConstraintValidator&lt;T, ?&gt;&gt;&gt;
+		getConstraintValidatorClasses();
 
 	/**
 	 * Returns a map containing the annotation parameter names as keys and the
@@ -6150,7 +6151,7 @@ public interface ConstraintDescriptor {
 	 * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
 	 *         in case there are no composing constraints.
 	 */
-	Set&lt;ConstraintDescriptor&gt; getComposingConstraints();
+	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getComposingConstraints();
 
 	/**
 	 * @return true if the constraint is annotated with @ReportAsSingleViolation
@@ -6295,7 +6296,7 @@ assert propertyDescriptor.getConstraintDescriptors().size() == 2
 assert "title".equals( propertyDescriptor.getPropertyName() );
 
 //assuming the implementation returns the @NotEmpty constraint first
-ConstraintDescriptor constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
+ConstraintDescriptor&lt;?&gt; constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
                                                               .iterator().next();
 assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
@@ -6304,7 +6305,7 @@ assert constraintDescriptor.isReportAsSingleViolation() == true
 
 //@NotEmpty cannot be null
 boolean notNullPresence = false;
-for ( ConstraintDescriptor composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
+for ( ConstraintDescriptor&lt;?&gt; composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
     if ( composingDescriptor.getAnnotation().getAnnotationType().equals( NotNull.class ) ) {
         notNullPresence = true;
     }
