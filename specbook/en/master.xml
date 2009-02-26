@@ -1375,17 +1375,9 @@ public interface ConstraintValidatorFactory {
         particular type are used.</para>
 
         <para>The <classname>@Valid</classname> annotation is applied
-        recursively. A conforming implementation avoids infinite loops by
-        validating an object the first time it is encountered in the graph,
-        and ignores it if it is encountered again via a different path.</para>
-
-        <warning>
-          <para>Question: this rule does not guarantee a full deterministic
-          behavior if an object is present several times in the graph. Should
-          we adjust the rule to ensure deterministic behavior at the risk of
-          validating an object more than one time, but still preventing
-          infinite loop?</para>
-        </warning>
+        recursively. A conforming implementation avoids infinite loops
+        according to the rules described in <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />.</para>
       </section>
     </section>
 
@@ -2209,10 +2201,77 @@ EBE: is that a problem?-->
         dictates the Bean Validator implementation to apply recursively the
         bean validation routine on (each of) the associated object(s). This
         mechanism is recursive: an associated object can itself contain
-        cascaded references. The Bean Validation implementation must ignore
-        the cascading operation if the associated object instance has already
-        been validated by the current validation routine, thus preventing
-        infinite loops. Null references are ignored.</para>
+        cascaded references. </para>
+
+        <para>Null references are ignored.</para>
+
+        <para>To prevent infinite loops, the Bean Validation implementation
+        must ignore the cascading operation if the associated object instance
+        has already been validated in the current navigation path (starting
+        from the root object). See <xref linkend="example-oglimit" /> for an
+        example.</para>
+
+        <example id="example-oglimit">
+          <title>Object graph limits</title>
+
+          <programlisting>#assuming the following object graph
+
+Order -(lines)-&gt; Orderline1
+Order -(lines)-&gt; Orderline2
+Orderline1 -(order)-&gt; Order
+Orderline2 -(order)-&gt; Order
+Order -(customer)-&gt; User
+Order -(shippingAddress)-&gt; Address1
+Order -(billingAddress)-&gt; Address2
+Address1 -(inhabitant)-&gt; User
+Address2 -(inhabitant)-&gt; User
+User -(addresses)-&gt; Address1
+User -(addresses)-&gt; Address2
+
+#validation branches are as followed
+Order -(lines)-&gt; Orderline1
+  - order is ignored: Order is already present in the branch 
+
+Order -(lines)-&gt; Orderline2
+  - order is ignored: Order is already present in the branch
+
+Order -(customer)-&gt; User -(addresses)-&gt; Address1
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(customer)-&gt; User -(addresses)-&gt; Address2
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(shippingAddress)-&gt; Address1 -(inhabitant)-&gt; User 
+  - addresses to Address1 is ignored: Address1 is already present in the branch
+
+Order -(shippingAddress)-&gt; Address1 -(inhabitant)-&gt; User -(addresses)-&gt; Address2
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(shippingAddress)-&gt; Address2 -(inhabitant)-&gt; User 
+  - addresses to Address2 is ignored: Address2 is already present in the branch
+
+Order -(shippingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; Address1
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(billingAddress)-&gt; Address1 -(inhabitant)-&gt; User 
+  - addresses to Address1 is ignored: Address1 is already present in the branch
+
+Order -(billingAddress)-&gt; Address1 -(inhabitant)-&gt; User -(addresses)-&gt; Address2
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User 
+  - addresses to Address2 is ignored: Address2 is already present in the branch
+
+Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; Address1
+  - inhabitant is ignored: User is already present in the branch</programlisting>
+        </example>
+
+        <note>
+          <para>This object graph navigation can lead to multiple validations
+          of the same constraint and the same object instance but the set of
+          constraint validation is deterministic and the algorithm prevent
+          infinite loops.</para>
+        </note>
 
         <para>The <classname>ConstraintViolation</classname> objects, built
         when a failing constraint on an associated object is found, reflects
