@@ -401,58 +401,83 @@ public @interface Constraint {
         <title>Examples</title>
 
         <example id="example-definition-notnull">
-          <title>@NotNull constraint definition</title>
+          <title>Simple constraint definition</title>
 
-          <programlisting>@Documented
-@Constraint(validatedBy = NotNullConstraintValidator.class)
+          <programlisting>package com.acme.constraint;
+
+/**
+ * Mark a String as representing a well formed order number
+ */
+@Documented
+@Constraint(validatedBy = OrderNumberValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-public @interface NotNull {
-    String message() default "{constraint.notNull}";
+public @interface OrderNumber {
+    String message() default "{constraint.orderNumber}";
     Class&lt;?&gt;[] groups() default {};
 }</programlisting>
         </example>
 
-        <para><xref linkend="example-definition-notnull" /> defines a not null
-        constraint with a specific default message. The constraint Validator
-        is implemented by <classname>NotNullConstraint</classname>.</para>
+        <para><xref linkend="example-definition-notnull" /> marks a String as
+        a well-formed order number. The constraint Validator is implemented by
+        <classname>OrderNumberValidator</classname>.</para>
 
         <example id="example-definition-length">
-          <title>@Length constraint definition</title>
+          <title>Constraint definition with default parameter</title>
 
-          <programlisting>@Documented
-@Constraint(validatedBy = LengthConstraintValidator.class)
+          <programlisting>package com.acme.constraint;
+
+/**
+ * A frequency in Hz as audible to human ear.
+ * Adjustable to the age of the person.
+ * Accept Numbers.
+ */
+@Documented
+@Constraint(validatedBy = AudibleValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-public @interface Length {
-    int min() default 0;
-    int max() default Integer.MAX_VALUE;
-    String message() default "{constraint.length}";
+public @interface Audible {
+    Audible age() default Age.YOUNG;
+    String message() default "{constraint.audible}";
     Class&lt;?&gt;[] groups() default {};
+
+    public enum Age {
+        YOUNG,
+        WONDERING
+        OLD
+    }
 }</programlisting>
         </example>
 
-        <para><xref linkend="example-definition-length" /> defines a length
-        constraint. The constraint definition includes two optional properties
-        that may be specified when the constraint is applied.</para>
+        <para><xref linkend="example-definition-length" /> ensure that a given
+        frequency is between human ear scope. The constraint definition
+        includes a optional parameter that may be specified when the
+        constraint is applied.</para>
 
         <example id="example-definition-min">
-          <title>@Min constraint definition</title>
+          <title>Constraint definition with mandatory parameter</title>
 
-          <programlisting>@Documented
-@Constraint(validatedBy = MinConstraintValidator.class)
+          <programlisting>package com.acme.constraint;
+
+/**
+ * Defines a maximum value using he big decimal format
+ * Accepts Number objects
+ */
+@Documented
+@Constraint(validatedBy = MaxBigDecimalValidator.class)
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
-public @interface Min {
-    int value();
+public @interface Max {
+    String value();
     String message() default "{constraint.min}";
     Class&lt;?&gt;[] groups() default {};
 }</programlisting>
         </example>
 
-        <para><xref linkend="example-definition-min" /> defines a min
-        constraint: the <methodname>value</methodname> property must be
-        specified when the constraint is applied.</para>
+        <para><xref linkend="example-definition-min" /> defines a maximum
+        value constraint expressed as <classname>BigDecimal</classname>: the
+        <methodname>value</methodname> property must be specified when the
+        constraint is applied.</para>
       </section>
     </section>
 
@@ -501,7 +526,7 @@ public @interface ZipCode {
 
     String countryCode();
 
-    String message() default "{validator.zipCode}";
+    String message() default "{constraint.zipCode}";
 
     Class&lt;?&gt;[] groups() default {};
 
@@ -566,7 +591,7 @@ public @interface ZipCode {
         <title>Composition consists of annotating the composed
         constraint</title>
 
-        <programlisting>@NotNull
+        <programlisting>@Pattern(regexp="[0-9]*")
 @Size(min=5, max=5)
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
@@ -579,7 +604,8 @@ public @interface FrenchZipcode {
       </example>
 
       <para>Annotating an element with <classname>@FrenchZipcode</classname>
-      is equivalent to annotating it with <classname>@NotNull</classname>,
+      is equivalent to annotating it with
+      <classname>@Pattern(regexp="[0-9]*")</classname>,
       <classname>@Size(min=5, max=5)</classname> and
       <classname>@FrenchZipcode</classname>. More formally, each constraint
       annotation hosted on a constraint annotation is applied to the target
@@ -597,7 +623,7 @@ public @interface FrenchZipcode {
 
       <para>It is possible to ensure that composing annotations do not raise
       individual error reports. In this scenario, if one or more composing
-      annotations are invalid, the main annotation is automatically considered
+      annotations are invalid, the main constraint is automatically considered
       invalid and the corresponding error report is generated. To mark a
       constraint as raising only the main constraint error report despite its
       use of composing constraints, use the
@@ -607,7 +633,7 @@ public @interface FrenchZipcode {
         <title>If any of the composing constraint fails, the error report
         corresponding to @FrenchZipcode is raised and none other.</title>
 
-        <programlisting>@NotNull
+        <programlisting>@Pattern(regexp="[0-9]*")
 @Size(min=5, max=5)
 @ReportAsSingleViolation
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
@@ -635,6 +661,19 @@ public @interface FrenchZipcode {
 public @interface ReportAsSingleViolation {
 }</programlisting>
 
+      <para>More specifically, if a composed constraint is marked as
+      <classname>@ReportAsSingleViolation</classname>, and if any of its
+      composing constraint reports one or more violations, all reports from
+      composing constraints are ignored and the error report corresponding to
+      the composed constraint is generated.</para>
+
+      <note>
+        <para>If a composing constraint fails and if the composed constraint
+        is marked as <classname>@ReportAsSingleViolation</classname>, the Bean
+        Validation provider is free to not process the other composing
+        constraints for this composed constraint.</para>
+      </note>
+
       <para>Composing annotations can define parameters and message (aside
       from <methodname>groups</methodname>) but these are fixed for a given
       main annotation.</para>
@@ -644,7 +683,7 @@ public @interface ReportAsSingleViolation {
         given main annotation. All @FrenchZipcode constraints have a @Size
         restricted to 5.</title>
 
-        <programlisting>@NotNull
+        <programlisting>@Pattern(regexp="[0-9]*")
 @Size(min=5, max=5)
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
@@ -667,7 +706,7 @@ public @interface FrenchZipcode {
         <title>Parameters from composing annotations can be overridden by
         parameters from the main annotation.</title>
 
-        <programlisting>@NotNull
+        <programlisting>@Pattern(regexp="[0-9]*")
 @Size
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
@@ -683,18 +722,32 @@ public @interface FrenchZipcode {
     int size() default 5;
 
     @OverridesParameter(constraint=Size.class, parameter="message")
-    String sizeMessage() default "{beancheck.zipcode.size}";
+    String sizeMessage() default "{constraint.zipcode.size}";
+
+    @OverridesParameter(constraint=Pattern.class, parameter="message")
+    String sizeMessage() default "{constraint.number.size}";
 }</programlisting>
       </example>
 
-      <para>The parameter value from the main annotation annotated with
-      <classname>@OverridesParameter</classname> is applied to the parameter
-      named after <methodname>OverridesParameter.parameter</methodname> of the
+      <para>The value of the composed constraint parameter annotated with
+      <classname>@OverridesParameter</classname>
+      (<methodname>@FrenchZipcode.sizeMessage</methodname>) is applied to the
+      composing constraint parameter named after
+      <methodname>OverridesParameter.parameter</methodname> and hosted on the
       composing constraint of type
-      <methodname>OverridesParameter.constraint</methodname>. If not
-      specified, the name of the targeted parameter equals the name of the
-      parameter the <classname>@OverridesParameter</classname> is on The types
-      of the overridden and overriding parameters must be identical.</para>
+      <methodname>OverridesParameter.constraint</methodname>
+      (<methodname>@Size.message</methodname>). The default value for
+      <methodname>OverridesParameter.parameter</methodname> is the name of the
+      composed constraint parameter hosting the
+      <classname>@OverridesParameter</classname> annotation. The types of the
+      overridden and overriding parameters must be identical.</para>
+
+      <note>
+        <para>A composing constraint can itself be a composed constraint. In
+        this case, parameter values are overridden recursively according to
+        the described rules. But the forwarding rules of a given constraint
+        are only applied to its direct composing constraints.</para>
+      </note>
 
       <para>Using <xref linkend="example-composing-overridden" />,</para>
 
@@ -704,9 +757,9 @@ public @interface FrenchZipcode {
 
       <programlisting>@FrenchZipcode</programlisting>
 
-      <para>using the following definition</para>
+      <para>if <classname>@FrenchZipcode</classname> is defined as</para>
 
-      <programlisting>@NotNull
+      <programlisting>@Pattern(regexp="[0-9]*")
 @Size(min=9, max=9, message="Zipcode should be of size {max}")
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
@@ -726,10 +779,7 @@ public @interface FrenchZipcode {
       <literal>index</literal> is undefined, the single constraint declaration
       is targeted.</para>
 
-      <example>
-        <title>@OverridesParameter annotation definition</title>
-
-        <programlisting>/**
+      <programlisting>/**
  * Mark a parameter as overriding the parameter of a composing constraint.
  * Both parameter must share the same type.
  *
@@ -759,7 +809,6 @@ public @interface OverridesParameter {
      */
     int index() default -1;
 }</programlisting>
-      </example>
 
       <para>The following elements uniquely identify an overridden constraint
       parameter:</para>
@@ -804,10 +853,7 @@ public @interface OverridesParameter {
       implements the <classname>ConstraintValidator</classname>
       interface.</para>
 
-      <example>
-        <title>ConstraintValidator interface</title>
-
-        <programlisting>/**
+      <programlisting>/**
  * Defines the logic to validate a given constraint A
  * for a given object type T.
  * Implementations must comply to the following restriction:
@@ -839,7 +885,6 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
      */
     boolean isValid(T value, ConstraintValidatorContext constraintValidatorContext);
 }</programlisting>
-      </example>
 
       <para>Some restrictions apply on the generic type
       <classname>T</classname> (used in the <methodname>isValid</methodname>
@@ -955,11 +1000,7 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
       information and operations available in the context the constraint is
       validated to.</para>
 
-      <example>
-        <title>ConstraintValidatorContext interface passed to
-        ConstraintValidator.isValid()</title>
-
-        <programlisting>/**
+      <programlisting>/**
  * Provide contextual data and operation when applying a given constraint validator implementation
  *
  * @author Emmanuel Bernard
@@ -1010,7 +1051,6 @@ public interface ConstraintValidatorContext {
      */
     void addError(String message, String property);
 }</programlisting>
-      </example>
 
       <para>The <classname>ConstraintValidatorContext</classname> interface
       allows to redefine the default message error generated when a constraint
@@ -1026,7 +1066,7 @@ public interface ConstraintValidatorContext {
       generation and create one or more custom ones. The non-interpolated
       message passed as a parameter is used to build the
       <classname>ConstraintViolation</classname> object (the message
-      interpolation operation is applied to it). </para>
+      interpolation operation is applied to it).</para>
 
       <para>By default, the <literal>propertyPath</literal> exposed on the
       <classname>ConstraintViolation</classname> represents the path to the
@@ -1087,28 +1127,23 @@ public interface ConstraintValidatorContext {
         <title>Example</title>
 
         <example>
-          <title>Length constraint Validator</title>
+          <title>ConstraintValidator implementation</title>
 
-          <programlisting>/**
- * Check that a string length is between min and max
- *
+          <programlisting>Language XXXXXXXXXXXXXXXX
+
+/**
+ * Check that a text is within the authorized syntax
  */
-public class LengthConstraintValidator implements ConstraintValidator&lt;Length, String&gt; {
-    private int min;
-    private int max;
-<!--SCP: does this take a Map as its input to support XML descriptor, or do we map the XML descriptor into a Length instance?
-EBE: The second option-->
+public class SyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt; {
+    private Set&lt;Format&gt; allowedFormats;
+
     /**
      * Configure the constraint validator based on the elements
      * specified at the time it was defined.
      * @param constraint the constraint definition
      */
-    public void initialize(Length constraint) {
-        min = constraint.min();
-        max = constraint.max();
-<!--SCP: is best practice here to just keep a reference to the Length? Since there will be one LengthConstraint for each Length instance
-EBE in real life, I expect some preprocessing anyway, so keeping the annotations as a data container probably does not make a lot of sense generally speaking
-Note that generally speaking one "LengthConstraint for each Length instance" is not guaranteed. -->
+    public void initialize(Syntax constraint) {
+        allowedFormats = new HashSet( Arrays.asList( constraint.value() ) );
     }
 
     /**
@@ -1117,16 +1152,18 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
      */
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if ( value == null ) return true;
-        
-        int length = value.length();
-        return length &gt;= min &amp;&amp; length &lt;= max;
+
+        return allowedFormats.size() == 0 
+            || (! Collections.disjoint( guessFormat(value), allowedFormats ) ));
     }
+
+    Set&lt;Format&gt; guessFormats(String text) { ... }
 }</programlisting>
         </example>
 
-        <para>This constraint Validator checks that the string's length is
-        between min and max. It also demonstrates an interesting best
-        practice: return <literal>true</literal> on a null parameter</para>
+        <para>This constraint Validator checks that a text is within the
+        accepted syntax. It also demonstrates an interesting best practice:
+        return <literal>true</literal> on a null parameter</para>
 
         <para>The next example shows how to use
         <classname>ConstraintValidatorContext</classname>.</para>
@@ -1135,24 +1172,21 @@ Note that generally speaking one "LengthConstraint for each Length instance" is 
           <title>Use of ConstraintValidatorContext</title>
 
           <programlisting>/**
- * Check that a string length is between min and max
+ * Check that a text is within the authorized syntax
  * Error messages are using either key:
- *  - constraint.length.min if the min limit is reached
- *  - constraint.length.max if the max limit is reached
+ *  - constraint.syntax.unknown if no particular syntax is detected
+ *  - constraint.syntax.unauthorized if the syntax is not allowed
  */
-public class FineGrainedLengthConstraintValidator 
-             implements ConstraintValidator&lt;Length, String&gt; {
-    private int min;
-    private int max;
+ublic class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt; {
+    private Set&lt;Format&gt; allowedFormats;
 
     /**
      * Configure the constraint validator based on the elements
      * specified at the time it was defined.
      * @param constraint the constraint definition
      */
-    public void initialize(Length constraint) {
-        min = constraint.min();
-        max = constraint.max();
+    public void initialize(Syntax constraint) {
+        allowedFormats = new HashSet( Arrays.asList( constraint.value() ) );
     }
 
     /**
@@ -1161,23 +1195,21 @@ public class FineGrainedLengthConstraintValidator
      */
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if ( value == null ) return true;
-        int length = value.length();
+        Set&lt;Format&gt; guessedFormats = guessFormat(value);
 
-        //remove default error
         context.disableDefaultError();
+        if ( guessedFormats.size() == 0 ) {
+            context.addError("constraint.syntax.unknown");
+        }
+        else {
+            context.addError("constraint.syntax.unauthorized");
+        }
 
-        if (length &lt; min) {
-            //add min specific error
-            context.addError( "{constraint.length.min}" );
-            return false;
-        }
-        if (length &gt; max) {
-            //add max specific error
-            context.addError( "{constraint.length.max}" );
-            return false;
-        }
-        return true;
+        return allowedFormats.size() == 0 
+            || (! Collections.disjoint( guessFormat(value), allowedFormats ) ));
     }
+
+    Set&lt;Format&gt; guessFormats(String text) { ... }
 }</programlisting>
         </example>
 
@@ -1320,7 +1352,9 @@ public interface ConstraintValidatorFactory {
         property is defined by the result of
         <code>java.beans.Introspector.decapitalize(X)</code>.</para>
 
-        <para>The fields or methods visibility are not constrained.</para>
+        <para>The fields or methods visibility are not constrained.
+        Constraints on non getter methods are ignored by the Bean Validation
+        provider.</para>
       </section>
 
       <section>
@@ -1495,8 +1529,7 @@ public interface Default {
           <programlisting>/**
  * Customer can buy without harrassing checking process
  */
-public interface BuyInOneClick extends Default, Billable {
-}</programlisting>
+public interface BuyInOneClick extends Default, Billable {}</programlisting>
         </example>
 
         <para>For a given interface <classname>Z</classname>, constraints
@@ -1620,7 +1653,7 @@ public class Address {
     @NotNull @Size(max = 50)
     private String street1;
 
-    @ZipCode
+    @NotNull @ZipCode
     private String zipcode;
 
     @NotNull @Size(max = 30)
@@ -1685,7 +1718,7 @@ public class Address {
     @NotNull @Size(max = 50)
     private String street1;
 
-    @ZipCode
+    @NotNull @ZipCode
     private String zipcode;
 
     @NotNull @Size(max = 30)
@@ -2201,7 +2234,7 @@ EBE: is that a problem?-->
         dictates the Bean Validator implementation to apply recursively the
         bean validation routine on (each of) the associated object(s). This
         mechanism is recursive: an associated object can itself contain
-        cascaded references. </para>
+        cascaded references.</para>
 
         <para>Null references are ignored.</para>
 
@@ -2360,8 +2393,8 @@ public interface TraversableResolver {
 
         <programlisting>public class Country {
     @NotNull private String name;
-    @Length(max=2) private String ISO2Code;
-    @Length(max=3) private String ISO3Code;
+    @Size(max=2) private String ISO2Code;
+    @Size(max=3) private String ISO3Code;
 
     public String getName() {
         return name;
@@ -2389,11 +2422,11 @@ public interface TraversableResolver {
 }
 
 public class Address {
-    @NotNull @Length(max=30)
+    @NotNull @Size(max=30)
     private String addressline1;
-    @Length(max=30)
+    @Size(max=30)
     private String addressline2;
-    @Length(max=11)
+    @Size(max=11)
     private String zipCode;
     @NotNull @Valid
     private Country country;
@@ -2424,7 +2457,7 @@ public class Address {
         this.zipCode = zipCode;
     }
 
-    @Length(max=30) @NotNull
+    @Size(max=30) @NotNull
     public String getCity() {
         return city;
     }
@@ -2732,10 +2765,10 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
 
         <programlisting>@ZipCodeCityCoherenceChecker
 public class Address {
-    @NotNull @Length(max=30)
+    @NotNull @Size(max=30)
     private String addressline1;
 
-    @Length(max=30)
+    @Size(max=30)
     private String addressline2;
 
     private String zipCode;
@@ -2766,7 +2799,7 @@ public class Address {
         this.zipCode = zipCode;
     }
 
-    @Length(max=30) @NotNull
+    @Size(max=30) @NotNull
     public String getCity() {
         return city;
     }
@@ -2784,19 +2817,19 @@ public class Address {
         <listitem>
           <para><methodname>addressline1</methodname> field value is passed to
           the <classname>@NotNull</classname> as well as
-          <classname>Length</classname> constraint validation
+          <classname>@Size</classname> constraint validation
           implementation.</para>
         </listitem>
 
         <listitem>
           <para><methodname>addressline2</methodname> field value is passed to
-          the <classname>@Length</classname> constraint validation
+          the <classname>@Size</classname> constraint validation
           implementations.</para>
         </listitem>
 
         <listitem>
           <para><methodname>getCity</methodname> value is passed to the
-          <classname>Length</classname> and <classname>@NotNull</classname>
+          <classname>@Size</classname> and <classname>@NotNull</classname>
           constraint validation implementations</para>
         </listitem>
 
@@ -2816,8 +2849,8 @@ public class Address {
         <programlisting>public class Country {
     @NotNull
     private String name;
-    @Length(max=2) private String ISO2Code;
-    @Length(max=3) private String ISO3Code;
+    @Size(max=2) private String ISO2Code;
+    @Size(max=3) private String ISO3Code;
 
     public String getName() {
         return name;
@@ -2845,11 +2878,11 @@ public class Address {
 }
 
 public class Address {
-    @NotNull @Length(max=30)
+    @NotNull @Size(max=30)
     private String addressline1;
-    @Length(max=30)
+    @Size(max=30)
     private String addressline2;
-    @Length(max=11)
+    @Size(max=11)
     private String zipCode;
     <emphasis role="bold">@NotNull @Valid</emphasis>
     private Country country;
@@ -2880,7 +2913,7 @@ public class Address {
         this.zipCode = zipCode;
     }
 
-    @Length(max=30) @NotNull
+    @Size(max=30) @NotNull
     public String getCity() {
         return city;
     }
@@ -2908,19 +2941,31 @@ public class Address {
       specifically <methodname>country.name</methodname> is checked for
       <classname>@NotNull</classname>, <methodname>ISO2Code</methodname> and
       <methodname>ISO3Code</methodname> are checked for
-      <classname>@Length</classname>.</para>
+      <classname>@Size</classname>.</para>
 
       <para>Assuming that <classname>@NotEmpty</classname> is defined as
       such</para>
 
-      <programlisting>@Documented
+      <programlisting>package com.acme.constraint;
+
+@Documented
 @NotNull
 @Size(min=1)
-@Constraint(validatedBy = NotEmptyConstraintValidator.class)
+@ReportAsSingleViolation
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    ...
+    String message() default "{constraint.notEmpty}"
+    Class&lt;?&gt; groups() default {};
+
+    class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
+        public void initialize(NotEmpty constraintAnnotation) {}
+
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            return true;
+        }
+    }
 }</programlisting>
 
       <para>The third example demonstrates superclass, inheritance and
@@ -3077,7 +3122,7 @@ public class Book {
     @NotEmpty(groups=First.class)
     private String title;
 
-    @Length(max=30, groups=Second.class)
+    @Size(max=30, groups=Second.class)
     private String subtitle;
 
     @Valid
@@ -3116,7 +3161,7 @@ public class Author {
     @NotEmpty(groups=First.class)
     private String lastName;
 
-    @Length(max=30, groups=Last.class)
+    @Size(max=30, groups=Last.class)
     private String company;
 
     public String getFirstName() {
@@ -3178,12 +3223,12 @@ author.setCompany("Some random publisher with a very very very long name");</pro
         <listitem>
           <para><methodname>author.firstName</methodname> fails to pass the
           <classname>@Size(min=1)</classname> (from
-          <classname>NotEmpty</classname>) constraint</para>
+          <classname>@NotEmpty</classname>) constraint</para>
         </listitem>
 
         <listitem>
           <para><methodname>author.company</methodname> fails to pass the
-          <classname>Length</classname> constraint</para>
+          <classname>@Size</classname> constraint</para>
         </listitem>
       </itemizedlist>
 
@@ -3368,10 +3413,10 @@ public interface Validator {
           definition, constraint declarations and address instance.</para>
 
           <programlisting>public class Address {
-    <emphasis role="bold">@NotNull @Length(max=30)</emphasis>
+    <emphasis role="bold">@NotNull @Size(max=30)</emphasis>
     private String addressline1;
 
-    <emphasis role="bold">@Length(max=30)</emphasis>
+    <emphasis role="bold">@Size(max=30)</emphasis>
     private String addressline2;
 
     private String zipCode;
@@ -3402,7 +3447,7 @@ public interface Validator {
         this.zipCode = zipCode;
     }
 
-    <emphasis role="bold">@Length(max=30) @NotNull</emphasis>
+    <emphasis role="bold">@Size(max=30) @NotNull</emphasis>
     public String getCity() {
         return city;
     }
@@ -3422,13 +3467,13 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
           <classname>ConstraintViolation</classname> objects. One for
           <literal>addressline1</literal> violating
           <literal>@NotNull</literal> and one for <literal>city</literal>
-          violating <literal>@Length</literal>.</para>
+          violating <literal>@Size</literal>.</para>
 
           <programlisting>validator.validate(address).size() == 2</programlisting>
 
           <para>The following code will return one
           <classname>ConstraintViolation</classname> since
-          <literal>city</literal> violates <literal>@Length</literal> and only
+          <literal>city</literal> violates <literal>@Size</literal> and only
           <literal>city</literal> is validated.</para>
 
           <programlisting>validator.validateProperty(address, "city").size() == 1</programlisting>
@@ -3467,7 +3512,7 @@ public interface Minimal {}
 public class Address {
 
     @NotEmpty(groups = Minimal.class)
-    @Length(max=50)
+    @Size(max=50)
     private String street1;
     
     @NotEmpty
@@ -3482,7 +3527,7 @@ public class Address {
           it's composing constraints) on <methodname>street1</methodname>
           applies to the group
           <literal><classname>Minimal</classname></literal>,
-          <classname>@Length</classname> on <methodname>street1</methodname>
+          <classname>@Size</classname> on <methodname>street1</methodname>
           applies to the group <literal>Default</literal> and
           <classname>@NotEmpty </classname>(and it's composing constraints) on
           <methodname>zipCode</methodname> applies to the groups
@@ -3492,7 +3537,7 @@ public class Address {
           <programlisting>validator.validate(address);</programlisting>
 
           <para>validates the group <classname>Default</classname>
-          (implicitly) and applies <classname>@Length</classname> on
+          (implicitly) and applies <classname>@Size</classname> on
           <methodname>street1</methodname>, <classname>@NotEmpty</classname>
           (and its composing constraints) on <methodname>city</methodname>,
           <classname>@NotEmpty</classname> (and its composing constraints) on
@@ -3513,7 +3558,7 @@ public class Address {
           <para>validates both <classname>Default</classname> and
           <classname>Minimal</classname> groups. The routine applies
           <classname>@NotEmpty</classname> (and its composing constraints) and
-          <classname>@Length</classname> on <methodname>street1</methodname>,
+          <classname>@Size</classname> on <methodname>street1</methodname>,
           <classname>@NotEmpty</classname> (and its composing constraints) on
           <methodname>city</methodname>, <classname>@NotEmpty</classname> (and
           its composing constraints) on <methodname>zipCode</methodname>. Note
@@ -3527,7 +3572,7 @@ public class Address {
 
           <programlisting>public class Address {
     @NotEmpty(groups = Minimal.class)
-    @Length(max=50, groups=FirstStep.class)
+    @Size(max=50, groups=FirstStep.class)
     private String street1;
     
     @NotEmpty(groups="SecondStep.class)
@@ -3551,11 +3596,11 @@ public class Address {
 
           <para>the validation process will process
           <classname>@NotEmpty</classname> (and it's composing constraints)
-          and <classname>@Length</classname> from
+          and <classname>@Size</classname> from
           <methodname>street1</methodname> and
           <classname>@NotEmpty</classname> (and it's composing constraints)
           from <methodname>zipCode</methodname>. If
-          <classname>@Length</classname> from <methodname>street1</methodname>
+          <classname>@Size</classname> from <methodname>street1</methodname>
           does not generate a failure, then <classname>@NotEmpty</classname>
           (and it's composing constraints) from <methodname>city</methodname>
           will be processed as part of <classname>SecondStep</classname>. Note
@@ -3571,7 +3616,7 @@ public class Address {
           constraints) from <methodname>city</methodname> and
           <classname>@NotEmpty</classname> (and it's composing constraints)
           from <methodname>zipCode</methodname> will be processed even if
-          <classname>@Length</classname> from <methodname>street1</methodname>
+          <classname>@Size</classname> from <methodname>street1</methodname>
           fails: while <literal><classname>SecondStep</classname></literal> is
           in the <literal><classname>Total</classname></literal> group
           sequence and hence should not be triggered if
@@ -3766,6 +3811,11 @@ public interface ConstraintViolation&lt;T&gt; {
         context of the failure</para>
       </note>
 
+      <warning>
+        <para>Should map key be represented as toString() in the propertyPath?
+        If yes, should " be escaped?</para>
+      </warning>
+
       <para>Assuming the following object definitions and when book is
       validated:</para>
 
@@ -3776,7 +3826,7 @@ public class Author {
     @NotEmpty(message="lastname must not be null")
     private String lastName;
 
-    @Length(max=30)
+    @Size(max=30)
     private String company;
     ...
 }
@@ -3845,7 +3895,7 @@ public class Review {
             </row>
 
             <row>
-              <entry><classname>@Length</classname> on the fourth author,
+              <entry><classname>@Size</classname> on the fourth author,
               <classname>Author.lastname</classname></entry>
 
               <entry>authors[3].lastname</entry>
@@ -3874,15 +3924,26 @@ public class Review {
         <para>These examples assume the following definition of
         <classname>@NotEmpty</classname>.</para>
 
-        <programlisting>@Documented
+        <programlisting>package com.acme.constraint;
+
+@Documented
 @NotNull
 @Size(min=1)
 @ReportAsSingleViolation
-@Constraint(validatedBy = NotEmptyConstraintValidator.class)
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    ...
+    String message() default "{constraint.notEmpty}"
+    Class&lt;?&gt; groups() default {};
+
+    class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
+        public void initialize(NotEmpty constraintAnnotation) {}
+
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            return true;
+        }
+    }
 }</programlisting>
 
         <para>and the following class definitions</para>
@@ -3893,7 +3954,7 @@ public @interface NotEmpty {
     @NotEmpty(message="lastname must not be null")
     private String lastName;
 
-    @Length(max=30)
+    @Size(max=30)
     private String company;
 
     public String getFirstName() {
@@ -6253,15 +6314,26 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
       <para>Assuming the following <classname>@NotEmpty</classname>
       definition</para>
 
-      <programlisting>@Documented
+      <programlisting>package com.acme.constraint;
+
+@Documented
 @NotNull
 @Size(min=1)
 @ReportAsSingleViolation
-@Constraint(validatedBy = NotEmptyConstraintValidator.class)
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    ...
+    String message() default "{constraint.notEmpty}"
+    Class&lt;?&gt; groups() default {};
+
+    class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
+        public void initialize(NotEmpty constraintAnnotation) {}
+
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            return true;
+        }
+    }
 }</programlisting>
 
       <para>and the following class definitions</para>
@@ -6272,7 +6344,7 @@ public @interface NotEmpty {
     @NotEmpty(message="lastname must not be null")
     private String lastName;
 
-    @Length(max=30)
+    @Size(max=30)
     private String company;
 
     public String getFirstName() {
@@ -6305,7 +6377,7 @@ public class Book {
     private Author author;
 
     @NotEmpty(groups={FirstLevelCheck.class, Default.class})
-    @Length(max=30)
+    @Size(max=30)
     public String getTitle() {
         return title;
     }
@@ -6371,11 +6443,11 @@ for ( ConstraintDescriptor&lt;?&gt; composingDescriptor : constraintDescriptor.g
 }
 assert notNullPresence; 
 
-//assuming the implementation returns the Length constraint second
+//assuming the implementation returns the Size constraint second
 constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next().next();
-assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Length.class );
+assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Size.class );
 assert constraintDescriptor.getParameters().get("max") == 30; 
-assert constraintDescriptor.getGroups().length == 1;
+assert constraintDescriptor.getGroups().size() == 1;
 
 propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
 assert propertyDescriptor.getConstraintDescriptors().size() == 1
