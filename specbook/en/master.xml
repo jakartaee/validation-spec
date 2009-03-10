@@ -550,9 +550,9 @@ public @interface ZipCode {
 
         <programlisting>public class Address {
     @ZipCode.List( {
-            @ZipCode(country="fr", groups=Default.class
+            @ZipCode(countryCode="fr", groups=Default.class
                      message = "zip code is not valid"),
-            @ZipCode(country="fr", groups=SuperUser.class
+            @ZipCode(countryCode="fr", groups=SuperUser.class
                      message = "zip code ivalid. Requires overriding before saving.")
             } )
     private String zipcode;
@@ -1001,7 +1001,7 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
       validated to.</para>
 
       <programlisting>/**
- * Provide contextual data and operation when applying a given constraint validator implementation
+ * Provide contextual data and operation when applying a given constraint validator
  *
  * @author Emmanuel Bernard
  */
@@ -1053,7 +1053,7 @@ public interface ConstraintValidatorContext {
 }</programlisting>
 
       <para>The <classname>ConstraintValidatorContext</classname> interface
-      allows to redefine the default message error generated when a constraint
+      allows to redefine the default error message generated when a constraint
       is not valid. By default, each invalid constraint leads to the
       generation of one error object represented by a
       <classname>ConstraintViolation</classname> object. This object is build
@@ -1582,7 +1582,7 @@ public class User {
         </itemizedlist>
 
         <para>because <classname>Default</classname> and
-        <classname>Billable</classname> are subinterfaces of
+        <classname>Billable</classname> are superinterfaces of
         <classname>BuyInOneClick</classname>.</para>
       </section>
 
@@ -1591,7 +1591,7 @@ public class User {
 
         <para>By default, constraints are evaluated in no particular order and
         this regardless of which groups they belong to. It is however useful
-        in some situations to to control the order of constraints evaluation.
+        in some situations to control the order of constraints evaluation.
         There are often scenarios where a preliminary set of constraints
         should be evaluated prior to other constraints. Here are two
         examples:</para>
@@ -2340,23 +2340,25 @@ Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; 
  * @author Emmanuel Bernard
  */
 public interface TraversableResolver {
-    /**
-     * Determine if a property can be traversed by Bean Validation.
-     *
-     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;.
-     * @param traversableProperty name of the traversable property.
-     * @param rootBeanType type of the root object passed to the Validator.
-     * @param pathToTraversableObject path from the root object to the &lt;code&gt;traversableProperty&lt;/code&gt;
-     *        (using the path specification defined by Bean Validator).
-     * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
-     *
-     * @return &lt;code&gt;true&lt;/code&gt; if the property is traversable by Bean Validation, &lt;code&gt;false&lt;/code&gt; otherwise.
-     */
-    boolean isTraversable(Object traversableObject,
-                          String traversableProperty,
-                          Class&lt;?&gt; rootBeanType,
-                          String pathToTraversableObject,
-                          ElementType elementType);
+	/**
+	 * Determine if a property can be traversed by Bean Validation.
+	 *
+	 * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;.
+	 * @param traversableProperty name of the traversable property.
+	 * @param rootBeanType type of the root object passed to the Validator.
+	 * @param pathToTraversableObject path from the root object to
+	 *        the &lt;code&gt;traversableProperty&lt;/code&gt;
+	 *        (using the path specification defined by Bean Validator).
+	 * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
+	 *
+	 * @return &lt;code&gt;true&lt;/code&gt; if the property is traversable by Bean Validation,
+	 *         &lt;code&gt;false&lt;/code&gt; otherwise.
+	 */
+	boolean isTraversable(Object traversableObject,
+						  String traversableProperty,
+						  Class&lt;?&gt; rootBeanType,
+						  String pathToTraversableObject,
+						  ElementType elementType);
 }</programlisting>
 
         <para><literal>traversableObject</literal> is the object instance
@@ -3268,102 +3270,80 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
- * @todo Should Serializable be part of the definition?
  */
 public interface Validator {
-    /**
-     * Validates all constraints on object.
-     *
-     * @param object object to validate
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException if object is null
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on object.
+	 *
+	 * @param object object to validate
+	 * @param groups groups targeted for validation
+	 * (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null
+	 * @throws ValidationException	  if a non recoverable error happens
+	 *                                  during the validation process
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
-    /**
-     * Validates all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
-     *
-     * @param object object to validate
-     * @param propertyName property to validate (ie field/**
- * Validate bean instances. Implementations of this interface must be thread-safe.
- *
- * @author Emmanuel Bernard
- * @author Hardy Ferentschik
- */
-public interface Validator {
-    /**
-     * Validates all constraints on object.
-     *
-     * @param object object to validate
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException if object is null
-     * @throws ValidationException if a non recoverable error happens
-     *                             during the validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
+	 *
+	 * @param object object to validate
+	 * @param propertyName property to validate (ie field and getter constraints)
+	 * @param groups groups targeted for validation
+	 * (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
+	 *                                  or not a valid object property
+	 * @throws ValidationException	  if a non recoverable error happens
+	 *                                  during the validation process
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+													 String propertyName,
+													 Class&lt;?&gt;... groups);
 
-    /**
-     * Validates all constraints on &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; property of object
-     *
-     * @param object object to validate
-     * @param propertyName property to validate (ie field and getter constraints)
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException if object is null, if propertyName null, empty
-     *                                  or not a valid object property
-     * @throws ValidationException if a non recoverable error happens
-     *                             during the validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
-                                                     String propertyName,
-                                                     Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on &lt;code&gt;propertyName&lt;/code&gt; property
+	 * if the property value is &lt;code&gt;value&lt;/code&gt;
+	 * &lt;p/&gt;
+	 * TODO express limitations of ConstraintViolation in this case
+	 *
+	 * @param beanType the bean type
+	 * @param propertyName property to validate
+	 * @param value property value to validate
+	 * @param groups groups targeted for validation
+	 * (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
+	 *                                  or not a valid object property
+	 * @throws ValidationException	  if a non recoverable error happens
+	 *                                  during the validation process
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
+												  String propertyName,
+												  Object value,
+												  Class&lt;?&gt;... groups);
 
-    /**
-     * Validates all constraints on &lt;code&gt;propertyName&lt;/code&gt; property
-     * if the property value is &lt;code&gt;value&lt;/code&gt;
-     * &lt;p/&gt;
-     * TODO express limitations of ConstraintViolation in this case
-     *
-     * @param beanType the bean type
-     * @param propertyName property to validate
-     * @param value property value to validate
-     * @param groups groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     * @throws IllegalArgumentException if object is null, if propertyName null, empty
-     *                                  or not a valid object property
-     * @throws ValidationException if a non recoverable error happens
-     *                             during the validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
-                                                  String propertyName,
-                                                  Object value,
-                                                  Class&lt;?&gt;... groups);
-
-    /**
-     * Return the descriptor object describing bean constraints
-     * The returned object (and associated objects including ConstraintDescriptors)
-     * are immutable.
-     *
-     * @param clazz class type evaluated
-     * @return the bean descriptor for the specified class.
-     * @throws ValidationException if a non recoverable error happens
-     *                             during the metadata discovery or if some
-     *                             constraints are invalid. 
-     */
-    BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
+	/**
+	 * Return the descriptor object describing bean constraints
+	 * The returned object (and associated objects including ConstraintDescriptors)
+	 * are immutable.
+	 *
+	 * @param clazz class type evaluated
+	 *
+	 * @return the bean descriptor for the specified class.
+	 *
+	 * @throws ValidationException if a non recoverable error happens
+	 *                             during the metadata discovery or if some
+	 *                             constraints are invalid.
+	 */
+	BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 }</programlisting>
 
       <para><methodname>getConstraintsForClass</methodname> is described in
@@ -3838,7 +3818,7 @@ public class Author {
     ...
 }
 
-@PresentInAmazon
+@AvailableInStore(groups={Availability.class})
 public class Book {
     @NotEmpty(groups={FirstLevelCheck.class, Default.class})
     private String title;
@@ -4189,7 +4169,7 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
         the <classname>MessageInterpolator</classname> interface.</para>
 
         <programlisting>/**
- * Interpolate a given constraint violation message.
+ * Interpolate a given constraint error message.
  * Implementations should be as tolerant as possible on syntax errors.
  *
  * @author Emmanuel Bernard
@@ -4568,7 +4548,7 @@ Validator validator = factory.getValidator();</programlisting>
 ValidatorFactory factory = Validation
        .byDefaultProvider().configure()
           .messageInterpolator( new ContainerMessageInterpolator() )
-          .constraintValidatorFactory( new ontainerComponentConstraintValidatorFactory() )
+          .constraintValidatorFactory( new containerComponentConstraintValidatorFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
           .buildValidatorFactory();
 
@@ -4630,7 +4610,7 @@ public interface ACMEConfiguration
                     extends Configuration&lt;ACMEConfiguration&gt; {
     /**
      * Programmatically add constraints. Specific to the ACME provider.
-     *r
+     */
     ACMEConfiguration addConstraint(Class&lt;?&gt; entity, 
                                     ACMEConstraintDescriptor constraintDescriptor);
 }</programlisting>
