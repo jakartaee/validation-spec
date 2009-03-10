@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.Beta4</releaseinfo>
+    <releaseinfo>1.0.CR1.20090307</releaseinfo>
 
-    <pubdate>2009-03-03</pubdate>
+    <pubdate>2009-03-07</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -216,7 +216,7 @@
       Some reviewers have found that reading the terminology section first
       helps to better understand the specification.</para>
 
-      <para>JPA, JSF and EE integration proposals are present at <xref
+      <para>JPA, JSF and EE integration are present at <xref
       linkend="appendix-jpa" />, <xref linkend="appendix-jsf" /> and <xref
       linkend="appendix-ee" />.</para>
     </section>
@@ -7569,7 +7569,6 @@ public @interface Pattern {
     &lt;xs:complexType name="classType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="groupSequenceType" name="group-sequence" minOccurs="0"/&gt;
-            &lt;xs:element type="xs:simpleType" name="stop-constraint-inheritance" fixed="" minOccurs="0"/&gt;
             &lt;xs:element type="map:constraintType"
                         name="constraint"
                         maxOccurs="unbounded"
@@ -7611,7 +7610,6 @@ public @interface Pattern {
     &lt;xs:complexType name="getterType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
-            &lt;xs:element type="xs:string" name="stop-constraint-inheritance" minOccurs="0" fixed=""/&gt;
             &lt;xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
@@ -7632,7 +7630,6 @@ public @interface Pattern {
     &lt;xs:complexType name="fieldType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
-            &lt;xs:element type="xs:string" name="stop-constraint-inheritance" minOccurs="0" fixed=""/&gt;
             &lt;xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
@@ -8274,171 +8271,26 @@ public interface BeanDescriptor {
   </appendix>
 
   <appendix id="appendix-jpa">
-    <title>Proposal for Java Persistence 2.0 integration</title>
+    <title>Java Persistence 2.0 integration</title>
 
-    <para>This proposal is been discussed in the Java Persistence 2.0 expert
-    group for evaluation. It does not represent the final views of the JPA 2.0
-    expert group and is here to give a global picture of how Bean Validation
-    can be brought to the EE ecosystem.</para>
+    <para>Integration with Java Persistence is described in the Java
+    Persistence 2 specification (JSR-317). Persistence framework are
+    encouraged to mimic the integration work done with JPA. </para>
 
-    <programlisting>Java Persistence / Bean Validation integration proposal
+    <para>While not specified by this specification or the Java Persistence
+    2.0 specification, Persistence Providers are encouraged to make use of
+    Bean Validation constraint metadata when generating DDL schemas. The
+    proposal is as followed.</para>
 
-Integration between Java Persistence and Bean Validation (BV) happens at two levels:
-- as a metadata provider for DDL generation and generally speaking the behavior of
-the persistence provider. This approach will be treated in a different email.
-- as a validation engine called on entity changes
-
-
-** Using the Bean Validation (BV) engine inside a Java Persistence provider
-
-Java Persistence delegates the validation of entities to Bean Validation on the following 
-entity events:
-- pre persist (an entity must be valid to be inserted in the DB)
-- pre update (an entity change must be valid before being propagated to the database)
-- pre remove (eg. a Customer still owning some Payments cannot be removed)
-
-These events are called at the same time as their respective callback methods after
-all callbacks have been called.
-
-For each event type, a list of groups is targeted for validation. By default,
-pre persist and pre update events validate the group Default (default BV group)
-and pre remove does not validate any group. Each list can be overridden
-by a JPA property:
-- javax.persistence.validation.group.pre-persist for pre persist events
-- javax.persistence.validation.group.pre-update for pre update events
-- javax.persistence.validation.group.pre-remove for pre remove events
-
-Question: should JPA introduce the following groups
-/** Defaut validation group used when an entity is persisted */
-public interface Persist extends Default {}
-
-/** Defaut validation group used when an entity is updated */
-public interface Update extends Default {}
-
-/** Defaut validation group used when an entity is removed */
-public interface Remove {}
-
-
-Each property holds the list of targeted groups (fully qualified class name)
-separated by a comma.
-
-When any of the pre-cited event is raised on an entity instance 'a' of type A,
-the persistence provider must validate 'a' by invoking a validator with the
-targeted groups. If the list of targeted groups is empty,
-no validation is performed. If the set of constraint violation is not empty,
-a javax.validation.ValidationException containing a reference to this set of violations is raised.
-
-
-** Special need from Java Persistence
-
-Validator instances used to validate entities on pre-* events must use a TraversableResolver
-implementing the following logic:
-- Lazy properties or associations must not be traversed
-- Single or multi valued associations pointing to entities must not be traversed
-
-A typical implementation could rely on 
-Persistence.isLoaded(Object objectHostingTheProperty, String property)
-to determine the load state of the entity properties.
-In the situation where only a singe (ie the default) persistence provider is available
-in the classpath, the container can implement a potentially optimized TraversableResolver
-that does not rely on Persistence.isLoaded(Object objectHostingTheProperty, String property).
-
-The TraversableResolver instance is passed to Bean Validation through
-ValidatorFactory.usingContext().traversableResolver(jpaSpecificTR).getValidator()
-
-These rules guarantee that:
-- no lazy property nor association will be loaded by side effect
-- no entity will be validated more than once even if it is reachable through @Valid several
-times by entities changing state. This keeps JPA cascading and BV orthogonal.
-
-
-** Interaction between Persistence and Validation Providers
-BV metadata APIs and runtime are available from ValidatorFactory instances. It
-is recommended to cache ValidatorFactory instances and retrieve Validator on demand.
-ValidatorFactory provides metadata informations to the JPA provider, it will be built at
-or before EntityManagerFactory initialization.
-
-Providing the ValidatorFactory
--- in EE
-A ValidatorFactory is made available at the platform level by the Java EE container. This
-ValidatorFactory instance is passed to the persistence provider via the configuration
-Map of PersistenceProvider.createContainerEntityManagerFactory(PersistenceUnitInfo, Map).
-The property name is
-javax.persistence.validation.factory (Persistence.VALIDATOR_FACTORY)
-Note that the container must pass an instance of VF.
-
-
--- in SE
-Out of container, the Persistence provider access to the ValidatorFactory in two ways:
- - it is provided by the application via the configuration Map of
-    Persistence.createEntityManagerFaactory(Map). The property name is
-    javax.persistence.validation.factory  (Persistence.VALIDATOR_FACTORY)
- - if not provided by the user, and if Bean Validation is present in the classpath, 
-    the ValidatorFactory is instantiated using the default bootstrap
-    approach ie Validation.buildDefaultValidatorFactory() which uses the configuration
-     defined in META-INF/validation.xml
-
-
-By default:
- - if a Bean Validation provider is present in the environment, the JPA provider
-enables the Bean Validation integration features. 
- - if no BeanValidation provider is present in the environment, the JPA provider
-disable the Bean Validation integration features.
-This default behavior is known as the "auto" mode.
-
-QUESTION: should auto encompass ddl the undefined ddl modification behaviors 
-to prevent future backward compatibility headache?
-
-When the mode "callback" is activated, the JPA provider
-enables the callback based Bean Validation integration features or raises an exception if
-no Bean Validation provider is present in the environment.
-
-QUESTION: callback or event?
-
-When the mode "none" is activated, the JPA provider
-does not enable  the Bean Validation integration features.
-
-The validation  mode which defaults to "auto" can be defined via a property
-javax.persistence.validation.mode  (Persistence.VALIDATION_MODE)
-
-Such a flag can be defined via the configuration Map at EMF creation time
-or in META-INF/persistence.xml
-
-//add constants
-public Persistence {
-    /** property key receiving a ValidatorFactory instance as value */
-    public static final String VALIDATOR_FACTORY = "javax.persistence.validation.factory"
-
-    /** property key receiving the validation mode as a String*/
-    public static final String VALIDATOR_FACTORY = "javax.persistence.validation.mode"
-
-   [...]
-}
-</programlisting>
-
-    <programlisting>********* OLD do not read **************
-Java Persistence / Bean Validation integration proposal
-
-Integration between Java Persistence and Bean Validation (BV) happens at two levels:
- - as a metadata provider for DDL generation and generally speaking the behavior of 
-the persistence provider
- - as a validation engine called on entity changes
-
-This proposal will describe both integration levels.
-
-** Metadata provider and DDL generation
-* main proposal
-
-NOTE: this aspect of the proposal will be integrated to JPA after the runtime 
-aspect if time permits.
+    <programlisting>Ideas explored and not standardized
 
 Java Persistence consumes Bean Validation (BV) metadata to enhance persistence property 
 metadata.
 
 A Persistence provider must use the BV metadata of a given list of groups. 
 The default group evaluated is Default (default BV group). Groups evaluated 
-can be overridden by a JPA property javax.persistence.validation.group.metadata. 
-This contains the comma separated groups (fully qualified class name).
+can be overridden by a property. 
+This property contains the comma separated groups (fully qualified class name).
 
 For each entity, apply the following algorithm. 
 For each persistent property in a given entity: 
@@ -8481,15 +8333,6 @@ While most high level constraints will not be recognize, the BV built-in constra
 will be the common language spoken by Persistence Providers. Any high level constraint 
 can be composed of more modular constraints (constraint composition).
 
-* additional proposition: consider JPA annotations as constraint definitions
-Some people have asked for BV to recognize Java Persistence annotations as legit 
-constraint definitions. Besides making BV more complex, I am not sure of the 
-actual benefit of such an approach. I am even doubtful of the value as a legacy 
-migration too. It also raises multiple problems including how to define proper 
-error messages and groups. This proposal seems to be a good candidate for BV 
-provider extension if a provider is interested.
-  =&gt; proposal received no interest from the EG so far
-
 * additional proposal
 In case of a constraint violation report detected and generated by the database 
 (not null, etc), the Java persistence provider catches this report and translates 
@@ -8500,324 +8343,26 @@ constraint violation error (constraintDescriptor.createConstraintViolation(...))
 While this proposal has a lot of value-add, I wonder how difficult it can be to 
 implement this in persistence providers.
 
+Provide a way to disable BV metadata use by a persistence provider (property based).</programlisting>
 
-** Using the Bean Validation (BV) engine inside a Java Persistence provider
-NOTE: This part of the proposition has been worked most extensively by the exert group.
-
-Java Persistence delegates the validation of entities to BV on the following entity events:
-- pre persist (an entity must be valid to be inserted in the DB)
-- pre update (an entity change must be valid before being propagated to the database)
-- pre remove (eg. a Customer still owning some Payments cannot be removed)
-- question has been asked about post load. What would be the value add?
-
-These events are called at the same time as their respective callback methods but
-after all user registered callbacks have been called.
-
-For each event type, a list of groups is targeted for validation. By default, 
-pre persist and pre update events vaildate the group Default (default BV group) 
-and pre remove does not validate any group. Each list can be overridden 
-by a JPA property:
-- javax.persistence.validation.group.pre-persist for pre persist events
-- javax.persistence.validation.group.pre-update for pre update events
-- javax.persistence.validation.group.pre-remove for pre remove events
-
-Each property holds the list of targeted groups (fully qualified class name) 
-separated by a comma.
-
-When any of the pre-cited event is raised on an entity instance 'a' of type A, 
-the persistence provider must validate 'a' by invoking a validator with the 
-targeted groups. If the list of targeted groups is empty, 
-no validation is performed. If the set of constraint violation is not empty, 
-a ValidationException containing a reference to this set of violations is raised.
-
-Question: should we raise the exception at the first invalid object and stop 
-(easy way)? Or should all objects in the persistence context expected 
-to raise a pre-* event be passed to the pre-* events and their constraint 
-violations merged into a single ValidationException
- =&gt; as defined today, the first invalid object will stop and raise an exception
-
-Question: should ValidationException be defined in JPA or BV?
- =&gt; BV seems a more natural place
-
-** Lazy loaded state boundaries
-
-Validator instances used to validate entities on pre-* events must use a TraversableResolver 
-implementing the following logic:
- - Lazy properties or associations must not be traversed
- - Single or multi valued associations pointing to entities must not be traversed
-
-A work is in progress to define a static method provider-agnostic to determine the 
-fetching state of a property
-eg. boolean Persistence.isLoaded(Object objectHostingTheProperty, String property)
-
-This TraversableResolver implementation is provided and injected by the persistence
-provider. This implementation is not exposed.
-
-The TraversableResolver instance is passed to Bean Validation through
-ValidatorFactory.usingContext().traversableResolver(jpaSpecificTR).getValidator();
-The Validator instance retrieved is used by the persistence provider to validate the 
-entities on pre-* events.
-
-The TraversableRsolver rules guarantee that:
- - no lazy property nor association will be loaded by side effect
- - no entity will be validated more than once even if it is reachable through @Valid several 
-times due to multiple entities changing state. 
-A consequence is that JPA cascading and BV cascading are orthogonal for entity associations.
-
-QUESTION: should embeddable objects be validated even if not marked as @Valid? 
- =&gt; Inclined to say no.
-
-
-Outside JPA, and if BV validates object graphs loaded by JPA,
-BV needs to determine the lazy loaded state boundaries.
-BV needs to know whether or not an entity / property is loaded or lazy. 
-Java Persistence should expose a way to determine this.
-Because BV must work on detached objects and on objects made of potentially 
-multiple EMF, this contract should be persistence provider agnostic.
-
-Persistence.isLoaded(Object objectHostingTheProperty, String property) currently
-discussed should fulfill such contract.
-
-When the container (say EE) knows that only a single (ie the default) persistence 
-provider is available in the classpath, it can implement a potentially optimized 
-TraversableResolver that does not rely on 
-Persistence.isLoaded(Object objectHostingTheProperty, String property). This decision
-is left to the EE implementor.
-
-
-** Interactions between Persistence and Validation Providers
-
-BV metadata APIs and runtime are available via Validator instances provided by
-a ValidatorFactory. BV recommends to cache ValidatorFactory instances while 
-retrieving Validators on demand.
-Because the ValidatorFactory provides metadata informations to the JPA provider, 
-it will be built at or before an EntityManagerFactory initialization.
-
-Providing the ValidatorFactory
--- in EE
-A ValidatorFactory is made available at the platform level by the Java EE container. This
-ValidationFactory instance is passed to the persistence provider via the PersistenceUnitInfo.
-(this point is still under discussion in the expert group) 
-
--- in SE
-Out of container, the Persistence provider accesses the ValidatorFactory in two ways:
- - it is provided by the application via the configuration Map of 
-     Persistence.createEntityManagerFactory(Map). The property name is 
-     javax.persistence.validation_factory (constant in Persistence?)
- - if not provided by the user, the VF is instantiated using the default bootstrap
-     approach. ie Validation.getBuilder().build() which uses the configuration
-     defined in META-INF/validation.xml
-
-Note that in the SE case, if the application uses Validation directly, it should
-implement a TraversableResolver that does not cross lazy state boundaries
-(the implementation is trivial if we have Persistence.isLoaded).
-
-The BV / JPA integration features are enabled by default (provided a Bean Validation 
-provider is available in the classpath). It is possible to disable them using
-javax.persistence.validation.mode metadata|event|all (should metadata be renamed DDL?)
-Such a flag can be defined in META-INF/persistence.xml (JPA level).
-  =&gt; the default value (ie activated by default or not) is under discussion by the EG</programlisting>
+    <para>This is not an endorsement of the Java Persistence expert group or
+    the Bean Validation expert group. Such approach may or may not be
+    standardized in the future. Such integration should not be considered
+    portable.</para>
   </appendix>
 
   <appendix id="appendix-jsf">
-    <title>Proposal for Java Server Faces 2.0 integration</title>
+    <title>Java Server Faces 2.0 integration</title>
 
-    <para>This proposal has been built with the help of the Java Server Faces
-    2.0 expert group for evaluation. This proposal does not bind the Java
-    Server faces 2.0 expert group and is here to give a global picture of how
-    Bean Validation can be brought to the EE ecosystem.</para>
-
-    <programlisting>Motivation
---------------
-
-To provide bean based validation support in the view layer. This
-supports the DRY principle.  The community has trialed this approach
-for a couple of years with Hibernate Validator and Seam or MyFaces
-extval. As Bean Validation, JSR 303, will be standardized for EE6, we
-propose to introduce changes to better support for delegating validation
-to an external validation framework and explicit support for Bean
-Validation to JSF2.
-
-Proposal
-------------
-A) GENERAL CHANGES
-
-1) Add a context-param, javax.faces.VALIDATE_EMPTY_FIELDS, by default auto. 
-If true, all submitted fields will be validated. This is necessary to delegate 
-validation of whether a field can be null/empty to the model validator.
-If false, empty values will not be passed to the validators.
-If auto, the default will be true only if Bean Validation
-is in the environment, false otherwise (keeps backward compatibility)
-
-BACKWARDS COMPATIBILITY NOTE:
-
-JSF 2 validators must not fail on non-null empty values; for a JSF 1.2
-validator to work with JSF2 and VALIDATE_EMPTY_FIELDS, it must be be
-safe to use with non-null, empty values. If a non-safe validator is
-used, validate-empty-fields should be set to false.
-
-2) Add these elements:
-
-&lt;application&gt;
-&lt;default-validators&gt;
-&lt;validator-id /&gt;
-
-and
-
-public abstract void addDefaultValidatorId(String validatorId);
-public abstract Iterator&lt;String&gt; getDefaultValidatorIds();
-
-to javax.faces.application.Application.
-
-The JSF implementation should add the validator to all
-EditableValueHolders after any locally defined validators.
-
-If Bean Validation is present in the environment, and if no default 
-validator is explicitly specified (either via face-confg.xml or via 
-programmatic API), the validator with id javax.faces.Bean is 
-considered the default validator.
-NOTE: if an application or a container override the default validator 
-list (face-config.xml or programmatic API) and wish to keep integration 
-with Bean Validation, it must manually add javax.faces.Bean to the list.
-
-B) SPECIFIC SUPPORT FOR JSR-303
-
-3) Add javax.faces.validator.BeanValidator with id
-javax.faces.Bean. The property validationGroups on BeanValidator is
-used to allow the view designer to specify a comma separated list of
-groups which should be validated. A group is represented by the fully
-qualified class name of its interface. If the validationGroups attribute is
-omitted, the Default (javax.validation.groups.Default) group will be used. 
-If the model validator is set as the default validator, this tag can be 
-used to specify validation groups for this input.
-
-The BeanValidator requires a version of EL which supports
-ValueExpression.getReference(elContext).getProperty(). The validate() method should inspect 
-the parent EditableValueHolder and discover the ValueExpression specified 
-for the "value" attribute, and from it the EL expression's resolved 
-base and property using:
-
-ValueReference ref = valueExpression.getReference(elContext);
-String property = ref.getProperty();
-Object base = ref.getBase();
-
-The BeanValidator acquires 
-javax.validator.ValidatorFactory as defined in 5;
-it may keep an application scoped cache of it.
-The Validator instance should be acquired as defined in 4) and
-Validator.validateValue(property, value,
-validationGroups); called to find any validation errors.
-
-Bean Validation returns multiple validation constraint failures from a
-single validator, whilst JSF is limited to returning a single validation
-failure; lifting this constrain is outside the scope of JSF2, but may be
-addressed in the future.  The model validator may take any constraint
-failure and use it to throw a ValidatorException. The FacesMessage
-created for the ValidatorException should have SEVERITY_ERROR, a message
-summary taken from the validation error message taken from the Bean
-Validation validation error and the detail message should be null.
-
-4) To ensure proper localization of the messages, JSF should provide a
-custom BV MessageInterpolator resolving the Locale according to JSF defaults
-and delegating to the default MessageInterpolator as defined in 
-ValidationFactory.getMessageInterpolator()
-
-A possible implementation is described as followed
-
-public class class JsfMessageInterpolator implements MessageInterpolator {
-    private final MessageInterpolator delegate;
-
-    public JsfMessageInterpolator(MessageInterpolator delegate) { 
-        this.delegate = delegate; 
-    }
-
-    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
-                              Object value) {
-        Locale locale = FacesContext.getCurrentInstance().getViewRoot().getLocale();
-        return this.delegate.interpolate(
-                        message, constraintDescriptor, value, locale );
-    }
-
-    public String interpolate(String message, ConstraintDescriptor constraintDescriptor, 
-                              Object value, Locale locale) {
-        return this.delegate.interpolate(message, constraintDescriptor, value, locale);
-    }
-}
-
-Assuming a ValidatorFactory, JSF receives a Validator instance by providing the custom message
-interpolator to the validator state.
-
-//could be cached
-MessageInterpolator jsfMessageInterpolator = new JsfMessageInterpolator( 
-                  validatorFactory.getMessageInterpolator() );
-
-//...
-
-Validator validator = validatorFactory
-          .usingContext()
-          .messageInterpolator(jsfMessageInterpolator)
-          .getValidator();
-
-5) ValidatorFactory are retrieved using the following algorithm:
- - if the servlet context contains a ValidatorFactory instance under the attribute named 
-javax.faces.validator.beanValidator.ValidatorFactory, this instance is used by
-JSF to acquire Validator instances
- - if the servlet context does not contain such entry, JSF looks for a Bean Validation
-provider in the classpath. If present, the standard Bean Validation bootstrap strategy 
-is used. If not present, Bean Validation integration is disabled.
-
-The standard Bean Validation bootstrap procedure is shown here
-ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory();
-
-If the BeanValidator is used and no ValidatorFactory can be retrieved,
-an exception is raised.
-
-VALIDATOR_FACTORY_KEY is a static final String hosted on BeanValidator whose value 
-is javax.faces.validator.beanValidator.ValidatorFactory
-
-
-6) Add a &lt;f:validateBean /&gt; tag. When nested in an EditableValueHolder
-this should add the BeanValidator
-
-7) JSR-303 allows the user to validate a graph of objects, JSF will not
-support graph validation.
-
-8) An subtree of components, for example a form, can be validated by
-directly nesting a &lt;f:validateBean /&gt; element. Validating an entire
-form is especially useful if you are not using the BeanValidator as the
-default validator, or you want to set a validationGroup for the entire
-form. The &lt;f:validateBean /&gt; should not render a UIComponent. Any
-validationGroups specified at this level should be used when validating
-each component in the subtree. Any validationGroups defined on
-&lt;f:validateBean /&gt; nested in an EditableValueHolder take precedence
-over the validationGroups defined for the subtree.
-
-9) If JSF is running in EE then bean validation will be present in the
-environment and activated in JSF (see rules 1) and 2) ).
-The EE container will also make ValidatorFactory available as an 
-attribute in the ServletContext at
-"javax.faces.validator.beanValidator.ValidatorFactory"
-
-10) It is possible to disable the default validator for a field/a subtree
-by using the disabled attribute: &lt;h:inputText ...&gt; &lt;f:validateBean
-disabled="true" /&gt; &lt;/h:inputText&gt; This is useful when you are using the
-ModelValidator as the default validator, or validating an entire form
-
-C) AJAX VALIDATION
-
-11) JSF2's Ajax support transparently supports Ajax validation for any JSF
-validator, including the BeanValidator. For example you could enable
-ajax validation for the onBlur event of an input field:
-
-&lt;h:inputText value="#{item.name}"&gt;
-&lt;f:ajaxRequest execute="none" render="none" /&gt;
-&lt;/h:inputText&gt;</programlisting>
+    <para>Integration with Java Server Faces is described in the Java Server
+    Faces 2 specification (JSR-314). Presentation frameworks are encouraged to
+    study the integration work done with JSF 2.</para>
   </appendix>
 
   <appendix id="appendix-ee">
     <title>Proposal for Java EE integration</title>
 
-    <para>This proposal has not been discussed with the EE expert group but
+    <para>This proposal is being discussed with the EE expert group. It
     proposes a way to smoothly integrates Bean Validation to the platform.
     This proposition is the result of the work done on JSF and JPA
     integrations.</para>
@@ -8848,11 +8393,9 @@ ajax validation for the onBlur event of an input field:
     (<literal>Persistence.VALIDATOR_FACTORY</literal>).</para>
 
     <para>The container places the <classname>ValidatorFactory</classname>
-    instance into the <classname>ServletContext</classname> in the following
-    attribute name entry
-    <literal>javax.faces.validator.beanValidator.ValidatorFactory</literal>.
-    JSF 2 implementations are required to look in this entry for any
-    <classname>ValidatorFactory</classname> and use it.</para>
+    instance uner the following JNDI name. JSF 2 implementations are required
+    to look in this entry for any <classname>ValidatorFactory</classname> and
+    use it.</para>
 
     <para>In addition, <classname>Validator</classname> and
     <classname>ValidatorFactory</classname> should be considered as Java EE
