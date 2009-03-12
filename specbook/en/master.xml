@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.CR1.20090309</releaseinfo>
+    <releaseinfo>1.0.CR1.20090312</releaseinfo>
 
-    <pubdate>2009-03-09</pubdate>
+    <pubdate>2009-03-12</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -4178,60 +4178,76 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
  * @author Hardy Ferentschik
  */
 public interface MessageInterpolator {
-    /**
-     * Interpolate the message from the constraint parameters and the actual validated object.
-     * The locale is defaulted according to the &lt;code&gt;MessageInterpolator&lt;/code&gt; implementation
-     * See the implementation documentation for more detail.
-     *
-     * @param message The message to interpolate.
-     * @param constraintDescriptor The constraint descriptor.
-     * @param value The object being validated
-     *
-     * @return Interpolated error message.
-     */
-    String interpolate(String message,
-                       ConstraintDescriptor&lt;?&gt; constraintDescriptor,
-                       Object value);
+	/**
+	 * Interpolate the message from the constraint parameters and the actual validated object.
+	 * The locale is defaulted according to the &lt;code&gt;MessageInterpolator&lt;/code&gt; implementation
+	 * See the implementation documentation for more detail.
+	 *
+	 * @param messageTemplate The message to interpolate.
+	 * @param context contextual information related to the interpolation
+	 *
+	 * @return Interpolated error message.
+	 */
+	String interpolate(String messageTemplate,
+					   Context context);
 
-    /**
-     * Interpolate the message from the constraint parameters and the actual validated object.
-     * The Locale used is provided as a parameter
-     *
-     * @param message The message to interpolate.
-     * @param constraintDescriptor The constraint descriptor.
-     * @param value The object being validated
-     * @param locale the locale targeted for the message
-     *
-     * @return Interpolated error message.
-     */
-    String interpolate(String message,
-                       ConstraintDescriptor&lt;?&gt; constraintDescriptor,
-                       Object value,
-                       Locale locale);
+	/**
+	 * Interpolate the message from the constraint parameters and the actual validated object.
+	 * The Locale used is provided as a parameter
+	 *
+	 * @param messageTemplate The messageTemplate to interpolate.
+	 * @param context contextual information related to the interpolation
+	 * @param locale the locale targeted for the message
+	 *
+	 * @return Interpolated error message.
+	 */
+	String interpolate(String message,
+					   Context context,
+					   Locale locale);
+
+	/**
+	 * Informations related to the interpolation context
+	 */
+	static interface Context {
+		/**
+		 * @return ConstraintDescriptor corresponding to the constraint being validated
+		 */
+		ConstraintDescriptor&lt;?&gt; getConstraintDescriptor();
+
+		/**
+		 * @return value being validated
+		 */
+		Object getValidatedValue();
+	}
 }</programlisting>
 
-        <para><parameter>message</parameter> is the message descriptor as seen
-        in <literal>@ConstraintAnnotation.message</literal> or provided to the
-        <classname>ConstraintContext</classname> methods.</para>
+        <para><parameter>messageTemplate</parameter> is the message descriptor
+        as seen in <literal>@ConstraintAnnotation.message</literal> or
+        provided to the <classname>ConstraintContext</classname>
+        methods.</para>
 
-        <para><parameter>constraintDescriptor</parameter> is the
+        <para>The <classname>Context</classname> object contains contextual
+        informations related to the interpolation.</para>
+
+        <para><parameter>getConstraintDescriptor</parameter> is the
         <classname>ConstraintDescriptor</classname> object representing the
         metadata of the failing constraint (see <xref
         linkend="constraintmetadata" />).</para>
 
-        <para><parameter>value</parameter> is the value being
+        <para><parameter>getValidatedValue</parameter> is the value being
         validated.</para>
 
         <para><methodname>MessageInterpolator.interpolate(String,
-        ConstraintDescriptor&lt;?&gt;, Object)</methodname> is invoked for
-        each constraint violation report generated. The default
-        <classname>Locale</classname> is implementation specific.</para>
+        Context)</methodname> is invoked for each constraint violation report
+        generated. The default <classname>Locale</classname> is implementation
+        specific.</para>
 
-        <para><methodname>MessageInterpolator.interpolate(String,
-        ConstraintDescriptor&lt;?&gt;, Object, Locale)</methodname> can be
-        invoked by a wrapping <classname>MessageInterpolator</classname> to
-        enforce a specific <classname>Locale</classname> value by bypassing or
-        overriding the default <classname>Locale</classname> strategy.</para>
+        <para><methodname>MessageInterpolator.interpolate(String, Context,
+        Locale)</methodname> can be invoked by a wrapping
+        <classname>MessageInterpolator</classname> to enforce a specific
+        <classname>Locale</classname> value by bypassing or overriding the
+        default <classname>Locale</classname> strategy (see <xref
+        linkend="validationapi-message-examples-specificlocale" />).</para>
 
         <para>A message interpolator implementation shall be
         thread-safe.</para>
@@ -4289,33 +4305,34 @@ myapp.creditcard.error=credit card number not valid</programlisting>
               </row>
 
               <row>
-                <entry>@NotNull</entry>
+                <entry><classname>@NotNull</classname></entry>
 
                 <entry>must not be null</entry>
               </row>
 
               <row>
-                <entry>@Max(30)</entry>
+                <entry><classname>@Max(30)</classname></entry>
 
                 <entry>must be less than or equal to 30</entry>
               </row>
 
               <row>
-                <entry>@Size(min=5, max=15, message="Key must have {min} \\\\
-                \\{{max}\\} characters")</entry>
+                <entry><classname>@Size(min=5, max=15, message="Key must have
+                {min} \\\\ \\{{max}\\} characters")</classname></entry>
 
                 <entry>Key must have {5} \ {15} characters</entry>
               </row>
 
               <row>
-                <entry>@Digits(integer=9, fraction=2)</entry>
+                <entry><classname>@Digits(integer=9,
+                fraction=2)</classname></entry>
 
                 <entry>numeric value out of bounds (&lt;9 digits&gt;.&lt;2
                 digits&gt; expected)</entry>
               </row>
 
               <row>
-                <entry>@CreditCard(message={myapp.creditcard.error})</entry>
+                <entry><classname>@CreditCard(message={myapp.creditcard.error})</classname></entry>
 
                 <entry>credit card number not valid</entry>
               </row>
@@ -4351,18 +4368,17 @@ public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
      * enforece the locale passed to the interpolator
      */
     public String interpolate(String message, 
-                              ConstraintDescriptor&lt;?&gt; constraintDescriptor, 
-                              Object value) {
-        return defaultInterpolator.interpolate(message, constraintDescriptor, 
-                                           value, this.defaultLocale);
+                              Context context) {
+        return defaultInterpolator.interpolate(message, 
+                                               context, 
+                                               this.defaultLocale);
     }
 
     // no real use, implemented for completeness
     public String interpolate(String message,
-                              ConstraintDescriptor&lt;?&gt; constraintDescriptor,
-                              Object value,
+                              Context context,
                               Locale locale) {
-        return defaultInterpolator.interpolate(message, constraintDescriptor, value, locale);
+        return defaultInterpolator.interpolate(message, context, locale);
     }
 }
 
@@ -4388,8 +4404,8 @@ Validator validator = validatorFactory.usingContext()
         default locale.<!--TODO Rework this example as it is not reality--></para>
 
         <example id="validationapi-message-examples-jsflocale">
-          <title>Contextual container possible MessageInterpolator
-          implementation</title>
+          <title>Contextual container possible
+          <classname>MessageInterpolator</classname> implementation</title>
 
           <programlisting>public class ContextualMessageInterpolator {
     private final MessageInterpolator delegate;
@@ -4398,16 +4414,14 @@ Validator validator = validatorFactory.usingContext()
         this.delegate = delegate; 
     }
 
-    public String interpolate(String message, ConstraintDescriptor&lt;?&gt; constraintDescriptor, 
-                              Object value) {
+    public String interpolate(String message, Context context) {
         Locale locale = Container.getManager().getUserLocale();
         return this.delegate.interpolate(
-                        message, constraintDescriptor, value, locale );
+                        message, context, locale );
     }
 
-    public String interpolate(String message, ConstraintDescriptor&lt;?&gt; constraintDescriptor, 
-                              Object value, Locale locale) {
-        return this.delegate.interpolate(message, constraintDescriptor, value, locale);
+    public String interpolate(String message, Context context, Locale locale) {
+        return this.delegate.interpolate(message, context, locale);
     }
 }
 
