@@ -6531,8 +6531,8 @@ assert propertyDescriptor.isCascaded()</programlisting>
 
     <note>
       <para><classname>ConstraintValidator</classname> implementations can be
-      overridden including for built-in constraints using the XML mapping (see
-      <xref linkend="xml-mapping-constraintdefinition" />).</para>
+      overridden including for built-in constraints by using the XML mapping
+      (see <xref linkend="xml-mapping-constraintdefinition" />).</para>
     </note>
 
     <para>All built-in constraints are in the
@@ -6675,49 +6675,48 @@ public @interface AssertFalse {
       <title>@Min constraint</title>
 
       <programlisting>/**
- * The annotated element must be a number whose value must be greater or
- * equal than the specificed minimum
+ * The annotated element must be a number whose value must be higher or
+ * equal to the specified minimum.
  * &lt;p/&gt;
  * Supported types are:
  * &lt;ul&gt;
  * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;Number&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;,
- * &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, 
+ * and their respective wrappers&lt;/li&gt;
  * &lt;/ul&gt;
+ * Note that &lt;code&gt;double&lt;/code&gt; and &lt;code&gt;float&lt;/code&gt; are not supported due to rounding errors
+ * (some providers might provide some approximative support)
  * &lt;p/&gt;
  * &lt;code&gt;null&lt;/code&gt; elements are considered valid
  *
  * @author Emmanuel Bernard
- * @todo Is string supported or not?
  */
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
 public @interface Min {
-    String message() default "{constraint.min}";
+	String message() default "{constraint.min}";
 
-    Class&lt;?&gt;[] groups() default { };
+	Class&lt;?&gt;[] groups() default { };
 
-    /**
-     * @return Value the element must be higher or equal to
-     */
-    long value();
+	/**
+	 * @return value the element must be higher or equal to
+	 */
+	long value();
 
-    /**
-     * Defines several @Min annotations on the same element
-     * @see javax.validation.constraints.Min
-     *
-     * @author Emmanuel Bernard
-     */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        Min[] value();
-    }
+	/**
+	 * Defines several @Min annotations on the same element
+	 * @see {@link Min}
+	 *
+	 * @author Emmanuel Bernard
+	 */
+	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	@interface List {
+		Min[] value();
+	}
 }</programlisting>
     </example>
 
@@ -6726,48 +6725,151 @@ public @interface Min {
 
       <programlisting>/**
  * The annotated element must be a number whose value must be lower or
- * equal than the specificed maximum.
+ * equal to the specified maximum.
  * &lt;p/&gt;
  * Supported types are:
  * &lt;ul&gt;
  * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;Number&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, 
- * &lt;code&gt;float&lt;/code&gt;, &lt;code&gt;double&lt;/code&gt;&lt;/li&gt;
+ * and their respective wrappers&lt;/li&gt;
  * &lt;/ul&gt;
+ * Note that &lt;code&gt;double&lt;/code&gt; and &lt;code&gt;float&lt;/code&gt; are not supported due to rounding errors
+ * (some providers might provide some approximative support)
  * &lt;p/&gt;
  * &lt;code&gt;null&lt;/code&gt; elements are considered valid
  *
  * @author Emmanuel Bernard
- * @todo Is string supported or not?
  */
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
 public @interface Max {
-    String message() default "{constraint.max}";
+	String message() default "{constraint.max}";
 
-    Class&lt;?&gt;[] groups() default { };
+	Class&lt;?&gt;[] groups() default { };
 
-    /**
-     * @return Value the element must be lower or equal to
-     */
-    long value();
+	/**
+	 * @return value the element must be lower or equal to
+	 */
+	long value();
 
-    /**
-     * Defines several @Max annotations on the same element
-     * @see Max
-     *
-     * @author Emmanuel Bernard
-     */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        Max[] value();
-    }
+	/**
+	 * Defines several @Max annotations on the same element
+	 * @see {@link Max}
+	 *
+	 * @author Emmanuel Bernard
+	 */
+	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	@interface List {
+		Max[] value();
+	}
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@DecimalMin constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a number whose value must be higher or
+ * equal to the specificed minimum.
+ * &lt;p/&gt;
+ * Supported types are:
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;,
+ * and their respective wrappers&lt;/li&gt;
+ * &lt;/ul&gt;
+ * Note that &lt;code&gt;double&lt;/code&gt; and &lt;code&gt;float&lt;/code&gt; are not supported due to rounding errors
+ * (some providers might provide some approximative support)
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface DecimalMin {
+	String message() default "{constraint.decimalmin}";
+
+	Class&lt;?&gt;[] groups() default { };
+
+	/**
+	 * The String representation of the min value according to the
+	 * BigDecimal string representation
+	 * @return value the element must be higher or equal to
+	 */
+	String value();
+
+	/**
+	 * Defines several @DecimalMin annotations on the same element
+	 * @see {@link DecimalMin}
+	 *
+	 * @author Emmanuel Bernard
+	 */
+	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	@interface List {
+		DecimalMin[] value();
+	}
+}</programlisting>
+    </example>
+
+    <example>
+      <title>@DecimalMax constraint</title>
+
+      <programlisting>/**
+ * The annotated element must be a number whose value must be lower or
+ * equal to the specified maximum.
+ * &lt;p/&gt;
+ * Supported types are:
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;,
+ * and their respective wrappers&lt;/li&gt;
+ * &lt;/ul&gt;
+ * Note that &lt;code&gt;double&lt;/code&gt; and &lt;code&gt;float&lt;/code&gt; are not supported due to rounding errors 
+ * (some providers might provide some approximative support)
+ * &lt;p/&gt;
+ * &lt;code&gt;null&lt;/code&gt; elements are considered valid
+ *
+ * @author Emmanuel Bernard
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+@Documented
+public @interface DecimalMax {
+	String message() default "{constraint.decimalmax}";
+
+	Class&lt;?&gt;[] groups() default { };
+
+	/**
+	 * The String representation of the max value according to the
+	 * BigDecimal string representation
+	 * @return value the element must be lower or equal to
+	 */
+	String value();
+
+	/**
+	 * Defines several @DecimalMax annotations on the same element
+	 * @see {@link DecimalMax}
+	 *
+	 * @author Emmanuel Bernard
+	 */
+	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	@interface List {
+		DecimalMax[] value();
+	}
 }</programlisting>
     </example>
 
