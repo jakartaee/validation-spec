@@ -9,7 +9,7 @@
 
     <releaseinfo>1.0.CR1 Proposed Final Draft</releaseinfo>
 
-    <pubdate>2009-03-15</pubdate>
+    <pubdate>2009-03-16</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -770,41 +770,41 @@ public @interface FrenchZipcode {
 @Retention(RUNTIME)
 @Target({ METHOD })
 public @interface OverridesAttribute {
-	/**
-	 * @return Constraint type the attribute is overriding
-	 */
-	Class&lt;? extends Annotation&gt; constraint();
+    /**
+     * @return Constraint type the attribute is overriding
+     */
+    Class&lt;? extends Annotation&gt; constraint();
 
-	/**
-	 * Name of the Constraint attribute overridden.
-	 * Defaults to the name of the attribute hosting OverridesAttribute.
-	 *
-	 * @return name of constraint attribute overridden.
-	 */
-	String name();
+    /**
+     * Name of the Constraint attribute overridden.
+     * Defaults to the name of the attribute hosting OverridesAttribute.
+     *
+     * @return name of constraint attribute overridden.
+     */
+    String name();
 
-	/**
-	 * The index of the targeted constraint declaration when using
-	 * multiple constraints of the same type.
-	 * The index represents the index of the constraint in the value() array.
-	 *
-	 * By default, no index is defined and the single constraint declaration
-	 * is targeted
-	 *
-	 * @return constraint declaration index if multivalued annotation is used
-	 */
-	int constraintIndex() default -1;
+    /**
+     * The index of the targeted constraint declaration when using
+     * multiple constraints of the same type.
+     * The index represents the index of the constraint in the value() array.
+     *
+     * By default, no index is defined and the single constraint declaration
+     * is targeted
+     *
+     * @return constraint declaration index if multivalued annotation is used
+     */
+    int constraintIndex() default -1;
 
-	/**
-	 * Defines several @OverridesAttribute annotations on the same element
-	 * @see {@link OverridesAttribute}
-	 */
-	@Documented
-	@Target({ METHOD })
-	@Retention(RUNTIME)
-	public @interface List {
-		OverridesAttribute[] value();
-	}
+    /**
+     * Defines several @OverridesAttribute annotations on the same element
+     * @see {@link OverridesAttribute}
+     */
+    @Documented
+    @Target({ METHOD })
+    @Retention(RUNTIME)
+    public @interface List {
+        OverridesAttribute[] value();
+    }
 }</programlisting>
 
       <para>The following elements uniquely identify an overridden constraint
@@ -861,28 +861,28 @@ public @interface OverridesAttribute {
  * @author Hardy Ferentschik
  */
 public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
-	/**
-	 * Initialize the validator in preparation for isValid calls.
-	 * The onstraint annotation for a given constraint declaration
-	 * is passed.
-	 * &lt;p/&gt;
-	 * This method is guaranteed to be called before any of the other Constraint
-	 * implementation methods
-	 *
-	 * @param constraintAnnotation annotation instance for a given constraint declaration
-	 */
-	void initialize(A constraintAnnotation);
+    /**
+     * Initialize the validator in preparation for isValid calls.
+     * The onstraint annotation for a given constraint declaration
+     * is passed.
+     * &lt;p/&gt;
+     * This method is guaranteed to be called before any of the other Constraint
+     * implementation methods
+     *
+     * @param constraintAnnotation annotation instance for a given constraint declaration
+     */
+    void initialize(A constraintAnnotation);
 
-	/**
-	 * Implement the validation logic.
-	 * &lt;code&gt;value&lt;/code&gt; state must not be altered.
-	 *
-	 * @param value object to validate
-	 * @param constraintValidatorContext context in which the constraint is evaluated
-	 *
-	 * @return false if &lt;code&gt;value&lt;/code&gt; does not pass the constraint
-	 */
-	boolean isValid(T value, ConstraintValidatorContext constraintValidatorContext);
+    /**
+     * Implement the validation logic.
+     * &lt;code&gt;value&lt;/code&gt; state must not be altered.
+     *
+     * @param value object to validate
+     * @param constraintValidatorContext context in which the constraint is evaluated
+     *
+     * @return false if &lt;code&gt;value&lt;/code&gt; does not pass the constraint
+     */
+    boolean isValid(T value, ConstraintValidatorContext constraintValidatorContext);
 }</programlisting>
 
       <para>Some restrictions apply on the generic type
@@ -1005,58 +1005,58 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
  * @author Emmanuel Bernard
  */
 public interface ConstraintValidatorContext {
-	/**
-	 * Disable the default error message and default ConstraintViolation object generation.
-	 * Useful to set a different error message or generate a ConstraintViolation based on
-	 * a different property
-	 *
-	 * @see #addError(String)
-	 * @see #addError(String, String)
-	 */
-	void disableDefaultError();
+    /**
+     * Disable the default error message and default ConstraintViolation object generation.
+     * Useful to set a different error message or generate a ConstraintViolation based on
+     * a different property
+     *
+     * @see #addError(String)
+     * @see #addError(String, String)
+     */
+    void disableDefaultError();
 
-	/**
-	 * @return the current uninterpolated default message
-	 */
-	String getDefaultErrorMessage();
+    /**
+     * @return the current uninterpolated default message
+     */
+    String getDefaultErrorMessage();
 
-	/**
-	 * Add a new error message. This error message will be interpolated.
-	 * &lt;p/&gt;
-	 * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
-	 * per error message including the default one unless {@link #disableDefaultError()} has been called.
-	 * &lt;p/&gt;
-	 * Aside from the error message, &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
-	 * contain the same contextual information (root bean, path and so on)
-	 * &lt;p/&gt;
-	 * This method can be called multiple times. One &lt;code&gt;ConstraintViolation&lt;/code&gt; instance per
-	 * call is created.
-	 *
-	 * @param message new uninterpolated error message.
-	 */
-	void addError(String message);
+    /**
+     * Add a new error message. This error message will be interpolated.
+     * &lt;p/&gt;
+     * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
+     * per error message including the default one unless {@link #disableDefaultError()} has been called.
+     * &lt;p/&gt;
+     * Aside from the error message, &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
+     * contain the same contextual information (root bean, path and so on)
+     * &lt;p/&gt;
+     * This method can be called multiple times. One &lt;code&gt;ConstraintViolation&lt;/code&gt; instance per
+     * call is created.
+     *
+     * @param message new uninterpolated error message.
+     */
+    void addError(String message);
 
-	/**
-	 * Add a new error message to a given sub property &lt;code&gt;property&lt;/code&gt;. The subproperty
-	 * is relative to the path tot he bean or property hosting the constraint.
-	 *
-	 * This error message will be interpolated.
-	 * &lt;p/&gt;
-	 * If &lt;code&gt;isValid&lt;/code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
-	 * per error message including the default one unless {@link #disableDefaultError()}
-	 * has been called.
-	 * &lt;p/&gt;
-	 * Aside from the error message and the property path, &lt;code&gt;ConstraintViolation&lt;/code&gt; objects
-	 * generated from such a call contain the same contextual information
-	 * (root bean, leaf bean etc)
-	 * &lt;p/&gt;
-	 * This method can be called multiple times. One &lt;code&gt;ConstraintViolation&lt;/code&gt; instance per
-	 * call is created.
-	 *
-	 * @param message new uninterpolated error message.
-	 * @param property property name the &lt;/code&gt;ConstraintViolation&lt;/code&gt; is targeting.
-	 */
-	void addError(String message, String property);
+    /**
+     * Add a new error message to a given sub property &lt;code&gt;property&lt;/code&gt;. The subproperty
+     * is relative to the path tot he bean or property hosting the constraint.
+     *
+     * This error message will be interpolated.
+     * &lt;p/&gt;
+     * If &lt;code&gt;isValid&lt;/code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
+     * per error message including the default one unless {@link #disableDefaultError()}
+     * has been called.
+     * &lt;p/&gt;
+     * Aside from the error message and the property path, &lt;code&gt;ConstraintViolation&lt;/code&gt; objects
+     * generated from such a call contain the same contextual information
+     * (root bean, leaf bean etc)
+     * &lt;p/&gt;
+     * This method can be called multiple times. One &lt;code&gt;ConstraintViolation&lt;/code&gt; instance per
+     * call is created.
+     *
+     * @param message new uninterpolated error message.
+     * @param property property name the &lt;/code&gt;ConstraintViolation&lt;/code&gt; is targeting.
+     */
+    void addError(String message, String property);
 }</programlisting>
 
       <para>The <classname>ConstraintValidatorContext</classname> interface
@@ -1686,7 +1686,7 @@ public class User {
 @Target({ TYPE })
 @Retention(RUNTIME)
 public @interface GroupSequence {
-	Class&lt;?&gt;[] value();
+    Class&lt;?&gt;[] value();
 }</programlisting>
 
         <para>Here is a usage example</para>
@@ -3329,60 +3329,60 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  */
 public interface Validator {
     /**
-	 * Validates all constraints on object.
-	 *
-	 * @param object object to validate
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+     * Validates all constraints on object.
+     *
+     * @param object object to validate
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
-	/**
-	 * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; 
-	 * of &lt;code&gt;object&lt;/code&gt;
-	 *
-	 * @param object object to validate
-	 * @param propertyName property to validate (ie field and getter constraints)
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
-	 *                                  or not a valid object property
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
-													 String propertyName,
-													 Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt; 
+     * of &lt;code&gt;object&lt;/code&gt;
+     *
+     * @param object object to validate
+     * @param propertyName property to validate (ie field and getter constraints)
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null, if propertyName null, empty
+     *                                  or not a valid object property
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+                                                     String propertyName,
+                                                     Class&lt;?&gt;... groups);
 
-	/**
-	 * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-	 * would the property value be &lt;code&gt;value&lt;/code&gt;
-	 * &lt;p/&gt;
-	 * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
-	 * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
-	 *
-	 * @param beanType the bean type
-	 * @param propertyName property to validate
-	 * @param value property value to validate
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
-	 *                                  or not a valid object property
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
+    /**
+     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
+     * would the property value be &lt;code&gt;value&lt;/code&gt;
+     * &lt;p/&gt;
+     * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
+     * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
+     *
+     * @param beanType the bean type
+     * @param propertyName property to validate
+     * @param value property value to validate
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null, if propertyName null, empty
+     *                                  or not a valid object property
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
                                                   String propertyName,
                                                   Object value,
@@ -4233,46 +4233,46 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
  * @author Hardy Ferentschik
  */
 public interface MessageInterpolator {
-	/**
-	 * Interpolate the message from the constraint parameters and the actual validated
-	 * object.
-	 * The locale is defaulted according to the &lt;code&gt;MessageInterpolator&lt;/code&gt;
-	 * implementation. See the implementation documentation for more detail.
-	 *
-	 * @param messageTemplate The message to interpolate.
-	 * @param context contextual information related to the interpolation
-	 *
-	 * @return Interpolated error message.
-	 */
-	String interpolate(String messageTemplate, Context context);
+    /**
+     * Interpolate the message from the constraint parameters and the actual validated
+     * object.
+     * The locale is defaulted according to the &lt;code&gt;MessageInterpolator&lt;/code&gt;
+     * implementation. See the implementation documentation for more detail.
+     *
+     * @param messageTemplate The message to interpolate.
+     * @param context contextual information related to the interpolation
+     *
+     * @return Interpolated error message.
+     */
+    String interpolate(String messageTemplate, Context context);
 
-	/**
-	 * Interpolate the message from the constraint parameters and the actual validated
-	 * object.
-	 * The Locale used is provided as a parameter.
-	 *
-	 * @param messageTemplate The message to interpolate.
-	 * @param context contextual information related to the interpolation
-	 * @param locale the locale targeted for the message
-	 *
-	 * @return Interpolated error message.
-	 */
-	String interpolate(String messageTemplate, Context context,  Locale locale);
+    /**
+     * Interpolate the message from the constraint parameters and the actual validated
+     * object.
+     * The Locale used is provided as a parameter.
+     *
+     * @param messageTemplate The message to interpolate.
+     * @param context contextual information related to the interpolation
+     * @param locale the locale targeted for the message
+     *
+     * @return Interpolated error message.
+     */
+    String interpolate(String messageTemplate, Context context,  Locale locale);
 
-	/**
-	 * Informations related to the interpolation context
-	 */
-	static interface Context {
-		/**
-		 * @return ConstraintDescriptor corresponding to the constraint being validated
-		 */
-		ConstraintDescriptor&lt;?&gt; getConstraintDescriptor();
+    /**
+     * Informations related to the interpolation context
+     */
+    static interface Context {
+        /**
+         * @return ConstraintDescriptor corresponding to the constraint being validated
+         */
+        ConstraintDescriptor&lt;?&gt; getConstraintDescriptor();
 
-		/**
-		 * @return value being validated
-		 */
-		Object getValidatedValue();
-	}
+        /**
+         * @return value being validated
+         */
+        Object getValidatedValue();
+    }
 }</programlisting>
 
         <para><parameter>messageTemplate</parameter> is the value of the
@@ -4746,31 +4746,31 @@ Validator localizedValidator =
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactory {
-	/**
-	 * @return Returns an initialized &lt;code&gt;Validator&lt;/code&gt; instance using the default
-	 * factory instances for message interpolator and traversable resolver.
-	 * &lt;p&gt;
-	 * Validator instances can be pooled and shared by the implementation.
-	 * &lt;/p&gt;
-	 */
-	Validator getValidator();
+    /**
+     * @return Returns an initialized &lt;code&gt;Validator&lt;/code&gt; instance using the default
+     * factory instances for message interpolator and traversable resolver.
+     * &lt;p&gt;
+     * Validator instances can be pooled and shared by the implementation.
+     * &lt;/p&gt;
+     */
+    Validator getValidator();
 
-	/**
-	 * Define the validator context and return a &lt;code&gt;Validator&lt;/code&gt; compliant
-	 * with this state.
-	 *
-	 * @return a &lt;code&gt;ValidatorContext&lt;/code&gt;.
-	 */
-	ValidatorContext usingContext();
+    /**
+     * Define the validator context and return a &lt;code&gt;Validator&lt;/code&gt; compliant
+     * with this state.
+     *
+     * @return a &lt;code&gt;ValidatorContext&lt;/code&gt;.
+     */
+    ValidatorContext usingContext();
 
-	/**
-	 * Returns the &lt;code&gt;MessageInterpolator&lt;/code&gt; instance configured at
-	 * initialization time for the &lt;code&gt;ValidatorFactory&lt;code&gt;.
-	 * This is the instance used by #getValidator().
-	 *
-	 * @return MessageInterpolator instance.
-	 */
-	MessageInterpolator getMessageInterpolator();
+    /**
+     * Returns the &lt;code&gt;MessageInterpolator&lt;/code&gt; instance configured at
+     * initialization time for the &lt;code&gt;ValidatorFactory&lt;code&gt;.
+     * This is the instance used by #getValidator().
+     *
+     * @return MessageInterpolator instance.
+     */
+    MessageInterpolator getMessageInterpolator();
 }</programlisting>
         </example>
 
@@ -4942,117 +4942,117 @@ Validator validatorUsingCustomTraversable = factory
  */
 public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
 
-	/**
-	 * Ignore data from the META-INF/validation.xml file if this
-	 * method is called.
-	 * This method is typically useful for containers that parse
-	 * META-INF/validation.xml themselves and pass the information
-	 * via the Configuration methods.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T ignoreXmlConfiguration();
+    /**
+     * Ignore data from the META-INF/validation.xml file if this
+     * method is called.
+     * This method is typically useful for containers that parse
+     * META-INF/validation.xml themselves and pass the information
+     * via the Configuration methods.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T ignoreXmlConfiguration();
 
-	/**
-	 * Defines the message interpolator used. Has priority over the configuration
-	 * based message interpolator.
-	 * If null is passed, the default message interpolator is used
-	 * (defined in XML or the specification default).
-	 *
-	 * @param interpolator message interpolator implementation.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T messageInterpolator(MessageInterpolator interpolator);
+    /**
+     * Defines the message interpolator used. Has priority over the configuration
+     * based message interpolator.
+     * If null is passed, the default message interpolator is used
+     * (defined in XML or the specification default).
+     *
+     * @param interpolator message interpolator implementation.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T messageInterpolator(MessageInterpolator interpolator);
 
-	/**
-	 * Defines the traversable resolver used. Has priority over the configuration
-	 * based traversable resolver.
-	 * If null is passed, the default traversable resolver is used
-	 * (defined in XML or the specification default).
-	 *
-	 * @param resolver traversable resolver implementation.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T traversableResolver(TraversableResolver resolver);
+    /**
+     * Defines the traversable resolver used. Has priority over the configuration
+     * based traversable resolver.
+     * If null is passed, the default traversable resolver is used
+     * (defined in XML or the specification default).
+     *
+     * @param resolver traversable resolver implementation.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T traversableResolver(TraversableResolver resolver);
 
-	/**
-	 * Defines the constraint validator factory. Has priority over the configuration
-	 * based constraint factory.
-	 * If null is passed, the default constraint validator factory is used
-	 * (defined in XML or the specification default).
-	 *
-	 * @param constraintValidatorFactory constraint factory inmplementation.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 */
-	T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
+    /**
+     * Defines the constraint validator factory. Has priority over the configuration
+     * based constraint factory.
+     * If null is passed, the default constraint validator factory is used
+     * (defined in XML or the specification default).
+     *
+     * @param constraintValidatorFactory constraint factory inmplementation.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
 
-	/**
-	 * Add a stream describing constraint mapping in the Bean Validation
-	 * XML format.
-	 * &lt;p/&gt;
-	 * The stream should be closed by the client API after the
-	 * &lt;code&gt;ValidatorFactory&lt;/code&gt; has been built. The Bean Validation provider
-	 * must not close the stream.
-	 *
-	 * @param stream XML mapping stream.
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 * @throws IllegalArgumentException if &lt;code&gt;stream&lt;/code&gt; is null
-	 */
-	T addMapping(InputStream stream);
+    /**
+     * Add a stream describing constraint mapping in the Bean Validation
+     * XML format.
+     * &lt;p/&gt;
+     * The stream should be closed by the client API after the
+     * &lt;code&gt;ValidatorFactory&lt;/code&gt; has been built. The Bean Validation provider
+     * must not close the stream.
+     *
+     * @param stream XML mapping stream.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     * @throws IllegalArgumentException if &lt;code&gt;stream&lt;/code&gt; is null
+     */
+    T addMapping(InputStream stream);
 
-	/**
-	 * Add a provider specific property. This property is equivalent to
-	 * XML configuration properties.
-	 * If the underlying provider does not know how to handle the property,
-	 * it must silently ignore it.
-	 * &lt;p/&gt;
-	 * Note: Using this non type-safe method is generally not recommended.
-	 * &lt;p/&gt;
-	 * It is more appropriate to use, if available, the type-safe equivalent provided
-	 * by a specific provider via its Configuration subclass.
-	 * &lt;code&gt;ValidatorFactory factory = Validation.byProvider(ACMEConfiguration.class)
-	 * .configure()
-	 * .providerSpecificProperty(ACMEState.FAST)
-	 * .buildValidatorFactory();
-	 * &lt;/code&gt;
-	 * This method is typically used by containers parsing META-INF/validation.xml
-	 * themselves and injecting the state to the Configuration object.
-	 * &lt;p/&gt;
-	 * If a property with a given name is defined both via this method and in the
-	 * XML configuration, the value set programmatically has priority.
-	 *
-	 * If null is passed as a value, the value defined in XML is used. If no value
-	 * is defined in XML, the property is considered unset.
-	 *
-	 * @param name property name.
-	 * @param value property value.
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-	 *
-	 * @throws IllegalArgumentException if &lt;code&gt;name&lt;/code&gt; is null
-	 */
-	T addProperty(String name, String value);
+    /**
+     * Add a provider specific property. This property is equivalent to
+     * XML configuration properties.
+     * If the underlying provider does not know how to handle the property,
+     * it must silently ignore it.
+     * &lt;p/&gt;
+     * Note: Using this non type-safe method is generally not recommended.
+     * &lt;p/&gt;
+     * It is more appropriate to use, if available, the type-safe equivalent provided
+     * by a specific provider via its Configuration subclass.
+     * &lt;code&gt;ValidatorFactory factory = Validation.byProvider(ACMEConfiguration.class)
+     * .configure()
+     * .providerSpecificProperty(ACMEState.FAST)
+     * .buildValidatorFactory();
+     * &lt;/code&gt;
+     * This method is typically used by containers parsing META-INF/validation.xml
+     * themselves and injecting the state to the Configuration object.
+     * &lt;p/&gt;
+     * If a property with a given name is defined both via this method and in the
+     * XML configuration, the value set programmatically has priority.
+     *
+     * If null is passed as a value, the value defined in XML is used. If no value
+     * is defined in XML, the property is considered unset.
+     *
+     * @param name property name.
+     * @param value property value.
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     *
+     * @throws IllegalArgumentException if &lt;code&gt;name&lt;/code&gt; is null
+     */
+    T addProperty(String name, String value);
 
-	/**
-	 * Return an implementation of the MessageInterpolator interface following the
-	 * default MessageInterpolator defined in the specification:
-	 * - use the ValidationMessages resource bundle to load keys
-	 * - use Locale.getDefault()
-	 *
-	 * @return default MessageInterpolator implementation compliant with the specification
-	 */
-	MessageInterpolator getDefaultMessageInterpolator();
+    /**
+     * Return an implementation of the MessageInterpolator interface following the
+     * default MessageInterpolator defined in the specification:
+     * - use the ValidationMessages resource bundle to load keys
+     * - use Locale.getDefault()
+     *
+     * @return default MessageInterpolator implementation compliant with the specification
+     */
+    MessageInterpolator getDefaultMessageInterpolator();
 
-	/**
-	 * Build a ValidatorFactory implementation.
-	 *
-	 * @return ValidatorFactory
-	 * @throws ValidationException if the ValidatorFactory cannot be built
-	 */
-	ValidatorFactory buildValidatorFactory();
+    /**
+     * Build a ValidatorFactory implementation.
+     *
+     * @return ValidatorFactory
+     * @throws ValidationException if the ValidatorFactory cannot be built
+     */
+    ValidatorFactory buildValidatorFactory();
 }</programlisting>
         </example>
 
@@ -5127,7 +5127,9 @@ public interface ACMEConfiguration
         <example>
           <title>ConfigurationState interface</title>
 
-          <programlisting>/**
+          <programlisting>package javax.validation.spi;
+
+/**
  * Contract between a &lt;code&gt;Configuration&lt;/code&gt; and a
  * &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create a &lt;code&gt;ValidatorFactory&lt;/code&gt;.
  * The configuration artifacts defined in the XML configuration and provided to the
@@ -5410,7 +5412,9 @@ public interface ValidationProviderResolver {
           <example>
             <title>ValidationProvider</title>
 
-            <programlisting>/**
+            <programlisting>package javax.validation.spi;
+
+/**
  * Contract between the validation bootstrap mechanism and the provider engine.
  * &lt;p/&gt;
  * Implementations must have a public no-arg constructor. The construction of a provider
@@ -5420,71 +5424,73 @@ public interface ValidationProviderResolver {
  * @author Hardy Ferentschik
  */
 public interface ValidationProvider {
-	/**
-	 * Return true if &lt;code&gt;configurationClass&lt;/code&gt; is the uniquely identifying 
-	 * Configuration subclass for this provider
-	 * 
-	 * @param configurationClass targeted configuration class.
-	 *
-	 * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;configurationClass&lt;/code&gt; is the Bean Validation Provider
-	 *         sub-interface for Configuration
-	 */
-	boolean isSuitable(Class&lt;? extends Configuration&lt;?&gt;&gt; configurationClass);
+    /**
+     * Return true if &lt;code&gt;configurationClass&lt;/code&gt; is the uniquely identifying 
+     * Configuration subclass for this provider
+     * 
+     * @param configurationClass targeted configuration class.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;configurationClass&lt;/code&gt; is the Bean Validation Provider
+     *         sub-interface for Configuration
+     */
+    boolean isSuitable(Class&lt;? extends Configuration&lt;?&gt;&gt; configurationClass);
 
-	/**
-	 * Returns a Configuration instance implementing the
-	 * &lt;code&gt;configurationClass&lt;/code&gt; interface.
-	 * The returned Configuration instance must use the current provider (&lt;code&gt;this&lt;/code&gt;)
-	 * to build the ValidatorFactory instance.
-	 * &lt;p/&gt;
-	 * This method can only be called on providers returning true on
-	 * &lt;code&gt;#isSuitable(configurationClass)&lt;/code&gt;
-	 *
-	 * @param configurationClass the Configuration class type
-	 * @param state bootstrap state
-	 *
-	 * @return specific Configuration implementation
-	 */
-	&lt;T extends Configuration&lt;T&gt;&gt; T createSpecializedConfiguration(
-			BootstrapState state,
-			Class&lt;T&gt; configurationClass);
+    /**
+     * Returns a Configuration instance implementing the
+     * &lt;code&gt;configurationClass&lt;/code&gt; interface.
+     * The returned Configuration instance must use the current provider (&lt;code&gt;this&lt;/code&gt;)
+     * to build the ValidatorFactory instance.
+     * &lt;p/&gt;
+     * This method can only be called on providers returning true on
+     * &lt;code&gt;#isSuitable(configurationClass)&lt;/code&gt;
+     *
+     * @param configurationClass the Configuration class type
+     * @param state bootstrap state
+     *
+     * @return specific Configuration implementation
+     */
+    &lt;T extends Configuration&lt;T&gt;&gt; T createSpecializedConfiguration(
+            BootstrapState state,
+            Class&lt;T&gt; configurationClass);
 
-	/**
-	 * Returns a Configuration instance. This instance is not bound to
-	 * use the current provider. The choice of provider follows the algorithm described
-	 * in {@link javax.validation.Configuration}
-	 * &lt;p/&gt;
-	 * The ValidationProviderResolver used by &lt;code&gt;Configuration&lt;/code&gt;
-	 * is provided by &lt;code&gt;state&lt;/code&gt;.
-	 * If null, the default ValidationProviderResolver is used.
-	 *
-	 * @param state bootstrap state
-	 *
-	 * @return Non specialized Configuration implementation
-	 */
-	Configuration&lt;?&gt; createGenericConfiguration(BootstrapState state);
+    /**
+     * Returns a Configuration instance. This instance is not bound to
+     * use the current provider. The choice of provider follows the algorithm described
+     * in {@link javax.validation.Configuration}
+     * &lt;p/&gt;
+     * The ValidationProviderResolver used by &lt;code&gt;Configuration&lt;/code&gt;
+     * is provided by &lt;code&gt;state&lt;/code&gt;.
+     * If null, the default ValidationProviderResolver is used.
+     *
+     * @param state bootstrap state
+     *
+     * @return Non specialized Configuration implementation
+     */
+    Configuration&lt;?&gt; createGenericConfiguration(BootstrapState state);
 
-	/**
-	 * Build a ValidatorFactory using the current provider implementation. The
-	 * ValidatorFactory is assembled and follows the configuration passed
-	 * via ConfigurationState.
-	 * &lt;p&gt;
-	 * The returned ValidatorFactory is properly initialized and ready for use.
-	 * &lt;/p&gt;
-	 *
-	 * @param configurationState the configuration descriptor
-	 *
-	 * @return the instanciated ValidatorFactory
-	 * @throws javax.validation.ValidationException if the ValidatorFactory cannot be built
-	 */
-	ValidatorFactory buildValidatorFactory(ConfigurationState configurationState);
+    /**
+     * Build a ValidatorFactory using the current provider implementation. The
+     * ValidatorFactory is assembled and follows the configuration passed
+     * via ConfigurationState.
+     * &lt;p&gt;
+     * The returned ValidatorFactory is properly initialized and ready for use.
+     * &lt;/p&gt;
+     *
+     * @param configurationState the configuration descriptor
+     *
+     * @return the instanciated ValidatorFactory
+     * @throws javax.validation.ValidationException if the ValidatorFactory cannot be built
+     */
+    ValidatorFactory buildValidatorFactory(ConfigurationState configurationState);
 }</programlisting>
           </example>
 
           <example>
             <title>BootstrapState interface</title>
 
-            <programlisting>/**
+            <programlisting>package javax.validation.spi;
+
+/**
  * Defines the state used to bootstrap the Configuration
  *
  * @author Emmanuel Bernard
@@ -5712,8 +5718,8 @@ public class Validation {
      * ValidatorFactory factory = configuration.buildValidatorFactory();
      * &lt;/pre&gt;
      * The provider can be specified in the XML configuration. If the XML
-	 * configuration does not exsist or if no provider is specified,
-	 *  the first available provider will be returned.
+     * configuration does not exsist or if no provider is specified,
+     *  the first available provider will be returned.
      *
      * @return instance building a generic &lt;code&gt;Configuration&lt;/code&gt;
      * compliant with the bootstrap state provided.
@@ -5773,7 +5779,9 @@ public class Validation {
         <example>
           <title>GenericBootstrap interface</title>
 
-          <programlisting>/**
+          <programlisting>package javax.validation.bootstrap;
+
+/**
  * Defines the state used to bootstrap Bean Validation and
  * creates a provider agnostic Configuration.
  *
@@ -5827,7 +5835,9 @@ public interface GenericBootstrap {
         <example>
           <title>ProviderSpecificBootstrap interface</title>
 
-          <programlisting>/**
+          <programlisting>package javax.validation.bootstrap;
+
+/**
  * Defines the state used to bootstrap Bean Validation and
  * creates a provider specific Configuration. The specific Configuration
  * sub interface uniquely identifies a provider.
@@ -5842,25 +5852,25 @@ public interface GenericBootstrap {
  */
 public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&gt; {
 
-	/**
-	 * Optionally define the provider resolver implementation used.
-	 * If not defined, use the default ValidationProviderResolver
-	 *
-	 * @param resolver ValidationProviderResolver implementation used
-	 *
-	 * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
-	 */
-	public ProviderSpecificBootstrap&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
+    /**
+     * Optionally define the provider resolver implementation used.
+     * If not defined, use the default ValidationProviderResolver
+     *
+     * @param resolver ValidationProviderResolver implementation used
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     */
+    public ProviderSpecificBootstrap&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
 
-	/**
-	 * Determine the provider implementation suitable for T and delegate
-	 * the creation of this specific Configuration subclass to the provider.
-	 *
-	 * @return a Configuration sub interface implementation
-	 * @throws javax.validation.ValidationException if the Configuration object cannot be built
-	 *                        this is generally due to an issue with the ValidationProviderResolver
-	 */
-	public T configure();
+    /**
+     * Determine the provider implementation suitable for T and delegate
+     * the creation of this specific Configuration subclass to the provider.
+     *
+     * @return a Configuration sub interface implementation
+     * @throws javax.validation.ValidationException if the Configuration object cannot be built
+     *                        this is generally due to an issue with the ValidationProviderResolver
+     */
+    public T configure();
 }</programlisting>
         </example>
 
@@ -6174,37 +6184,37 @@ public interface ElementDescriptor {
  * @author Emmanuel Bernard
  */
 public interface BeanDescriptor extends ElementDescriptor {
-	/**
-	 * Returns true if the bean involves validation:
-	 * &lt;ul&gt;
-	 * &lt;li&gt; a constraint is hosted on the bean itself &lt;/li&gt;
-	 * &lt;li&gt; a constraint is hosted on one of the bean properties &lt;/li&gt;
-	 * &lt;li&gt; or a bean property is marked for cascade (@Valid) &lt;/li&gt;
-	 * &lt;/ul&gt;
-	 *
-	 * @return &lt;code&gt;true&lt;/code&gt; if the bean involves validation, &lt;code&gt;false&lt;/code&gt; otherwise.
-	 */
-	boolean isBeanConstrained();
+    /**
+     * Returns true if the bean involves validation:
+     * &lt;ul&gt;
+     * &lt;li&gt; a constraint is hosted on the bean itself &lt;/li&gt;
+     * &lt;li&gt; a constraint is hosted on one of the bean properties &lt;/li&gt;
+     * &lt;li&gt; or a bean property is marked for cascade (@Valid) &lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if the bean involves validation, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isBeanConstrained();
 
-	/**
-	 * Return the property descriptor for a given property.
-	 * Return &lt;code&gt;null&lt;/code&gt; if the property does not exist or has no
-	 * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
-	 * &lt;p/&gt;
-	 * The returned object (and associated objects including ConstraintDescriptors)
-	 * are immutable.
-	 *
-	 * @param propertyName property evaludated
-	 *
-	 * @return the property descriptor for a given property.
-	 */
-	PropertyDescriptor getConstraintsForProperty(String propertyName);
+    /**
+     * Return the property descriptor for a given property.
+     * Return &lt;code&gt;null&lt;/code&gt; if the property does not exist or has no
+     * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
+     * &lt;p/&gt;
+     * The returned object (and associated objects including ConstraintDescriptors)
+     * are immutable.
+     *
+     * @param propertyName property evaludated
+     *
+     * @return the property descriptor for a given property.
+     */
+    PropertyDescriptor getConstraintsForProperty(String propertyName);
 
-	/**
-	 * @return the property descriptors having at least one constraint defined or which are marked
-	 *         as cascaded (@Valid) or an empty set.
-	 */
-	Set&lt;PropertyDescriptor&gt; getConstrainedProperties();
+    /**
+     * @return the property descriptors having at least one constraint defined or which are marked
+     *         as cascaded (@Valid) or an empty set.
+     */
+    Set&lt;PropertyDescriptor&gt; getConstrainedProperties();
 }</programlisting>
 
       <para><methodname>isBeanConstrained</methodname> returns true if the
@@ -6282,58 +6292,58 @@ public interface PropertyDescriptor extends ElementDescriptor {
  * @author Hardy Ferentschik
  */
 public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
-	/**
-	 * Returns the annotation describing the constraint declaration.
-	 * If a composing constraint, attribute values are reflecting
-	 * the overridden attributes from the composing constraint
-	 *
-	 * @return The annotation for this constraint.
-	 */
-	T getAnnotation();
+    /**
+     * Returns the annotation describing the constraint declaration.
+     * If a composing constraint, attribute values are reflecting
+     * the overridden attributes from the composing constraint
+     *
+     * @return The annotation for this constraint.
+     */
+    T getAnnotation();
 
-	/**
-	 * The Set of groups the constraint is applied on.
-	 * If the constraint declares no group, the &lt;code&gt;Default&lt;/code&gt;
-	 * group is returned.
-	 *
-	 * @return The groups the constraint is applied on.
-	 */
-	Set&lt;Class&lt;?&gt;&gt; getGroups();
+    /**
+     * The Set of groups the constraint is applied on.
+     * If the constraint declares no group, the &lt;code&gt;Default&lt;/code&gt;
+     * group is returned.
+     *
+     * @return The groups the constraint is applied on.
+     */
+    Set&lt;Class&lt;?&gt;&gt; getGroups();
 
-	/**
-	 * Immutable list of the constraint validation implementation classes.
-	 *
-	 * @return list of the constraint validation implementation classes.
-	 */
-	List&lt;Class&lt;? extends ConstraintValidator&lt;T, ?&gt;&gt;&gt;
-	getConstraintValidatorClasses();
+    /**
+     * Immutable list of the constraint validation implementation classes.
+     *
+     * @return list of the constraint validation implementation classes.
+     */
+    List&lt;Class&lt;? extends ConstraintValidator&lt;T, ?&gt;&gt;&gt;
+    getConstraintValidatorClasses();
 
-	/**
-	 * Returns a map containing the annotation attribute names as keys and the
-	 * annotation attribute values as value.
-	 * If this constraint is used as part of a composed constraint, attribute
-	 * values are reflecting the overridden attribute from the composing constraint.
-	 *
-	 * @return a map containing the annotation attribute names as keys
-	 *         and the annotation attribute values as value.
-	 */
-	Map&lt;String, Object&gt; getAttributes();
+    /**
+     * Returns a map containing the annotation attribute names as keys and the
+     * annotation attribute values as value.
+     * If this constraint is used as part of a composed constraint, attribute
+     * values are reflecting the overridden attribute from the composing constraint.
+     *
+     * @return a map containing the annotation attribute names as keys
+     *         and the annotation attribute values as value.
+     */
+    Map&lt;String, Object&gt; getAttributes();
 
-	/**
-	 * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each
-	 * descriptor describes a composing constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt;
-	 * instances of composing constraints reflect overridden attribute values in
-	 * {@link #getAttributes()}  and {@link #getAnnotation()}.
-	 *
-	 * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
-	 *         in case there are no composing constraints.
-	 */
-	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getComposingConstraints();
+    /**
+     * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each
+     * descriptor describes a composing constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt;
+     * instances of composing constraints reflect overridden attribute values in
+     * {@link #getAttributes()}  and {@link #getAnnotation()}.
+     *
+     * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
+     *         in case there are no composing constraints.
+     */
+    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getComposingConstraints();
 
-	/**
-	 * @return true if the constraint is annotated with @ReportAsSingleViolation
-	 */
-	boolean isReportAsSingleViolation();
+    /**
+     * @return true if the constraint is annotated with @ReportAsSingleViolation
+     */
+    boolean isReportAsSingleViolation();
 }</programlisting>
 
       <para><methodname>getAnnotation</methodname> returns the annotation
@@ -6696,27 +6706,27 @@ public @interface AssertFalse {
 @Retention(RUNTIME)
 @Documented
 public @interface Min {
-	String message() default "{constraint.min}";
+    String message() default "{constraint.min}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * @return value the element must be higher or equal to
-	 */
-	long value();
+    /**
+     * @return value the element must be higher or equal to
+     */
+    long value();
 
-	/**
-	 * Defines several @Min annotations on the same element
-	 * @see {@link Min}
-	 *
-	 * @author Emmanuel Bernard
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
-	@Retention(RUNTIME)
-	@Documented
-	@interface List {
-		Min[] value();
-	}
+    /**
+     * Defines several @Min annotations on the same element
+     * @see {@link Min}
+     *
+     * @author Emmanuel Bernard
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        Min[] value();
+    }
 }</programlisting>
     </example>
 
@@ -6745,27 +6755,27 @@ public @interface Min {
 @Retention(RUNTIME)
 @Documented
 public @interface Max {
-	String message() default "{constraint.max}";
+    String message() default "{constraint.max}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * @return value the element must be lower or equal to
-	 */
-	long value();
+    /**
+     * @return value the element must be lower or equal to
+     */
+    long value();
 
-	/**
-	 * Defines several @Max annotations on the same element
-	 * @see {@link Max}
-	 *
-	 * @author Emmanuel Bernard
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
-	@Retention(RUNTIME)
-	@Documented
-	@interface List {
-		Max[] value();
-	}
+    /**
+     * Defines several @Max annotations on the same element
+     * @see {@link Max}
+     *
+     * @author Emmanuel Bernard
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        Max[] value();
+    }
 }</programlisting>
     </example>
 
@@ -6795,29 +6805,29 @@ public @interface Max {
 @Retention(RUNTIME)
 @Documented
 public @interface DecimalMin {
-	String message() default "{constraint.decimalmin}";
+    String message() default "{constraint.decimalmin}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * The String representation of the min value according to the
-	 * BigDecimal string representation
-	 * @return value the element must be higher or equal to
-	 */
-	String value();
+    /**
+     * The String representation of the min value according to the
+     * BigDecimal string representation
+     * @return value the element must be higher or equal to
+     */
+    String value();
 
-	/**
-	 * Defines several @DecimalMin annotations on the same element
-	 * @see {@link DecimalMin}
-	 *
-	 * @author Emmanuel Bernard
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
-	@Retention(RUNTIME)
-	@Documented
-	@interface List {
-		DecimalMin[] value();
-	}
+    /**
+     * Defines several @DecimalMin annotations on the same element
+     * @see {@link DecimalMin}
+     *
+     * @author Emmanuel Bernard
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        DecimalMin[] value();
+    }
 }</programlisting>
     </example>
 
@@ -6847,29 +6857,29 @@ public @interface DecimalMin {
 @Retention(RUNTIME)
 @Documented
 public @interface DecimalMax {
-	String message() default "{constraint.decimalmax}";
+    String message() default "{constraint.decimalmax}";
 
-	Class&lt;?&gt;[] groups() default { };
+    Class&lt;?&gt;[] groups() default { };
 
-	/**
-	 * The String representation of the max value according to the
-	 * BigDecimal string representation
-	 * @return value the element must be lower or equal to
-	 */
-	String value();
+    /**
+     * The String representation of the max value according to the
+     * BigDecimal string representation
+     * @return value the element must be lower or equal to
+     */
+    String value();
 
-	/**
-	 * Defines several @DecimalMax annotations on the same element
-	 * @see {@link DecimalMax}
-	 *
-	 * @author Emmanuel Bernard
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE })
-	@Retention(RUNTIME)
-	@Documented
-	@interface List {
-		DecimalMax[] value();
-	}
+    /**
+     * Defines several @DecimalMax annotations on the same element
+     * @see {@link DecimalMax}
+     *
+     * @author Emmanuel Bernard
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        DecimalMax[] value();
+    }
 }</programlisting>
     </example>
 
@@ -6884,7 +6894,7 @@ public @interface DecimalMax {
  * &lt;li&gt;&lt;code&gt;String&lt;/code&gt; (string length is evaludated)&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;Collection&lt;/code&gt; (collection size is evaluated)&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;Map&lt;/code&gt; (map size is evaluated)&lt;/li&gt;
- * &lt;li&gt;Array (array length is evaludated)&lt;/li&gt;
+ * &lt;li&gt;Array (array length is evaluated)&lt;/li&gt;
  *
  * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
@@ -6909,7 +6919,7 @@ public @interface Size {
 
     /**
      * Defines several @Size annotations on the same element
-     * @see Size
+     * @see {@link Size}
      *
      * @author Emmanuel Bernard
      */
@@ -6931,11 +6941,9 @@ public @interface Size {
  * &lt;ul&gt;
  * &lt;li&gt;&lt;code&gt;BigDecimal&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;BigInteger&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;Number&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;String&lt;/code&gt;&lt;/li&gt;
- * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;,
- * &lt;code&gt;long&lt;/code&gt;, &lt;code&gt;float&lt;/code&gt;,
- * &lt;code&gt;double&lt;/code&gt;&lt;/li&gt;
+ * &lt;li&gt;&lt;code&gt;byte&lt;/code&gt;, &lt;code&gt;short&lt;/code&gt;, &lt;code&gt;int&lt;/code&gt;, &lt;code&gt;long&lt;/code&gt;, 
+ * and their respective wrapper types&lt;/li&gt;
  * &lt;/ul&gt;
  * &lt;p/&gt;
  * &lt;code&gt;null&lt;/code&gt; elements are considered valid
@@ -6963,7 +6971,7 @@ public @interface Digits {
 
     /**
      * Defines several @Digits annotations on the same element
-     * @see Digits
+     * @see {@link Digits}
      *
      * @author Emmanuel Bernard
      */
@@ -6971,7 +6979,7 @@ public @interface Digits {
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        Size[] value();
+        Digits[] value();
     }
 }</programlisting>
     </example>
@@ -6985,14 +6993,11 @@ public @interface Digits {
  * The calendar used if the compared type is of type &lt;code&gt;Calendar&lt;/code&gt;
  * is the calendar based on the current timezone and the current locale.
  * &lt;p/&gt;
- * TODO what are the implications
- * &lt;p/&gt;
  * Supported types are:
  * &lt;ul&gt;
  * &lt;li&gt;&lt;code&gt;java.util.Date&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;java.util.Calendar&lt;/code&gt;&lt;/li&gt;
  * &lt;/ul&gt;
- * - TODO new date/time JSR types?
  * &lt;p/&gt;
  * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
@@ -7007,8 +7012,8 @@ public @interface Past {
     Class&lt;?&gt;[] groups() default { };
 
     /**
-     * Defines several @NotNull annotations on the same element
-     * @see Past
+     * Defines several @Past annotations on the same element
+     * @see {@link Past}
      *
      * @author Emmanuel Bernard
      */
@@ -7030,14 +7035,11 @@ public @interface Past {
  * The calendar used if the compared type is of type &lt;code&gt;Calendar&lt;/code&gt;
  * is the calendar based on the current timezone and the current locale.
  * &lt;p/&gt;
- * TODO what are the implications
- * &lt;p/&gt;
  * Supported types are:
  * &lt;ul&gt;
  * &lt;li&gt;&lt;code&gt;java.util.Date&lt;/code&gt;&lt;/li&gt;
  * &lt;li&gt;&lt;code&gt;java.util.Calendar&lt;/code&gt;&lt;/li&gt;
  * &lt;/ul&gt;
- * - TODO new date/time JSR types?
  * &lt;p/&gt;
  * &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
@@ -7053,7 +7055,7 @@ public @interface Future {
 
     /**
      * Defines several @Future annotations on the same element
-     * @see javax.validation.constraints.Future
+     * @see {@link Future}
      *
      * @author Emmanuel Bernard
      */
@@ -7074,7 +7076,7 @@ public @interface Future {
  * The regular expression follows the Java regular expression conventions
  * see {@link java.util.regex.Pattern}.
  *
- * Accepts String.
+ * Accepts String. &lt;code&gt;null&lt;/code&gt; elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
@@ -7146,12 +7148,12 @@ public @interface Pattern {
          * Enables canonical equivalence
          * @see java.util.regex.Pattern#CANON_EQ
          */
-        CANON_EQ,
+        CANON_EQ
     }
 
     /**
      * Defines several @Pattern annotations on the same element
-     * @see javax.validation.constraints.Pattern
+     * @see @link Pattern}
      *
      * @author Emmanuel Bernard
      */
@@ -7188,9 +7190,13 @@ public @interface Pattern {
       <para>There is no distinction between an annotation based constraint
       declaration and an XML based constraint declaration: they are considered
       equivalent and should be treated as such by the Bean Validation
-      provider. Specifically when exploring metadata, the Bean Validation
-      provider must ensure that an annotation instance corresponding to the
-      XML declaration is provided via
+      provider. The rest of the specification only refers to annotations as
+      validation metadata: it should eb read as annotation or their XML
+      descriptor equivalent.</para>
+
+      <para>Specifically when exploring metadata, the Bean Validation provider
+      must ensure that an annotation instance corresponding to the XML
+      declaration is provided via
       <classname>ConstraintDescriptor.getAnnnotation()</classname>. The
       annotation elements as well as
       <methodname>ConstraintValidator.getParameters()</methodname> must
@@ -7200,13 +7206,13 @@ public @interface Pattern {
       must reflect XML based constraint definition overriding (see <xref
       linkend="xml-mapping-constraintdefinition" />).</para>
 
-      <para>A given class must not be described more than once amongst the XML
-      mapping descriptors. A given field or getter must not be described more
-      than once on a given class description. A given constraint definition
-      must not be overridden more than once amongst the XML mapping
-      descriptors. If any of these rule is violated in a given validation
-      deployment, a <classname>ValidationException</classname> is raised
-      during the creation of the
+      <para>A given class must not be described more than once amongst all the
+      XML mapping descriptors. A given field or getter must not be described
+      more than once on a given class description. A given constraint
+      definition must not be overridden more than once amongst all the XML
+      mapping descriptors. If any of these rule is violated in a given
+      validation deployment, a <classname>ValidationException</classname> is
+      raised during the creation of the
       <classname>ValidatorFactory</classname>.</para>
 
       <para>The schema is provided in <xref
@@ -7223,12 +7229,12 @@ public @interface Pattern {
         element. The name of the class is mandatory. By default, all
         constraint declarations expressed via annotation are ignored for
         classes described in XML. You can force Bean Validation to consider
-        both annotation and XML constraint declarations by using
+        both annotations and XML constraint declarations by using
         <code>ignore-annotation="false"</code> on
         <literal>bean</literal>.</para>
 
         <para>If the name of the class does refer to a class not present in in
-        the classpath, a <classname>ValidatorFactory</classname> is
+        the classpath, a <classname>ValidationException</classname> is
         raised.</para>
 
         <example>
@@ -7237,7 +7243,8 @@ public @interface Pattern {
           <programlisting>&lt;constraint-mappings
         xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
 
     &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
 
@@ -7257,12 +7264,13 @@ public @interface Pattern {
           <literal>class</literal> element. If
           <literal>ignore-annotations</literal> is declared, Bean Validation
           must honor the explicit value for this element. If not declared, the
-          default value for the bean is considered.</para>
+          default value defined in the encapsulating
+          <classname>bean</classname> element is considered.</para>
 
-          <para>When ignore annotations is true, class-level Bean Validation
-          annotations are ignored for this class (including the
-          <classname>@GroupSequence</classname>). When ignore annotations is
-          false:</para>
+          <para>When <literal>ignore-annotations</literal> is true,
+          class-level Bean Validation annotations are ignored for this class
+          (including the <classname>@GroupSequence</classname>). When
+          <literal>ignore-annotations</literal> is false:</para>
 
           <itemizedlist>
             <listitem>
@@ -7284,7 +7292,8 @@ public @interface Pattern {
             <programlisting>&lt;constraint-mappings
         xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
     &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
     &lt;bean class="Customer" ignore-annotations="false"&gt;
         &lt;class ignore-annotations="true"&gt;
@@ -7308,12 +7317,13 @@ public @interface Pattern {
           attribute correspond to the name of the field considered. If
           <literal>ignore-annotations</literal> is declared, Bean Validation
           must honor the explicit value for this element. If not declared, the
-          default value for the bean is considered.</para>
+          default value defined in the encapsulating
+          <classname>bean</classname> element is considered.</para>
 
-          <para>When ignore annotations is true, field-level Bean Validation
-          annotations on the targeted field are ignored (including the
-          <classname>@Valid</classname>). When ignore annotations is
-          false:</para>
+          <para>When <literal>ignore-annotations</literal> is true,
+          field-level Bean Validation annotations on the targeted field are
+          ignored (including the <classname>@Valid</classname>). When
+          <literal>ignore-annotations</literal> is false:</para>
 
           <itemizedlist>
             <listitem>
@@ -7323,8 +7333,8 @@ public @interface Pattern {
             </listitem>
 
             <listitem>
-              <para><classname>@Valid</classname> is considered unless
-              <literal>valid</literal> element is explicitly use. Note that
+              <para><classname>@Valid</classname> is considered unless the
+              <literal>valid</literal> element is explicitly used. Note that
               the only way to disable cascading on a field marked as
               <classname>@Valid</classname> is to use
               <code>ignore-validation=true</code>.</para>
@@ -7341,7 +7351,8 @@ public @interface Pattern {
             <programlisting>&lt;constraint-mappings
         xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
     &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
     &lt;bean class="Customer" ignore-annotations="false"&gt;
         &lt;field name="firstName"&gt;
@@ -7368,12 +7379,13 @@ public @interface Pattern {
           <code>&lt;getter name="age"/&gt;</code> as a corresponding
           descriptor). If <literal>ignore-annotations</literal> is declared,
           Bean Validation must honor the explicit value for this element. If
-          not declared, the default value for the bean is considered.</para>
+          not declared, the default value defined in the encapsulating
+          <classname>bean</classname> element is considered.</para>
 
-          <para>When ignore annotations is true, property-level Bean
-          Validation annotations on the targeted property are ignored
-          (including the <classname>@Valid</classname>). When ignore
-          annotations is false:</para>
+          <para>When <literal>ignore-annotations</literal> is true,
+          property-level Bean Validation annotations on the targeted property
+          are ignored (including the <classname>@Valid</classname>). When
+          <literal>ignore-annotations</literal> is false:</para>
 
           <itemizedlist>
             <listitem>
@@ -7383,9 +7395,9 @@ public @interface Pattern {
             </listitem>
 
             <listitem>
-              <para><classname>@Valid</classname> is considered unless
-              <literal>valid</literal> element is explicitly use. Note that
-              the only way to disable cascading on a field marked as
+              <para><classname>@Valid</classname> is considered unless the
+              <literal>valid</literal> element is explicitly used. Note that
+              the only way to disable cascading on a property marked as
               <classname>@Valid</classname> is to use
               <code>ignore-validation=true</code>.</para>
             </listitem>
@@ -7401,7 +7413,8 @@ public @interface Pattern {
             <programlisting>&lt;constraint-mappings
         xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
     &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
     &lt;bean class="Customer" ignore-annotations="false"&gt;
         &lt;getter name="firstName"&gt;
@@ -7468,7 +7481,8 @@ public @interface Pattern {
             <programlisting>&lt;constraint-mappings
         xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
     &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
     &lt;bean class="Customer" ignore-annotations="false"&gt;
 
@@ -7572,7 +7586,8 @@ public @interface Pattern {
           <programlisting>&lt;constraint-mappings
         xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.0.xsd"&gt;
    &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
    &lt;bean class="com.acme.common.model.Address"&gt;
        [...]
@@ -7840,7 +7855,7 @@ public @interface Pattern {
     <title>Exception model</title>
 
     <para>Illegal arguments passed to the Bean Validation APIs generally lead
-    to a <classname>IllegalArgumentException</classname> (see JavaDoc for
+    to a <classname>IllegalArgumentException</classname> (see the JavaDoc for
     specific details). Other exceptions raised by Bean Validation are or
     inherits from the runtime exception
     <classname>javax.validation.ValidationException</classname>. Exception
@@ -7850,7 +7865,7 @@ public @interface Pattern {
     <itemizedlist>
       <listitem>
         <para>invalid constraint definitions (missing mandatory elements,
-        illegal composition cycle, illegal parameter overriding, etc)</para>
+        illegal composition cycle, illegal attribute overriding, etc)</para>
       </listitem>
 
       <listitem>
@@ -7886,8 +7901,8 @@ public @interface Pattern {
       </listitem>
 
       <listitem>
-        <para>missing no-arg constructors on extension implementations
-        described in the XML configuration file</para>
+        <para>missing no-arg constructor on extension implementations
+        described in XML configuration files</para>
       </listitem>
 
       <listitem>
@@ -7941,9 +7956,9 @@ public @interface Pattern {
       <title>Error report:
       <classname>ConstraintViolationException</classname></title>
 
-      <para>Some frameworks or applications need to convey the results of a
-      validation. It is an exception case if the validation returns constraint
-      violation and a Java exception is raised.</para>
+      <para>Some frameworks or applications need to convey the result of a
+      validation by raising an exception if the validation returns constraint
+      violations.</para>
 
       <para>Bean Validation provides a reference exception for such cases.
       Frameworks and applications are encouraged to use
@@ -7958,6 +7973,7 @@ public @interface Pattern {
  * @author Emmanuel Bernard
  */
 public class ConstraintViolationException extends ValidationException {
+    private final Set&lt;ConstraintViolation&gt; constraintViolations;
 
     /**
      * Creates a constraint violation report
@@ -7965,8 +7981,10 @@ public class ConstraintViolationException extends ValidationException {
      * @param message error message
      * @param constraintViolations Set of ConstraintViolation
      */
-    public ConstraintViolationException(String message, Set&lt;ConstraintViolation&gt; constraintViolations) {
-        [...]
+    public ConstraintViolationException(String message, 
+                                        Set&lt;ConstraintViolation&gt; constraintViolations) {
+        super( message );
+        this.constraintViolations = constraintViolations;
     }
 
     /**
@@ -7975,7 +7993,8 @@ public class ConstraintViolationException extends ValidationException {
      * @param constraintViolations Set of ConstraintViolation
      */
     public ConstraintViolationException(Set&lt;ConstraintViolation&gt; constraintViolations) {
-        [...]
+        super();
+        this.constraintViolations = constraintViolations;
     }
 
     /**
@@ -7984,7 +8003,7 @@ public class ConstraintViolationException extends ValidationException {
      * @return Set of CosntraintViolation
      */
     public Set&lt;ConstraintViolation&gt; getConstraintViolations() {
-        [...]
+        return constraintViolations;
     }
 }</programlisting>
 
@@ -8043,8 +8062,8 @@ public class ConstraintViolationException extends ValidationException {
       requested.</para>
 
       <note>
-        <para>These exception cases can be determined at compile time by a
-        tool such as an annotation processor.</para>
+        <para>These exception cases can be determined at compile time by
+        tooling (such as an annotation processor).</para>
       </note>
     </section>
 
@@ -8054,14 +8073,15 @@ public class ConstraintViolationException extends ValidationException {
 
       <para>When a group definition is illegal,
       <classname>GroupDefinitionException</classname> is raised. This
-      typically arises when a cyclic group dependency is discovered.</para>
+      typically arises when a cyclic group dependency is discovered, an
+      illegal attribute overriding is defined etc.</para>
 
       <para><classname>GroupDefinitionException</classname> is a subclass of
       <classname>ValidationException</classname>.</para>
 
       <note>
         <para>These exception cases can generally be determined at compile
-        time by a tool such as an annotation processor.</para>
+        time by tooling (such as an annotation processor).</para>
       </note>
     </section>
   </chapter>
@@ -8069,9 +8089,9 @@ public class ConstraintViolationException extends ValidationException {
   <appendix id="terminology">
     <title>Terminology</title>
 
-    <para>This appendix aims at giving an overview on the different specific
-    terms used through this specification. There are not to be considered
-    formal definitions. Formal definitions are to be inferred from the core
+    <para>This appendix aims at giving an overview on the different key terms
+    used through this specification. There are not to be considered formal
+    definitions. Formal definitions are to be inferred from the core
     specification.</para>
 
     <table>
@@ -8099,27 +8119,27 @@ public class ConstraintViolationException extends ValidationException {
           <row>
             <entry>Constraint declaration</entry>
 
-            <entry>Assignment of a constraint on a target (bean, field,
+            <entry>Assignment of a constraint to a target (bean, field,
             property) for a specific class. Typically by declaring an
-            annotation on the target but can also be done through a deployment
-            descriptor in XML</entry>
+            annotation on the target but can also be done through a XML
+            deployment descriptor</entry>
           </row>
 
           <row>
             <entry>Validation routine</entry>
 
-            <entry><para>Implementation of the validation algorithm associated
-            to a given constraint </para><para>Also means, sequence of
-            operations executed by the Bean Validation provider to validate a
-            given object</para></entry>
+            <entry><para>Sequence of operations executed by the Bean
+            Validation provider to validate a given object
+            graph</para></entry>
           </row>
 
           <row>
             <entry>Constraint definition</entry>
 
-            <entry>Defines a type of constraint, it's attributes and the
-            actual constraint implementation. Usually done through
-            annotations, this definition can also be done through XML</entry>
+            <entry>Defines a type of constraint, its attributes and the actual
+            constraint validation implementations. Done through annotations.
+            The list of constraint validation implementations can be provided
+            via XML</entry>
           </row>
 
           <row>
@@ -8134,14 +8154,14 @@ public class ConstraintViolationException extends ValidationException {
             <entry>group sequence</entry>
 
             <entry>Define a group ordering in the validation process. If a
-            given ordered group contains one or more failure, the following
-            ones in the sequence must be ignored.</entry>
+            given group in the sequence contains one or more failure, the
+            following groups in the sequence must be ignored.</entry>
           </row>
 
           <row>
             <entry>Constraint validation</entry>
 
-            <entry>constraint logic algorithm used to determine whether a
+            <entry>Constraint logic algorithm used to determine whether a
             given value passes a constraint or not.</entry>
           </row>
 
@@ -8153,15 +8173,9 @@ public class ConstraintViolationException extends ValidationException {
           </row>
 
           <row>
-            <entry>Validation API</entry>
-
-            <entry>Main API used to validate a given type of bean</entry>
-          </row>
-
-          <row>
             <entry>Bean validation provider</entry>
 
-            <entry>Implementation of the specification</entry>
+            <entry>Product implementing this specification</entry>
           </row>
 
           <row>
@@ -8180,9 +8194,16 @@ public class ConstraintViolationException extends ValidationException {
           </row>
 
           <row>
+            <entry>Bootstrap API</entry>
+
+            <entry>Bootstrapping part of the Bean Validation API producing a
+            <classname>ValidatorFactory</classname>.</entry>
+          </row>
+
+          <row>
             <entry>javax.validation.ConstraintValidator</entry>
 
-            <entry>interface implemented by a constraint validation
+            <entry>Interface implemented by a constraint validation
             implementation</entry>
           </row>
 
@@ -8197,13 +8218,14 @@ public class ConstraintViolationException extends ValidationException {
           <row>
             <entry>javax.validation.Validator</entry>
 
-            <entry>Main interface for the validation API</entry>
+            <entry>Main API used to validate objects</entry>
           </row>
 
           <row>
-            <entry>javax.validation.ConstraintViolation</entry>
+            <entry>validate
+            objectsjavax.validation.ConstraintViolation</entry>
 
-            <entry>interface describing a given constraint failure on a given
+            <entry>Interface describing a given constraint failure on a given
             bean</entry>
           </row>
         </tbody>
@@ -8235,9 +8257,8 @@ constraint.pattern=must match the following regular expression: {regexp}</progra
   <appendix id="appendix-methodlevelvalidation">
     <title>Proposal for method-level validation</title>
 
-    <para>This proposal is not yet present in the specification but is
-    considered for inclusion due to numerous feedbacks from the early
-    draft.</para>
+    <para>This proposition has not been integrated into the core specification
+    and is not part of it. Remains here for archaeological purposes.</para>
 
     <para>A popular demand was to provide a method and parameter level
     validation mechanism reusing the constraint descriptions of the
@@ -8433,8 +8454,9 @@ public interface BeanDescriptor {
     <title>Java Persistence 2.0 integration</title>
 
     <para>Integration with Java Persistence is described in the Java
-    Persistence 2 specification (JSR-317). Persistence framework are
-    encouraged to mimic the integration work done with JPA.</para>
+    Persistence 2 specification (JSR-317). Persistence frameworks are
+    encouraged to mimic the integration work done with Java
+    Persistence.</para>
 
     <para>While not specified by this specification or the Java Persistence
     2.0 specification, Persistence Providers are encouraged to make use of
@@ -8505,7 +8527,7 @@ implement this in persistence providers.
 Provide a way to disable BV metadata use by a persistence provider (property based).</programlisting>
 
     <para>This is not an endorsement of the Java Persistence expert group or
-    the Bean Validation expert group. Such approach may or may not be
+    the Bean Validation expert group. Such approach may nor may not be
     standardized in the future. Such integration should not be considered
     portable.</para>
   </appendix>
@@ -8572,7 +8594,7 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
   <appendix id="changelog">
     <title>Changelog</title>
 
-    <programlisting>1.0.CR1 Proposed Final Draft (2009-03-15)
+    <programlisting>1.0.CR1 Proposed Final Draft (2009-03-16)
 -----------------------------------------
 
 
@@ -8603,6 +8625,10 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
     * [BVAL-135] - Remove DefaultValidationProviderResolver from the public API
     * [BVAL-136] - Add Context object for MessageInterpolator
     * [BVAL-137] - prefix for message template key is constraint. instead of validator.
+    * [BVAL-138] - Rename OverridesParameter to OverridesAttribute
+    * [BVAL-139] - Remove @OverridesParameters and use the inner class mode (OverridesAttribute.LIst)
+    * [BVAL-140] - BeanDescriptor.getConstrainedProperties() returns Set&lt;PropertyDescriptor&gt;
+    * [BVAL-141] - Rename ConstraintDescriptor.getParameters() to getAttributes()
 
 ** New Feature
     * [BVAL-52] - Define the exception hierarchy and rules
@@ -8615,6 +8641,7 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
     * [BVAL-121] - Define built-in constraints plural forms
     * [BVAL-123] - Add ConstraintViolationException
     * [BVAL-124] - Introduce backslash as escaping character
+    * [BVAL-142] - @Min/@max no longer accept float/double and introduce @DecimalMin/@DecimalMax
 
 
 ** Task
