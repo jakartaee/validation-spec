@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.CR1 Proposed Final Draft</releaseinfo>
+    <releaseinfo>1.0.20090331</releaseinfo>
 
-    <pubdate>2009-03-16</pubdate>
+    <pubdate>2009-03-31</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -1198,7 +1198,7 @@ public class SyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt
  *  - constraint.syntax.unknown if no particular syntax is detected
  *  - constraint.syntax.unauthorized if the syntax is not allowed
  */
-ublic class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt; {
+public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt; {
     private Set&lt;Format&gt; allowedFormats;
 
     /**
@@ -1220,10 +1220,10 @@ ublic class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax,
 
         context.disableDefaultError();
         if ( guessedFormats.size() == 0 ) {
-            context.addError("constraint.syntax.unknown");
+            context.addError("{constraint.syntax.unknown}");
         }
         else {
-            context.addError("constraint.syntax.unauthorized");
+            context.addError("{constraint.syntax.unauthorized}");
         }
 
         return allowedFormats.size() == 0 
@@ -4621,7 +4621,7 @@ Validator validator = factory.getValidator();</programlisting>
 ValidatorFactory factory = Validation
        .byDefaultProvider().configure()
           .messageInterpolator( new ContainerMessageInterpolator() )
-          .constraintValidatorFactory( new containerComponentConstraintValidatorFactory() )
+          .constraintValidatorFactory( new ContainerComponentConstraintValidatorFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
           .buildValidatorFactory();
 
@@ -4662,7 +4662,7 @@ Validator validator = factory.getValidator();</programlisting>
        .byProvider( ACMEConfiguration.class )  //chose a specific provider
        .configure()
           .messageInterpolator( new ContainerMessageInterpolator() ) //default configuration option
-          .addConsttaint(Address.class, customConstraintDescriptor) //ACME specific method
+          .addConstraint(Address.class, customConstraintDescriptor) //ACME specific method
           .buildValidatorFactory();
 
 //same initialization decomposing calls
@@ -7842,7 +7842,11 @@ public @interface Pattern {
         &lt;/xs:sequence&gt;
     &lt;/xs:complexType&gt;
     &lt;xs:complexType name="propertyType"&gt;
-        &lt;xs:attribute name="name" use="required" type="xs:string"/&gt;
+        &lt;xs:simpleContent&gt;
+            &lt;xs:extension base="xs:string"&gt;
+                &lt;xs:attribute name="name" use="required" type="xs:string"/&gt;
+            &lt;/xs:extension&gt;
+        &lt;/xs:simpleContent&gt;
     &lt;/xs:complexType&gt;
 &lt;/xs:schema&gt;</programlisting>
 
