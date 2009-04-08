@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090331</releaseinfo>
+    <releaseinfo>1.0.20090407</releaseinfo>
 
-    <pubdate>2009-03-31</pubdate>
+    <pubdate>2009-04-07</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -888,21 +888,10 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
       <para>Some restrictions apply on the generic type
       <classname>T</classname> (used in the <methodname>isValid</methodname>
       method). <classname>T</classname> must resolve in a non parameterized
-      type ie:</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>the type is not using generics</para>
-        </listitem>
-
-        <listitem>
-          <para>or the raw type is used instead of the generic version</para>
-        </listitem>
-      </itemizedlist>
-
-      <warning>
-        <para>Should we support unbounded wildcards?</para>
-      </warning>
+      type (ie. because the type is not using generics or because the raw type
+      is used instead of the generic version). Or generic parameters of
+      <classname>T</classname> must be unbounded wildcard types (ie.
+      <literal>&lt;?&gt;</literal>).</para>
 
       <para><xref
       linkend="example-constraintsdefinitionimplementation-validationimplementation-validdef" />
@@ -915,7 +904,10 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
 public class SizeValidatorForString implements&lt;Size, String&gt; {...}
 
 //Collection uses generics but the raw type is used
-public class SizeValidatorForCollection implements&lt;Size, Collection&gt; {...}</programlisting>
+public class SizeValidatorForCollection implements&lt;Size, Collection&gt; {...}
+
+//Collection uses generics and unbounded windcard type
+public class SizeValidatorForCollection implements&lt;Size, Collection&lt;?&gt;&gt; {...}</programlisting>
       </example>
 
       <para>And some invalid definitions in <xref
@@ -926,9 +918,6 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&gt; {...}
 
         <programlisting>//parameterized type
 public class SizeValidatorForString implements&lt;Size, Collection&lt;String&gt;&gt; {...}
-
-//parameterized type using unbounded wildcard
-public class SizeValidatorForCollection implements&lt;Size, Collection&lt;?&gt;&gt; {...}
 
 //parameterized type using bounded wildcard
 public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? extends Address&gt;&gt; {...}</programlisting>
@@ -5391,7 +5380,7 @@ public interface ValidationProviderResolver {
               <para>Determine if a provider matches a given
               <classname>Configuration</classname> sub interface. One
               <classname>Configuration</classname> sub interface specifically
-              represent one Bean Validation provider.</para>
+              represents one Bean Validation provider.</para>
             </listitem>
 
             <listitem>
@@ -5507,7 +5496,7 @@ public interface BootstrapState {
           </example>
 
           <para>A client can request a specific Bean Validation provider by
-          using <classname>Validation.byProvider(Class&lt;T exptends
+          using <classname>Validation.byProvider(Class&lt;T extends
           Configuration&lt;T&gt;&gt;)</classname> or by defining the provider
           in the XML configuration file. The key uniquely identifying a Bean
           Validation provider is a provider specific sub interface of
