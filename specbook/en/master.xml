@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090407</releaseinfo>
+    <releaseinfo>1.0.20090421</releaseinfo>
 
-    <pubdate>2009-04-07</pubdate>
+    <pubdate>2009-04-21</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -5365,6 +5365,12 @@ public interface ValidationProviderResolver {
           should be rarely used. A typical use of a custom resolution is
           resolving providers in a classloader constrained container like OSGi
           or in a tool environment (IDE).</para>
+
+          <para>The default <classname>ValidationProviderResolver</classname>
+          can be accessed via
+          <classname>BootStrapState.getDefaultValidationProviderResolver()</classname>.
+          This method is typically used by the Bean Validation provider
+          <classname>Configuration</classname> implementation.</para>
         </section>
 
         <section id="id-bootstrap-validationprovider">
@@ -5485,13 +5491,20 @@ public interface ValidationProvider {
  * @author Emmanuel Bernard
  */
 public interface BootstrapState {
-    /**
-     * returns the user defined ValidationProviderResolver strategy instance or &lt;code&gt;null&lt;/code&gt;
-     * if undefined.
-     *
-     * @return ValidationProviderResolver instance or null
-     */
-    ValidationProviderResolver getValidationProviderResolver();
+	/**
+	 * User defined ValidationProviderResolver strategy instance or &lt;code&gt;null&lt;/code&gt;
+	 * if undefined.
+	 *
+	 * @return ValidationProviderResolver instance or null
+	 */
+	ValidationProviderResolver getValidationProviderResolver();
+
+	/**
+	 * Specification default ValidationProviderResolver strategy instance
+	 * 
+	 * @return default implementation of ValidationProviderResolver
+	 */
+	ValidationProviderResolver getDefaultValidationProviderResolver();
 }</programlisting>
           </example>
 
@@ -6521,18 +6534,16 @@ assert propertyDescriptor.isCascaded()</programlisting>
     relying on the metadata API (such as client side validation frameworks or
     database schema generation frameworks).</para>
 
-    <para>Built-in annotations are not annotated with
-    <classname>@Constraint</classname> to avoid any dependency between the
-    specification API and a specific implementation. Each Bean Validation
-    provider must recognize built-in constraint annotations as valid
-    constraint definitions and provide compliant constraint implementations
-    for each.</para>
-
-    <note>
-      <para><classname>ConstraintValidator</classname> implementations can be
-      overridden including for built-in constraints by using the XML mapping
-      (see <xref linkend="xml-mapping-constraintdefinition" />).</para>
-    </note>
+    <para>Built-in annotations are annotated with an empty
+    <classname>@Constraint</classname> annotation to avoid any dependency
+    between the specification API and a specific implementation. Each Bean
+    Validation provider must recognize built-in constraint annotations as
+    valid constraint definitions and provide compliant constraint
+    implementations for each. The built-in constraint validation
+    implementation is having a lower priority than an XML mapping definition.
+    In other words <classname>ConstraintValidator</classname> implementations
+    for built-in constraints can be overridden by using the XML mapping (see
+    <xref linkend="xml-mapping-constraintdefinition" />).</para>
 
     <para>All built-in constraints are in the
     <classname>javax.validation.constraints</classname> package. Here is the
@@ -6550,6 +6561,7 @@ assert propertyDescriptor.isCascaded()</programlisting>
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Null {
     String message() default "{constraint.null}";
 
@@ -6582,6 +6594,7 @@ public @interface Null {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface NotNull {
     String message() default "{constraint.notNull}";
 
@@ -6616,6 +6629,7 @@ public @interface NotNull {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface AssertTrue {
     String message() default "{constraint.assertTrue}";
 
@@ -6650,6 +6664,7 @@ public @interface AssertTrue {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface AssertFalse {
     String message() default "{constraint.assertFalse}";
 
@@ -6694,6 +6709,7 @@ public @interface AssertFalse {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Min {
     String message() default "{constraint.min}";
 
@@ -6743,6 +6759,7 @@ public @interface Min {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Max {
     String message() default "{constraint.max}";
 
@@ -6793,6 +6810,7 @@ public @interface Max {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface DecimalMin {
     String message() default "{constraint.decimalmin}";
 
@@ -6845,6 +6863,7 @@ public @interface DecimalMin {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface DecimalMax {
     String message() default "{constraint.decimalmax}";
 
@@ -6892,6 +6911,7 @@ public @interface DecimalMax {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Size {
     String message() default "{constraint.size}";
     Class&lt;?&gt;[] groups() default {};
@@ -6943,6 +6963,7 @@ public @interface Size {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Digits {
     String message() default "{constraint.digits}";
 
@@ -6995,6 +7016,7 @@ public @interface Digits {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Past {
     String message() default "{constraint.past}";
 
@@ -7037,6 +7059,7 @@ public @interface Past {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Future {
     String message() default "{constraint.future}";
 
@@ -7072,6 +7095,7 @@ public @interface Future {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 @Documented
+@Constraint(validatedBy = {})
 public @interface Pattern {
     /**
      * regular expression to match
