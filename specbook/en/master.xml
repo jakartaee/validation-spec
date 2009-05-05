@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090421</releaseinfo>
+    <releaseinfo>1.0.20090505</releaseinfo>
 
-    <pubdate>2009-04-21</pubdate>
+    <pubdate>2009-05.05</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -2178,17 +2178,17 @@ public class Order implements Auditable {
 
       <itemizedlist>
         <listitem>
-          <para>for all traversable fields, execute all field level
-          validations (including the ones expressed on interfaces and
-          superclasses) matching the targeted group unless the given
+          <para>for all <emphasis>reachable</emphasis> fields, execute all
+          field level validations (including the ones expressed on interfaces
+          and superclasses) matching the targeted group unless the given
           validation constraint has already been processed during this
           validation routine (as part of a previous group match)</para>
         </listitem>
 
         <listitem>
-          <para>for all traversable getters, execute all getter level
-          validations (including the ones expressed on interfaces and
-          superclasses) matching the targeted group unless the given
+          <para>for all <emphasis>reachable</emphasis> getters, execute all
+          getter level validations (including the ones expressed on interfaces
+          and superclasses) matching the targeted group unless the given
           validation constraint has already been processed during this
           validation routine (as part of a previous group match)</para>
         </listitem>
@@ -2202,7 +2202,8 @@ public class Order implements Auditable {
         </listitem>
 
         <listitem>
-          <para>for all traversable associations, execute all cascading
+          <para>for all <emphasis>reachable</emphasis> and
+          <emphasis>cascadable</emphasis> associations, execute all cascading
           validations (see <xref
           linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
           including the ones expressed on interfaces and superclasses (see
@@ -2211,7 +2212,8 @@ public class Order implements Auditable {
         </listitem>
       </itemizedlist>
 
-      <para>Traversable fields, getters and associations are defined in <xref
+      <para>Reachable fields, getters and associations as well as cascadable
+      associations are defined in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-traversable" />.</para>
 
       <para>Note that this implies that a given validation constraint will not
@@ -2361,40 +2363,89 @@ Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; 
         would trigger a load from the database. An undesired behavior.</para>
 
         <para>Bean Validation offers a way to control which property can and
-        cannot be accessed via the <classname>TraversableResolver</classname>
+        cannot be accessed via the
+        <classname>TraversableResolver.isReachable</classname>()
         contract.</para>
+
+        <para>Likewise, it is sometimes undesirable to cascade validation
+        despite the use of <classname>@Valid</classname>. Java Persistence 2
+        for example does not cascade to associated entities during flush. You
+        can control this behavior by implementing
+        <methodname>Traversable.isCascadable()</methodname>.</para>
 
         <programlisting>/**
  * Contract determining if a property can be accessed by the Bean Validation provider
- * This contract is called for each property either validated or traversed.
+ * This contract is called for each property either validated or cascaded.
  *
- * A traversable resolver implementation must me thread-safe.
+ * A traversable resolver implementation must be thread-safe.
  *
  * @author Emmanuel Bernard
  */
 public interface TraversableResolver {
-	/**
-	 * Determine if a property can be traversed by Bean Validation.
-	 *
-	 * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
-	 * @param traversableProperty name of the traversable property.
-	 * @param rootBeanType type of the root object passed to the Validator.
-	 * @param pathToTraversableObject path from the root object to
-	 *        &lt;code&gt;traversableObject&lt;/code&gt; ("" if the &lt;code&gt;traversableObject&lt;/code&gt; 
-	 *        is the root object)
-	 *        (using the path specification defined by Bean Validator).
-	 * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
-	 *
-	 * @return &lt;code&gt;true&lt;/code&gt; if the property is traversable by Bean Validation,
-	 *         &lt;code&gt;false&lt;/code&gt; otherwise.
-	 */
-	boolean isTraversable(Object traversableObject,
-						  String traversableProperty,
-						  Class&lt;?&gt; rootBeanType,
-						  String pathToTraversableObject,
-						  ElementType elementType);
-}
-</programlisting>
+    /**
+     * Determine if Bean Validation is allowed to reach the property state
+     *
+     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
+     * @param traversableProperty name of the traversable property.
+     * @param rootBeanType type of the root object passed to the Validator.
+     * @param pathToTraversableObject path from the root object to
+     *        &lt;code&gt;traversableObject&lt;/code&gt; ("" if the &lt;code&gt;traversableObject&lt;/code&gt; 
+     *        is the root object)
+     *        (using the path specification defined by Bean Validator).
+     * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if Bean Validation is allowed to reach the property state,
+     *         &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isReachable(Object traversableObject,
+                          String traversableProperty,
+                          Class&lt;?&gt; rootBeanType,
+                          String pathToTraversableObject,
+                          ElementType elementType);
+
+    /**
+     * Determine if Bean Validation is allowed to cascade validation on
+     * the bean instance returned by the property value
+     * marked as &lt;code&gt;@Valid&lt;/code&gt;.
+     * Note that this method is called only if isReachable returns true for the same set of
+     * arguments and if the property is marked as &lt;code&gt;@Valid&lt;/code&gt;
+     *
+     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
+     * @param traversableProperty name of the traversable property.
+     * @param rootBeanType type of the root object passed to the Validator.
+     * @param pathToTraversableObject path from the root object to
+     *        &lt;code&gt;traversableObject&lt;/code&gt; ("" if the &lt;code&gt;traversableObject&lt;/code&gt;
+     *        is the root object)
+     *        (using the path specification defined by Bean Validator).
+     * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if Bean Validation is allowed to cascade validation,
+     *         &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isCascadable(Object traversableObject,
+                          String traversableProperty,
+                          Class&lt;?&gt; rootBeanType,
+                          String pathToTraversableObject,
+                          ElementType elementType);
+}</programlisting>
+
+        <para><methodname>isReachable</methodname> is called for every
+        property about to be accessed either for validation or for cascading.
+        A property is <emphasis>reachable</emphasis> if this method returns
+        true.</para>
+
+        <para><methodname>isCascadable</methodname> is called for every
+        property about to be cascaded (ie. marked as
+        <classname>@Valid</classname>). A property is
+        <emphasis>cascadable</emphasis> if this method returns true.</para>
+
+        <note>
+          <para><methodname>isCascadable</methodname> for a given property is
+          only called if <methodname>isReachable</methodname> returns true. In
+          other words, <methodname>isReachable</methodname> is always called
+          before <methodname>isCascadable</methodname> for a given
+          property.</para>
+        </note>
 
         <para><literal>traversableObject</literal> is the object instance
         being evaluated. Can be <literal>null</literal> of
@@ -2477,7 +2528,7 @@ public class Address {
     private String addressline2;
     @Size(max=11)
     private String zipCode;
-    @NotNull @Valid
+    @Valid
     private Country country;
 
     private String city;
@@ -2527,9 +2578,9 @@ public class Address {
 
         <para>When the Bean Validation provider is about to check constraints
         of <literal>ISO3Code</literal>, it calls the
-        <classname>TraversableResolver</classname> instance to ensure that the
-        <literal>ISO3Code</literal> property is traversable with the following
-        parameter values:</para>
+        <classname>TraversableResolver.isReachable()</classname> instance to
+        ensure that the <literal>ISO3Code</literal> property is reachable with
+        the following parameter values:</para>
 
         <itemizedlist>
           <listitem>
@@ -2555,8 +2606,44 @@ public class Address {
 
           <listitem>
             <para><literal>elementType</literal>:
+            <classname>ElementType.FIELD</classname>. The ISO3Code property is
+            annotated on its field.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>When the Bean Validation provider is about to cascade validation
+        on <literal>country</literal> (<classname>Address</classname> object),
+        it calls the <classname>TraversableResolver.isReachable()</classname>
+        instance to ensure that the <literal>country</literal> property is
+        reachable and if this method returns true, it calls
+        <classname>TraversableResolver.isCascadable()</classname> with the
+        following parameter values:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para><literal>traversableObject</literal>: address. The address
+            instance.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>traversableProperty</literal>: "country". The name
+            of the property of <literal>traversableObject</literal> being
+            verified.</para>
+          </listitem>
+
+          <listitem>
+            <para><methodname>rootBeanType</methodname>: Address.class. The
+            type of the root object being validated.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>pathtoTraversableObject</literal>: "".</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>elementType</literal>:
             <classname>ElementType.FIELD</classname>. The country property is
-            annotated on the field.</para>
+            annotated on its field.</para>
           </listitem>
         </itemizedlist>
 
@@ -2565,14 +2652,13 @@ public class Address {
 
           <programlisting>public class JPATraversableResolver implements TraversableResolver {
 
-    boolean isTraversable(Object traversableObject,
-                          String traversableProperty,
-                          Class&lt;?&gt; rootBeanType,
-                          String pathToTraversableObject,
-                          ElementType elementType) {
+    public boolean isReachable(Object traversableObject, String traversableProperty, Class&lt;?&gt; rootBeanType, String pathToTraversableObject, ElementType elementType) {
+        return traversableObject == null ||
+                Persistence.getPersistenceUtil().isLoaded( traversableObject, traversableProperty );
+    }
 
-        return Persistence.getPersistenceUtil()
-                          .isLoaded(traversableObject, traversableProperty);
+    public boolean isCascadable(Object traversableObject, String traversableProperty, Class&lt;?&gt; rootBeanType, String pathToTraversableObject, ElementType elementType) {
+        return true;
     }
 }</programlisting>
         </example>
@@ -2583,7 +2669,7 @@ public class Address {
         <itemizedlist>
           <listitem>
             <para>if Java Persistence is available in the runtime environment,
-            a property is considered traversable if Java Persistence considers
+            a property is considered reachable if Java Persistence considers
             the property as loaded. A typical implementation will use
             <code>Persistence.getPersistenceUtil().isLoaded(Object,
             String)</code> to implement such contract.</para>
@@ -2591,7 +2677,11 @@ public class Address {
 
           <listitem>
             <para>if Java Persistence is not available in the runtime
-            environment, all properties are considered traversable.</para>
+            environment, all properties are considered reachable.</para>
+          </listitem>
+
+          <listitem>
+            <para>all properties are considered cascadable.</para>
           </listitem>
         </itemizedlist>
 
@@ -5500,20 +5590,20 @@ public interface ValidationProvider {
  * @author Sebastian Thomschke
  */
 public interface BootstrapState {
-	/**
-	 * User defined ValidationProviderResolver strategy instance or &lt;code&gt;null&lt;/code&gt;
-	 * if undefined.
-	 *
-	 * @return ValidationProviderResolver instance or null
-	 */
-	ValidationProviderResolver getValidationProviderResolver();
+    /**
+     * User defined ValidationProviderResolver strategy instance or &lt;code&gt;null&lt;/code&gt;
+     * if undefined.
+     *
+     * @return ValidationProviderResolver instance or null
+     */
+    ValidationProviderResolver getValidationProviderResolver();
 
-	/**
-	 * Specification default ValidationProviderResolver strategy instance
-	 * 
-	 * @return default implementation of ValidationProviderResolver
-	 */
-	ValidationProviderResolver getDefaultValidationProviderResolver();
+    /**
+     * Specification default ValidationProviderResolver strategy instance
+     * 
+     * @return default implementation of ValidationProviderResolver
+     */
+    ValidationProviderResolver getDefaultValidationProviderResolver();
 }</programlisting>
           </example>
 
