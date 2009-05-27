@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090505</releaseinfo>
+    <releaseinfo>1.0.20090527</releaseinfo>
 
-    <pubdate>2009-05.05</pubdate>
+    <pubdate>2009-05-27</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -1394,15 +1394,16 @@ public interface ConstraintValidatorFactory {
         <classname>Z</classname> are used. This ensures proper polymorphic
         behavior.</para>
 
-        <para>Collection-valued, array-valued or
+        <para>Collection-valued, array-valued and generally
         <classname>Iterable</classname> fields and properties may also be
         decorated with the <classname>@Valid</classname> annotation. This
-        causes the contents of the collection, array or iterator to be
-        validated. The following types are supported:</para>
+        causes the contents of the iterator to be validated. Any object
+        implementing <classname>java.lang.Iterable</classname> is supported.
+        This includes specifically:</para>
 
         <itemizedlist>
           <listitem>
-            <para>any array of object</para>
+            <para>arrays of object</para>
           </listitem>
 
           <listitem>
@@ -1418,20 +1419,17 @@ public interface ConstraintValidatorFactory {
           </listitem>
 
           <listitem>
-            <para><classname>java.util.Map</classname></para>
-          </listitem>
-
-          <listitem>
-            <para>any object implementing
-            <classname>java.lang.Iterable</classname></para>
+            <para><classname>java.util.Map</classname> (special treatment see
+            below)</para>
           </listitem>
         </itemizedlist>
 
-        <para>Each object stored in the array, collection or iterator is
-        validated. For <classname>Map</classname>, the value of each entry is
-        validated (the key is not validated). Like regular references, its
-        type is determined at runtime and the constraint definitions for this
-        particular type are used.</para>
+        <para>Each object provided by the iterator is validated. For
+        <classname>Map</classname>, the value of each
+        <classname>Map.Entry</classname> is validated (the key is not
+        validated). Like regular references, its type is determined at runtime
+        and the constraint definitions for this particular type are
+        used.</para>
 
         <para>The <classname>@Valid</classname> annotation is applied
         recursively. A conforming implementation avoids infinite loops
@@ -3889,6 +3887,12 @@ public interface ConstraintViolation&lt;T&gt; {
               (<literal>["key.toString()"]</literal>) is concatenated to the
               <literal>propertyPath</literal> (for example
               <literal>item.evaluation["quality"]</literal>)</para>
+            </listitem>
+
+            <listitem>
+              <para>for any other <classname>Iterable</classname> association,
+              <literal>[]</literal> (square brackets) is concatenated to the
+              <literal>propertyPath</literal>.</para>
             </listitem>
           </itemizedlist>
         </listitem>
@@ -7344,6 +7348,12 @@ public @interface Pattern {
         both annotations and XML constraint declarations by using
         <code>ignore-annotation="false"</code> on
         <literal>bean</literal>.</para>
+
+        <note>
+          <para>The <literal>ignore-annotation</literal> setting is not
+          inherited from nor by the class hierarchy. In other words, it only
+          applies to the current bean only.</para>
+        </note>
 
         <para>If the name of the class does refer to a class not present in in
         the classpath, a <classname>ValidationException</classname> is
