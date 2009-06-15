@@ -326,10 +326,10 @@ public @interface Constraint {
         <para>A constraint definition may have attributes that are specified
         at the time the constraint is applied to a JavaBean. The properties
         are mapped as annotation elements. The annotation element names
-        <literal>message</literal> and <literal>groups</literal> are
-        considered reserved names; annotation elements starting with
-        <literal>valid</literal> are not allowed; a constraint may use any
-        other element name for its attributes.</para>
+        <literal>message</literal>, <literal>groups</literal> and
+        <literal>payload</literal> are considered reserved names; annotation
+        elements starting with <literal>valid</literal> are not allowed; a
+        constraint may use any other element name for its attributes.</para>
 
         <section id="constraintsdefinitionimplementation-constraintdefinition-parameters-message">
           <title>message</title>
@@ -352,7 +352,7 @@ public @interface Constraint {
 
           <para>Every constraint annotation must define a
           <literal>groups</literal> element that specifies which processing
-          groups the constraint definition is associated with.</para>
+          groups the constraint declaration is associated with.</para>
 
           <programlisting>    Class&lt;?&gt;[] groups() default {};</programlisting>
 
@@ -368,6 +368,72 @@ public @interface Constraint {
           <para>Groups are typically used to control the order in which
           constraints are evaluated, or to perform validation of the partial
           state of a JavaBean.</para>
+        </section>
+
+        <section id="constraintsdefinitionimplementation-constraintdefinition-groups">
+          <title>payload</title>
+
+          <para>Every constraint annotation must define a
+          <literal>payload</literal> element that specifies which payload the
+          constraint declaration is associated with.</para>
+
+          <programlisting>    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};</programlisting>
+
+          <para>The default value must be an empty array.</para>
+
+          <para>Each attachable payload extends
+          <classname>ConstraintPayload</classname>.</para>
+
+          <programlisting>/**
+ * Payload type that can be attached to a given
+ * constraint declaration.
+ * Payloads are typically used to carry on metadata information
+ * consumed by a validation client.
+ *
+ * Use of payloads is not considered portable.
+ *
+ * @author Emmanuel Bernard
+ * @author Gerhard Petracek
+ */
+public interface ConstraintPayload {
+}</programlisting>
+
+          <para>Payloads are typically used by validation clients to associate
+          some metadata information to a given constraint declaration.
+          Payloads are typically non portable. Describing payloads as
+          interface extensions as opposed to a string based approach allows an
+          easier and more type-safe approach.</para>
+
+          <para>One use case for payload shown in <xref
+          linkend="example-payload" /> is to associate a severity to a
+          constraint. This severity can be exploited by a presentation
+          framework to adjust how a constraint failure is displayed.</para>
+
+          <example id="example-payload">
+            <title>Use of payload to associate severity to a
+            constraint</title>
+
+            <programlisting>package com.acme.severity;
+public class Severity {
+    public static class Info extends ConstraintPayload {};
+    public static class Error extends ConstraintPayload {};
+}
+
+public class Address {
+    @NotNull(message="would be nice if we had one", payload=Severity.Info.class)
+    public String getZipCode() {...}
+
+    @NotNull(message="the city is mandatory", payload=Severity.Error.class) 
+    String getCity() {...}
+}</programlisting>
+          </example>
+
+          <para>The <literal>payload</literal> information can be retrieved
+          from error reports via <classname>ConstraintViolation</classname>
+          objects (see <xref linkend="validationapi-constraintviolation" />)
+          or using the metadata API via
+          <classname>ConstraintDescriptor</classname> objects (see <xref
+          linkend="constraintmetadata-constraintdescriptor" />).</para>
         </section>
 
         <section>
@@ -1717,8 +1783,8 @@ public class Address {
         evaluated.</para>
 
         <note>
-          <para>A given constraint can belong to two groups ordered by a
-          sequence. In this case, the constraint is evaluated as part of the
+          <para>A given constraint can belong to two or more groups ordered by
+          a sequence. In this case, the constraint is evaluated as part of the
           first group and ignored in the subsequent group(s). See <xref
           linkend="constraintdeclarationvalidationprocess-validationroutine" />
           for more information.</para>
@@ -2156,7 +2222,7 @@ public class Order implements Auditable {
         <para>Unless defined by a <classname>@GroupSequence</classname>,
         evaluation ordering is not constrained. In particular, several groups
         can be validated in the same pass. If a group definition leads to a
-        circular sequencing order between groups, an
+        circular sequencing order between groups, a
         <classname>GroupDefinitionException</classname> is raised.</para>
 
         <note>
@@ -6262,6 +6328,9 @@ public interface Validator {
       of constraints for a given element (whether it be a field, a method or a
       class).</para>
 
+      <para><classname>ElementDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
+
       <programlisting>/**
  * Describes a validated element (class, field or property).
  *
@@ -6312,6 +6381,9 @@ public interface ElementDescriptor {
       <para>The <classname>BeanDescriptor</classname> interface describes a
       constrained Java Bean. This interface is returned by
       <methodname>Validator.getConstraintsForClass(Class&lt;?&gt;)</methodname>.</para>
+
+      <para><classname>BeanDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
 
       <programlisting>/**
  * Describe a constrained Java Bean and the constraints associated to it.
@@ -6377,7 +6449,12 @@ public interface BeanDescriptor extends ElementDescriptor {
       <title>PropertyDescriptor</title>
 
       <para>The <classname>PropertyDescriptor</classname> interface describes
-      a constrained property of a Java Bean. This interface is returned by
+      a constrained property of a Java Bean. </para>
+
+      <para><classname>PropertyDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
+
+      <para>This interface is returned by
       <methodname>BeanDescriptor.getConstraintsForProperty(String)</methodname>.
       Constraints declared on the attribute and the getter of the same name
       according to the Java Bean rules are returned by this descriptor.</para>
@@ -6418,6 +6495,9 @@ public interface PropertyDescriptor extends ElementDescriptor {
 
       <para>A <classname>ConstraintDescriptor</classname> object describes a
       given constraint declaration (i.e. a constraint annotation).</para>
+
+      <para><classname>ConstraintDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
 
       <programlisting>/**
  * Describes a single constraint and its composing constraints.
