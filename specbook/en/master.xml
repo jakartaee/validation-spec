@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090527</releaseinfo>
+    <releaseinfo>1.0.20090615</releaseinfo>
 
-    <pubdate>2009-05-27</pubdate>
+    <pubdate>2009-06-15</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -370,7 +370,7 @@ public @interface Constraint {
           state of a JavaBean.</para>
         </section>
 
-        <section id="constraintsdefinitionimplementation-constraintdefinition-groups">
+        <section id="constraintsdefinitionimplementation-constraintdefinition-payload">
           <title>payload</title>
 
           <para>Every constraint annotation must define a
@@ -465,6 +465,7 @@ public class Address {
 public @interface OrderNumber {
     String message() default "{constraint.orderNumber}";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
         </example>
 
@@ -490,6 +491,7 @@ public @interface Audible {
     Audible age() default Age.YOUNG;
     String message() default "{constraint.audible}";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     public enum Age {
         YOUNG,
@@ -521,6 +523,7 @@ public @interface Acceptable {
     int[] value();
     String message() default "{constraint.acceptable}";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
         </example>
 
@@ -578,6 +581,8 @@ public @interface ZipCode {
     String message() default "{constraint.zipCode}";
 
     Class&lt;?&gt;[] groups() default {};
+
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * Defines several @ZipCode annotations on the same element
@@ -647,6 +652,7 @@ public @interface ZipCode {
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
       </example>
 
@@ -690,6 +696,7 @@ public @interface FrenchZipcode {
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
       </example>
 
@@ -740,6 +747,7 @@ public @interface ReportAsSingleViolation {
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
       </example>
 
@@ -763,6 +771,7 @@ public @interface FrenchZipcode {
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     @OverridesAttribute.List( {
         @OverridesAttribute(constraint=Size.class, name="min"),
@@ -816,6 +825,7 @@ public @interface FrenchZipcode {
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
 
       <para>If a constraint is used more than once as a composing constraint,
@@ -3165,6 +3175,7 @@ public class Address {
 public @interface NotEmpty {
     String message() default "{constraint.notEmpty}"
     Class&lt;?&gt; groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
         public void initialize(NotEmpty constraintAnnotation) {}
@@ -3470,92 +3481,92 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  * @author Hardy Ferentschik
  */
 public interface Validator {
-	/**
-	 * Validates all constraints on object.
-	 *
-	 * @param object object to validate
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints on object.
+     *
+     * @param object object to validate
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
-	/**
-	 * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
-	 * of &lt;code&gt;object&lt;/code&gt;
-	 *
-	 * @param object object to validate
-	 * @param propertyName property to validate (ie field and getter constraints)
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
-	 *                                  or not a valid object property
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
-													 String propertyName,
-													 Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
+     * of &lt;code&gt;object&lt;/code&gt;
+     *
+     * @param object object to validate
+     * @param propertyName property to validate (ie field and getter constraints)
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null, if propertyName null, empty
+     *                                  or not a valid object property
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+                                                     String propertyName,
+                                                     Class&lt;?&gt;... groups);
 
-	/**
-	 * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-	 * would the property value be &lt;code&gt;value&lt;/code&gt;
-	 * &lt;p/&gt;
-	 * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
-	 * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
-	 *
-	 * @param beanType the bean type
-	 * @param propertyName property to validate
-	 * @param value property value to validate
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
-	 *                                  or not a valid object property
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
-												  String propertyName,
-												  Object value,
-												  Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
+     * would the property value be &lt;code&gt;value&lt;/code&gt;
+     * &lt;p/&gt;
+     * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
+     * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
+     *
+     * @param beanType the bean type
+     * @param propertyName property to validate
+     * @param value property value to validate
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null, if propertyName null, empty
+     *                                  or not a valid object property
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
+                                                  String propertyName,
+                                                  Object value,
+                                                  Class&lt;?&gt;... groups);
 
-	/**
-	 * Return the descriptor object describing bean constraints
-	 * The returned object (and associated objects including ConstraintDescriptors)
-	 * are immutable.
-	 *
-	 * @param clazz class type evaluated
-	 *
-	 * @return the bean descriptor for the specified class.
-	 *
-	 * @throws ValidationException if a non recoverable error happens
-	 *                             during the metadata discovery or if some
-	 *                             constraints are invalid.
-	 */
-	BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
+    /**
+     * Return the descriptor object describing bean constraints
+     * The returned object (and associated objects including ConstraintDescriptors)
+     * are immutable.
+     *
+     * @param clazz class type evaluated
+     *
+     * @return the bean descriptor for the specified class.
+     *
+     * @throws ValidationException if a non recoverable error happens
+     *                             during the metadata discovery or if some
+     *                             constraints are invalid.
+     */
+    BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 
-	/** 
-	 * Return an object of the specified type to allow access to the
-	 * provider-specific API.  If the Bean Validation provider
-	 * implementation does not support the specified class, the
-	 * ValidationException is thrown.
-	 * @param type  the class of the object to be returned.
-	 * @return an instance of the specified class
-	 * @throws ValidationException if the provider does not
-	 *         support the call.
-	 */
-	public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+    /** 
+     * Return an object of the specified type to allow access to the
+     * provider-specific API.  If the Bean Validation provider
+     * implementation does not support the specified class, the
+     * ValidationException is thrown.
+     * @param type  the class of the object to be returned.
+     * @return an instance of the specified class
+     * @throws ValidationException if the provider does not
+     *         support the call.
+     */
+    public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
 
       <para><methodname>getConstraintsForClass</methodname> is described in
@@ -4145,6 +4156,7 @@ public class Review {
 public @interface NotEmpty {
     String message() default "{constraint.notEmpty}"
     Class&lt;?&gt; groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
         public void initialize(NotEmpty constraintAnnotation) {}
@@ -4911,43 +4923,43 @@ Validator localizedValidator =
  * @author Emmanuel Bernard
  */
 public interface ValidatorFactory {
-	/**
-	 * @return Returns an initialized &lt;code&gt;Validator&lt;/code&gt; instance using the default
-	 * factory instances for message interpolator and traversable resolver.
-	 * &lt;p&gt;
-	 * Validator instances can be pooled and shared by the implementation.
-	 * &lt;/p&gt;
-	 */
-	Validator getValidator();
+    /**
+     * @return Returns an initialized &lt;code&gt;Validator&lt;/code&gt; instance using the default
+     * factory instances for message interpolator and traversable resolver.
+     * &lt;p&gt;
+     * Validator instances can be pooled and shared by the implementation.
+     * &lt;/p&gt;
+     */
+    Validator getValidator();
 
-	/**
-	 * Define the validator context and return a &lt;code&gt;Validator&lt;/code&gt; compliant
-	 * with this state.
-	 *
-	 * @return a &lt;code&gt;ValidatorContext&lt;/code&gt;.
-	 */
-	ValidatorContext usingContext();
+    /**
+     * Define the validator context and return a &lt;code&gt;Validator&lt;/code&gt; compliant
+     * with this state.
+     *
+     * @return a &lt;code&gt;ValidatorContext&lt;/code&gt;.
+     */
+    ValidatorContext usingContext();
 
-	/**
-	 * Returns the &lt;code&gt;MessageInterpolator&lt;/code&gt; instance configured at
-	 * initialization time for the &lt;code&gt;ValidatorFactory&lt;code&gt;.
-	 * This is the instance used by #getValidator().
-	 *
-	 * @return MessageInterpolator instance.
-	 */
-	MessageInterpolator getMessageInterpolator();
+    /**
+     * Returns the &lt;code&gt;MessageInterpolator&lt;/code&gt; instance configured at
+     * initialization time for the &lt;code&gt;ValidatorFactory&lt;code&gt;.
+     * This is the instance used by #getValidator().
+     *
+     * @return MessageInterpolator instance.
+     */
+    MessageInterpolator getMessageInterpolator();
 
-	/**
-	 * Return an object of the specified type to allow access to the
-	 * provider-specific API.  If the Bean Validation provider
-	 * implementation does not support the specified class, the
-	 * ValidationException is thrown. 
-	 * @param type  the class of the object to be returned.
-	 * @return an instance of the specified class
-	 * @throws ValidationException if the provider does not
-	 *         support the call.
-	 */
-	public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+    /**
+     * Return an object of the specified type to allow access to the
+     * provider-specific API.  If the Bean Validation provider
+     * implementation does not support the specified class, the
+     * ValidationException is thrown. 
+     * @param type  the class of the object to be returned.
+     * @return an instance of the specified class
+     * @throws ValidationException if the provider does not
+     *         support the call.
+     */
+    public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
         </example>
 
@@ -6449,7 +6461,7 @@ public interface BeanDescriptor extends ElementDescriptor {
       <title>PropertyDescriptor</title>
 
       <para>The <classname>PropertyDescriptor</classname> interface describes
-      a constrained property of a Java Bean. </para>
+      a constrained property of a Java Bean.</para>
 
       <para><classname>PropertyDescriptor</classname> lives in the
       <classname>javax.validation.metadata</classname> package.</para>
@@ -6780,6 +6792,8 @@ public @interface Null {
 
     Class&lt;?&gt;[] groups() default { };
 
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
     /**
      * Defines several @Null annotations on the same element
      * @see javax.validation.constraints.Null
@@ -6812,6 +6826,8 @@ public @interface NotNull {
     String message() default "{javax.validation.constraints.NotNull.message}";
 
     Class&lt;?&gt;[] groups() default { };
+
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * Defines several @NotNull annotations on the same element
@@ -6848,6 +6864,8 @@ public @interface AssertTrue {
 
     Class&lt;?&gt;[] groups() default { };
 
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
     /**
      * Defines several @AssertTrue annotations on the same element
      * @see AssertTrue
@@ -6882,6 +6900,8 @@ public @interface AssertFalse {
     String message() default "{javax.validation.constraints.AssertFalse.message}";
 
     Class&lt;?&gt;[] groups() default { };
+
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * Defines several @AssertFalse annotations on the same element
@@ -6927,6 +6947,8 @@ public @interface Min {
     String message() default "{javax.validation.constraints.Min.message}";
 
     Class&lt;?&gt;[] groups() default { };
+
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * @return value the element must be higher or equal to
@@ -6978,6 +7000,8 @@ public @interface Max {
 
     Class&lt;?&gt;[] groups() default { };
 
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
     /**
      * @return value the element must be lower or equal to
      */
@@ -7028,6 +7052,8 @@ public @interface DecimalMin {
     String message() default "{javax.validation.constraints.DecimalMin.message}";
 
     Class&lt;?&gt;[] groups() default { };
+
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * The String representation of the min value according to the
@@ -7082,6 +7108,8 @@ public @interface DecimalMax {
 
     Class&lt;?&gt;[] groups() default { };
 
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
     /**
      * The String representation of the max value according to the
      * BigDecimal string representation
@@ -7128,6 +7156,7 @@ public @interface DecimalMax {
 public @interface Size {
     String message() default "{javax.validation.constraints.Size.message}";
     Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * @return size the element must be higher or equal to
@@ -7182,6 +7211,8 @@ public @interface Digits {
 
     Class&lt;?&gt;[] groups() default { };
 
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
     /**
      * @return maximum number of integral digits accepted for this number.
      */
@@ -7235,6 +7266,8 @@ public @interface Past {
 
     Class&lt;?&gt;[] groups() default { };
 
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
     /**
      * Defines several @Past annotations on the same element
      * @see {@link Past}
@@ -7277,6 +7310,8 @@ public @interface Future {
     String message() default "{javax.validation.constraints.Future.message}";
 
     Class&lt;?&gt;[] groups() default { };
+
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * Defines several @Future annotations on the same element
@@ -7329,6 +7364,11 @@ public @interface Pattern {
      * groups the constraint belongs to
      */
     Class&lt;?&gt;[] groups() default { };
+
+    /**
+     * @return The payload associated to the constraint
+     */
+    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
     /**
      * Possible Regexp flags
