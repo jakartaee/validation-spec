@@ -6567,36 +6567,53 @@ public interface Validator {
  */
 public interface ElementDescriptor {
 
-    /**
-     * return true if at least one constraint declaration is present on the element.
-     */
-    boolean hasConstraints();
+	/**
+	 * @return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is present on the element, &lt;code&gt;false&lt;/code&gt; otherwise.
+	 */
+	boolean hasConstraints();
 
-    /**
-     * @return Statically defined returned type.
-     *
-     * @todo should it be Type or even completly removed
-     */
-    Class&lt;?&gt; getType();
+	/**
+	 * @return Statically defined returned type.
+	 */
+	Class&lt;?&gt; getElementClass();
 
-    /**
-     * Return all constraint descriptors for this element or an
-     * empty Set if none are present.
-     *
-     * @return Set of constraint descriptors for this element
-     */
-    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+	/**
+	 * Return all constraint descriptors for this element or an
+	 * empty Set if none are present.
+	 *
+	 * @return Set of constraint descriptors for this element
+	 */
+	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+
+	/**
+	 * Return the list of matching constraints for a given set of groups for this element.
+	 *
+	 * This method respects group sequences and group inheritance (including
+	 * class-level Default group overriding) but does not return ConstraintDescriptors
+	 * in any particular order. Specifically, ordering of the group sequence is not
+	 * respected.
+	 *
+	 * @param groups groups targeted
+	 * @return list of matching ConstraintDescriptors
+	 */
+	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getUnorderdConstraintDescriptorsMatchingGroups(Class&lt;?&gt;... groups);
 }</programlisting>
 
-      <para><methodname>getType</methodname> returns either the object type
-      for a class, or the returned type for a property (TODO problem of
-      generics resolution).</para>
+      <para><methodname>getElementClass</methodname> returns either the object
+      type for a class, or the returned type for a property.</para>
 
       <para><classname>getConstraintDescriptors</classname> returns the
       <classname>ConstraintDescriptor</classname>s (see <xref
       linkend="constraintmetadata-constraintdescriptor" />), each
       <classname>ConstraintDescriptor</classname> describing one of the
       constraints declared on the given element.</para>
+
+      <para><classname>getUnorderdConstraintDescriptorsMatchingGroups</classname>
+      returns the <classname>ConstraintDescriptor</classname>s (see <xref
+      linkend="constraintmetadata-constraintdescriptor" />) matching the set
+      of groups passed as parameters and present on the element. Order is not
+      respected but group inheritance and inheritance via sequence (including
+      the Default group overriding at the class level) are honored.</para>
 
       <para><methodname>hasConstraints</methodname> returns true if the
       element (class, field or property) holds at least one constraint
