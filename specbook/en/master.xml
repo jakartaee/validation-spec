@@ -338,13 +338,18 @@ public @interface Constraint {
           <literal>message</literal> element of type
           <literal>String</literal>.</para>
 
-          <programlisting>String message() default "{constraint.myConstraintFailure}";</programlisting>
+          <programlisting>String message() default "{com.acme.constraint.MyConstraint.message}";</programlisting>
 
           <para>The <methodname>message</methodname> element value is used to
           create the error message. See <xref
           linkend="validationapi-message" /> for a detailed explanation. It is
           recommended to default <literal>message</literal> values to resource
-          bundle keys. It opens the doors to internationalization.</para>
+          bundle keys as it opens the doors to internationalization. It is
+          also recommended to use the following convention. The resource
+          bundle key should be the fully qualified class name of the
+          constraint annotation concatenated to <literal>.message</literal> as
+          shown in the previous program listing. The built-in Bean Validation
+          constraints follow this convention.</para>
         </section>
 
         <section id="constraintsdefinitionimplementation-constraintdefinition-groups">
@@ -463,7 +468,7 @@ public class Address {
 @Target({METHOD, FIELD, ANNOTATION_TYPE})
 @Retention(RUNTIME)
 public @interface OrderNumber {
-    String message() default "{constraint.orderNumber}";
+    String message() default "{com.acme.constraint.OrderNumber.message}";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
@@ -489,7 +494,7 @@ public @interface OrderNumber {
 @Retention(RUNTIME)
 public @interface Audible {
     Audible age() default Age.YOUNG;
-    String message() default "{constraint.audible}";
+    String message() default "{com.acme.constraint.Audible.message}";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
@@ -521,7 +526,7 @@ public @interface Audible {
 @Retention(RUNTIME)
 public @interface Acceptable {
     int[] value();
-    String message() default "{constraint.acceptable}";
+    String message() default "{com.acme.constraint.Acceptable.message}";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 }</programlisting>
@@ -578,7 +583,7 @@ public @interface ZipCode {
 
     String countryCode();
 
-    String message() default "{constraint.zipCode}";
+    String message() default "{com.acme.constraint.ZipCode.message}";
 
     Class&lt;?&gt;[] groups() default {};
 
@@ -779,10 +784,10 @@ public @interface FrenchZipcode {
     int size() default 5;
 
     @OverridesAttribute(constraint=Size.class, name="message")
-    String sizeMessage() default "{constraint.zipcode.size}";
+    String sizeMessage() default "{com.acme.constraint.FrenchZipcode.zipcode.size}";
 
     @OverridesAttribute(constraint=Pattern.class, name="message")
-    String numberMessage() default "{constraint.number.size}";
+    String numberMessage() default "{com.acme.constraint.FrenchZipcode.number.size}";
 }</programlisting>
       </example>
 
@@ -1260,8 +1265,8 @@ public class SyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt
           <programlisting>/**
  * Check that a text is within the authorized syntax
  * Error messages are using either key:
- *  - constraint.syntax.unknown if no particular syntax is detected
- *  - constraint.syntax.unauthorized if the syntax is not allowed
+ *  - com.acme.constraint.Syntax.unknown if no particular syntax is detected
+ *  - com.acme.constraint.Syntax.unauthorized if the syntax is not allowed
  */
 public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt; {
     private Set&lt;Format&gt; allowedFormats;
@@ -1285,10 +1290,10 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
 
         context.disableDefaultError();
         if ( guessedFormats.size() == 0 ) {
-            context.addError("{constraint.syntax.unknown}");
+            context.addError("{com.acme.constraint.Syntax.unknown}");
         }
         else {
-            context.addError("{constraint.syntax.unauthorized}");
+            context.addError("{com.acme.constraint.Syntax.unauthorized}");
         }
 
         return allowedFormats.size() == 0 
@@ -3173,7 +3178,7 @@ public class Address {
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{constraint.notEmpty}"
+    String message() default "{com.acme.constraint.NotEmpty.message}"
     Class&lt;?&gt; groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
@@ -3481,93 +3486,99 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  * @author Hardy Ferentschik
  */
 public interface Validator {
-    /**
-     * Validates all constraints on object.
-     *
-     * @param object object to validate
-     * @param groups groups targeted for validation
-     * (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException if object is null
-     * @throws ValidationException      if a non recoverable error happens
-     *                                  during the validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints on object.
+	 *
+	 * @param object object to validate
+	 * @param groups groups targeted for validation
+	 * (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null
+	 *                                  or if null is passed to the varargs groups
+	 * @throws ValidationException	  if a non recoverable error happens
+	 *                                  during the validation process
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
-    /**
-     * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
-     * of &lt;code&gt;object&lt;/code&gt;
-     *
-     * @param object object to validate
-     * @param propertyName property to validate (ie field and getter constraints)
-     * @param groups groups targeted for validation
-     * (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException if object is null, if propertyName null, empty
-     *                                  or not a valid object property
-     * @throws ValidationException      if a non recoverable error happens
-     *                                  during the validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
-                                                     String propertyName,
-                                                     Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
+	 * of &lt;code&gt;object&lt;/code&gt;
+	 *
+	 * @param object object to validate
+	 * @param propertyName property to validate (ie field and getter constraints)
+	 * @param groups groups targeted for validation
+	 * (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
+	 *                                  or not a valid object property
+	 *                                  or if null is passed to the varargs groups
+	 * @throws ValidationException	  if a non recoverable error happens
+	 *                                  during the validation process
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+													 String propertyName,
+													 Class&lt;?&gt;... groups);
 
-    /**
-     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-     * would the property value be &lt;code&gt;value&lt;/code&gt;
-     * &lt;p/&gt;
-     * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
-     * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
-     *
-     * @param beanType the bean type
-     * @param propertyName property to validate
-     * @param value property value to validate
-     * @param groups groups targeted for validation
-     * (default to {@link javax.validation.groups.Default})
-     *
-     * @return constraint violations or an empty Set if none
-     *
-     * @throws IllegalArgumentException if object is null, if propertyName null, empty
-     *                                  or not a valid object property
-     * @throws ValidationException      if a non recoverable error happens
-     *                                  during the validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
-                                                  String propertyName,
-                                                  Object value,
-                                                  Class&lt;?&gt;... groups);
+	/**
+	 * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
+	 * would the property value be &lt;code&gt;value&lt;/code&gt;
+	 * &lt;p/&gt;
+	 * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
+	 * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
+	 *
+	 * @param beanType the bean type
+	 * @param propertyName property to validate
+	 * @param value property value to validate
+	 * @param groups groups targeted for validation
+	 * (default to {@link javax.validation.groups.Default})
+	 *
+	 * @return constraint violations or an empty Set if none
+	 *
+	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
+	 *                                  or not a valid object property
+	 *                                  or if null is passed to the varargs groups
+	 * @throws ValidationException	  if a non recoverable error happens
+	 *                                  during the validation process
+	 */
+	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
+												  String propertyName,
+												  Object value,
+												  Class&lt;?&gt;... groups);
 
-    /**
-     * Return the descriptor object describing bean constraints
-     * The returned object (and associated objects including ConstraintDescriptors)
-     * are immutable.
-     *
-     * @param clazz class type evaluated
-     *
-     * @return the bean descriptor for the specified class.
-     *
-     * @throws IllegalArgumentException if clazz is null
-     * @throws ValidationException if a non recoverable error happens
-     *                             during the metadata discovery or if some
-     *                             constraints are invalid.
-     */
-    BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
+	/**
+	 * Return the descriptor object describing bean constraints
+	 * The returned object (and associated objects including ConstraintDescriptors)
+	 * are immutable.
+	 *
+	 * @param clazz class type evaluated
+	 *
+	 * @return the bean descriptor for the specified class.
+	 *
+	 * @throws IllegalArgumentException if clazz is null
+	 * @throws ValidationException if a non recoverable error happens
+	 *                             during the metadata discovery or if some
+	 *                             constraints are invalid.
+	 */
+	BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 
-    /** 
-     * Return an object of the specified type to allow access to the
-     * provider-specific API.  If the Bean Validation provider
-     * implementation does not support the specified class, the
-     * ValidationException is thrown.
-     * @param type  the class of the object to be returned.
-     * @return an instance of the specified class
-     * @throws ValidationException if the provider does not
-     *         support the call.
-     */
-    public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+	/**
+	 * Return an object of the specified type to allow access to the
+	 * provider-specific API.  If the Bean Validation provider
+	 * implementation does not support the specified class, the
+	 * ValidationException is thrown.
+	 *
+	 * @param type the class of the object to be returned.
+	 *
+	 * @return an instance of the specified class
+	 *
+	 * @throws ValidationException if the provider does not
+	 *                             support the call.
+	 */
+	public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
 
       <para><methodname>getConstraintsForClass</methodname> is described in
@@ -4155,7 +4166,7 @@ public class Review {
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{constraint.notEmpty}"
+    String message() default "{com.acme.constraint.NotEmpty.message}"
     Class&lt;?&gt; groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
 
@@ -6634,7 +6645,7 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 @Target({ METHOD, FIELD })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{constraint.notEmpty}"
+    String message() default "{com.acme.constraint.NotEmpty.message}"
     Class&lt;?&gt; groups() default {};
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
