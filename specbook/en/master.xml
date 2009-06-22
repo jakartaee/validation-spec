@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090615</releaseinfo>
+    <releaseinfo>1.0.20090622</releaseinfo>
 
-    <pubdate>2009-06-15</pubdate>
+    <pubdate>2009-06-22</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -1079,54 +1079,192 @@ public interface ConstraintValidatorContext {
      * Disable the default error message and default ConstraintViolation object generation.
      * Useful to set a different error message or generate a ConstraintViolation based on
      * a different property
-     *
-     * @see #addError(String)
-     * @see #addError(String, String)
      */
     void disableDefaultError();
 
     /**
      * @return the current uninterpolated default message
      */
-    String getDefaultErrorMessage();
+    String getDefaultErrorMessageTemplate();
 
     /**
-     * Add a new error message. This error message will be interpolated.
+     * Return an error builder building an error allowing to optionally associate
+     * the error to a sub path.
+     * The error message will be interpolated.
+     * &lt;p/&gt;
+     * To create the error, one must call either one of
+     * the #addError method available in one of the
+     * interfaces of the fluent API.
+     * If another method is called after #addError() on
+     * ErrorBuilder or any of its associated nested interfaces
+     * an IllegalStateException is raised.
      * &lt;p/&gt;
      * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
-     * per error message including the default one unless {@link #disableDefaultError()} has been called.
+     * per error including the default one unless {@link #disableDefaultError()} has been called.
      * &lt;p/&gt;
-     * Aside from the error message, &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
-     * contain the same contextual information (root bean, path and so on)
+     * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
+     * contain the same contextual information (root bean, path and so on) unless
+     * the path has been overriden.
      * &lt;p/&gt;
-     * This method can be called multiple times. One &lt;code&gt;ConstraintViolation&lt;/code&gt; instance per
-     * call is created.
+     * To create a different error, a new error builder has to be retrieved from
+     * ConstraintValidatorContext
      *
-     * @param message new uninterpolated error message.
+     * Here are a few usage examples:
+     * &lt;pre&gt;//create new error with the default path the constraint
+     * //is located on
+     * context.buildErrorWithMessageTemplate( "way too long" )
+     *             .addError();
+     *
+     * //create new error in the "street" subnode of the default
+     * //path the constraint is located on
+     * context.buildErrorWithMessageTemplate( "way too long" )
+     *              .inSubNode( "street" )
+     *              .addError();
+     *
+     * //create new error in the "addresses["home"].city.name
+     * //subnode of the default path the constraint is located on
+     * context.buildErrorWithMessageTemplate( "this detail is wrong" )
+     *              .inSubNode( "addresses" )
+     *              .inSubNode( "country" )
+     *                  .inIterable().atKey( "home" )
+     *              .inSubNode( "name" )
+     *              .addError();
+     * &lt;/pre&gt;
+     *
+     * @param messageTemplate new uninterpolated error message.
      */
-    void addError(String message);
+    ErrorBuilder buildErrorWithMessageTemplate(String messageTemplate);
 
     /**
-     * Add a new error message to a given sub property &lt;code&gt;property&lt;/code&gt;. The subproperty
-     * is relative to the path to the bean or property hosting the constraint.
+     * Error builder allowing to optionally associate
+     * the error to a sub path.
      *
-     * This error message will be interpolated.
-     * &lt;p/&gt;
-     * If &lt;code&gt;isValid&lt;/code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
-     * per error message including the default one unless {@link #disableDefaultError()}
-     * has been called.
-     * &lt;p/&gt;
-     * Aside from the error message and the property path, &lt;code&gt;ConstraintViolation&lt;/code&gt; objects
-     * generated from such a call contain the same contextual information
-     * (root bean, leaf bean etc)
-     * &lt;p/&gt;
-     * This method can be called multiple times. One &lt;code&gt;ConstraintViolation&lt;/code&gt; instance per
-     * call is created.
-     *
-     * @param message new uninterpolated error message.
-     * @param property property name the &lt;/code&gt;ConstraintViolation&lt;/code&gt; is targeting.
+     * To create the error, one must call either one of
+     * the #addError method available in one of the
+     * interfaces of the fluent API.
+     * If another method is called after #addError() on
+     * ErrorBuilder or any of its associated objects
+     * an IllegalStateException is raised.
+     * 
      */
-    void addError(String message, String property);
+    interface ErrorBuilder {
+        /**
+         * Add a subNode to the path the error will be associated to
+         *
+         * @param name property
+         * @return a builder representing the first level node
+         */
+        NodeBuilder inSubNode(String name);
+
+        /**
+         * Add the new error report to be generated if the
+         * constraint validator mark the value as invalid.
+         * Methods of this ErrorBuilder instance and its nested
+         * objects returns IllegalStateException from now on.
+         *
+         * @return ConstraintValidatorContext instance the ErrorBuilder comes from 
+         */
+        ConstraintValidatorContext addError();
+
+        /**
+         * Represent asubnode whose context is known
+         * (ie index, key and isInIterable)
+         */
+        interface NodeBuilder {
+            /**
+             * Add a subNode to the path the error will be associated to
+             *
+             * @param name property
+             * @return a builder representing this node
+             */
+            InIterableNodeBuilder inSubNode(String name);
+
+            /**
+             * Add the new error report to be generated if the
+             * constraint validator mark the value as invalid.
+             * Methods of the ErrorBuilder instance this object comes
+             * from and the error builder nested
+             * objects returns IllegalStateException from now on.
+             *
+             * @return ConstraintValidatorContext instance the ErrorBuilder comes from
+             */
+            ConstraintValidatorContext addError();
+        }
+
+        /**
+         * Represent a subnode whose context is
+         * configurable (ie index, key and isInIterable)
+         */
+        interface InIterableNodeBuilder {
+            /**
+             * Mark the node as being in an Iterable or a Map
+             * @return a builder representing iterable details
+             */
+            InIterablePropertiesBuilder inIterable();
+
+            /**
+             * Add a subNode to the path the error will be associated to
+             *
+             * @param name property
+             * @return a builder representing this node
+             */
+            InIterableNodeBuilder inSubNode(String name);
+
+            /**
+             * Add the new error report to be generated if the
+             * constraint validator mark the value as invalid.
+             * Methods of the ErrorBuilder instance this object comes
+             * from and the error builder nested
+             * objects returns IllegalStateException from now on.
+             *
+             * @return ConstraintValidatorContext instance the ErrorBuilder comes from
+             */
+            ConstraintValidatorContext addError();
+        }
+
+        /**
+         * Represent choices for a node which is
+         * in an Iterator or Map.
+         * If the iterator is an indexed collection or a map,
+         * the index or the key should be set.
+         */
+        interface InIterablePropertiesBuilder {
+            /**
+             * Define the key the object is into the Map
+             *
+             * @param key map key
+             * @return a builder representing the current node
+             */
+            NodeBuilder atKey(Object key);
+
+            /**
+             * Define the index the object is into the List or array
+             *
+             * @param index index
+             * @return a builder representing the current node
+             */
+            NodeBuilder atIndex(Integer index);
+
+            /**
+             * Add a subNode to the path the error will be associated to
+             *
+             * @param name property
+             * @return a builder representing this node
+             */
+            InIterableNodeBuilder inSubNode(String name);
+
+            /**
+             * Add the new error report to be generated if the
+             * constraint validator mark the value as invalid.
+             * Methods of the ErrorBuilder instance this object comes
+             * from and the error builder nested
+             * objects returns IllegalStateException from now on.
+             *
+             * @return ConstraintValidatorContext instance the ErrorBuilder comes from
+             */
+            ConstraintValidatorContext addError();
+        }
+    }
 }</programlisting>
 
       <para>The <classname>ConstraintValidatorContext</classname> interface
@@ -1134,9 +1272,9 @@ public interface ConstraintValidatorContext {
       is not valid. By default, each invalid constraint leads to the
       generation of one error object represented by a
       <classname>ConstraintViolation</classname> object. This object is build
-      from the default error message as defined by the constraint declaration
-      and the context in which the constraint declaration is placed on (bean,
-      property, attribute).</para>
+      from the default error message template as defined by the constraint
+      declaration and the context in which the constraint declaration is
+      placed on (bean, property, attribute).</para>
 
       <para>The <classname>ConstraintValidatorContext</classname> methods let
       the constraint implementation disable the default error object
@@ -1145,75 +1283,42 @@ public interface ConstraintValidatorContext {
       <classname>ConstraintViolation</classname> object (the message
       interpolation operation is applied to it).</para>
 
-      <para>By default, the <literal>propertyPath</literal> exposed on the
+      <para>By default, the <classname>Path</classname> exposed on the
       <classname>ConstraintViolation</classname> represents the path to the
-      bean or property hosting the constraint. The leaf of the
-      <literal>propertyPath</literal> can be adjusted by use of
-      <methodname>ConstraintValidatorContext.addError(String,
-      String)</methodname>. In this case,
-      <literal><literal>propertyPath</literal></literal> is the concatenation
-      of</para>
+      bean or property hosting the constraint (see <xref
+      linkend="validationapi-constraintviolation" /> for more infos). You can
+      point an error to a subpath of this default path by using the error
+      builder fluent API.</para>
 
-      <itemizedlist>
-        <listitem>
-          <para>the default <literal>propertyPath</literal> value</para>
-        </listitem>
+      <para><xref
+      linkend="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder" />
+      shows a few examples.</para>
 
-        <listitem>
-          <para><literal>.</literal> (dot) if <literal>propertyPath</literal>
-          is not an empty string (ie not representing the root object)</para>
-        </listitem>
+      <example id="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder">
+        <title>Using the fluent API to build error reports</title>
 
-        <listitem>
-          <para>the <literal>property</literal> string passed to the
-          <methodname>addError</methodname> method</para>
-        </listitem>
-      </itemizedlist>
+        <programlisting>//default path
+context.buildErrorWithMessageTemplate( "this detail is wrong" )
+            .addError();
 
-      <table>
-        <title>propertyPath examples</title>
+//default path + "street"
+context.buildErrorWithMessageTemplate( "this detail is wrong" )
+            .inSubNode( "street" )
+            .addError();
 
-        <tgroup cols="3">
-          <thead>
-            <row>
-              <entry>Constraint</entry>
+//default path + "addresses["home"].country.name
+context.buildErrorWithMessageTemplate( "this detail is wrong" )
+            .inSubNode( "addresses" )
+            .inSubNode( "country" )
+                .inIterable().atKey( "home" )
+            .inSubNode( "name" )
+            .addError();</programlisting>
+      </example>
 
-              <entry>addError call</entry>
-
-              <entry>propertyPath</entry>
-            </row>
-          </thead>
-
-          <tbody>
-            <row>
-              <entry><classname>@NotNull</classname> constraint on the
-              property <literal>address</literal></entry>
-
-              <entry><code>addError("is not null")</code></entry>
-
-              <entry><code>address</code></entry>
-            </row>
-
-            <row>
-              <entry><classname>@SafeAddress</classname> constraint on the
-              property <literal>address</literal></entry>
-
-              <entry><code>addError("is not safe")</code></entry>
-
-              <entry><code>address</code></entry>
-            </row>
-
-            <row>
-              <entry><classname>@SafeAddress</classname> constraint on the
-              property <literal>address</literal></entry>
-
-              <entry><code>addError("is not safe", "zipCode")</code></entry>
-
-              <entry><code>address.zipCode</code></entry>
-            </row>
-          </tbody>
-        </tgroup>
-      </table>
+      <para>If <methodname>disableDefaultError</methodname> is called, no
+      custom error is added (using the error builder) and if the constraint is
+      not valid, a <classname>ValidationException</classname> is
+      raised.</para>
 
       <section id="constraintsdefinitionimplementation-validationimplementation-example">
         <title>Example</title>
@@ -1290,10 +1395,12 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
 
         context.disableDefaultError();
         if ( guessedFormats.size() == 0 ) {
-            context.addError("{com.acme.constraint.Syntax.unknown}");
+            context.buildErrorWithMessageTemplate("{com.acme.constraint.Syntax.unknown}")
+                       .addError();
         }
         else {
-            context.addError("{com.acme.constraint.Syntax.unauthorized}");
+            context.buildErrorWithMessageTemplate("{com.acme.constraint.Syntax.unauthorized}")
+                       .addError();
         }
 
         return allowedFormats.size() == 0 
@@ -2461,11 +2568,10 @@ public interface TraversableResolver {
      * Determine if Bean Validation is allowed to reach the property state
      *
      * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
-     * @param traversableProperty name of the traversable property.
+     * @param traversableProperty the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
      * @param pathToTraversableObject path from the root object to
-     *        &lt;code&gt;traversableObject&lt;/code&gt; ("" if the &lt;code&gt;traversableObject&lt;/code&gt; 
-     *        is the root object)
+     *        &lt;code&gt;traversableObject&lt;/code&gt;
      *        (using the path specification defined by Bean Validator).
      * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
      *
@@ -2473,9 +2579,9 @@ public interface TraversableResolver {
      *         &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isReachable(Object traversableObject,
-                          String traversableProperty,
+                          Path.Node traversableProperty,
                           Class&lt;?&gt; rootBeanType,
-                          String pathToTraversableObject,
+                          Path pathToTraversableObject,
                           ElementType elementType);
 
     /**
@@ -2486,11 +2592,10 @@ public interface TraversableResolver {
      * arguments and if the property is marked as &lt;code&gt;@Valid&lt;/code&gt;
      *
      * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
-     * @param traversableProperty name of the traversable property.
+     * @param traversableProperty the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
      * @param pathToTraversableObject path from the root object to
-     *        &lt;code&gt;traversableObject&lt;/code&gt; ("" if the &lt;code&gt;traversableObject&lt;/code&gt;
-     *        is the root object)
+     *        &lt;code&gt;traversableObject&lt;/code&gt;
      *        (using the path specification defined by Bean Validator).
      * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
      *
@@ -2498,9 +2603,9 @@ public interface TraversableResolver {
      *         &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isCascadable(Object traversableObject,
-                          String traversableProperty,
+                          Path.Node traversableProperty,
                           Class&lt;?&gt; rootBeanType,
-                          String pathToTraversableObject,
+                          Path pathToTraversableObject,
                           ElementType elementType);
 }</programlisting>
 
@@ -2526,21 +2631,23 @@ public interface TraversableResolver {
         being evaluated. Can be <literal>null</literal> if
         <methodname>validateValue</methodname> is called.</para>
 
-        <para><literal>traversableProperty</literal> is the name of the
-        property hosted by the <methodname>traversableObject</methodname>
-        being considered for traversal. The name of a property is defined in
-        <xref
+        <para><literal>traversableProperty</literal> is the
+        <classname>Node</classname> representing the property hosted by the
+        <methodname>traversableObject</methodname> being considered for
+        traversal. The name of a property is defined in <xref
         linkend="constraintdeclarationvalidationprocess-requirements-property" />.</para>
 
         <para><literal>rootBeanType</literal> is the class of the root being
         validated (and passed to the <methodname>validate</methodname>
         method).</para>
 
-        <para><literal>pathToTraversableObject</literal> is the path from the
+        <para><literal>pathToTraversableObject</literal> is the
+        <classname>Path</classname> from the
         <methodname>rootBeanType</methodname> down to the
-        <methodname>traversableObject</methodname> (it is an empty string if
-        the root object is <methodname>traversableObject</methodname>). The
-        path is described following the conventions described in <xref
+        <methodname>traversableObject</methodname> (it is composed of a single
+        Node whose name is null if the root object is
+        <methodname>traversableObject</methodname>). The path is described
+        following the conventions described in <xref
         linkend="validationapi-constraintviolation" />
         (<methodname>getPropertyPath</methodname>).</para>
 
@@ -2664,8 +2771,9 @@ public class Address {
           </listitem>
 
           <listitem>
-            <para><literal>traversableProperty</literal>: "ISO3Code". The name
-            of the property of <literal>traversableObject</literal> being
+            <para><literal>traversableProperty</literal>: a
+            <classname>Node</classname> whose name is "ISO3Code". The name of
+            the property of <literal>traversableObject</literal> being
             verified.</para>
           </listitem>
 
@@ -2675,8 +2783,10 @@ public class Address {
           </listitem>
 
           <listitem>
-            <para><literal>pathtoTraversableObject</literal>: "country". The
-            path from address to the country instance.</para>
+            <para><literal>pathtoTraversableObject</literal>: a
+            <classname>Path</classname> containing a single
+            <classname>Node</classname> whose name is "country". The path from
+            address to the country instance.</para>
           </listitem>
 
           <listitem>
@@ -2701,8 +2811,9 @@ public class Address {
           </listitem>
 
           <listitem>
-            <para><literal>traversableProperty</literal>: "country". The name
-            of the property of <literal>traversableObject</literal> being
+            <para><literal>traversableProperty</literal>: a
+            <classname>Node</classname> whose name is "country". The name of
+            the property of <literal>traversableObject</literal> being
             verified.</para>
           </listitem>
 
@@ -2712,7 +2823,9 @@ public class Address {
           </listitem>
 
           <listitem>
-            <para><literal>pathtoTraversableObject</literal>: "".</para>
+            <para><literal>pathtoTraversableObject</literal>: a
+            <classname>Path</classname> containing a single
+            <classname>Node</classname> whose name is null.</para>
           </listitem>
 
           <listitem>
@@ -2727,12 +2840,20 @@ public class Address {
 
           <programlisting>public class JPATraversableResolver implements TraversableResolver {
 
-    public boolean isReachable(Object traversableObject, String traversableProperty, Class&lt;?&gt; rootBeanType, String pathToTraversableObject, ElementType elementType) {
+    public boolean isReachable(Object traversableObject, 
+                               Node traversableProperty, 
+                               Class&lt;?&gt; rootBeanType, 
+                               Path pathToTraversableObject, 
+                               ElementType elementType) {
         return traversableObject == null ||
                 Persistence.getPersistenceUtil().isLoaded( traversableObject, traversableProperty );
     }
 
-    public boolean isCascadable(Object traversableObject, String traversableProperty, Class&lt;?&gt; rootBeanType, String pathToTraversableObject, ElementType elementType) {
+    public boolean isCascadable(Object traversableObject, 
+                               Node traversableProperty, 
+                               Class&lt;?&gt; rootBeanType, 
+                               Path pathToTraversableObject, 
+                               ElementType elementType) {
         return true;
     }
 }</programlisting>
@@ -3486,99 +3607,99 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  * @author Hardy Ferentschik
  */
 public interface Validator {
-	/**
-	 * Validates all constraints on object.
-	 *
-	 * @param object object to validate
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null
-	 *                                  or if null is passed to the varargs groups
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints on object.
+     *
+     * @param object object to validate
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null
+     *                                  or if null is passed to the varargs groups
+     * @throws ValidationException if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
-	/**
-	 * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
-	 * of &lt;code&gt;object&lt;/code&gt;
-	 *
-	 * @param object object to validate
-	 * @param propertyName property to validate (ie field and getter constraints)
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
-	 *                                  or not a valid object property
-	 *                                  or if null is passed to the varargs groups
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
-													 String propertyName,
-													 Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
+     * of &lt;code&gt;object&lt;/code&gt;
+     *
+     * @param object object to validate
+     * @param propertyName property to validate (ie field and getter constraints)
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null, if propertyName null, empty
+     *                                  or not a valid object property
+     *                                  or if null is passed to the varargs groups
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
+                                                     String propertyName,
+                                                     Class&lt;?&gt;... groups);
 
-	/**
-	 * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-	 * would the property value be &lt;code&gt;value&lt;/code&gt;
-	 * &lt;p/&gt;
-	 * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
-	 * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
-	 *
-	 * @param beanType the bean type
-	 * @param propertyName property to validate
-	 * @param value property value to validate
-	 * @param groups groups targeted for validation
-	 * (default to {@link javax.validation.groups.Default})
-	 *
-	 * @return constraint violations or an empty Set if none
-	 *
-	 * @throws IllegalArgumentException if object is null, if propertyName null, empty
-	 *                                  or not a valid object property
-	 *                                  or if null is passed to the varargs groups
-	 * @throws ValidationException	  if a non recoverable error happens
-	 *                                  during the validation process
-	 */
-	&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
-												  String propertyName,
-												  Object value,
-												  Class&lt;?&gt;... groups);
+    /**
+     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
+     * would the property value be &lt;code&gt;value&lt;/code&gt;
+     * &lt;p/&gt;
+     * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
+     * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
+     *
+     * @param beanType the bean type
+     * @param propertyName property to validate
+     * @param value property value to validate
+     * @param groups groups targeted for validation
+     * (default to {@link javax.validation.groups.Default})
+     *
+     * @return constraint violations or an empty Set if none
+     *
+     * @throws IllegalArgumentException if object is null, if propertyName null, empty
+     *                                  or not a valid object property
+     *                                  or if null is passed to the varargs groups
+     * @throws ValidationException      if a non recoverable error happens
+     *                                  during the validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
+                                                  String propertyName,
+                                                  Object value,
+                                                  Class&lt;?&gt;... groups);
 
-	/**
-	 * Return the descriptor object describing bean constraints
-	 * The returned object (and associated objects including ConstraintDescriptors)
-	 * are immutable.
-	 *
-	 * @param clazz class type evaluated
-	 *
-	 * @return the bean descriptor for the specified class.
-	 *
-	 * @throws IllegalArgumentException if clazz is null
-	 * @throws ValidationException if a non recoverable error happens
-	 *                             during the metadata discovery or if some
-	 *                             constraints are invalid.
-	 */
-	BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
+    /**
+     * Return the descriptor object describing bean constraints
+     * The returned object (and associated objects including ConstraintDescriptors)
+     * are immutable.
+     *
+     * @param clazz class type evaluated
+     *
+     * @return the bean descriptor for the specified class.
+     *
+     * @throws IllegalArgumentException if clazz is null
+     * @throws ValidationException if a non recoverable error happens
+     *                             during the metadata discovery or if some
+     *                             constraints are invalid.
+     */
+    BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 
-	/**
-	 * Return an object of the specified type to allow access to the
-	 * provider-specific API.  If the Bean Validation provider
-	 * implementation does not support the specified class, the
-	 * ValidationException is thrown.
-	 *
-	 * @param type the class of the object to be returned.
-	 *
-	 * @return an instance of the specified class
-	 *
-	 * @throws ValidationException if the provider does not
-	 *                             support the call.
-	 */
-	public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+    /**
+     * Return an object of the specified type to allow access to the
+     * provider-specific API.  If the Bean Validation provider
+     * implementation does not support the specified class, the
+     * ValidationException is thrown.
+     *
+     * @param type the class of the object to be returned.
+     *
+     * @return an instance of the specified class
+     *
+     * @throws ValidationException if the provider does not
+     *                             support the call.
+     */
+    public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
 
       <para><methodname>getConstraintsForClass</methodname> is described in
@@ -3885,15 +4006,15 @@ public interface ConstraintViolation&lt;T&gt; {
     String getMessageTemplate();
 
     /**
-     * @return The class of the root bean being validated
-     */
-    Class&lt;T&gt; getRootBeanClass();
-
-    /**
      * @return The root bean being validated. Null when returned by 
      *         {@link javax.validation.Validator#validateValue(Class, String, Object, Class[])}
      */
     T getRootBean();
+
+    /**
+     * @return The class of the root bean being validated
+     */
+    Class&lt;T&gt; getRootBeanClass();
 
     /**
      * If a bean constraint, the bean instance the constraint is applied on
@@ -3906,10 +4027,9 @@ public interface ConstraintViolation&lt;T&gt; {
     Object getLeafBean();
 
     /**
-     * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;
-     *         &lt;code&gt;null&lt;/code&gt; if the value is the &lt;code&gt;rootBean&lt;code&gt; itself.
+     * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;.
      */
-    String getPropertyPath();
+    Path getPropertyPath();
 
     /**
      * @return the value failing to pass the constraint.
@@ -3949,92 +4069,138 @@ public interface ConstraintViolation&lt;T&gt; {
       to the failing constraint metadata (see <xref
       linkend="constraintmetadata-constraintdescriptor" />).</para>
 
-      <para>The <methodname>getPropertyPath</methodname> is built according to
-      the following rules:</para>
+      <para>The <methodname>getPropertyPath</methodname> returns the Path
+      object representing the navigation path from the root object to the
+      failing object.</para>
+
+      <programlisting>/**
+ * Represent a navigation path from an object to another.
+ * Each path element is represented by a Node.
+ *
+ * The path corresponds to the succession of nodes
+ * in the order they are retured by the Iterator
+ *
+ * @author Emmanuel Bernard
+ */
+public interface Path extends Iterable&lt;Path.Node&gt; {
+
+    /**
+     * Represents an element of a navigation path
+     */
+    interface Node {
+        /**
+         * Property name the node represents
+         * or null if the leaf node and representing an entity
+         * (in particular the node representing the root object
+         * has its name null)
+         */
+        String getName();
+
+        /**
+         * True if the node represents an object contained in an Iterable
+         * or in a Map.
+         */
+        boolean isInIterable();
+
+        /**
+         * The index the node is placed in if contained
+         * in an array or List. Null otherwise.
+         */
+        Integer getIndex();
+
+        /**
+         * The key the node is placed in if contained
+         * in a Map. Null otherwise.
+         */
+        Object getKey();
+    }
+}</programlisting>
+
+      <para><classname>Path</classname> is made of
+      <classname>Node</classname>s and is built according to the following
+      rules:</para>
 
       <itemizedlist>
+        <listitem>
+          <para>if the failing object is the root object, a
+          <classname>Node</classname> with name set to null is added to the
+          <classname>Path</classname>.</para>
+        </listitem>
+
         <listitem>
           <para>When an association is traversed:</para>
 
           <itemizedlist>
             <listitem>
-              <para>if the association is not hosted by the root object (ie
-              hosted on an associated object) a dot (<literal>.</literal>) is
-              concatenated to the <literal>propertyPath</literal></para>
-            </listitem>
-
-            <listitem>
-              <para>the name of the association property (field name or Java
-              Bean property name) is concatenated to the
-              <literal>propertyPath</literal>.</para>
+              <para>a <classname>Node</classname> object whose
+              <literal>name</literal> equals the name of the association
+              property (field name or Java Bean property name) is added to
+              <classname>Path</classname></para>
             </listitem>
 
             <listitem>
               <para>if the association is a <classname>List</classname> or an
-              array, the index value surrounded by square brackets
-              (<literal>[index]</literal>) is concatenated to the
-              <literal>propertyPath</literal> (for example
-              <literal>order.orderLines[1]</literal>)</para>
+              array, the following <classname>Node</classname> object added
+              contains the index value in
+              <methodname>getIndex</methodname>.</para>
             </listitem>
 
             <listitem>
-              <para>if the association is a <classname>Map</classname>, for a
-              given map entry, the result of <code>key.toString()</code>
-              surrounded by square brackets and quotes
-              (<literal>["key.toString()"]</literal>) is concatenated to the
-              <literal>propertyPath</literal> (for example
-              <literal>item.evaluation["quality"]</literal>)</para>
+              <para>if the association is a <classname>Map</classname>, the
+              following <classname>Node</classname> object added (representing
+              a given map entry) contains the key value in
+              <methodname>getKey</methodname></para>
             </listitem>
 
             <listitem>
-              <para>for any other <classname>Iterable</classname> association,
-              <literal>[]</literal> (square brackets) is concatenated to the
-              <literal>propertyPath</literal>.</para>
-            </listitem>
-          </itemizedlist>
-        </listitem>
-
-        <listitem>
-          <para>For property level constraint (field and getter):</para>
-
-          <itemizedlist>
-            <listitem>
-              <para>if the property level constraint is not hosted by the root
-              object (ie hosted on an associated object) a dot
-              (<literal>.</literal>) is concatenated to the
-              <literal>propertyPath</literal></para>
-            </listitem>
-
-            <listitem>
-              <para>the name of the property (field name or Java Bean property
-              name) is concatenated to the
-              <literal>propertyPath</literal></para>
-            </listitem>
-
-            <listitem>
-              <para>the <literal>propertyPath</literal> is considered
-              complete</para>
+              <para>for all <classname>Iterable</classname> or
+              <classname>Map</classname>, the following
+              <classname>Node</classname> object added is marked as
+              <literal>inIterable</literal>
+              (<methodname>isInIterable</methodname>)</para>
             </listitem>
           </itemizedlist>
         </listitem>
 
         <listitem>
-          <para>For class level constraint:</para>
+          <para>For a property level constraint (field and getter)</para>
 
           <itemizedlist>
             <listitem>
-              <para>nothing is concatenated to the
-              <literal>propertyPath</literal>, it is considered complete. If
-              the <literal>propertyPath</literal> is empty, "" is returned
-              (typically a class-level constraint on the root object)</para>
+              <para>a <classname>Node</classname> object is added to
+              <classname>Path</classname> whose <literal>name</literal> equals
+              the name of the property (field name or Java Bean property
+              name)</para>
+            </listitem>
+
+            <listitem>
+              <para>the property path is considered complete</para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>For a class level constraint:</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>a <classname>Node</classname> object is added to
+              <classname>Path</classname> whose <literal>name</literal> is
+              null</para>
+            </listitem>
+
+            <listitem>
+              <para>the property path is considered complete</para>
             </listitem>
           </itemizedlist>
         </listitem>
       </itemizedlist>
 
       <note>
-        <para>the collection notation is following the Unified Expression
-        Language conventions.</para>
+        <para>A given <classname>Node</classname> object derives its
+        <literal>inIterable</literal>, <literal>key</literal> and
+        <literal>index</literal> properties from the previous association
+        traversed.</para>
       </note>
 
       <note>
@@ -4042,11 +4208,6 @@ public interface ConstraintViolation&lt;T&gt; {
         <methodname>propertyPath</methodname>, it is possible to rebuild the
         context of the failure</para>
       </note>
-
-      <warning>
-        <para>Should map key be represented as toString() in the propertyPath?
-        If yes, should " be escaped?</para>
-      </warning>
 
       <para>Assuming the following object definitions and when book is
       validated:</para>
@@ -4074,6 +4235,9 @@ public class Book {
 
     @Valid
     private Map&lt;String, Review&gt; reviewsPerSource;
+
+    @Valid
+    private Review pickedReview;
     ...
 }
 
@@ -4102,49 +4266,71 @@ public class Review {
               <entry><classname>@AvailableInStore</classname> on
               <classname>Book</classname></entry>
 
-              <entry>"" (empty string)</entry>
+              <entry><para>Node(name=null,inIterable=false, index=null,
+              key=null)</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotEmpty</classname> on
               <classname>Book.title</classname></entry>
 
-              <entry>title</entry>
+              <entry><para>Node(name=title,inIterable=false, index=null,
+              key=null)</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotNull</classname> on
               <classname>Book.authors</classname></entry>
 
-              <entry>authors</entry>
+              <entry><para>Node(name=authors,inIterable=false, index=null,
+              key=null)</para></entry>
             </row>
 
             <row>
               <entry><classname>@SecurityChecking</classname> on the fourth
               author, <classname>Author</classname></entry>
 
-              <entry>authors[3]</entry>
+              <entry><para>Node(name=authors,inIterable=false, index=null,
+              key=null)</para><para>Node(name=null,inIterable=true, index=3,
+              key=null)</para></entry>
             </row>
 
             <row>
               <entry><classname>@Size</classname> on the fourth author,
               <classname>Author.lastname</classname></entry>
 
-              <entry>authors[3].lastname</entry>
+              <entry><para>Node(name=authors,inIterable=false, index=null,
+              key=null)</para><para>Node(name=lastname,inIterable=true,
+              index=4, key=null)</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotEmpty</classname> on the first author,
               <classname>Author.company</classname></entry>
 
-              <entry>authors[0].company</entry>
+              <entry><para>Node(name=authors,inIterable=false, index=null,
+              key=null)</para><para>Node(name=company,inIterable=true,
+              index=0, key=null)</para></entry>
             </row>
 
             <row>
               <entry><classname>@Min</classname> on the review associated to
               Consumer Report, <classname>Review.rating</classname></entry>
 
-              <entry>reviewsPerSource["Consumer Report"].rating</entry>
+              <entry><para>Node(name=reviewsPerSource,inIterable=false,
+              index=null,
+              key=null)</para><para>Node(name=rating,inIterable=true,
+              index=null, key="Consumer Report")</para></entry>
+            </row>
+
+            <row>
+              <entry><classname>@Min</classname> on the picked review,
+              <classname>Review.rating</classname></entry>
+
+              <entry><para>Node(name=pickedReview,inIterable=false,
+              index=null,
+              key=null)</para><para>Node(name=rating,inIterable=false,
+              index=null, key=null)</para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -4265,7 +4451,9 @@ assert book == constraintViolation.getLeafBean();
 //the offending value
 assert book.getTitle().equals( constraintViolation.getInvalidValue() );
 //the offending property
-assert "title".equals( constraintViolation.getPropertyPath() );</programlisting>
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+assert "title".equals( nodeIter.next().getName() );
+assert false == nodeIter.hasNext();</programlisting>
 
         <para>The second failure, <literal>@NotEmpty</literal> (or more
         precisely <classname>@NotNull</classname> a composing constraint of
@@ -4280,7 +4468,10 @@ assert author == constraintViolation.getLeafBean();
 //the offending value
 assert book.getAuthor().getLastName() == constraintViolation.getInvalidValue();
 //the offending property
-assert "author.lastName".equals( constraintViolation.getPropertyPath() );</programlisting>
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+assert "author".equals( nodeIter.next().getName() );
+assert "lastName".equals( nodeIter.next().getName() );
+assert false == nodeIter.hasNext();</programlisting>
       </section>
     </section>
 
@@ -4451,7 +4642,7 @@ public interface MessageInterpolator {
     /**
      * Information related to the interpolation context
      */
-    static interface Context {
+    interface Context {
         /**
          * @return ConstraintDescriptor corresponding to the constraint being validated
          */
@@ -8894,7 +9085,7 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
     (<literal>Persistence.VALIDATOR_FACTORY</literal>).</para>
 
     <para>The container places the <classname>ValidatorFactory</classname>
-    instance uner the following JNDI name. JSF 2 implementations are required
+    instance under the following JNDI name. JSF 2 implementations are required
     to look in this entry for any <classname>ValidatorFactory</classname> and
     use it.</para>
 
