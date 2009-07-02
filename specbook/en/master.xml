@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090622</releaseinfo>
+    <releaseinfo>1.0.20090702</releaseinfo>
 
-    <pubdate>2009-06-22</pubdate>
+    <pubdate>2009-07-02</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -299,7 +299,10 @@ public @interface Constraint {
 
       <para>While other <classname>ElementType</classname>s are not forbidden,
       the provider does not have to recognize and process constraints placed
-      on such types.</para>
+      on such types. Built-in types do support <literal>PARAMETER</literal>
+      and <literal>CONSTRUCTOR</literal> to allow Bean Validation provider
+      specific extensions. It is considered a good practice to follow the same
+      approach for custom annotations.</para>
 
       <para>If a constraint definition is not valid, a
       <classname>ConstraintDefinitionException</classname> is raised either at
@@ -465,7 +468,7 @@ public class Address {
  */
 @Documented
 @Constraint(validatedBy = OrderNumberValidator.class)
-@Target({METHOD, FIELD, ANNOTATION_TYPE})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface OrderNumber {
     String message() default "{com.acme.constraint.OrderNumber.message}";
@@ -490,7 +493,7 @@ public @interface OrderNumber {
  */
 @Documented
 @Constraint(validatedBy = AudibleValidator.class)
-@Target({METHOD, FIELD, ANNOTATION_TYPE})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface Audible {
     Audible age() default Age.YOUNG;
@@ -522,7 +525,7 @@ public @interface Audible {
  */
 @Documented
 @Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
-@Target({METHOD, FIELD, ANNOTATION_TYPE})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface Acceptable {
     int[] value();
@@ -577,7 +580,7 @@ public @interface Acceptable {
  */
 @Documented
 @Constraint(validatedBy = ZipCodeValidator.class)
-@Target({METHOD, FIELD, ANNOTATION_TYPE})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface ZipCode {
 
@@ -593,7 +596,7 @@ public @interface ZipCode {
      * Defines several @ZipCode annotations on the same element
      * @see (@link ZipCode}
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -652,12 +655,19 @@ public @interface ZipCode {
 @Size(min=5, max=5)
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
-@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Target({ANNOTATION_TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER})
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        FrenchZipcode[] value();
+    }
 }</programlisting>
       </example>
 
@@ -696,12 +706,19 @@ public @interface FrenchZipcode {
 @ReportAsSingleViolation
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
-@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        FrenchZipcode[] value();
+    }
 }</programlisting>
       </example>
 
@@ -747,12 +764,19 @@ public @interface ReportAsSingleViolation {
 @Size(min=5, max=5)
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
-@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        FrenchZipcode[] value();
+    }
 }</programlisting>
       </example>
 
@@ -771,7 +795,7 @@ public @interface FrenchZipcode {
 @Size
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
-@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
@@ -788,6 +812,13 @@ public @interface FrenchZipcode {
 
     @OverridesAttribute(constraint=Pattern.class, name="message")
     String numberMessage() default "{com.acme.constraint.FrenchZipcode.number.size}";
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        FrenchZipcode[] value();
+    }
 }</programlisting>
       </example>
 
@@ -825,12 +856,19 @@ public @interface FrenchZipcode {
 @Size(min=9, max=9, message="Zipcode should be of size {max}")
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
-@Target({ANNOTATION_TYPE, METHOD, FIELD})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
     Class&lt;?&gt;[] groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        FrenchZipcode[] value();
+    }
 }</programlisting>
 
       <para>If a constraint is used more than once as a composing constraint,
@@ -3296,12 +3334,19 @@ public class Address {
 @Size(min=1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
     String message() default "{com.acme.constraint.NotEmpty.message}"
     Class&lt;?&gt; groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        NotEmpty[] value();
+    }    
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
         public void initialize(NotEmpty constraintAnnotation) {}
@@ -4349,12 +4394,19 @@ public class Review {
 @Size(min=1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
     String message() default "{com.acme.constraint.NotEmpty.message}"
     Class&lt;?&gt; groups() default {};
     Class&lt;? extends ConstraintPayload&gt;[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        NotEmpty[] value();
+    }
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
         public void initialize(NotEmpty constraintAnnotation) {}
@@ -6850,11 +6902,18 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 @Size(min=1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
     String message() default "{com.acme.constraint.NotEmpty.message}"
     Class&lt;?&gt; groups() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        NotEmpty[] value();
+    }
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
         public void initialize(NotEmpty constraintAnnotation) {}
@@ -7018,7 +7077,7 @@ assert propertyDescriptor.isCascaded()</programlisting>
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7035,7 +7094,7 @@ public @interface Null {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7053,7 +7112,7 @@ public @interface Null {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7070,7 +7129,7 @@ public @interface NotNull {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7090,7 +7149,7 @@ public @interface NotNull {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7107,7 +7166,7 @@ public @interface AssertTrue {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7127,7 +7186,7 @@ public @interface AssertTrue {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7144,7 +7203,7 @@ public @interface AssertFalse {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7174,7 +7233,7 @@ public @interface AssertFalse {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7196,7 +7255,7 @@ public @interface Min {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7226,7 +7285,7 @@ public @interface Min {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7248,7 +7307,7 @@ public @interface Max {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7279,7 +7338,7 @@ public @interface Max {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7303,7 +7362,7 @@ public @interface DecimalMin {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7334,7 +7393,7 @@ public @interface DecimalMin {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7358,7 +7417,7 @@ public @interface DecimalMax {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7384,7 +7443,7 @@ public @interface DecimalMax {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7409,7 +7468,7 @@ public @interface Size {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7437,7 +7496,7 @@ public @interface Size {
  * @author Emmanuel Bernard
  * @todo Is string supported or not?
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7464,7 +7523,7 @@ public @interface Digits {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7492,7 +7551,7 @@ public @interface Digits {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7509,7 +7568,7 @@ public @interface Past {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7537,7 +7596,7 @@ public @interface Past {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7554,7 +7613,7 @@ public @interface Future {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -7575,7 +7634,7 @@ public @interface Future {
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {})
@@ -7673,7 +7732,7 @@ public @interface Pattern {
      *
      * @author Emmanuel Bernard
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
