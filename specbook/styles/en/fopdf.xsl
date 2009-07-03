@@ -39,112 +39,78 @@ don't want that -->
          <fo:table table-layout="fixed" width="175mm">
             <fo:table-column column-width="175mm"/>
             <fo:table-body>
-               <fo:table-row>
-                  <fo:table-cell text-align="center">
-                     <xsl:if test="bookinfo/mediaobject">
-                        <fo:block>
-                           <fo:external-graphic>
-                              <xsl:attribute name="src">
+    
+                  <!-- begin change -->
+                  <xsl:if test="bookinfo/mediaobject">
+                  <fo:table-row>
+                      <fo:table-cell text-align="center">
+                              <fo:block>
+                                  <fo:external-graphic>
+                                  <xsl:attribute name="src">
                                  FILE:
                                  <xsl:value-of
                                          select="bookinfo/mediaobject/imageobject/imagedata/@fileref"/>
-                              </xsl:attribute>
-                           </fo:external-graphic>
-                        </fo:block>
-                     </xsl:if>
-                     <xsl:if test="bookinfo/title">
-                        <fo:block font-family="Helvetica" font-size="26pt" padding-before="10mm" text-align="left"
-                                  font-weight="bold" color="#003399">
-                           <xsl:value-of select="bookinfo/title"/>
-                        </fo:block>
-                     </xsl:if>
-                     <xsl:if test="bookinfo/subtitle">
-                        <fo:block font-family="Helvetica" font-size="20pt" padding-before="10mm" text-align="left">
-                           <xsl:value-of select="bookinfo/subtitle"/>
-                        </fo:block>
-                     </xsl:if>
-                     <xsl:if test="bookinfo/releaseinfo">
-                        <fo:block font-family="Helvetica" font-size="10pt" text-align="left" padding-before="30mm">
-                           <xsl:value-of select="bookinfo/releaseinfo"/>
-                        </fo:block>
-                     </xsl:if>
-                     <xsl:if test="bookinfo/pubdate">
-                        <fo:block font-family="Helvetica" font-size="10pt" text-align="left">
-                           <xsl:value-of select="bookinfo/pubdate"/>
-                        </fo:block>
-                     </xsl:if>
-
-
-                     <xsl:if test="bookinfo/author">
-                        <fo:block font-family="Helvetica" font-size="10pt" padding="2mm" text-align="left"
-                                  font-weight="bold" padding-before="20mm">
-                           <xsl:text>Authors:</xsl:text>
-                        </fo:block>
-                        <xsl:for-each select="bookinfo/author">
-                           <fo:block font-family="Helvetica" font-size="10pt" padding="2mm" text-align="left">
-                              <xsl:if test="firstname">
-                                 <xsl:value-of select="firstname"/>
-                                 <xsl:if test="surname">
-                                    <xsl:text></xsl:text>
-                                 </xsl:if>
-                              </xsl:if>
-                              <xsl:if test="surname">
-                                 <xsl:value-of select="surname"/>
-                              </xsl:if>
-                              <xsl:if test="email">
-                                 <xsl:text>(</xsl:text>
-                                 <xsl:value-of select="email"/>
-                                 <xsl:text>)</xsl:text>
-                              </xsl:if>
+                                  </xsl:attribute>
+                                  </fo:external-graphic>
+                              </fo:block> 
+                       </fo:table-cell>
+                   </fo:table-row>
+                   </xsl:if>
+                   <fo:table-row>
+                       <fo:table-cell text-align="center">
+                           <fo:block font-family="Helvetica" font-size="22pt" padding-before="20mm" font-weight="bold" color="#003399">
+                               <xsl:value-of select="bookinfo/title"/>
                            </fo:block>
-                        </xsl:for-each>
-                     </xsl:if>
-					 
-					 <xsl:if test="bookinfo/authorgroup">
-                        <fo:block font-family="Helvetica" font-size="10pt" padding="2mm" text-align="left"
-                                  font-weight="bold" padding-before="20mm">
-                           <xsl:text>Authors:</xsl:text>
-                        </fo:block>
-						<fo:block font-family="Helvetica" font-size="10pt" padding="2mm" text-align="left">
-						   <xsl:if test="bookinfo/authorgroup/corpauthor">
-                              <xsl:value-of select="bookinfo/authorgroup/corpauthor"/>
+                           <fo:block>
+                               <fo:leader leader-pattern="rule" leader-length="120mm"/>
+                           </fo:block>
+                           <!--
+                           <fo:block font-family="Helvetica" font-size="18pt" padding-before="10mm">
+                               <xsl:value-of select="bookinfo/subtitle"/>
+                           </fo:block>
+                           -->
+                       </fo:table-cell>
+                   </fo:table-row>
+                   <fo:table-row>
+                       <fo:table-cell text-align="center">
+                           <fo:block font-family="Helvetica" font-size="16pt" padding-before="10mm">
+                               <xsl:value-of select="bookinfo/authorgroup/corpauthor"/>
+                           </fo:block>
+                           <fo:block font-family="Helvetica" font-size="10pt" padding-before="10mm" padding-after="0mm">
+                               <xsl:text>Specification lead</xsl:text>
+                           </fo:block>
+                           <fo:block font-family="Helvetica" font-size="12pt">
+                               <xsl:value-of select="bookinfo/authorgroup/author/firstname"/>
+                               <xsl:text> </xsl:text>
+                               <xsl:value-of select="bookinfo/authorgroup/author/surname"/>
+                               <xsl:text>, </xsl:text>
+                               <xsl:value-of select="bookinfo/authorgroup/author/affiliation/orgname"/>
+                           </fo:block>
+                       </fo:table-cell>
+                   </fo:table-row>
+                   <fo:table-row text-align="center">
+                       <fo:table-cell>
+                           <fo:block font-family="Helvetica" font-size="10pt" padding-before="10mm" padding-after="0mm">
+                               <xsl:text>Version</xsl:text>
+                           </fo:block>
+                           <fo:block font-family="Helvetica" font-size="12pt">
+                               <xsl:value-of select="bookinfo/releaseinfo"/>
+                           </fo:block>
+                           <fo:block font-family="Helvetica" font-size="12pt">
+                               <xsl:value-of select="bookinfo/pubdate"/>
+                           </fo:block>
+                           <xsl:if test="bookinfo/copyright">
+                               <fo:block font-family="Helvetica" font-size="8pt" padding="10mm" padding-before="20mm">
+                                   <xsl:apply-templates select="bookinfo/copyright" mode="titlepage.mode"/>
+                               </fo:block>
                            </xsl:if>
-						</fo:block>
-                        <xsl:for-each select="bookinfo/authorgroup/author">
-                           <fo:block font-family="Helvetica" font-size="10pt" padding="2mm" text-align="left">
-                              <xsl:if test="firstname">
-                                 <xsl:value-of select="firstname"/>
-                                 <xsl:if test="surname">
-                                    <xsl:text> </xsl:text>
-                                 </xsl:if>
-                              </xsl:if>
-                              <xsl:if test="surname">
-                                 <xsl:value-of select="surname"/>
-                              </xsl:if>
-							  <xsl:if test="affiliation">
-                                 <xsl:text> (</xsl:text>
-                                 <xsl:value-of select="affiliation"/>
-                                 <xsl:text>)</xsl:text>
-                              </xsl:if>
-                              <xsl:if test="email">
-                                 <xsl:text>(</xsl:text>
-                                 <xsl:value-of select="email"/>
-                                 <xsl:text>)</xsl:text>
-                              </xsl:if>
-                           </fo:block>
-                        </xsl:for-each>
-                     </xsl:if>
+                       </fo:table-cell>
+                   </fo:table-row>
+                  <!-- end change --> 
+                   
+                  
 
-
-                     <xsl:if test="bookinfo/copyright">
-                        <fo:block font-family="Helvetica" font-size="8pt" padding="10mm" padding-before="20mm">
-
-                           <xsl:apply-templates select="bookinfo/copyright" mode="titlepage.mode"/>
-                        </fo:block>
-                     </xsl:if>
-                  </fo:table-cell>
-               </fo:table-row>
-            </fo:table-body>
+            </fo:table-body>	
          </fo:table>
       </fo:block>
    </xsl:template>
