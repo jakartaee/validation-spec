@@ -259,7 +259,7 @@
  * annotation which refers to its list of constraint validation implementations.
  *
  * @author Emmanuel Bernard
- * @author Gavin Kinge
+ * @author Gavin King
  * @author Hardy Ferentschik
  */
 @Documented
@@ -381,9 +381,9 @@ public @interface Constraint {
         <section id="constraintsdefinitionimplementation-constraintdefinition-payload">
           <title>payload</title>
 
-          <para>Every constraint annotation must define a
-          <literal>payload</literal> element that specifies which payload the
-          constraint declaration is associated with.</para>
+          <para>Constraint annotations can define a <literal>payload</literal>
+          element that specifies which payload the constraint declaration is
+          associated with.</para>
 
           <programlisting>    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};</programlisting>
 
@@ -411,6 +411,14 @@ public interface ConstraintPayload {
           Payloads are typically non portable. Describing payloads as
           interface extensions as opposed to a string based approach allows an
           easier and more type-safe approach.</para>
+
+          <note>
+            <para>While the <literal>payload</literal> attribute is not
+            mandatory, it is recommended to add it to constraint definitions
+            particularly if you intend to publish constraints as public APIs.
+            All built-in constraints do support
+            <literal>payload</literal>.</para>
+          </note>
 
           <para>One use case for payload shown in <xref
           linkend="example-payload" /> is to associate a severity to a
@@ -1109,6 +1117,9 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
 
       <programlisting>/**
  * Provide contextual data and operation when applying a given constraint validator
+ * 
+ * At least one error must be defined (either the default one, of if the default error
+ * is disabled, a custom one).
  *
  * @author Emmanuel Bernard
  */
