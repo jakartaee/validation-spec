@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090702</releaseinfo>
+    <releaseinfo>1.0.20090703</releaseinfo>
 
-    <pubdate>2009-07-02</pubdate>
+    <pubdate>2009-07-03</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -1398,7 +1398,7 @@ public class SyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt
         if ( value == null ) return true;
 
         return allowedFormats.size() == 0 
-            || (! Collections.disjoint( guessFormat(value), allowedFormats ) ));
+            || (! Collections.disjoint( guessFormat(value), allowedFormats ) );
     }
 
     Set&lt;Format&gt; guessFormats(String text) { ... }
@@ -2417,7 +2417,9 @@ public class Order implements Auditable {
           field level validations (including the ones expressed on interfaces
           and superclasses) matching the targeted group unless the given
           validation constraint has already been processed during this
-          validation routine (as part of a previous group match)</para>
+          validation routine for a given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+          as part of a previous group match.</para>
         </listitem>
 
         <listitem>
@@ -2425,15 +2427,19 @@ public class Order implements Auditable {
           getter level validations (including the ones expressed on interfaces
           and superclasses) matching the targeted group unless the given
           validation constraint has already been processed during this
-          validation routine (as part of a previous group match)</para>
+          validation routine for a given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+          as part of a previous group match.</para>
         </listitem>
 
         <listitem>
           <para>execute all class level validations (including the ones
           expressed on interfaces and superclasses) matching the targeted
           group unless the given validation constraint has already been
-          processed during this validation routine (as part of a previous
-          group match)</para>
+          processed during this validation routine for a given navigation path
+          (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+          as part of a previous group match.</para>
         </listitem>
 
         <listitem>
@@ -4629,8 +4635,9 @@ assert false == nodeIter.hasNext();</programlisting>
 
             <listitem>
               <para>Message parameters are extracted from the message string.
-              Those matching the name of an attribute of the constraint
-              declaration are replaced by the value of that attribute.<!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
+              Those matching the name of an attribute of the constraint are
+              replaced by the value of that attribute in the constraint
+              declaration.<!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
 If the value being valudated is null, the string 'null' is used as a replacement string
 EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it conflicts with value the default annotation name--></para>
             </listitem>
@@ -4904,7 +4911,7 @@ Validator validator = validatorFactory.usingContext()
           <title>Contextual container possible
           <classname>MessageInterpolator</classname> implementation</title>
 
-          <programlisting>public class ContextualMessageInterpolator {
+          <programlisting>public class ContextualMessageInterpolator implements MessageInterpolator {
     private final MessageInterpolator delegate;
 
     public ContextualMessageInterpolator(MessageInterpolator delegate) { 
@@ -6630,36 +6637,36 @@ public interface Validator {
  */
 public interface ElementDescriptor {
 
-	/**
-	 * @return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is present on the element, &lt;code&gt;false&lt;/code&gt; otherwise.
-	 */
-	boolean hasConstraints();
+    /**
+     * @return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is present on the element, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean hasConstraints();
 
-	/**
-	 * @return Statically defined returned type.
-	 */
-	Class&lt;?&gt; getElementClass();
+    /**
+     * @return Statically defined returned type.
+     */
+    Class&lt;?&gt; getElementClass();
 
-	/**
-	 * Return all constraint descriptors for this element or an
-	 * empty Set if none are present.
-	 *
-	 * @return Set of constraint descriptors for this element
-	 */
-	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+    /**
+     * Return all constraint descriptors for this element or an
+     * empty Set if none are present.
+     *
+     * @return Set of constraint descriptors for this element
+     */
+    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
 
-	/**
-	 * Return the list of matching constraints for a given set of groups for this element.
-	 *
-	 * This method respects group sequences and group inheritance (including
-	 * class-level Default group overriding) but does not return ConstraintDescriptors
-	 * in any particular order. Specifically, ordering of the group sequence is not
-	 * respected.
-	 *
-	 * @param groups groups targeted
-	 * @return list of matching ConstraintDescriptors
-	 */
-	Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getUnorderdConstraintDescriptorsMatchingGroups(Class&lt;?&gt;... groups);
+    /**
+     * Return the list of matching constraints for a given set of groups for this element.
+     *
+     * This method respects group sequences and group inheritance (including
+     * class-level Default group overriding) but does not return ConstraintDescriptors
+     * in any particular order. Specifically, ordering of the group sequence is not
+     * respected.
+     *
+     * @param groups groups targeted
+     * @return list of matching ConstraintDescriptors
+     */
+    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getUnorderdConstraintDescriptorsMatchingGroups(Class&lt;?&gt;... groups);
 }</programlisting>
 
       <para><methodname>getElementClass</methodname> returns either the object
@@ -6836,6 +6843,13 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
     Set&lt;Class&lt;?&gt;&gt; getGroups();
 
     /**
+     * The Set of payload the constraint hosts.
+     *
+     * @return payload classes hosted on the constraint or an empty set if none.
+     */
+    Set&lt;Class&lt;ConstraintPayload&gt;&gt; getPayload();
+
+    /**
      * Immutable list of the constraint validation implementation classes.
      *
      * @return list of the constraint validation implementation classes.
@@ -6894,6 +6908,9 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
       constraint declaration, the <classname>Default</classname> group is
       returned. The groups of a composing constraint are the groups of the
       composed constraint.</para>
+
+      <para><literal>getPayload</literal> returns the payloads associated to
+      the constraint or an empty set if none.</para>
 
       <para><methodname>getConstraintValidatorClasses</methodname> returns the
       <classname>ConstraintValidator</classname> classes associated with the
@@ -8838,18 +8855,18 @@ public class ConstraintViolationException extends ValidationException {
     <para>The properties listed below are resolved by the default message
     interpolator.</para>
 
-    <programlisting>javax.validation.constraints.Null.messate=must be null
-javax.validation.constraints.NotNull.messate=must not be mull
-javax.validation.constraints.AssertTrue.messate=assertion failed
-javax.validation.constraints.AssertFalse.messate=assertion failed
-javax.validation.constraints.Min.messate=must be greater than or equal to {value}
-javax.validation.constraints.Max.messate=must be less than or equal to {value}
-javax.validation.constraints.Size.messate=size must be between {min} and {max}
-javax.validation.constraints.Digits.messate= \
+    <programlisting>javax.validation.constraints.Null.message=must be null
+javax.validation.constraints.NotNull.message=must not be null
+javax.validation.constraints.AssertTrue.message=assertion failed
+javax.validation.constraints.AssertFalse.message=assertion failed
+javax.validation.constraints.Min.message=must be greater than or equal to {value}
+javax.validation.constraints.Max.message=must be less than or equal to {value}
+javax.validation.constraints.Size.message=size must be between {min} and {max}
+javax.validation.constraints.Digits.message= \
     numeric value out of bounds (&lt;{integer} digits&gt;.&lt;{fraction} digits&gt; expected)
-javax.validation.constraints.Past.messate=must be a past date
-javax.validation.constraints.Future.messate=must be a future date
-javax.validation.constraints.Pattern.messate=must match the following regular expression: {regexp}</programlisting>
+javax.validation.constraints.Past.message=must be a past date
+javax.validation.constraints.Future.message=must be a future date
+javax.validation.constraints.Pattern.message=must match the following regular expression: {regexp}</programlisting>
   </appendix>
 
   <appendix id="appendix-methodlevelvalidation">
