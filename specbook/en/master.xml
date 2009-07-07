@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090703</releaseinfo>
+    <releaseinfo>1.0.20090707</releaseinfo>
 
-    <pubdate>2009-07-03</pubdate>
+    <pubdate>2009-07-07</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -351,8 +351,10 @@ public @interface Constraint {
           also recommended to use the following convention. The resource
           bundle key should be the fully qualified class name of the
           constraint annotation concatenated to <literal>.message</literal> as
-          shown in the previous program listing. The built-in Bean Validation
-          constraints follow this convention.</para>
+          shown in the previous program listing. </para>
+
+          <para>Built-in Bean Validation constraints follow this
+          convention.</para>
         </section>
 
         <section id="constraintsdefinitionimplementation-constraintdefinition-groups">
@@ -1116,8 +1118,8 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
       validated to.</para>
 
       <programlisting>/**
- * Provide contextual data and operation when applying a given constraint validator
- * 
+ * Provide contextual data and operation when applying a given constraint validator.
+ *
  * At least one error must be defined (either the default one, of if the default error
  * is disabled, a custom one).
  *
@@ -1159,28 +1161,29 @@ public interface ConstraintValidatorContext {
      * ConstraintValidatorContext
      *
      * Here are a few usage examples:
-     * &lt;pre&gt;//create new error with the default path the constraint
-     * //is located on
+     * &lt;pre&gt;
+     * {@code
+     * // create new error with the default path the constraint is located on
      * context.buildErrorWithMessageTemplate( "way too long" )
      *             .addError();
      *
-     * //create new error in the "street" subnode of the default
-     * //path the constraint is located on
+     * // create new error in the "street" subnode of the default path the constraint is located on
      * context.buildErrorWithMessageTemplate( "way too long" )
-     *              .inSubNode( "street" )
+     *              .addSubNode( "street" )
      *              .addError();
      *
-     * //create new error in the "addresses["home"].city.name
-     * //subnode of the default path the constraint is located on
+     * //create new error in the "addresses["home"].city.name subnode of the default path the constraint is located on
      * context.buildErrorWithMessageTemplate( "this detail is wrong" )
-     *              .inSubNode( "addresses" )
-     *              .inSubNode( "country" )
+     *              .addSubNode( "addresses" )
+     *              .addSubNode( "country" )
      *                  .inIterable().atKey( "home" )
-     *              .inSubNode( "name" )
+     *              .addSubNode( "name" )
      *              .addError();
+     * }
      * &lt;/pre&gt;
      *
      * @param messageTemplate new uninterpolated error message.
+     * @return Returns an error builder
      */
     ErrorBuilder buildErrorWithMessageTemplate(String messageTemplate);
 
@@ -1198,12 +1201,15 @@ public interface ConstraintValidatorContext {
      */
     interface ErrorBuilder {
         /**
-         * Add a subNode to the path the error will be associated to
+         * Add a subNode to the path the error will be associated to.
          *
-         * @param name property
-         * @return a builder representing the first level node
+         * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
+         * dot (.) are not allowed.
+         *
+         * @param name property name
+         * @return a builder representing node &lt;code&gt;name&lt;/code&gt;
          */
-        NodeBuilder inSubNode(String name);
+        NodeBuilderDefinedContext addSubNode(String name);
 
         /**
          * Add the new error report to be generated if the
@@ -1216,24 +1222,28 @@ public interface ConstraintValidatorContext {
         ConstraintValidatorContext addError();
 
         /**
-         * Represent asubnode whose context is known
+         * Represent a subnode whose context is known
          * (ie index, key and isInIterable)
          */
-        interface NodeBuilder {
+        interface NodeBuilderDefinedContext {
+
             /**
-             * Add a subNode to the path the error will be associated to
+             * Add a subNode to the path the error will be associated to.
              *
-             * @param name property
+             * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
+             * dot (.) are not allowed.
+             *
+             * @param name property &lt;code&gt;name&lt;/code&gt;
              * @return a builder representing this node
              */
-            InIterableNodeBuilder inSubNode(String name);
+            NodeBuilderCustomizableContext addSubNode(String name);
 
             /**
              * Add the new error report to be generated if the
              * constraint validator mark the value as invalid.
              * Methods of the ErrorBuilder instance this object comes
              * from and the error builder nested
-             * objects returns IllegalStateException from now on.
+             * objects returns IllegalStateException after this call.
              *
              * @return ConstraintValidatorContext instance the ErrorBuilder comes from
              */
@@ -1244,27 +1254,32 @@ public interface ConstraintValidatorContext {
          * Represent a subnode whose context is
          * configurable (ie index, key and isInIterable)
          */
-        interface InIterableNodeBuilder {
-            /**
-             * Mark the node as being in an Iterable or a Map
-             * @return a builder representing iterable details
-             */
-            InIterablePropertiesBuilder inIterable();
+        interface NodeBuilderCustomizableContext {
 
             /**
-             * Add a subNode to the path the error will be associated to
+             * Mark the node as being in an Iterable or a Map
+             * 
+             * @return a builder representing iterable details
+             */
+            NodeContextBuilder inIterable();
+
+            /**
+             * Add a subNode to the path the error will be associated to.
              *
-             * @param name property
+             * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
+             * dot (.) are not allowed.
+             *
+             * @param name property &lt;code&gt;name&lt;/code&gt;
              * @return a builder representing this node
              */
-            InIterableNodeBuilder inSubNode(String name);
+            NodeBuilderCustomizableContext addSubNode(String name);
 
             /**
              * Add the new error report to be generated if the
              * constraint validator mark the value as invalid.
              * Methods of the ErrorBuilder instance this object comes
              * from and the error builder nested
-             * objects returns IllegalStateException from now on.
+             * objects returns IllegalStateException after this call.
              *
              * @return ConstraintValidatorContext instance the ErrorBuilder comes from
              */
@@ -1272,19 +1287,20 @@ public interface ConstraintValidatorContext {
         }
 
         /**
-         * Represent choices for a node which is
+         * Represent refinement choices for a node which is
          * in an Iterator or Map.
          * If the iterator is an indexed collection or a map,
          * the index or the key should be set.
          */
-        interface InIterablePropertiesBuilder {
+        interface NodeContextBuilder {
+            
             /**
              * Define the key the object is into the Map
              *
              * @param key map key
              * @return a builder representing the current node
              */
-            NodeBuilder atKey(Object key);
+            NodeBuilderDefinedContext atKey(Object key);
 
             /**
              * Define the index the object is into the List or array
@@ -1292,22 +1308,25 @@ public interface ConstraintValidatorContext {
              * @param index index
              * @return a builder representing the current node
              */
-            NodeBuilder atIndex(Integer index);
+            NodeBuilderDefinedContext atIndex(Integer index);
 
             /**
-             * Add a subNode to the path the error will be associated to
+             * Add a subNode to the path the error will be associated to.
              *
-             * @param name property
+             * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
+             * dot (.) are not allowed.
+             *
+             * @param name property &lt;code&gt;name&lt;/code&gt;
              * @return a builder representing this node
              */
-            InIterableNodeBuilder inSubNode(String name);
+            NodeBuilderCustomizableContext addSubNode(String name);
 
             /**
              * Add the new error report to be generated if the
              * constraint validator mark the value as invalid.
              * Methods of the ErrorBuilder instance this object comes
              * from and the error builder nested
-             * objects returns IllegalStateException from now on.
+             * objects returns IllegalStateException after this call.
              *
              * @return ConstraintValidatorContext instance the ErrorBuilder comes from
              */
@@ -1352,15 +1371,15 @@ context.buildErrorWithMessageTemplate( "this detail is wrong" )
 
 //default path + "street"
 context.buildErrorWithMessageTemplate( "this detail is wrong" )
-            .inSubNode( "street" )
+            .addSubNode( "street" )
             .addError();
 
 //default path + "addresses["home"].country.name
 context.buildErrorWithMessageTemplate( "this detail is wrong" )
-            .inSubNode( "addresses" )
-            .inSubNode( "country" )
+            .addSubNode( "addresses" )
+            .addSubNode( "country" )
                 .inIterable().atKey( "home" )
-            .inSubNode( "name" )
+            .addSubNode( "name" )
             .addError();</programlisting>
       </example>
 
