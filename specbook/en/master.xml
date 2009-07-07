@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090707</releaseinfo>
+    <releaseinfo>1.0.CR2 Proposed Final Draft 2</releaseinfo>
 
-    <pubdate>2009-07-07</pubdate>
+    <pubdate>2009-07-08</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -50,6 +50,52 @@
     <ulink
     url="http://forum.hibernate.org/viewforum.php?f=26">http://forum.hibernate.org/viewforum.php?f=26</ulink>.
     If privacy is a concern, consider using jsr-303-comments@jcp.org.</para>
+
+    <para>Some areas have changed or new features have been added (check <xref
+    linkend="changelog" /> for more infos). The most significant are:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>Object oriented <classname>Path</classname> instead of the
+        String representation (<xref
+        linkend="validationapi-constraintviolation" />) to make path
+        navigation more object oriented and error creation more safe (see
+        <xref
+        linkend="constraintsdefinitionimplementation-validationimplementation" />
+        <classname>ConstraintValidatorContext</classname>)</para>
+      </listitem>
+
+      <listitem>
+        <para>Support for constraint payload used by third party frameworks to
+        pass metadata on constraints (<xref
+        linkend="constraintsdefinitionimplementation-constraintdefinition-payload" />)</para>
+      </listitem>
+
+      <listitem>
+        <para>Return the list of <classname>ConstraintDescriptor</classname>s
+        for a given set of groups in <classname>ElementDescriptor</classname>
+        (<xref linkend="constraintmetadata-elementdescriptor" />)</para>
+      </listitem>
+
+      <listitem>
+        <para>Provide an <methodname>unwrap</methodname> method on
+        <classname>Validator</classname> and
+        <classname>ValidatorFactory</classname> to allow implementation
+        extensions</para>
+      </listitem>
+
+      <listitem>
+        <para>Bootstrap API now accept a
+        <classname>ValidationProvider</classname> subclass instead of a
+        <classname>Configuration</classname> subclass (<xref
+        linkend="bootstrapping" /> and
+        <code>Validation.byProvider(...)</code>).</para>
+      </listitem>
+
+      <listitem>
+        <para>Package refactoring</para>
+      </listitem>
+    </itemizedlist>
   </preface>
 
   <chapter>
@@ -383,9 +429,9 @@ public @interface Constraint {
         <section id="constraintsdefinitionimplementation-constraintdefinition-payload">
           <title>payload</title>
 
-          <para>Constraint annotations can define a <literal>payload</literal>
-          element that specifies which payload the constraint declaration is
-          associated with.</para>
+          <para>Constraint annotations must define a
+          <literal>payload</literal> element that specifies which payload the
+          constraint declaration is associated with.</para>
 
           <programlisting>    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};</programlisting>
 
@@ -413,14 +459,6 @@ public interface ConstraintPayload {
           Payloads are typically non portable. Describing payloads as
           interface extensions as opposed to a string based approach allows an
           easier and more type-safe approach.</para>
-
-          <note>
-            <para>While the <literal>payload</literal> attribute is not
-            mandatory, it is recommended to add it to constraint definitions
-            particularly if you intend to publish constraints as public APIs.
-            All built-in constraints do support
-            <literal>payload</literal>.</para>
-          </note>
 
           <para>One use case for payload shown in <xref
           linkend="example-payload" /> is to associate a severity to a
@@ -578,7 +616,7 @@ public @interface Acceptable {
 
       <para>Note to constraint designers. Each constraint annotation should be
       coupled with its corresponding multi-valued annotation. The
-      specification recommend, though does not mandate to define an inner
+      specification recommends, though does not mandate, to define an inner
       annotation named <classname>List</classname>.</para>
 
       <example>
@@ -1150,8 +1188,9 @@ public interface ConstraintValidatorContext {
      * ErrorBuilder or any of its associated nested interfaces
      * an IllegalStateException is raised.
      * &lt;p/&gt;
-     * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt; object will be built
-     * per error including the default one unless {@link #disableDefaultError()} has been called.
+     * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt;
+     * object will be built per error including the default one unless
+     * {@link #disableDefaultError()} has been called.
      * &lt;p/&gt;
      * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
      * contain the same contextual information (root bean, path and so on) unless
@@ -1167,12 +1206,14 @@ public interface ConstraintValidatorContext {
      * context.buildErrorWithMessageTemplate( "way too long" )
      *             .addError();
      *
-     * // create new error in the "street" subnode of the default path the constraint is located on
+     * // create new error in the "street" subnode of the default path the constraint
+     * // is located on
      * context.buildErrorWithMessageTemplate( "way too long" )
      *              .addSubNode( "street" )
      *              .addError();
      *
-     * //create new error in the "addresses["home"].city.name subnode of the default path the constraint is located on
+     * //create new error in the "addresses["home"].city.name subnode of the default
+     * // path the constraint is located on
      * context.buildErrorWithMessageTemplate( "this detail is wrong" )
      *              .addSubNode( "addresses" )
      *              .addSubNode( "country" )
@@ -2649,6 +2690,21 @@ public interface TraversableResolver {
      *
      * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
      * @param traversableProperty the traversable property.
+     * @param rootBeanType type of the root object/**
+ * Contract determining if a property can be accessed by the Bean Validation provider
+ * This contract is called for each property either validated or cascaded.
+ *
+ * A traversable resolver implementation must be thread-safe.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface TraversableResolver {
+    /**
+     * Determine if Bean Validation is allowed to reach the property state
+     *
+     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt; or null
+     *                          if validateValue is called
+     * @param traversableProperty the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
      * @param pathToTraversableObject path from the root object to
      *        &lt;code&gt;traversableObject&lt;/code&gt;
@@ -2671,7 +2727,8 @@ public interface TraversableResolver {
      * Note that this method is called only if isReachable returns true for the same set of
      * arguments and if the property is marked as &lt;code&gt;@Valid&lt;/code&gt;
      *
-     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt;, null if validateValue is called
+     * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt; or null
+     *                          if validateValue is called
      * @param traversableProperty the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
      * @param pathToTraversableObject path from the root object to
@@ -3711,7 +3768,7 @@ public interface Validator {
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
     /**
-     * Validates all constraints placed on the property named &amp;lt;code&amp;gt;propertyName&amp;lt;/code&amp;gt;
+     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
      * of &lt;code&gt;object&lt;/code&gt;
      *
      * @param object object to validate
@@ -6643,7 +6700,7 @@ public interface Validator {
       <classname>UnexpectedTypeException</classname>.</para>
     </section>
 
-    <section>
+    <section id="constraintmetadata-elementdescriptor">
       <title>ElementDescriptor</title>
 
       <para><classname>ElementDescriptor</classname> is the root interface
@@ -6663,7 +6720,8 @@ public interface Validator {
 public interface ElementDescriptor {
 
     /**
-     * @return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is present on the element, &lt;code&gt;false&lt;/code&gt; otherwise.
+     * @return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is
+     *         present on the element, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean hasConstraints();
 
@@ -9234,7 +9292,45 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
   <appendix id="changelog">
     <title>Changelog</title>
 
-    <programlisting>1.0.CR1 Proposed Final Draft (2009-03-16)
+    <programlisting>1.0.CR2 Proposed Final Draft 2 (2009-07-08)
+-------------------------------------------
+
+** Bug
+    * [BVAL-144] - validation-configuration.xsd property element does not extend basic string type preventing Oxygen to be happy
+    * [BVAL-159] - Fix example 3.8 on object graph validation 
+
+
+** Improvement
+    * [BVAL-143] - Describe path with an object model
+    * [BVAL-147] - Support for unbounded wildcards in ConstraintValidator
+    * [BVAL-148] - Built-in constraints annotations now annotated with @Constraint(validatedBy={})
+    * [BVAL-151] - TraversableResolver#isTraversable can receive null traversableObject when valudateValue is called
+    * [BVAL-152] - TraversableResolver should differentiate reachability and cascadability
+    * [BVAL-153] - Generify ConstraintValidatorException
+    * [BVAL-154] - Iterable is a superclass of all collection, clarify it's interaction with @Valid
+    * [BVAL-155] - ignore-annotation is not inherited hierarchically: make that explicit
+    * [BVAL-156] - Pattern.Flag takes the JDK flag int at construction time
+    * [BVAL-157] - Add [] to non-indexed iterable path 
+    * [BVAL-158] - Clarify that @Valid is orthogonal to the idea of group
+    * [BVAL-160] - rename message template key as [f.q.c.n of the constraint].message
+    * [BVAL-162] - Move metadata classes to the metadata package (BeanDescriptor, ElementDescriptor, PropertyDescriptor, ConstraintDescriptor)
+    * [BVAL-164] - Validation.byProvider now accept the provider implementation class
+    * [BVAL-166] - IllegalArgumentException raised on BeanDescriptor.getConstraintsForProperty and Validator.getConstraintsForClass
+    * [BVAL-167] - Recommend f.q.c.n.message for resource bundle keys and migrate examples
+    * [BVAL-169] - Rename ElementDescriptor.getType to getElementClass
+    * [BVAL-170] - Let built-in annotations to support ElementType.PARAMETER and ElementType.CONSTRUCTOR
+
+** New Feature
+    * [BVAL-149] - Provide access to the ValidationProviderResolver via BootstrapState
+    * [BVAL-150] - Add ConstraintViolation.getRootBeanClass
+    * [BVAL-161] - Add unwrap methods to ValidatorFactory and Validator
+    * [BVAL-163] - Add support for constraint payload
+    * [BVAL-168] - Return the list of matching ConstraintDescriptor for a given set of groups
+    * [BVAL-172] - Provide ConstraintDescriptor#getPayload
+
+
+
+1.0.CR1 Proposed Final Draft (2009-03-16)
 -----------------------------------------
 
 
