@@ -486,10 +486,11 @@ public class Address {
           </example>
 
           <para>The <literal>payload</literal> information can be retrieved
-          from error reports via <classname>ConstraintViolation</classname>
-          objects (see <xref linkend="validationapi-constraintviolation" />)
-          or using the metadata API via
-          <classname>ConstraintDescriptor</classname> objects (see <xref
+          from error reports via the
+          <classname>ConstraintDescriptor</classname> either accessed through
+          the <classname>ConstraintViolation</classname> objects (see <xref
+          linkend="validationapi-constraintviolation" />) or through the
+          metadata API (see <xref
           linkend="constraintmetadata-constraintdescriptor" />).</para>
         </section>
 
@@ -3030,16 +3031,18 @@ public class Address {
           <programlisting>public class JPATraversableResolver implements TraversableResolver {
 
     public boolean isReachable(Object traversableObject, 
-                               Node traversableProperty, 
+                               Path.Node traversableProperty, 
                                Class&lt;?&gt; rootBeanType, 
                                Path pathToTraversableObject, 
                                ElementType elementType) {
         return traversableObject == null ||
-                Persistence.getPersistenceUtil().isLoaded( traversableObject, traversableProperty );
+                Persistence.getPersistenceUtil().isLoaded( 
+                        traversableObject, 
+                        traversableProperty.getName() );
     }
 
     public boolean isCascadable(Object traversableObject, 
-                               Node traversableProperty, 
+                               Path.Node traversableProperty, 
                                Class&lt;?&gt; rootBeanType, 
                                Path pathToTraversableObject, 
                                ElementType elementType) {
