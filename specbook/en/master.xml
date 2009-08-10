@@ -354,9 +354,9 @@ public @interface Constraint {
       <para>Since a given constraint definition applies to one or more
       specific Java types, the JavaDoc for the constraint annotation should
       clearly state which types are supported. Applying a constraint
-      annotation to an incompatible type will raise a
+      annotation to an incompatible type will raise an
       <classname>UnexpectedTypeException</classname>. Care should be taken on
-      defining the list of <classname>ConstraintValidator</classname>. The
+      defining the list of <classname>ConstraintValidator</classname>s. The
       type resolution algorithm (see <xref
       linkend="typevalidatorresolution" />) could lead to exceptions if the
       <classname>ConstraintValidator</classname> list leads to
@@ -394,11 +394,12 @@ public @interface Constraint {
           create the error message. See <xref
           linkend="validationapi-message" /> for a detailed explanation. It is
           recommended to default <literal>message</literal> values to resource
-          bundle keys as it opens the doors to internationalization. It is
-          also recommended to use the following convention. The resource
-          bundle key should be the fully qualified class name of the
-          constraint annotation concatenated to <literal>.message</literal> as
-          shown in the previous program listing.</para>
+          bundle keys as this approach opens the doors to
+          internationalization. It is also recommended to use the following
+          convention. The resource bundle key should be the fully qualified
+          class name of the constraint annotation concatenated to
+          <literal>.message</literal> as shown in the previous program
+          listing.</para>
 
           <para>Built-in Bean Validation constraints follow this
           convention.</para>
@@ -408,8 +409,8 @@ public @interface Constraint {
           <title>groups</title>
 
           <para>Every constraint annotation must define a
-          <literal>groups</literal> element that specifies which processing
-          groups the constraint declaration is associated with.</para>
+          <literal>groups</literal> element that specifies the processing
+          groups with which the constraint declaration is associated.</para>
 
           <programlisting>    Class&lt;?&gt;[] groups() default {};</programlisting>
 
@@ -431,8 +432,8 @@ public @interface Constraint {
           <title>payload</title>
 
           <para>Constraint annotations must define a
-          <literal>payload</literal> element that specifies which payload the
-          constraint declaration is associated with.</para>
+          <literal>payload</literal> element that specifies the payload with
+          which the the constraint declaration is associated.</para>
 
           <programlisting>    Class&lt;? extends ConstraintPayload&gt;[] payload() default {};</programlisting>
 
@@ -456,9 +457,9 @@ public interface ConstraintPayload {
 }</programlisting>
 
           <para>Payloads are typically used by validation clients to associate
-          some metadata information to a given constraint declaration.
-          Payloads are typically non portable. Describing payloads as
-          interface extensions as opposed to a string based approach allows an
+          some metadata information with a given constraint declaration.
+          Payloads are typically non-portable. Describing payloads as
+          interface extensions as opposed to a string-based approach allows an
           easier and more type-safe approach.</para>
 
           <para>One use case for payload shown in <xref
@@ -616,10 +617,10 @@ public @interface Acceptable {
       recommended to use the same set of targets as the initial
       constraint.</para>
 
-      <para>Note to constraint designers. Each constraint annotation should be
+      <para>Note to constraint designers: each constraint annotation should be
       coupled with its corresponding multi-valued annotation. The
-      specification recommends, though does not mandate, to define an inner
-      annotation named <classname>List</classname>.</para>
+      specification recommends, though does not mandate, the definition of an
+      inner annotation named <classname>List</classname>.</para>
 
       <example>
         <title>Multi-valued constraint definition</title>
@@ -734,7 +735,7 @@ public @interface FrenchZipcode {
       annotations. Any <methodname>groups</methodname> definition on a
       composing annotation is ignored.</para>
 
-      <para>The property type a composed constraint is placed on must be
+      <para>The property type upon which composed constraint is placed must be
       compatible with all constraints (composing and composed). A constraint
       designer should ensure that such a type exists and list in the JavaDoc
       all the compatible types.</para>
@@ -748,7 +749,7 @@ public @interface FrenchZipcode {
       <classname>@ReportAsSingleViolation</classname> annotation.</para>
 
       <example>
-        <title>If any of the composing constraint fails, the error report
+        <title>If any of the composing constraints fail, the error report
         corresponding to @FrenchZipcode is raised and none other.</title>
 
         <programlisting>@Pattern(regexp="[0-9]*")
@@ -1432,13 +1433,13 @@ public interface ConstraintValidatorContext {
 }</programlisting>
 
       <para>The <classname>ConstraintValidatorContext</classname> interface
-      allows to redefine the default error message generated when a constraint
-      is not valid. By default, each invalid constraint leads to the
-      generation of one error object represented by a
+      allows redefinition of the default error message generated when a
+      constraint is not valid. By default, each invalid constraint leads to
+      the generation of one error object represented by a
       <classname>ConstraintViolation</classname> object. This object is built
       from the default error message template as defined by the constraint
       declaration and the context in which the constraint declaration is
-      placed on (bean, property, attribute).</para>
+      placed (bean, property, attribute).</para>
 
       <para>The <classname>ConstraintValidatorContext</classname> methods let
       the constraint implementation disable the default error object
@@ -1612,8 +1613,8 @@ public interface ConstraintValidatorFactory {
       provided by the Bean Validation provider implementation uses the public
       no-arg constructor of the <classname>ConstraintValidator</classname>
       class. A custom <classname>ConstraintValidatorFactory</classname> can be
-      provided for example to benefit from dependency injection control in
-      constraint implementations. Any constraint implementation relying on
+      provided; for example it may benefit from dependency injection control
+      in constraint implementations. Any constraint implementation relying on
       <classname>ConstraintValidatorFactory</classname> behaviors specific to
       an implementation (dependency injection, no no-arg constructor and so
       on) are not considered portable, hence great care should be given before
@@ -1912,9 +1913,9 @@ public interface Default {
       <section id="constraintdeclarationvalidationprocess-groupsequence-groupinheritance">
         <title>Group inheritance</title>
 
-        <para>In some situations, a group is a super set of one or more
-        groups. This can be described by Bean Validation. A group can inherit
-        one or more groups by using interface inheritance.</para>
+        <para>In some situations, a group is a superset of one or more groups.
+        This can be described by Bean Validation. A group may inherit one or
+        more groups by using interface inheritance.</para>
 
         <example>
           <title>Groups can inherit other groups</title>
@@ -1976,12 +1977,11 @@ public class User {
       <section id="constraintdeclarationvalidationprocess-groupsequence-groupsequence">
         <title>Group sequence</title>
 
-        <para>By default, constraints are evaluated in no particular order and
-        this is regardless of which groups they belong to. It is however
-        useful in some situations to control the order of constraints
-        evaluation. There are often scenarios where a preliminary set of
-        constraints should be evaluated prior to other constraints. Here are
-        two examples:</para>
+        <para>By default, constraints are evaluated in no particular order
+        regardless of which groups they belong to. It is however useful in
+        some situations to control the order of constraints evaluation. There
+        are often scenarios where a preliminary set of constraints should be
+        evaluated prior to other constraints. Here are two examples:</para>
 
         <itemizedlist>
           <listitem>
