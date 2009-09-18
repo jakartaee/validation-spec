@@ -42,11 +42,11 @@
     <title>Disclaimer</title>
 
     <para>This specification is in proposed final draft stage. The content of
-    this specification is expected to change except for minor adjustments,
+    this specification is not expected to change except for minor adjustments,
     needs uncovered when writing the reference implementation or due to
-    important feedback by the community.</para>
+    important feedback by the community. XXXXXXXXX</para>
 
-    <para>The JSR 303 expert group is seeking feedbacks from the community at
+    <para>The JSR 303 expert group is seeking feedback from the community at
     <ulink
     url="http://forum.hibernate.org/viewforum.php?f=26">http://forum.hibernate.org/viewforum.php?f=26</ulink>.
     If privacy is a concern, consider using jsr-303-comments@jcp.org.</para>
@@ -64,7 +64,7 @@
     <section>
       <title>Expert group</title>
 
-      <para>This work is being conducted as part of JSR-303 under the Java
+      <para>This work is being conducted as part of JSR 303 under the Java
       Community Process Program. This specification is the result of the
       collaborative work of the members of the JSR 303 Expert Group. These
       include the following present and former expert group members:</para>
@@ -226,7 +226,7 @@
     <section>
       <title>How to comment</title>
 
-      <para>The expert group is eager to receive feedbacks from readers. Feel
+      <para>The expert group is eager to receive feedback from readers. Feel
       free to contact us at <ulink
       url="http://forum.hibernate.org/viewforum.php?f=26">http://forum.hibernate.org/viewforum.php?f=26</ulink>.
       If privacy is a concern, consider using jsr-303-comments@jcp.org.</para>
@@ -302,7 +302,7 @@ public @interface Constraint {
       the provider does not have to recognize and process constraints placed
       on such types. Built-in types do support <literal>PARAMETER</literal>
       and <literal>CONSTRUCTOR</literal> to allow Bean Validation provider
-      specific extensions. It is considered a good practice to follow the same
+      specific extensions. It is considered good practice to follow the same
       approach for custom annotations.</para>
 
       <para>Since a given constraint definition applies to one or more
@@ -348,12 +348,11 @@ public @interface Constraint {
           create the error message. See <xref
           linkend="validationapi-message" /> for a detailed explanation. It is
           recommended to default <literal>message</literal> values to resource
-          bundle keys as this approach opens the doors to
-          internationalization. It is also recommended to use the following
-          convention. The resource bundle key should be the fully qualified
-          class name of the constraint annotation concatenated to
-          <literal>.message</literal> as shown in the previous program
-          listing.</para>
+          bundle keys to enable internationalization. It is also recommended
+          to use the following convention. The resource bundle key should be
+          the fully qualified class name of the constraint annotation
+          concatenated to <literal>.message</literal> as shown in the previous
+          program listing.</para>
 
           <para>Built-in Bean Validation constraints follow this
           convention.</para>
@@ -624,9 +623,13 @@ public @interface ZipCode {
 }</programlisting>
       </example>
 
-      <para>In this example, both constraints apply on the
-      <methodname>zipcode</methodname> field but on different groups and with
-      different error messages.</para>
+      <para>In this example, both constraints apply to the
+      <methodname>zipcode</methodname> field but with different groups and
+      with different error messages.</para>
+
+      <para>Using two different multi-constraint annotations for the same
+      underlying constraint on the same class or property is not considered
+      portable and is discouraged.</para>
     </section>
 
     <section id="constraintsdefinitionimplementation-constraintcomposition">
@@ -889,7 +892,7 @@ public @interface FrenchZipcode {
       <para>If a constraint is used more than once as a composing constraint,
       the multi value constraints model as described in <xref
       linkend="constraintsdefinitionimplementation-multipleconstraints" /> is
-      used. To select the appropriate composing constraint targeted,
+      used. To select a specific composing constraint,
       <methodname>OverridesAttribute.constraintIndex</methodname> is used. It
       represents the constraint index in the <methodname>value</methodname>
       array. If <literal>index</literal> is undefined, the single constraint
@@ -1408,9 +1411,9 @@ public interface ConstraintValidatorContext {
       <para>By default, the <classname>Path</classname> exposed on the
       <classname>ConstraintViolation</classname> represents the path to the
       bean or property hosting the constraint (see <xref
-      linkend="validationapi-constraintviolation" /> for more infos). You can
-      point an error to a subpath of this default path by using the error
-      builder fluent API.</para>
+      linkend="validationapi-constraintviolation" /> for more information).
+      You can point an error to a subpath of this default path by using the
+      error builder fluent API.</para>
 
       <para><xref
       linkend="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder" />
@@ -2687,7 +2690,7 @@ public class Driver {
   @Min(value = 18, groups = Minimal.class)
   int age;
 
-  @AssertTrue(max = 20)
+  @AssertTrue
   Boolean passedDrivingTest;
 
   @Valid
@@ -2703,7 +2706,7 @@ public class Car {
   @NotNull
   String type;
 
-  @(groups = Later.class)
+  @AssertTruegroups = Later.class)
   Boolean roadWorthy;
 
   // setter/getters
@@ -2733,9 +2736,9 @@ assert violations.size() == 2;
 violations = validator.validate( driver, SequencedGroups.class );
 
 assert violations.size() == 1;</programlisting>
-          </example>In the example the default group sequence is redefined for
-        the <classname>Driver</classname> as well as
-        <classname>Car</classname>. When the default group is requested via
+          </example>The default group sequence is redefined for the
+        <classname>Driver</classname> as well as <classname>Car</classname>.
+        When the default group is requested via
         <methodname>validator.validate( driver )</methodname> the group
         <classname>Minimal</classname> gets validated in class
         <classname>Driver</classname>. The constraint will fail since the
@@ -2746,10 +2749,10 @@ assert violations.size() == 1;</programlisting>
         <classname>@NotNull</classname> on <property>Car.type</property>. The
         reason for this is that the group <classname>Default</classname> gets
         propagated to <classname>Car</classname> (not
-        <classname>Minimal</classname>!). Class <classname>Driver</classname>
+        <classname>Minimal</classname>). Class <classname>Driver</classname>
         defines its own group sequence which means that <classname>only
         @NotNull</classname> on <property>type</property> gets
-        evaluted.</para>
+        evaluated.</para>
 
         <para>In the second call to <methodname>validate</methodname> the
         group <classname>SequencedGroups</classname> is requested which
