@@ -2676,8 +2676,92 @@ Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; 
         pass for all associated objects before the second group is evaluated.
         Note however that the <classname>Default</classname> group sequence
         overriding is local to the class it is defined on and is not
-        propagated to the associated objects. TODO put the example defined in
-        the TCK.</para>
+        propagated to the associated objects. The following example
+        illustrates this:</para>
+
+        <para><example>
+            <title>Class Driver with redefined default group</title>
+
+            <programlisting>@GroupSequence({ Minimal.class, Driver.class })
+public class Driver {
+  @Min(value = 18, groups = Minimal.class)
+  int age;
+
+  @AssertTrue(max = 20)
+  Boolean passedDrivingTest;
+
+  @Valid
+  Car car;
+
+  // setter/getters
+}</programlisting>
+          </example><example>
+            <title>Class Car with redefined default group</title>
+
+            <programlisting>@GroupSequence({ Car.class, Later.class })
+public class Car {
+  @NotNull
+  String type;
+
+  @(groups = Later.class)
+  Boolean roadWorthy;
+
+  // setter/getters
+}</programlisting>
+          </example><example>
+            <title>Defining a group sequence</title>
+
+            <programlisting>@GroupSequence({ Minimal.class, Later.class })
+public interface SequencedGroups {
+}</programlisting>
+          </example><example>
+            <title>Group sequence overriding is not propagated to associated
+            objects</title>
+
+            <programlisting>Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+Driver driver = new Driver();
+driver.setAge(16);
+Car porsche = new Car();
+driver.setCar(porsche);
+
+
+Set&lt;ConstraintViolation&lt;Driver&gt;&gt; violations = validator.validate( driver );
+
+assert violations.size() == 2;
+
+violations = validator.validate( driver, SequencedGroups.class );
+
+assert violations.size() == 1;</programlisting>
+          </example>In the example the default group sequence is redefined for
+        the <classname>Driver</classname> as well as
+        <classname>Car</classname>. When the default group is requested via
+        <methodname>validator.validate( driver )</methodname> the group
+        <classname>Minimal</classname> gets validated in class
+        <classname>Driver</classname>. The constraint will fail since the
+        driver's age in the example is only 16. The constraint on
+        <property>passedDrivingTest</property> will not be evaluated due to
+        the redefined default sequence of <classname>Driver</classname>.
+        However, there is one more constraint violation, namely the
+        <classname>@NotNull</classname> on <property>Car.type</property>. The
+        reason for this is that the group <classname>Default</classname> gets
+        propagated to <classname>Car</classname> (not
+        <classname>Minimal</classname>!). Class <classname>Driver</classname>
+        defines its own group sequence which means that <classname>only
+        @NotNull</classname> on <property>type</property> gets
+        evaluted.</para>
+
+        <para>In the second call to <methodname>validate</methodname> the
+        group <classname>SequencedGroups</classname> is requested which
+        defines a sequence of <classname>Minimal</classname> followed by
+        <classname>Later</classname>. In this case there is only one
+        constraint violation. Again <classname>@Min</classname> on
+        <property>age</property> fails, but in this case the group
+        <classname>Minimal</classname> gets propagated to
+        <classname>Car</classname> which does not have any constraints defined
+        against this group. Constraints belonging to the group
+        <classname>Later</classname> won't get validated until all constraints
+        belonging to <classname>Minimal</classname> pass.</para>
       </section>
 
       <section id="constraintdeclarationvalidationprocess-validationroutine-traversable">
