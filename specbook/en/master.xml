@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090923</releaseinfo>
+    <releaseinfo>1.0.20090924</releaseinfo>
 
-    <pubdate>2009-09-23</pubdate>
+    <pubdate>2009-09-24</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -5416,6 +5416,25 @@ public interface ValidatorFactory {
     MessageInterpolator getMessageInterpolator();
 
     /**
+     * Returns the &lt;code&gt;TraversableResolver&lt;/code&gt; instance configured
+     * at initialization time for the &lt;code&gt;ValidatorFactory&lt;code&gt;.
+     * This is the instance used by #getValidator().
+     *
+     * @return TraversableResolver instance.
+     */
+    TraversableResolver getTraversableResolver();
+
+    /**
+     * Returns the &lt;code&gt;ConstraintValidatorFactory&lt;/code&gt; instance
+     * configured at initialization time for the
+     * &lt;code&gt;ValidatorFactory&lt;code&gt;.
+     * This is the instance used by #getValidator().
+     *
+     * @return ConstraintValidatorFactory instance.
+     */
+    ConstraintValidatorFactory getConstraintValidatorFactory();
+
+    /**
      * Return an object of the specified type to allow access to the
      * provider-specific API.  If the Bean Validation provider
      * implementation does not support the specified class, the
@@ -5450,6 +5469,21 @@ acmeFactory.setSpecificConfiguration(...);</programlisting>
         the initialization of the <classname>ValidatorFactory</classname>. It
         is particularly useful to build a <classname>Validator</classname>
         specific <classname>MessageInterpolator</classname> wrapping the one
+        from the <classname>ValidatorFactory</classname>.</para>
+
+        <para><methodname>getTraversableResolver()</methodname> returns the
+        <classname>TraversableResolver</classname> instance configured during
+        the initialization of the <classname>ValidatorFactory</classname>. It
+        is particularly useful to build a <classname>Validator</classname>
+        specific <classname>TraversableResolver</classname> wrapping the one
+        from the <classname>ValidatorFactory</classname>.</para>
+
+        <para><methodname>getConstraintValidatorFactory()</methodname> returns
+        the <classname>ConstraintValidatorFactory</classname> instance
+        configured during the initialization of the
+        <classname>ValidatorFactory</classname>. It is particularly useful to
+        build a <classname>Validator</classname> specific
+        <classname>ConstraintValidatorFactory</classname> wrapping the one
         from the <classname>ValidatorFactory</classname>.</para>
 
         <para><classname>ValidatorContext</classname> returned by
@@ -5572,6 +5606,28 @@ Validator validatorUsingCustomTraversable = factory
         <methodname>getDefaultMessageInterpolator()</methodname> in <xref
         linkend="validationapi-message-examples-jsflocale" />).</para>
 
+        <para>A <classname>Configuration</classname> does provide a
+        <classname>TraversableResolver</classname> implementation following
+        the default Bean Validation <classname>TraversableResolver</classname>
+        rules as defined in <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine-traversable" />
+        by calling <methodname>getDefaultTraversableResolver()</methodname>.
+        Such an implementation is useful to let a custom
+        <classname>TraversableResolver</classname> delegate to the standard
+        <classname>TraversableResolver</classname>.</para>
+
+        <para>A <classname>Configuration</classname> does provide a
+        <classname>ConstraintValidatorFactory</classname> implementation
+        following the default Bean Validation
+        <classname>ConstraintValidatorFactory</classname> rules as defined in
+        <xref
+        linkend="constraintsdefinitionimplementation-constraintfactory" /> by
+        calling
+        <methodname>getDefaultConstraintValidatorFactory()</methodname>. Such
+        an implementation is useful to let a custom
+        <classname>ConstraintValidatorFactory</classname> delegate to the
+        standard <classname>TraversableResolver</classname>.</para>
+
         <para>Clients call
         <methodname>Configuration.buildValidatorFactory()</methodname> to
         retrieve the initialized <classname>ValidatorFactory</classname>
@@ -5605,7 +5661,7 @@ Validator validatorUsingCustomTraversable = factory
  * The provider is selected in the following way:
  * &lt;ul&gt;
  * &lt;li&gt;if a specific provider is requested programmatically using
- * &lt;code&gt;Validation.byProvider(Class)&lt;/code&gt;, find the first provider implementing 
+ * &lt;code&gt;Validation.byProvider(Class)&lt;/code&gt;, find the first provider implementing
  * the provider class requested and use it&lt;/li&gt;
  * &lt;li&gt;if a specific provider is requested in &lt;i&gt;META-INF/validation.xml&lt;/i&gt;,
  * find the first provider implementing the provider class requested and use it&lt;/li&gt;
@@ -5723,6 +5779,33 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * @return default MessageInterpolator implementation compliant with the specification
      */
     MessageInterpolator getDefaultMessageInterpolator();
+
+    /**
+     * Return an implementation of the TraversableResolver interface following the
+     * default TraversableResolver defined in the specification:
+     * &lt;ul&gt;
+     * &lt;li&gt;if Java Persistence is available in the runtime environment, 
+     * a property is considered reachable if Java Persistence considers
+     * the property as loaded&lt;/li&gt;
+     * &lt;li&gt;if Java Persistence is not available in the runtime environment,
+     * all properties are considered reachable&lt;/li&gt;
+     * &lt;li&gt;all properties are considered cascadable.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return default TraversableResolver implementation compliant with the specification
+     */
+    TraversableResolver getDefaultTraversableResolver();
+
+    /**
+     * Return an implementation of the ConstraintValidatorFactory interface following the
+     * default ConstraintValidatorFactory defined in the specification:
+     * &lt;ul&gt;
+     * &lt;li&gt;uses the public no-arg constructor of the &lt;code&gt;ConstraintValidator&lt;/code&gt;&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return default ConstraintValidatorFactory implementation compliant with the specification
+     */
+    ConstraintValidatorFactory getDefaultConstraintValidatorFactory();
 
     /**
      * Build a ValidatorFactory implementation.
