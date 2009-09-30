@@ -1170,8 +1170,8 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
  */
 public interface ConstraintValidatorContext {
     /**
-     * Disable the default &lt;code&gt;ConstraintViolation&lt;/code&gt; object generation using the
-     * declared message template.
+     * Disable the default &lt;code&gt;ConstraintViolation&lt;/code&gt; object generation (which
+     * is using the message template declared on the constraint).
      * Useful to set a different violation message or generate a &lt;code&gt;ConstraintViolation&lt;/Code&gt;
      * based on a different property.
      */
@@ -1209,18 +1209,18 @@ public interface ConstraintValidatorContext {
      * &lt;pre&gt;
      * {@code
      * // create new violation report with the default path the constraint is located on
-     * context.buildConstraintViolationWithMessageTemplate( "way too long" )
+     * context.buildConstraintViolationWithTemplate( "way too long" )
      *             .addConstraintViolation();
      *
      * // create new violation report in the "street" subnode of the default path
      * //the constraint is located on
-     * context.buildConstraintViolationWithMessageTemplate( "way too long" )
+     * context.buildConstraintViolationWithTemplate( "way too long" )
      *              .addNode( "street" )
      *              .addConstraintViolation();
      *
      * //create new violation report in the "addresses["home"].city.name" subnode
      * //of the default path the constraint is located on
-     * context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+     * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
      *              .addNode( "addresses" )
      *              .addNode( "country" )
      *                  .inIterable().atKey( "home" )
@@ -1232,7 +1232,7 @@ public interface ConstraintValidatorContext {
      * @param messageTemplate new uninterpolated constraint message.
      * @return Returns an constraint violation builder
      */
-    ConstraintViolationBuilder buildConstraintViolationWithMessageTemplate(String messageTemplate);
+    ConstraintViolationBuilder buildConstraintViolationWithTemplate(String messageTemplate);
 
     /**
      * &lt;code&gt;ConstraintViolation&lt;/code&gt; builder allowing to optionally associate
@@ -1251,7 +1251,7 @@ public interface ConstraintValidatorContext {
          * Add a node to the path the &lt;code&gt;ConstraintViolation&lt;/code&gt; will be associated to.
          *
          * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
-         * dot (.) are not allowed.
+         * dot (.) is not allowed.
          *
          * @param name property name
          * @return a builder representing node &lt;code&gt;name&lt;/code&gt;
@@ -1418,16 +1418,16 @@ public interface ConstraintValidatorContext {
         violations</title>
 
         <programlisting>//default path
-context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addConstraintViolation();
 
 //default path + "street"
-context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addNode( "street" )
             .addConstraintViolation();
 
 //default path + "addresses["home"].country.name"
-context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addNode( "addresses" )
             .addNode( "country" )
                 .inIterable().atKey( "home" )
@@ -1516,12 +1516,12 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
         context.disableDefaultConstraintViolation();
         if ( guessedFormats.size() == 0 ) {
             String unknown = "{com.acme.constraint.Syntax.unknown}";
-            context.buildConstraintViolationWithMessageTemplate(unknown)
+            context.buildConstraintViolationWithTemplate(unknown)
                        .addConstraintViolation();
         }
         else {
             String unauthorized = "{com.acme.constraint.Syntax.unauthorized}";
-            context.buildConstraintViolationWithMessageTemplate(unauthorized)
+            context.buildConstraintViolationWithTemplate(unauthorized)
                        .addConstraintViolation();
         }
 
