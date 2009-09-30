@@ -1414,7 +1414,8 @@ public interface ConstraintValidatorContext {
       shows a few examples.</para>
 
       <example id="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder">
-        <title>Using the fluent API to build error reports</title>
+        <title>Using the fluent API to build custom constraint
+        violations</title>
 
         <programlisting>//default path
 context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
@@ -1434,9 +1435,9 @@ context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
             .addConstraintViolation();</programlisting>
       </example>
 
-      <para>If <methodname>disableDefaultError</methodname> is called, no
-      custom error is added (using the error builder) and if the constraint is
-      not valid, a <classname>ValidationException</classname> is
+      <para>If <methodname>disableDefaultConstraintViolation</methodname> is
+      called, no custom error is added (using the error builder) and if the
+      constraint is not valid, a <classname>ValidationException</classname> is
       raised.</para>
 
       <section id="constraintsdefinitionimplementation-validationimplementation-example">
@@ -1512,14 +1513,16 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
         if ( value == null ) return true;
         Set&lt;Format&gt; guessedFormats = guessFormat(value);
 
-        context.disableDefaultError();
+        context.disableDefaultConstraintViolation();
         if ( guessedFormats.size() == 0 ) {
-            context.buildErrorWithMessageTemplate("{com.acme.constraint.Syntax.unknown}")
-                       .addError();
+            String unknown = "{com.acme.constraint.Syntax.unknown}";
+            context.buildConstraintViolationWithMessageTemplate(unknown)
+                       .addConstraintViolation();
         }
         else {
-            context.buildErrorWithMessageTemplate("{com.acme.constraint.Syntax.unauthorized}")
-                       .addError();
+            String unauthorized = "{com.acme.constraint.Syntax.unauthorized}";
+            context.buildConstraintViolationWithMessageTemplate(unauthorized)
+                       .addConstraintViolation();
         }
 
         return allowedFormats.size() == 0 
