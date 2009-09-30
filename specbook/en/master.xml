@@ -7,14 +7,14 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20090924</releaseinfo>
+    <releaseinfo>1.0.20090928</releaseinfo>
 
-    <pubdate>2009-09-24</pubdate>
+    <pubdate>2009-09-28</pubdate>
 
     <copyright>
       <year>2007-2009</year>
 
-      <holder>Red Hat Middleware, LLC</holder>
+      <holder>Red Hat, Inc</holder>
     </copyright>
 
     <authorgroup>
@@ -26,7 +26,7 @@
         <surname>Bernard</surname>
 
         <affiliation>
-          <orgname>Red Hat Middleware, LLC</orgname>
+          <orgname>Red Hat, Inc.</orgname>
         </affiliation>
       </author>
 
@@ -37,20 +37,6 @@
       </author>
     </authorgroup>
   </bookinfo>
-
-  <preface>
-    <title>Disclaimer</title>
-
-    <para>This specification is in proposed final draft stage. The content of
-    this specification is not expected to change except for minor adjustments,
-    needs uncovered when writing the reference implementation or due to
-    important feedback by the community. XXXXXXXXX</para>
-
-    <para>The JSR 303 expert group is seeking feedback from the community at
-    <ulink
-    url="http://forum.hibernate.org/viewforum.php?f=26">http://forum.hibernate.org/viewforum.php?f=26</ulink>.
-    If privacy is a concern, consider using jsr-303-comments@jcp.org.</para>
-  </preface>
 
   <chapter>
     <title>Introduction</title>
@@ -67,7 +53,8 @@
       <para>This work is being conducted as part of JSR 303 under the Java
       Community Process Program. This specification is the result of the
       collaborative work of the members of the JSR 303 Expert Group. These
-      include the following present and former expert group members:</para>
+      include the following present and former expert group members in
+      alphabetical order:</para>
 
       <itemizedlist>
         <listitem>
@@ -75,8 +62,7 @@
         </listitem>
 
         <listitem>
-          <para>Emmanuel Bernard (Red Hat Middleware LLC) - Specification
-          Lead</para>
+          <para>Emmanuel Bernard (Red Hat, Inc.) - Specification Lead</para>
         </listitem>
 
         <listitem>
@@ -218,7 +204,8 @@
 
       <para>JPA, JSF and EE integration are present at <xref
       linkend="appendix-jpa" />, <xref linkend="appendix-jsf" /> and <xref
-      linkend="appendix-ee" />.</para>
+      linkend="appendix-ee" /> for archive purposes, one should refer to the
+      respective specifications for the up-to-date integration rules.</para>
 
       <para>The changelog can be found at <xref linkend="changelog" />.</para>
     </section>
@@ -227,9 +214,7 @@
       <title>How to comment</title>
 
       <para>The expert group is eager to receive feedback from readers. Feel
-      free to contact us at <ulink
-      url="http://forum.hibernate.org/viewforum.php?f=26">http://forum.hibernate.org/viewforum.php?f=26</ulink>.
-      If privacy is a concern, consider using jsr-303-comments@jcp.org.</para>
+      free to contact us or use jsr-303-comments@jcp.org.</para>
     </section>
   </chapter>
 
@@ -256,7 +241,7 @@
       <programlisting>/**
  * Link between a constraint annotation and its constraint validation implementations.
  * &lt;p/&gt;
- * A given constraint annotation should be annotated by a @Constraint
+ * A given constraint annotation should be annotated by a &lt;code&gt;@Constraint&lt;/code&gt;
  * annotation which refers to its list of constraint validation implementations.
  *
  * @author Emmanuel Bernard
@@ -268,12 +253,13 @@
 @Retention(RUNTIME)
 public @interface Constraint {
     /**
-     * ConstraintValidator classes must reference distinct target types.
-     * If two validators refer to the same type, an exception will occur.
-     * 
+     * &lt;code&gt;ConstraintValidator&lt;/code&gt; classes must reference distinct target types.
+     * If two &lt;code&gt;ConstraintValidator&lt;/code&gt; refer to the same type,
+     * an exception will occur.
+     *
      * @return array of ConstraintValidator classes implementing the constraint
      */
-    public Class&lt;? extends ConstraintValidator&lt;?,?&gt;&gt;[] validatedBy();
+    public Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt;[] validatedBy();
 }</programlisting>
 
       <para>Constraint annotations can target any of the following
@@ -349,7 +335,7 @@ public @interface Constraint {
           linkend="validationapi-message" /> for a detailed explanation. It is
           recommended to default <literal>message</literal> values to resource
           bundle keys to enable internationalization. It is also recommended
-          to use the following convention. The resource bundle key should be
+          to use the following convention: the resource bundle key should be
           the fully qualified class name of the constraint annotation
           concatenated to <literal>.message</literal> as shown in the previous
           program listing.</para>
@@ -425,6 +411,7 @@ public interface Payload {
             constraint</title>
 
             <programlisting>package com.acme.severity;
+
 public class Severity {
     public static class Info implements Payload {};
     public static class Error implements Payload {};
@@ -628,8 +615,8 @@ public @interface ZipCode {
       with different error messages.</para>
 
       <para>Using two different multi-constraint annotations for the same
-      underlying constraint on the same class or property is not considered
-      portable and is discouraged.</para>
+      underlying constraint type on the same target (ie. class or property) is
+      not considered portable and is discouraged.</para>
     </section>
 
     <section id="constraintsdefinitionimplementation-constraintcomposition">
@@ -740,7 +727,7 @@ public @interface FrenchZipcode {
  * A constraint annotation hosting this annotation
  * will return the composed annotation error report if any of the composing annotations
  * fail. The error reports of each individual composing constraint is ignored.
- * 
+ *
  * @author Emmanuel Bernard
  */
 @Target({ ANNOTATION_TYPE })
@@ -763,8 +750,8 @@ public @interface ReportAsSingleViolation {
 
       <para>Composing annotations can define the value of
       <literal>message</literal> and custom attributes (excluding
-      <methodname>groups</methodname>) but these are fixed in the composed
-      constraint definition.</para>
+      <methodname>groups</methodname> and <methodname>payload</methodname>)
+      but these are fixed in the composed constraint definition.</para>
 
       <example>
         <title>Composing annotations can use attributes. They are fixed for a
@@ -949,7 +936,7 @@ public @interface OverridesAttribute {
 
     /**
      * Name of the Constraint attribute overridden.
-     * Defaults to the name of the attribute hosting OverridesAttribute.
+     * Defaults to the name of the attribute hosting &lt;code&gt;@OverridesAttribute&lt;/code&gt;.
      *
      * @return name of constraint attribute overridden.
      */
@@ -969,7 +956,7 @@ public @interface OverridesAttribute {
 
     /**
      * Defines several @OverridesAttribute annotations on the same element
-     * @see {@link OverridesAttribute}
+     * @see javax.validation.OverridesAttribute
      */
     @Documented
     @Target({ METHOD })
@@ -996,11 +983,11 @@ public @interface OverridesAttribute {
         </listitem>
       </itemizedlist>
 
-      <para>If the composition is invalid (infinite composition, wrong
-      attribute overriding, a single attribute mapped to more than one source
-      attribute etc), a <classname>ConstraintDefinitionException</classname>
-      is raised either at validation time or when the metadata is
-      requested.</para>
+      <para>If the composition is invalid (infinitely recursive composition,
+      wrong attribute overriding, a single attribute mapped to more than one
+      source attribute etc), a
+      <classname>ConstraintDefinitionException</classname> is raised either at
+      validation time or when the metadata is requested.</para>
 
       <para>Constraint designers are encouraged to make use of composition
       (recursively or not) based on the built-in constraints defined by the
@@ -1027,7 +1014,11 @@ public @interface OverridesAttribute {
  * Defines the logic to validate a given constraint A
  * for a given object type T.
  * Implementations must comply to the following restriction:
- * T must resolve to a non parameterized type
+ * &lt;ul&gt;
+ * &lt;li&gt;T must resolve to a non parameterized type&lt;/li&gt;
+ * &lt;li&gt;or generic parameters of T must be unbounded
+ * wildcard types&lt;/li&gt;
+ * &lt;/ul&gt;
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -1038,8 +1029,8 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
      * The constraint annotation for a given constraint declaration
      * is passed.
      * &lt;p/&gt;
-     * This method is guaranteed to be called before any of the other Constraint
-     * implementation methods
+     * This method is guaranteed to be called before any use of this instance for
+     * validation.
      *
      * @param constraintAnnotation annotation instance for a given constraint declaration
      */
@@ -1047,17 +1038,17 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
 
     /**
      * Implement the validation logic.
-     * &lt;code&gt;value&lt;/code&gt; state must not be altered.
+     * The state of &lt;code&gt;value&lt;/code&gt; must not be altered.
      *
      * This method can be accessed concurrently, thread-safety must be ensured
      * by the implementation.
      *
      * @param value object to validate
-     * @param constraintValidatorContext context in which the constraint is evaluated
+     * @param context context in which the constraint is evaluated
      *
      * @return false if &lt;code&gt;value&lt;/code&gt; does not pass the constraint
      */
-    boolean isValid(T value, ConstraintValidatorContext constraintValidatorContext);
+    boolean isValid(T value, ConstraintValidatorContext context);
 }</programlisting>
 
       <para>Some restrictions apply on the generic type
@@ -1162,8 +1153,6 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
         most cases to other constraints. For example a String, if present,
         must be an email but can be null. Separating both concerns is a good
         practice.</para>
-
-        <!--[SCP: I think this should be mandatory.] I don't think you can: for once, it would prevent from implementing @NotNull or @NotEmpty-->
       </note>
 
       <para>The <classname>ConstraintValidatorContext</classname> object
@@ -1181,9 +1170,10 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
  */
 public interface ConstraintValidatorContext {
     /**
-     * Disable the default error message and default ConstraintViolation object generation.
-     * Useful to set a different error message or generate a ConstraintViolation based on
-     * a different property
+     * Disable the default error message and default &lt;code&gt;ConstraintViolation&lt;/code&gt; object
+     * generation.
+     * Useful to set a different error message or generate a &lt;code&gt;ConstraintViolation&lt;/Code&gt;
+     * based on a different property
      */
     void disableDefaultError();
 
@@ -1201,19 +1191,19 @@ public interface ConstraintValidatorContext {
      * the #addError method available in one of the
      * interfaces of the fluent API.
      * If another method is called after #addError() on
-     * ErrorBuilder or any of its associated nested interfaces
-     * an IllegalStateException is raised.
+     * &lt;code&gt;ErrorBuilder&lt;/code&gt; or any of its associated nested interfaces
+     * an &lt;code&gt;IllegalStateException&lt;/code&gt; is raised.
      * &lt;p/&gt;
      * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt;
-     * object will be built per error including the default one unless
-     * {@link #disableDefaultError()} has been called.
+     * object will be built per error including the default one (unless
+     * {@link #disableDefaultError()} has been called).
      * &lt;p/&gt;
      * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
      * contain the same contextual information (root bean, path and so on) unless
      * the path has been overriden.
      * &lt;p/&gt;
      * To create a different error, a new error builder has to be retrieved from
-     * ConstraintValidatorContext
+     * &lt;code&gt;ConstraintValidatorContext&lt;/code&gt;
      *
      * Here are a few usage examples:
      * &lt;pre&gt;
@@ -1228,7 +1218,7 @@ public interface ConstraintValidatorContext {
      *              .addSubNode( "street" )
      *              .addError();
      *
-     * //create new error in the "addresses["home"].city.name subnode of the default
+     * //create new error in the "addresses["home"].city.name" subnode of the default
      * // path the constraint is located on
      * context.buildErrorWithMessageTemplate( "this detail is wrong" )
      *              .addSubNode( "addresses" )
@@ -1252,8 +1242,8 @@ public interface ConstraintValidatorContext {
      * the #addError method available in one of the
      * interfaces of the fluent API.
      * If another method is called after #addError() on
-     * ErrorBuilder or any of its associated objects
-     * an IllegalStateException is raised.
+     * &lt;code&gt;ErrorBuilder&lt;/code&gt; or any of its associated objects
+     * an &lt;code&gt;IllegalStateException&lt;/code&gt; is raised.
      * 
      */
     interface ErrorBuilder {
@@ -1270,11 +1260,11 @@ public interface ConstraintValidatorContext {
 
         /**
          * Add the new error report to be generated if the
-         * constraint validator mark the value as invalid.
-         * Methods of this ErrorBuilder instance and its nested
-         * objects returns IllegalStateException from now on.
+         * constraint validator marks the value as invalid.
+         * Methods of this &lt;code&gt;ErrorBuilder&lt;/code&gt; instance and its nested
+         * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; from now on.
          *
-         * @return ConstraintValidatorContext instance the ErrorBuilder comes from 
+         * @return the ConstraintValidatorContext instance the ErrorBuilder comes from
          */
         ConstraintValidatorContext addError();
 
@@ -1297,10 +1287,10 @@ public interface ConstraintValidatorContext {
 
             /**
              * Add the new error report to be generated if the
-             * constraint validator mark the value as invalid.
-             * Methods of the ErrorBuilder instance this object comes
+             * constraint validator marks the value as invalid.
+             * Methods of the &lt;code&gt;ErrorBuilder&lt;/code&gt; instance this object comes
              * from and the error builder nested
-             * objects returns IllegalStateException after this call.
+             * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
              *
              * @return ConstraintValidatorContext instance the ErrorBuilder comes from
              */
@@ -1314,7 +1304,7 @@ public interface ConstraintValidatorContext {
         interface NodeBuilderCustomizableContext {
 
             /**
-             * Mark the node as being in an Iterable or a Map
+             * Mark the node as being in an &lt;code&gt;Iterable&lt;/code&gt; or a &lt;code&gt;Map&lt;/code&gt;
              * 
              * @return a builder representing iterable details
              */
@@ -1334,9 +1324,9 @@ public interface ConstraintValidatorContext {
             /**
              * Add the new error report to be generated if the
              * constraint validator mark the value as invalid.
-             * Methods of the ErrorBuilder instance this object comes
+             * Methods of the &lt;code&gt;ErrorBuilder&lt;/code&gt; instance this object comes
              * from and the error builder nested
-             * objects returns IllegalStateException after this call.
+             * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
              *
              * @return ConstraintValidatorContext instance the ErrorBuilder comes from
              */
@@ -1345,14 +1335,14 @@ public interface ConstraintValidatorContext {
 
         /**
          * Represent refinement choices for a node which is
-         * in an Iterator or Map.
+         * in an &lt;code&gt;Iterator&lt;code&gt; or &lt;code&gt;Map&lt;/code&gt;.
          * If the iterator is an indexed collection or a map,
          * the index or the key should be set.
          */
         interface NodeContextBuilder {
             
             /**
-             * Define the key the object is into the Map
+             * Define the key the object is into the &lt;code&gt;Map&lt;/code&gt;
              *
              * @param key map key
              * @return a builder representing the current node
@@ -1360,7 +1350,7 @@ public interface ConstraintValidatorContext {
             NodeBuilderDefinedContext atKey(Object key);
 
             /**
-             * Define the index the object is into the List or array
+             * Define the index the object is into the &lt;code&gt;List&lt;/code&gt; or array
              *
              * @param index index
              * @return a builder representing the current node
@@ -1381,9 +1371,9 @@ public interface ConstraintValidatorContext {
             /**
              * Add the new error report to be generated if the
              * constraint validator mark the value as invalid.
-             * Methods of the ErrorBuilder instance this object comes
+             * Methods of the &lt;code&gt;ErrorBuilder&lt;/code&gt; instance this object comes
              * from and the error builder nested
-             * objects returns IllegalStateException after this call.
+             * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
              *
              * @return ConstraintValidatorContext instance the ErrorBuilder comes from
              */
@@ -1431,7 +1421,7 @@ context.buildErrorWithMessageTemplate( "this detail is wrong" )
             .addSubNode( "street" )
             .addError();
 
-//default path + "addresses["home"].country.name
+//default path + "addresses["home"].country.name"
 context.buildErrorWithMessageTemplate( "this detail is wrong" )
             .addSubNode( "addresses" )
             .addSubNode( "country" )
@@ -1551,7 +1541,7 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
       <classname>ConstraintValidatorFactory</classname>.</para>
 
       <programlisting>/**
- * Instantiate a &lt;code&gt;ConstraintValidator&lt;/code&gt; instance from its class.
+ * Instantiate a &lt;code&gt;ConstraintValidator&lt;/code&gt; instance based off its class.
  * The &lt;code&gt;ConstraintValidatorFactory&lt;/code&gt; is &lt;b&gt;not&lt;/b&gt; responsible
  * for calling {@link ConstraintValidator#initialize(java.lang.annotation.Annotation)}.
  *
@@ -1716,7 +1706,7 @@ public interface ConstraintValidatorFactory {
         declared of type <classname>Y</classname> (subclass, implementation)
         is determined at runtime. The constraint definitions of
         <classname>Z</classname> are used. This ensures proper polymorphic
-        behavior.</para>
+        behavior for associations marked <classname>@Valid</classname>.</para>
 
         <para>Collection-valued, array-valued and generally
         <classname>Iterable</classname> fields and properties may also be
@@ -1727,7 +1717,7 @@ public interface ConstraintValidatorFactory {
 
         <itemizedlist>
           <listitem>
-            <para>arrays of object</para>
+            <para>arrays of objects</para>
           </listitem>
 
           <listitem>
@@ -1751,9 +1741,10 @@ public interface ConstraintValidatorFactory {
         <para>Each object provided by the iterator is validated. For
         <classname>Map</classname>, the value of each
         <classname>Map.Entry</classname> is validated (the key is not
-        validated). Like regular references, its type is determined at runtime
-        and the constraint definitions for this particular type are
-        used.</para>
+        validated). </para>
+
+        <para>Like regular references, its type is determined at runtime and
+        the constraint definitions for this particular type are used.</para>
 
         <para>The <classname>@Valid</classname> annotation is applied
         recursively. A conforming implementation avoids infinite loops
@@ -1964,7 +1955,7 @@ public class User {
         definition. In this case, each composed group must respect the
         sequence order as well.</para>
 
-        <para>TODO example</para>
+        <!--TODO add example-->
 
         <para>Processing a group is defined in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
@@ -1992,8 +1983,9 @@ public class User {
 
         <programlisting>/**
  * Define a group sequence
- * The interface hosting @GroupSequence is representing the group sequence.
- * When hosted on a class, represents the &lt;code&gt;Default&lt;/code&gt; group 
+ * The interface hosting &lt;code&gt;@GroupSequence&lt;/code&gt; is representing 
+ * the group sequence.
+ * When hosted on a class, represents the &lt;code&gt;Default&lt;/code&gt; group
  * for that class.
  *
  * @author Emmanuel Bernard
@@ -2556,9 +2548,6 @@ public class Order implements Auditable {
       particular order. This implies that the validation routine can be run
       for several groups in the same pass.</para>
 
-      <!--SCP: note that grouping, as currently defined cannot control depth of search in the graph
-EBE: correct, so far I don't think it's useful-->
-
       <para>The object validation routine is described as such. For each
       constraint declaration:</para>
 
@@ -2589,9 +2578,6 @@ EBE: correct, so far I don't think it's useful-->
           linkend="constraintsdefinitionimplementation-validationimplementation" />
           and appends these objects to the list of returned invalid
           violations.</para>
-
-          <!--SCP: note that this implies that validation issues are returned in the order they are discovered
-EBE: is that a problem?-->
         </listitem>
       </itemizedlist>
 
@@ -2787,7 +2773,7 @@ assert violations.size() == 1;</programlisting>
         <methodname>Traversable.isCascadable()</methodname>.</para>
 
         <programlisting>/**
- * Contract determining if a property can be accessed by the Bean Validation provider
+ * Contract determining if a property can be accessed by the Bean Validation provider.
  * This contract is called for each property that is being either validated or cascaded.
  *
  * A traversable resolver implementation must be thread-safe.
@@ -2799,7 +2785,7 @@ public interface TraversableResolver {
      * Determine if the Bean Validation provider is allowed to reach the property state
      *
      * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt; or null
-     *                          if validateValue is called
+     *                          if &lt;code&gt;validateValue&lt;/code&gt; is called
      * @param traversableProperty the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
      * @param pathToTraversableObject path from the root object to
@@ -2807,24 +2793,24 @@ public interface TraversableResolver {
      *        (using the path specification defined by Bean Validator).
      * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
      *
-     * @return &lt;code&gt;true&lt;/code&gt; if the Bean Validation provider is allowed to 
+     * @return &lt;code&gt;true&lt;/code&gt; if the Bean Validation provider is allowed to
      *         reach the property state, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isReachable(Object traversableObject,
-                          Path.Node traversableProperty,
-                          Class&lt;?&gt; rootBeanType,
-                          Path pathToTraversableObject,
-                          ElementType elementType);
+                        Path.Node traversableProperty,
+                        Class&lt;?&gt; rootBeanType,
+                        Path pathToTraversableObject,
+                        ElementType elementType);
 
     /**
      * Determine if the Bean Validation provider is allowed to cascade validation on
      * the bean instance returned by the property value
      * marked as &lt;code&gt;@Valid&lt;/code&gt;.
-     * Note that this method is called only if isReachable returns true for the same set of
-     * arguments and if the property is marked as &lt;code&gt;@Valid&lt;/code&gt;
+     * Note that this method is called only if &lt;code&gt;isReachable&lt;/code&gt; returns true
+     * for the same set of arguments and if the property is marked as &lt;code&gt;@Valid&lt;/code&gt;
      *
      * @param traversableObject object hosting &lt;code&gt;traversableProperty&lt;/code&gt; or null
-     *                          if validateValue is called
+     *                          if &lt;code&gt;validateValue&lt;/code&gt; is called
      * @param traversableProperty the traversable property.
      * @param rootBeanType type of the root object passed to the Validator.
      * @param pathToTraversableObject path from the root object to
@@ -2832,14 +2818,14 @@ public interface TraversableResolver {
      *        (using the path specification defined by Bean Validator).
      * @param elementType either &lt;code&gt;FIELD&lt;/code&gt; or &lt;code&gt;METHOD&lt;/code&gt;.
      *
-     * @return &lt;code&gt;true&lt;/code&gt; if the Bean Validation provider is allowed to 
+     * @return &lt;code&gt;true&lt;/code&gt; if the Bean Validation provider is allowed to
      *         cascade validation, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isCascadable(Object traversableObject,
-                          Path.Node traversableProperty,
-                          Class&lt;?&gt; rootBeanType,
-                          Path pathToTraversableObject,
-                          ElementType elementType);
+                         Path.Node traversableProperty,
+                         Class&lt;?&gt; rootBeanType,
+                         Path pathToTraversableObject,
+                         ElementType elementType);
 }</programlisting>
 
         <para><methodname>isReachable</methodname> is called for every
@@ -3855,11 +3841,11 @@ author.setCompany("Some random publisher with a very very very long name");</pro
  */
 public interface Validator {
     /**
-     * Validates all constraints on object.
+     * Validates all constraints on &lt;code&gt;object&lt;/code&gt;.
      *
      * @param object object to validate
-     * @param groups groups targeted for validation
-     * (default to {@link javax.validation.groups.Default})
+     * @param groups group or list of groups targeted for validation
+     *               (default to {@link javax.validation.groups.Default})
      *
      * @return constraint violations or an empty Set if none
      *
@@ -3871,19 +3857,19 @@ public interface Validator {
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
     /**
-     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-     * of &lt;code&gt;object&lt;/code&gt;
+     * Validates all constraints placed on the property of &lt;code&gt;object&lt;/code&gt;
+     * named &lt;code&gt;propertyName&lt;/code&gt;.
      *
      * @param object object to validate
      * @param propertyName property to validate (ie field and getter constraints)
-     * @param groups groups targeted for validation
-     * (default to {@link javax.validation.groups.Default})
+     * @param groups group or list of groups targeted for validation
+     *               (default to {@link javax.validation.groups.Default})
      *
      * @return constraint violations or an empty Set if none
      *
-     * @throws IllegalArgumentException if object is null, if propertyName null, empty
-     *                                  or not a valid object property
-     *                                  or if null is passed to the varargs groups
+     * @throws IllegalArgumentException if &lt;code&gt;object&lt;/code&gt; is null,
+     *            if &lt;code&gt;propertyName&lt;/code&gt; null, empty or not a valid object property
+     *            or if null is passed to the varargs groups
      * @throws ValidationException      if a non recoverable error happens
      *                                  during the validation process
      */
@@ -3893,7 +3879,7 @@ public interface Validator {
 
     /**
      * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-     * would the property value be &lt;code&gt;value&lt;/code&gt;
+     * of the class &lt;code&gt;beanType&lt;/code&gt; would the property value be &lt;code&gt;value&lt;/code&gt;
      * &lt;p/&gt;
      * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
      * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
@@ -3901,14 +3887,14 @@ public interface Validator {
      * @param beanType the bean type
      * @param propertyName property to validate
      * @param value property value to validate
-     * @param groups groups targeted for validation
-     * (default to {@link javax.validation.groups.Default})
+     * @param groups group or list of groups targeted for validation
+     *               (default to {@link javax.validation.groups.Default})
      *
      * @return constraint violations or an empty Set if none
      *
-     * @throws IllegalArgumentException if beanType is null, if propertyName null, empty
-     *                                  or not a valid object property
-     *                                  or if null is passed to the varargs groups
+     * @throws IllegalArgumentException if &lt;code&gt;beanType&lt;/code&gt; is null,
+     *            if &lt;code&gt;propertyName&lt;/code&gt; null, empty or not a valid object property
+     *            or if null is passed to the varargs groups
      * @throws ValidationException      if a non recoverable error happens
      *                                  during the validation process
      */
@@ -3918,9 +3904,9 @@ public interface Validator {
                                                   Class&lt;?&gt;... groups);
 
     /**
-     * Return the descriptor object describing bean constraints
-     * The returned object (and associated objects including ConstraintDescriptors)
-     * are immutable.
+     * Return the descriptor object describing bean constraints.
+     * The returned object (and associated objects including
+     * &lt;code&gt;ConstraintDescriptor&lt;code&gt;s) are immutable.
      *
      * @param clazz class type evaluated
      *
@@ -3934,23 +3920,35 @@ public interface Validator {
     BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 
     /**
-     * Return an object of the specified type to allow access to the
-     * provider-specific API.  If the Bean Validation provider
-     * implementation does not support the specified class, the
-     * ValidationException is thrown.
+     * Return an instance of the specified type allowing access to
+     * provider-specific APIs.  If the Bean Validation provider
+     * implementation does not support the specified class,
+     * &lt;code&gt;ValidationException&lt;/code&gt; is thrown.
      *
      * @param type the class of the object to be returned.
      *
      * @return an instance of the specified class
      *
-     * @throws ValidationException if the provider does not
-     *                             support the call.
+     * @throws ValidationException if the provider does not support the call.
      */
     public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
 
       <para><methodname>getConstraintsForClass</methodname> is described in
       <xref linkend="constraintmetadata" />.</para>
+
+      <para><methodname>unwrap</methodname> is provided as a way to access a
+      Bean Provider specific object of a given type typically as a complement
+      to the <classname>Validator</classname> contract. Using this method
+      makes your code non portable.</para>
+
+      <example>
+        <title>Using unwrap to access a provider specific contract</title>
+
+        <programlisting>//if using the ACME provider
+ACMEValidator acmeValidator = factory.unwrap(ACMEValidator.class);
+acmeValidator.setSpecificConfiguration(...);</programlisting>
+      </example>
 
       <section id="validationapi-validatorapi-validationmethods">
         <title>Validation methods</title>
@@ -4235,8 +4233,8 @@ public class Address {
       validation.</para>
 
       <programlisting>/**
- * Describe a constraint violation. This object describe the error context as
- * well as the message describing the violation.
+ * Describe a constraint violation. This object exposes the constraint
+ * violation context as well as the message describing the violation.
  *
  * @author Emmanuel Bernard
  */
@@ -4253,7 +4251,7 @@ public interface ConstraintViolation&lt;T&gt; {
     String getMessageTemplate();
 
     /**
-     * @return The root bean being validated. Null when returned by 
+     * @return The root bean being validated. Null when returned by
      *         {@link javax.validation.Validator#validateValue(Class, String, Object, Class[])}
      */
     T getRootBean();
@@ -4267,14 +4265,14 @@ public interface ConstraintViolation&lt;T&gt; {
      * If a bean constraint, the bean instance the constraint is applied on
      * If a property constraint, the bean instance hosting the property the
      * constraint is applied on
-     * 
-     * @return the leaf bean the constraint is applied on. Null when returned by 
+     *
+     * @return the leaf bean the constraint is applied on. Null when returned by
      *         {@link javax.validation.Validator#validateValue(Class, String, Object, Class[])}
      */
     Object getLeafBean();
 
     /**
-     * @return the property path to the value from &lt;code&gt;rootBean&lt;/code&gt;.
+     * @return the property path to the value from {@code rootBean}.
      */
     Path getPropertyPath();
 
@@ -4286,7 +4284,7 @@ public interface ConstraintViolation&lt;T&gt; {
     /**
      * Constraint metadata reported to fail.
      * The returned instance is immutable.
-     * 
+     *
      * @return constraint metadata
      */
     ConstraintDescriptor&lt;?&gt; getConstraintDescriptor();
@@ -4321,11 +4319,12 @@ public interface ConstraintViolation&lt;T&gt; {
       failing object.</para>
 
       <programlisting>/**
- * Represent a navigation path from an object to another.
- * Each path element is represented by a Node.
+ * Represent the navigation path from an object to another
+ * in an object graph.
+ * Each path element is represented by a &lt;code&gt;Node&lt;/code&gt;.
  *
  * The path corresponds to the succession of nodes
- * in the order they are returned by the Iterator
+ * in the order they are returned by the &lt;code&gt;Iterator&lt;/code&gt;
  *
  * @author Emmanuel Bernard
  */
@@ -4337,26 +4336,28 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
     interface Node {
         /**
          * Property name the node represents
-         * or null if the leaf node and representing an entity
-         * (in particular the node representing the root object
-         * has its name null)
+         * or null if representing an entity on the leaf node
+         * (in particular the node in a &lt;code&gt;Path&lt;/code&gt; representing
+         * the root object has its name null).
+         * 
+         * @return property name the node represents
          */
         String getName();
 
         /**
-         * True if the node represents an object contained in an Iterable
+         * @return true if the node represents an object contained in an Iterable
          * or in a Map.
          */
         boolean isInIterable();
 
         /**
-         * The index the node is placed in if contained
+         * @return The index the node is placed in if contained
          * in an array or List. Null otherwise.
          */
         Integer getIndex();
 
         /**
-         * The key the node is placed in if contained
+         * @return The key the node is placed in if contained
          * in a Map. Null otherwise.
          */
         Object getKey();
@@ -4775,7 +4776,7 @@ assert false == nodeIter.hasNext();</programlisting>
           </listitem>
         </itemizedlist>
 
-        <para><!--SCP need to define the string literal here--></para>
+        <para></para>
 
         <example>
           <title>Message using parameters</title>
@@ -4822,9 +4823,7 @@ assert false == nodeIter.hasNext();</programlisting>
               <para>Message parameters are extracted from the message string.
               Those matching the name of an attribute of the constraint are
               replaced by the value of that attribute in the constraint
-              declaration.<!--SCP: The {value} message parameter is replaced by the value being validated, using the result of invoking the toString method onvalue. 
-If the value being valudated is null, the string 'null' is used as a replacement string
-EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it conflicts with value the default annotation name--></para>
+              declaration.</para>
             </listitem>
           </orderedlist>
 
@@ -4861,7 +4860,7 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
         the <classname>MessageInterpolator</classname> interface.</para>
 
         <programlisting>/**
- * Interpolate a given constraint error message.
+ * Interpolate a given constraint violation message.
  * Implementations should be as tolerant as possible on syntax errors.
  *
  * @author Emmanuel Bernard
@@ -4869,8 +4868,7 @@ EBE: hummm, relying on toString sucks. Not sure I like the {value} idea. and it 
  */
 public interface MessageInterpolator {
     /**
-     * Interpolate the message from the constraint parameters and the actual validated
-     * object.
+     * Interpolate the message template based on the contraint validation context.
      * The locale is defaulted according to the &lt;code&gt;MessageInterpolator&lt;/code&gt;
      * implementation. See the implementation documentation for more detail.
      *
@@ -4882,9 +4880,8 @@ public interface MessageInterpolator {
     String interpolate(String messageTemplate, Context context);
 
     /**
-     * Interpolate the message from the constraint parameters and the actual validated
-     * object.
-     * The Locale used is provided as a parameter.
+     * Interpolate the message template based on the contraint validation context.
+     * The &lt;code&gt;Locale&lt;/code&gt; used is provided as a parameter.
      *
      * @param messageTemplate The message to interpolate.
      * @param context contextual information related to the interpolation
@@ -5090,7 +5087,7 @@ Validator validator = validatorFactory.usingContext()
         will not have to set the <classname>Locale</classname> itself. This
         example shows how a container framework would implement
         <classname>MessageInterpolator</classname> to provide a user specific
-        default locale.<!--TODO Rework this example as it is not reality--></para>
+        default locale.</para>
 
         <example id="validationapi-message-examples-jsflocale">
           <title>Contextual container possible
@@ -5313,8 +5310,7 @@ ValidatorFactory factory = acmeConfiguration
 /**
  * ACME specific validator configuration and configuration options
  */
-public interface ACMEConfiguration 
-                    extends Configuration&lt;ACMEConfiguration&gt; {
+public interface ACMEConfiguration extends Configuration&lt;ACMEConfiguration&gt; {
     /**
      * Programmatically add constraints. Specific to the ACME provider.
      */
