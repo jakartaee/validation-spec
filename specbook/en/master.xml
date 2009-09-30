@@ -5386,17 +5386,19 @@ Validator localizedValidator =
  */
 public interface ValidatorFactory {
     /**
-     * @return Returns an initialized &lt;code&gt;Validator&lt;/code&gt; instance using the default
-     * factory instances for message interpolator and traversable resolver.
+     * Returns an initialized &lt;code&gt;Validator&lt;/code&gt; instance using the
+     * factory defaults for message interpolator, traversable resolver
+     * and constraint validator factory.
      * &lt;p&gt;
      * Validator instances can be pooled and shared by the implementation.
      * &lt;/p&gt;
+     * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance
      */
     Validator getValidator();
 
     /**
-     * Define the validator context and return a &lt;code&gt;Validator&lt;/code&gt; compliant
-     * with this state.
+     * Defines a new validator context and return a &lt;code&gt;Validator&lt;/code&gt;
+     * compliant this new context.
      *
      * @return a &lt;code&gt;ValidatorContext&lt;/code&gt;.
      */
@@ -5431,12 +5433,15 @@ public interface ValidatorFactory {
     ConstraintValidatorFactory getConstraintValidatorFactory();
 
     /**
-     * Return an object of the specified type to allow access to the
-     * provider-specific API.  If the Bean Validation provider
-     * implementation does not support the specified class, the
-     * ValidationException is thrown. 
+     * Return an instance of the specified type allowing access to
+     * provider-specific APIs. If the Bean Validation provider
+     * implementation does not support the specified class,
+     * &lt;code&gt;ValidationException,&lt;/code&gt; is thrown.
+     *
      * @param type  the class of the object to be returned.
-     * @return an instance of the specified class
+     *
+     * @return an instance of the specified class.
+     *
      * @throws ValidationException if the provider does not
      *         support the call.
      */
@@ -5486,41 +5491,56 @@ acmeFactory.setSpecificConfiguration(...);</programlisting>
         <methodname>usingContext</methodname> can be used to customize the
         state in which the <classname>Validator</classname> must be
         initialized. This is used to customize the
-        <classname>MessageInterpolator</classname> or the
-        <classname>TraversableResolver</classname>.</para>
+        <classname>MessageInterpolator</classname>, the
+        <classname>TraversableResolver</classname> or the
+        <classname>ConstraintValidatorFactory</classname>.</para>
 
         <example>
           <title>ValidatorContext interface</title>
 
           <programlisting>/**
- * Represents the context that is used to create &lt;code&gt;Validator&lt;/code&gt; 
- * instances. 
- * 
- * A client may use methods of the ValidatorContext returned through 
- * &lt;code&gt;usingContext&lt;/code&gt; of &lt;code&gt;ValidatorFactory&lt;/code&gt; to customize 
- * the context (for instance establish different message interpolators or 
- * traversable resolvers) used to create &lt;code&gt;Validator&lt;/code&gt; instances.
+ * Represents the context that is used to create &lt;code&gt;Validator&lt;/code&gt;
+ * instances.
+ *
+ * A client may use methods of the &lt;code&gt;ValidatorContext&lt;/code&gt; returned by
+ * &lt;code&gt;ValidatorFactory#usingContext&lt;/code&gt; to customize
+ * the context used to create &lt;code&gt;Validator&lt;/code&gt; instances
+ * (for instance establish different message interpolators or
+ * traversable resolvers).
  * 
  * @author Emmanuel Bernard
  */
 public interface ValidatorContext {
     /**
-     * Defines the message interpolator implementation used by the Validator.
+     * Defines the message interpolator implementation used by the
+     * &lt;code&gt;Validator&lt;/code&gt;.
      * If not set or if null is passed as a parameter,
-     * the message interpolator of the ValidatorFactory is used.
+     * the message interpolator of the &lt;code&gt;ValidatorFactory&lt;/code&gt;
+     * is used.
      *
      * @return self following the chaining method pattern
      */
     ValidatorContext messageInterpolator(MessageInterpolator messageInterpolator);
 
     /**
-     * Defines the traversable resolver implementation used by the Validator.
+     * Defines the traversable resolver implementation used by the
+     * &lt;code&gt;Validator&lt;/code&gt;.
      * If not set or if null is passed as a parameter,
-     * the traversable resolver of the ValidatorFactory is used.
+     * the traversable resolver of the &lt;code&gt;ValidatorFactory&lt;/code&gt; is used.
      *
      * @return self following the chaining method pattern
      */
     ValidatorContext traversableResolver(TraversableResolver traversableResolver);
+
+    /**
+     * Defines the constraint validator factory implementation used by the
+     * &lt;code&gt;Validator&lt;/code&gt;.
+     * If not set or if null is passed as a parameter,
+     * the constraint validator factory of the &lt;code&gt;ValidatorFactory&lt;/code&gt; is used.
+     *
+     * @return self following the chaining method pattern
+     */
+    ValidatorContext constraintValidatorFactory(ConstraintValidatorFactory factory);
 
     /**
      * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
@@ -5530,8 +5550,9 @@ public interface ValidatorContext {
 }</programlisting>
         </example>
 
-        <para>The <classname>MessageInterpolator</classname> or the
-        <classname>TraversableResolver</classname> passed to the
+        <para>The <classname>MessageInterpolator</classname>, the
+        <classname>TraversableResolver</classname> or the
+        <classname>ConstraintValidatorFactory</classname> passed to the
         <classname>ValidatorContext</classname> are used instead of the
         <classname>ValidatorFactory</classname>'s
         <classname>MessageInterpolator</classname> or
