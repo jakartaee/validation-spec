@@ -1163,92 +1163,92 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
       <programlisting>/**
  * Provide contextual data and operation when applying a given constraint validator.
  *
- * At least one error must be defined (either the default one, of if the default error
- * is disabled, a custom one).
+ * At least one &lt;code&gt;ConstraintViolation&lt;/code&gt; must be defined (either the default one,
+ * of if the default &lt;code&gt;ConstraintViolation&lt;/code&gt; is disabled, a custom one).
  *
  * @author Emmanuel Bernard
  */
 public interface ConstraintValidatorContext {
     /**
-     * Disable the default error message and default &lt;code&gt;ConstraintViolation&lt;/code&gt; object
-     * generation.
-     * Useful to set a different error message or generate a &lt;code&gt;ConstraintViolation&lt;/Code&gt;
-     * based on a different property
+     * Disable the default &lt;code&gt;ConstraintViolation&lt;/code&gt; object generation using the
+     * declared message template.
+     * Useful to set a different violation message or generate a &lt;code&gt;ConstraintViolation&lt;/Code&gt;
+     * based on a different property.
      */
-    void disableDefaultError();
+    void disableDefaultConstraintViolation();
 
     /**
-     * @return the current uninterpolated default message
+     * @return the current uninterpolated default message.
      */
-    String getDefaultErrorMessageTemplate();
+    String getDefaultConstraintMessageTemplate();
 
     /**
-     * Return an error builder building an error allowing to optionally associate
-     * the error to a sub path.
-     * The error message will be interpolated.
+     * Return an constraint violation builder building an violation report
+     * allowing to optionally associate it to a sub path.
+     * The violation message will be interpolated.
      * &lt;p/&gt;
-     * To create the error, one must call either one of
-     * the #addError method available in one of the
+     * To create the &lt;code&gt;ConstraintViolation&lt;/code&gt;, one must call either one of
+     * the #addConstraintViolation() methods available in one of the
      * interfaces of the fluent API.
-     * If another method is called after #addError() on
-     * &lt;code&gt;ErrorBuilder&lt;/code&gt; or any of its associated nested interfaces
+     * If another method is called after #addConstraintViolation() on
+     * &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; or any of its associated nested interfaces
      * an &lt;code&gt;IllegalStateException&lt;/code&gt; is raised.
      * &lt;p/&gt;
      * If &lt;code&gt;isValid&lt;code&gt; returns &lt;code&gt;false&lt;/code&gt;, a &lt;code&gt;ConstraintViolation&lt;/code&gt;
-     * object will be built per error including the default one (unless
-     * {@link #disableDefaultError()} has been called).
+     * object will be built per ConstraintViolation report including the default one (unless
+     * {@link #disableDefaultConstraintViolation()} has been called).
      * &lt;p/&gt;
      * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects generated from such a call
      * contain the same contextual information (root bean, path and so on) unless
      * the path has been overriden.
      * &lt;p/&gt;
-     * To create a different error, a new error builder has to be retrieved from
-     * &lt;code&gt;ConstraintValidatorContext&lt;/code&gt;
+     * To create a different &lt;code&gt;ConstraintViolation&lt;/code&gt;, a new constraint violation builder
+     * has to be retrieved from &lt;code&gt;ConstraintValidatorContext&lt;/code&gt;
      *
      * Here are a few usage examples:
      * &lt;pre&gt;
      * {@code
-     * // create new error with the default path the constraint is located on
-     * context.buildErrorWithMessageTemplate( "way too long" )
-     *             .addError();
+     * // create new violation report with the default path the constraint is located on
+     * context.buildConstraintViolationWithMessageTemplate( "way too long" )
+     *             .addConstraintViolation();
      *
-     * // create new error in the "street" subnode of the default path the constraint
-     * // is located on
-     * context.buildErrorWithMessageTemplate( "way too long" )
-     *              .addSubNode( "street" )
-     *              .addError();
+     * // create new violation report in the "street" subnode of the default path
+     * //the constraint is located on
+     * context.buildConstraintViolationWithMessageTemplate( "way too long" )
+     *              .addNode( "street" )
+     *              .addConstraintViolation();
      *
-     * //create new error in the "addresses["home"].city.name" subnode of the default
-     * // path the constraint is located on
-     * context.buildErrorWithMessageTemplate( "this detail is wrong" )
-     *              .addSubNode( "addresses" )
-     *              .addSubNode( "country" )
+     * //create new violation report in the "addresses["home"].city.name" subnode
+     * //of the default path the constraint is located on
+     * context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+     *              .addNode( "addresses" )
+     *              .addNode( "country" )
      *                  .inIterable().atKey( "home" )
-     *              .addSubNode( "name" )
-     *              .addError();
+     *              .addNode( "name" )
+     *              .addConstraintViolation();
      * }
      * &lt;/pre&gt;
      *
-     * @param messageTemplate new uninterpolated error message.
-     * @return Returns an error builder
+     * @param messageTemplate new uninterpolated constraint message.
+     * @return Returns an constraint violation builder
      */
-    ErrorBuilder buildErrorWithMessageTemplate(String messageTemplate);
+    ConstraintViolationBuilder buildConstraintViolationWithMessageTemplate(String messageTemplate);
 
     /**
-     * Error builder allowing to optionally associate
-     * the error to a sub path.
+     * &lt;code&gt;ConstraintViolation&lt;/code&gt; builder allowing to optionally associate
+     * the violation report to a sub path.
      *
-     * To create the error, one must call either one of
-     * the #addError method available in one of the
+     * To create the &lt;code&gt;ConstraintViolation&lt;/code&gt;, one must call either one of
+     * the #addConstraintViolation() methods available in one of the
      * interfaces of the fluent API.
-     * If another method is called after #addError() on
-     * &lt;code&gt;ErrorBuilder&lt;/code&gt; or any of its associated objects
+     * If another method is called after #addConstraintViolation() on
+     * &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; or any of its associated objects
      * an &lt;code&gt;IllegalStateException&lt;/code&gt; is raised.
      * 
      */
-    interface ErrorBuilder {
+    interface ConstraintViolationBuilder {
         /**
-         * Add a subNode to the path the error will be associated to.
+         * Add a node to the path the &lt;code&gt;ConstraintViolation&lt;/code&gt; will be associated to.
          *
          * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
          * dot (.) are not allowed.
@@ -1256,26 +1256,27 @@ public interface ConstraintValidatorContext {
          * @param name property name
          * @return a builder representing node &lt;code&gt;name&lt;/code&gt;
          */
-        NodeBuilderDefinedContext addSubNode(String name);
+        NodeBuilderDefinedContext addNode(String name);
 
         /**
-         * Add the new error report to be generated if the
+         * Add the new &lt;code&gt;ConstraintViolation&lt;/code&gt; to be generated if the
          * constraint validator marks the value as invalid.
-         * Methods of this &lt;code&gt;ErrorBuilder&lt;/code&gt; instance and its nested
-         * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; from now on.
+         * Methods of this &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; instance and its nested
+         * objects return &lt;code&gt;IllegalStateException&lt;/code&gt; from now on.
          *
-         * @return the ConstraintValidatorContext instance the ErrorBuilder comes from
+         * @return the &lt;code&gt;ConstraintValidatorContext&lt;/code&gt; instance the
+         *           &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; comes from
          */
-        ConstraintValidatorContext addError();
+        ConstraintValidatorContext addConstraintViolation();
 
         /**
-         * Represent a subnode whose context is known
+         * Represent a node whose context is known
          * (ie index, key and isInIterable)
          */
         interface NodeBuilderDefinedContext {
 
             /**
-             * Add a subNode to the path the error will be associated to.
+             * Add a node to the path the &lt;code&gt;ConstraintViolation&lt;/code&gt; will be associated to.
              *
              * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
              * dot (.) are not allowed.
@@ -1283,22 +1284,23 @@ public interface ConstraintValidatorContext {
              * @param name property &lt;code&gt;name&lt;/code&gt;
              * @return a builder representing this node
              */
-            NodeBuilderCustomizableContext addSubNode(String name);
+            NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add the new error report to be generated if the
+             * Add the new &lt;code&gt;ConstraintViolation&lt;/code&gt; to be generated if the
              * constraint validator marks the value as invalid.
-             * Methods of the &lt;code&gt;ErrorBuilder&lt;/code&gt; instance this object comes
-             * from and the error builder nested
-             * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
+             * Methods of the &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; instance this object
+             * comes from and the constraint violation builder nested
+             * objects return &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
              *
-             * @return ConstraintValidatorContext instance the ErrorBuilder comes from
+             * @return &lt;code&gt;ConstraintValidatorContext&lt;/code&gt; instance the
+             *           &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; comes from
              */
-            ConstraintValidatorContext addError();
+            ConstraintValidatorContext addConstraintViolation();
         }
 
         /**
-         * Represent a subnode whose context is
+         * Represent a node whose context is
          * configurable (ie index, key and isInIterable)
          */
         interface NodeBuilderCustomizableContext {
@@ -1311,7 +1313,7 @@ public interface ConstraintValidatorContext {
             NodeContextBuilder inIterable();
 
             /**
-             * Add a subNode to the path the error will be associated to.
+             * Add a node to the path the &lt;code&gt;ConstraintViolation&lt;/code&gt; will be associated to.
              *
              * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
              * dot (.) are not allowed.
@@ -1319,18 +1321,19 @@ public interface ConstraintValidatorContext {
              * @param name property &lt;code&gt;name&lt;/code&gt;
              * @return a builder representing this node
              */
-            NodeBuilderCustomizableContext addSubNode(String name);
+            NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add the new error report to be generated if the
+             * Add the new &lt;code&gt;ConstraintViolation&lt;/code&gt; to be generated if the
              * constraint validator mark the value as invalid.
-             * Methods of the &lt;code&gt;ErrorBuilder&lt;/code&gt; instance this object comes
-             * from and the error builder nested
-             * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
+             * Methods of the &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; instance this object
+             * comes from and the constraint violation builder nested
+             * objects return &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
              *
-             * @return ConstraintValidatorContext instance the ErrorBuilder comes from
+             * @return &lt;code&gt;ConstraintValidatorContext&lt;/code&gt; instance the
+             *           &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; comes from
              */
-            ConstraintValidatorContext addError();
+            ConstraintValidatorContext addConstraintViolation();
         }
 
         /**
@@ -1358,7 +1361,7 @@ public interface ConstraintValidatorContext {
             NodeBuilderDefinedContext atIndex(Integer index);
 
             /**
-             * Add a subNode to the path the error will be associated to.
+             * Add a node to the path the &lt;code&gt;ConstraintViolation&lt;/code&gt; will be associated to.
              *
              * &lt;code&gt;name&lt;/code&gt; describes a single property. In particular,
              * dot (.) are not allowed.
@@ -1366,44 +1369,45 @@ public interface ConstraintValidatorContext {
              * @param name property &lt;code&gt;name&lt;/code&gt;
              * @return a builder representing this node
              */
-            NodeBuilderCustomizableContext addSubNode(String name);
+            NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add the new error report to be generated if the
+             * Add the new &lt;code&gt;ConstraintViolation&lt;/code&gt; to be generated if the
              * constraint validator mark the value as invalid.
-             * Methods of the &lt;code&gt;ErrorBuilder&lt;/code&gt; instance this object comes
-             * from and the error builder nested
-             * objects returns &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
+             * Methods of the &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; instance this object
+             * comes from and the constraint violation builder nested
+             * objects return &lt;code&gt;IllegalStateException&lt;/code&gt; after this call.
              *
-             * @return ConstraintValidatorContext instance the ErrorBuilder comes from
+             * @return &lt;code&gt;ConstraintValidatorContext&lt;/code&gt; instance the
+             *           &lt;code&gt;ConstraintViolationBuilder&lt;/code&gt; comes from
              */
-            ConstraintValidatorContext addError();
+            ConstraintValidatorContext addConstraintViolation();
         }
     }
 }</programlisting>
 
       <para>The <classname>ConstraintValidatorContext</classname> interface
-      allows redefinition of the default error message generated when a
+      allows redefinition of the default constraint message generated when a
       constraint is not valid. By default, each invalid constraint leads to
       the generation of one error object represented by a
       <classname>ConstraintViolation</classname> object. This object is built
-      from the default error message template as defined by the constraint
-      declaration and the context in which the constraint declaration is
-      placed (bean, property, attribute).</para>
+      from the default constraint message template as defined by the
+      constraint declaration and the context in which the constraint
+      declaration is placed (bean, property, attribute).</para>
 
       <para>The <classname>ConstraintValidatorContext</classname> methods let
-      the constraint implementation disable the default error object
-      generation and create one or more custom ones. The non-interpolated
-      message passed as a parameter is used to build the
-      <classname>ConstraintViolation</classname> object (the message
-      interpolation operation is applied to it).</para>
+      the constraint implementation disable the default
+      <classname>ConstraintViolation</classname> generation and create one or
+      more custom ones. The non-interpolated message passed as a parameter is
+      used to build the <classname>ConstraintViolation</classname> message
+      (the message interpolation operation is applied to it).</para>
 
       <para>By default, the <classname>Path</classname> exposed on the
       <classname>ConstraintViolation</classname> represents the path to the
       bean or property hosting the constraint (see <xref
       linkend="validationapi-constraintviolation" /> for more information).
-      You can point an error to a subpath of this default path by using the
-      error builder fluent API.</para>
+      You can point it to a subpath of this default path by using the
+      constraint violation builder fluent API.</para>
 
       <para><xref
       linkend="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder" />
@@ -1413,21 +1417,21 @@ public interface ConstraintValidatorContext {
         <title>Using the fluent API to build error reports</title>
 
         <programlisting>//default path
-context.buildErrorWithMessageTemplate( "this detail is wrong" )
-            .addError();
+context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+            .addConstraintViolation();
 
 //default path + "street"
-context.buildErrorWithMessageTemplate( "this detail is wrong" )
-            .addSubNode( "street" )
-            .addError();
+context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+            .addNode( "street" )
+            .addConstraintViolation();
 
 //default path + "addresses["home"].country.name"
-context.buildErrorWithMessageTemplate( "this detail is wrong" )
-            .addSubNode( "addresses" )
-            .addSubNode( "country" )
+context.buildConstraintViolationWithMessageTemplate( "this detail is wrong" )
+            .addNode( "addresses" )
+            .addNode( "country" )
                 .inIterable().atKey( "home" )
-            .addSubNode( "name" )
-            .addError();</programlisting>
+            .addNode( "name" )
+            .addConstraintViolation();</programlisting>
       </example>
 
       <para>If <methodname>disableDefaultError</methodname> is called, no
