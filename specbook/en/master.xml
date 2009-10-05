@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20091001</releaseinfo>
+    <releaseinfo>1.0.20091005</releaseinfo>
 
-    <pubdate>2009-10-01</pubdate>
+    <pubdate>2009-10-05</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -1748,7 +1748,7 @@ public interface ConstraintValidatorFactory {
         <para>Each object provided by the iterator is validated. For
         <classname>Map</classname>, the value of each
         <classname>Map.Entry</classname> is validated (the key is not
-        validated). </para>
+        validated).</para>
 
         <para>Like regular references, its type is determined at runtime and
         the constraint definitions for this particular type are used.</para>
@@ -1788,7 +1788,8 @@ public interface ConstraintValidatorFactory {
 
       <para>The effect of constraint declarations is cumulative. Constraints
       declared on a superclass getter will be validated along with any
-      constraints defined on an overridden version of the getter.</para>
+      constraints defined on an overridden version of the getter according to
+      the Java Language Specification visibility rules.</para>
     </section>
 
     <section id="constraintdeclarationvalidationprocess-groupsequence">
@@ -3915,7 +3916,7 @@ public interface Validator {
      * The returned object (and associated objects including
      * &lt;code&gt;ConstraintDescriptor&lt;code&gt;s) are immutable.
      *
-     * @param clazz class type evaluated
+     * @param clazz class or interface type evaluated
      *
      * @return the bean descriptor for the specified class.
      *
@@ -3993,6 +3994,22 @@ acmeValidator.setSpecificConfiguration(...);</programlisting>
         <literal>@Valid</literal> is not honored by this method. This method
         is useful for ahead of time validation (ie. before the JavaBean is
         populated or updated).</para>
+
+        <note>
+          <para>If multiple constrained fields or getters share the same name
+          and hide one another in the class hierarchy according to the Java
+          visibility rules, the list of constraints evaluated is unspecified.
+          This will be clarified in a later version of this specification.
+          Note that method overriding is not impacted.</para>
+
+          <para>If getters and fields share the same name and are present at
+          different levels of the hierarchy, the list of constraints evaluated
+          is unspecified. This will be clarified in a later version of this
+          specification.</para>
+
+          <para>However, constraints hosted on the most specific (hierarchy
+          wise) element type are always evaluated.</para>
+        </note>
 
         <para>If some unrecoverable failure happens during validation, a
         <classname>ValidationException</classname> is raised. This exception
@@ -6907,7 +6924,7 @@ public interface Validator {
      * The returned object (and associated objects including
      * &lt;code&gt;ConstraintDescriptor&lt;code&gt;s) are immutable.
      *
-     * @param clazz class type evaluated
+     * @param clazz class or interface type evaluated
      *
      * @return the bean descriptor for the specified class.
      *
@@ -6957,8 +6974,8 @@ public interface Validator {
 public interface ElementDescriptor {
 
     /**
-     * @return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is
-     *         present on the element, &lt;code&gt;false&lt;/code&gt; otherwise.
+     * Return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is present
+     * for this element in the class hierarchy, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean hasConstraints();
 
@@ -6968,46 +6985,161 @@ public interface ElementDescriptor {
     Class&lt;?&gt; getElementClass();
 
     /**
-     * Return all constraint descriptors for this element or an
-     * empty &lt;code&gt;Set&lt;/code&gt; if none are present.
+     * Return all constraint descriptors for this element in the class hierarchy
+     * or an empty &lt;code&gt;Set&lt;/code&gt; if none are present.
      *
      * @return &lt;code&gt;Set&lt;/code&gt; of constraint descriptors for this element
      */
     Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
 
     /**
-     * Return the list of matching constraints for a given set of groups for this element.
+     * Find constraints and potentially restricts them to certain criteria.
      *
-     * This method respects group sequences and group inheritance (including
-     * class-level &lt;code&gt;Default&lt;/code&gt; group overriding) but does not return 
-     * &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s in any particular order. 
-     * Specifically, ordering of the group sequence is not respected.
-     *
-     * @param groups groups targeted
-     * @return list of matching ConstraintDescriptors
+     * @return ConstraintFinder object.
      */
-    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getUnorderedConstraintDescriptorsMatchingGroups(Class&lt;?&gt;... groups);
+    ConstraintFinder findConstraints();
+
+    /**
+     * Declare restrictions on retrived constraints.
+     * Restrictions are cumulative.
+     *
+     * A &lt;code&gt;ConstraintFinder&lt;/code&gt; is not thread-safe. The set of matching
+     * &lt;code&gt;ConstraintDescriptor&lt;/code&gt; is.
+     */
+    interface ConstraintFinder {
+        /**
+         * Restrict to the constraints matching a given set of groups for this element
+         *
+         * This method respects group sequences and group inheritance (including
+         * class-level &lt;code&gt;Default&lt;/code&gt; group overriding) but does not return
+         * &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s in any particular order.
+         * Specifically, ordering of the group sequence is not respected.
+         *
+         * @param groups groups targeted
+         *
+         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         */
+        ConstraintFinder unorderedAndMatchingGroups(Class&lt;?&gt;... groups);
+
+        /**
+         * Restrict to the constraints matching the provided scope for this element.
+         *
+         * Defaults to &lt;code&gt;Scope.HIERARCHY&lt;/code&gt;
+         *
+         * @param scope exected scope
+         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         */
+        ConstraintFinder lookingAt(Scope scope);
+
+        /**
+         * Restrict to the constraints hosted on the listed &lt;code&gt;types&lt;/code&gt;
+         * for a given element.
+         *
+         * Default to all possible types of the element.
+         *
+         * Typically used to restrict to fields (&lt;code&gt;FIELD&lt;/code&gt;)
+         * or getters (&lt;code&gt;METHOD&lt;/code&gt;)
+         *
+         * @param types targeted types
+         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         */
+        ConstraintFinder declaredOn(ElementType... types);
+
+        /**
+         * Retrieve the constraint descriptors following the defined
+         * restrictions and hosted on the element described by
+         * &lt;code&gt;ElementDescriptor&lt;/code&gt;
+         *
+         * @return matching constraint descriptors
+         */
+        Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+
+        /**
+         * Returns &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration
+         * matching the restrictions is present on the element,
+         * &lt;code&gt;false&lt;/code&gt; otherwise.
+         *
+         * @return is there any constraint
+         */
+        boolean hasConstraints();
+    }
 }</programlisting>
 
       <para><methodname>getElementClass</methodname> returns either the object
       type for a class, or the returned type for a property.</para>
 
-      <para><classname>getConstraintDescriptors</classname> returns the
+      <para><classname>getConstraintDescriptors</classname> returns all the
       <classname>ConstraintDescriptor</classname>s (see <xref
-      linkend="constraintmetadata-constraintdescriptor" />), each
+      linkend="constraintmetadata-constraintdescriptor" />) hosted on the
+      given element in the class hierarchy, each
       <classname>ConstraintDescriptor</classname> describing one of the
       constraints declared on the given element.</para>
 
-      <para><classname>getUnorderedConstraintDescriptorsMatchingGroups</classname>
-      returns the <classname>ConstraintDescriptor</classname>s (see <xref
+      <para><methodname>hasConstraints</methodname> returns true if the given
+      element (class, field or property) in the class hierarchy holds at least
+      one constraint declaration.</para>
+
+      <para>If you need to query the metadata API in a more fine grained way
+      for example by restricting the constraints to the one described on
+      fields or on getters or by restricting to a given set of groups, you can
+      use the <classname>ConstraintFinder</classname> fluent API by calling
+      <methodname>findConstraints</methodname>. </para>
+
+      <para>Here is an example restricting the list of constraints on getters,
+      matching the default group and declared physically on the
+      <literal>name</literal> getter of <classname>Customer</classname> (and
+      not any of the getters on the super classes).</para>
+
+      <example>
+        <title>Using the fluent API to restrict matching constraints</title>
+
+        <programlisting>public class User {
+    @Size(max=50) 
+    String getName() { ... }
+    ...
+}
+
+public class Customer {
+    @NotNull
+    String getName() { ... }
+}
+
+PropertyDescriptor pd = 
+    validator.getConstraintsForClass(Customer.class).getConstraintsForProperty("name");
+Set&lt;ConstraintDescriptor&lt;?&gt;&gt; constraints = 
+    pd.findConstraints()
+        .declaredOn(ElementType.METHOD)
+        .unorderedAndMatchingGroups(Default.class)
+        .lookingAt(Scope.LOCAL_ELEMENT)
+            .getConstraintDescriptors();
+
+assert 1 == constraints.size();
+
+constraints = pd.getConstraintDescriptors();
+//equivalent to pd.findConstraints()..getConstraintDescriptors();
+assert 2 == constraints.size();      </programlisting>
+      </example>
+
+      <para><classname>unorderedAndMatchingGroups</classname> restricts to the
+      <classname>ConstraintDescriptor</classname>s (see <xref
       linkend="constraintmetadata-constraintdescriptor" />) matching the set
       of groups passed as parameters and present on the element. Order is not
       respected but group inheritance and inheritance via sequence (including
       the Default group overriding at the class level) are honored.</para>
 
-      <para><methodname>hasConstraints</methodname> returns true if the
-      element (class, field or property) holds at least one constraint
-      declaration.</para>
+      <para><methodname>declaredOn</methodname> lets you restrict the list of
+      element types constraints are hosted on. This is particularly useful to
+      retrieve constraints only hosted on fields
+      (<classname>ElementType.FIELD</classname>) or only hosted on getters
+      (<classname>ElementType.METHOD</classname>).</para>
+
+      <para><methodname>lookingAt</methodname> lets you restrict which
+      constraints are considered. Either constraints belonging to the element
+      but hosted on the class represented by
+      <classname>BeanDescritptor</classname>
+      (<classname>Scope.LOCAL_ELEMENT</classname>), or constraints belonging
+      to the element but hosted anywhere in the class hierarchy
+      (<classname>Scope.HIERARCHY</classname>).</para>
     </section>
 
     <section>
