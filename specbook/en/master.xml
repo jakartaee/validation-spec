@@ -7,9 +7,9 @@
   <bookinfo>
     <title>JSR 303: Bean Validation</title>
 
-    <releaseinfo>1.0.20091005</releaseinfo>
+    <releaseinfo>1.0 final</releaseinfo>
 
-    <pubdate>2009-10-05</pubdate>
+    <pubdate>2009-10-12</pubdate>
 
     <copyright>
       <year>2007-2009</year>
@@ -615,8 +615,8 @@ public @interface ZipCode {
       with different error messages.</para>
 
       <para>Using two different multi-constraint annotations for the same
-      underlying constraint type on the same target (ie. class or property) is
-      not considered portable and is discouraged.</para>
+      underlying constraint type on the same target (i.e. class or property)
+      is not considered portable and is discouraged.</para>
     </section>
 
     <section id="constraintsdefinitionimplementation-constraintcomposition">
@@ -1057,14 +1057,14 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
 
       <itemizedlist>
         <listitem>
-          <para>resolve to a non parameterized type (ie. because the type is
+          <para>resolve to a non parameterized type (i.e. because the type is
           not using generics or because the raw type is used instead of the
           generic version)</para>
         </listitem>
 
         <listitem>
           <para>or generic parameters of <classname>T</classname> must be
-          unbounded wildcard types (ie. <literal>&lt;?&gt;</literal>)</para>
+          unbounded wildcard types (i.e. <literal>&lt;?&gt;</literal>)</para>
         </listitem>
       </itemizedlist>
 
@@ -1796,10 +1796,11 @@ public interface ConstraintValidatorFactory {
       <title>Group and group sequence</title>
 
       <para>A group defines a subset of constraints. Instead of validating all
-      constraints for a given object graph, only a subset is validated
-      depending on the group targeted. Each constraint declaration defines the
-      list of groups it belongs to. If no group is explicitly declared, a
-      constraint belongs to the <classname>Default</classname> group.</para>
+      constraints for a given object graph, only a subset is validated. This
+      subset is defined by the the group or groups targeted. Each constraint
+      declaration defines the list of groups it belongs to. If no group is
+      explicitly declared, a constraint belongs to the
+      <classname>Default</classname> group.</para>
 
       <para>Groups are represented by interfaces.</para>
 
@@ -1807,7 +1808,7 @@ public interface ConstraintValidatorFactory {
         <title>Definition of groups</title>
 
         <programlisting>/**
- * Validation group checking a user is billable
+ * Validation group verifing that a user is billable
  */
 public interface Billable {}
 
@@ -1845,7 +1846,7 @@ public class User {
       <literal>defaultCreditCard</literal> when either the
       <classname>Billable</classname> or <classname>BuyInOneClick</classname>
       group is validated. <classname>@NotNull</classname> on
-      <literal>firstname</literal> and on <literal>lastname</literal> are
+      <literal>firstname</literal> and <literal>lastname</literal> are
       validated when the <classname>Default</classname> group is validated.
       Reminder: constraints held on superclasses and interfaces are
       considered.</para>
@@ -1886,8 +1887,8 @@ public interface BuyInOneClick extends Default, Billable {}</programlisting>
         </example>
 
         <para>For a given interface <classname>Z</classname>, constraints
-        marked as belonging to the group <classname>Z</classname> (ie where
-        the annotation <methodname>groups</methodname> property contains the
+        marked as belonging to the group <classname>Z</classname> (i.e. where
+        the annotation element <methodname>groups</methodname> contains the
         interface <classname>Z</classname>) or any of the super interfaces of
         <classname>Z</classname> (inherited groups) are considered part of the
         group <classname>Z</classname>.</para>
@@ -1907,7 +1908,7 @@ public class User {
     @NotNull(groups = Default.class)
     private String lastname;
 
-    @NotNull(groups = {Billable.class})
+    @NotNull(groups = Billable.class)
     private CreditCard defaultCreditCard;
 }</programlisting>
         </example>
@@ -1968,14 +1969,25 @@ public class User {
         <para>Processing a group is defined in <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         ; if one of the groups processed in the sequence generates one or more
-        constraint violation, the groups following in the sequence must not be
-        processed. This ensures that a set of constraint is evaluated only if
-        another set of constraint is valid.</para>
+        constraint violations, the groups following in the sequence must not
+        be processed. This ensures that a set of constraint is evaluated only
+        if another set of constraint is valid.</para>
 
         <para>Groups defining a sequence and groups composing a sequence must
-        not be involved in a cyclic dependency either directly or indirectly,
-        either through cascaded sequence definition or group inheritance. If a
-        group containing such a circularity is evaluated, a
+        not be involved in a cyclic dependency: </para>
+
+        <itemizedlist>
+          <listitem>
+            <para>either directly or indirectly</para>
+          </listitem>
+
+          <listitem>
+            <para>either through cascaded sequence definitions or group
+            inheritance</para>
+          </listitem>
+        </itemizedlist>
+
+        <para>If a group containing such a circularity is evaluated, a
         <classname>GroupDefinitionException</classname> is raised.</para>
 
         <para>Groups defining a sequence should not directly inherit other
@@ -2112,7 +2124,7 @@ public class Address {
         explicitly) implicitly belong to the group
         <classname>A</classname>.</para>
 
-        <para>A sequence defined on a class <classname>A</classname> (ie.
+        <para>A sequence defined on a class <classname>A</classname> (i.e.
         redefining the <classname>Default</classname> groups for the class)
         must contain the group <classname>A</classname>. In other words, the
         default constraints hosted on a class must be part of the sequence
@@ -2127,8 +2139,8 @@ public class Address {
       <section id="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping">
         <title>Implicit grouping</title>
 
-        <para>It is possible to implicitly group some constraints in the same
-        group without explicitly listing such a group in the constraint
+        <para>It is possible to implicitly group several constraints in the
+        same group without explicitly listing such a group in the constraint
         declaration. Every constraint hosted on an interface
         <classname>Z</classname> and part of the
         <classname>Default</classname> group (implicitly or explicitly)
@@ -2345,10 +2357,10 @@ public class Order implements Auditable {
               </listitem>
 
               <listitem>
-                <para>every constraint declared by any superinterface not
-                annotated <classname>@GroupSequence</classname> of the
-                interface <classname>Z</classname> which does not explicitly
-                declare a group</para>
+                <para>every constraint (which does not explicitly declare a
+                group) declared by any superinterface not annotated
+                <classname>@GroupSequence</classname> of the interface
+                <classname>Z</classname> </para>
 
                 <para><emphasis>all <classname>Default</classname> constraints
                 hosted on interfaces of <classname>Z</classname>: groups can
@@ -2500,8 +2512,8 @@ public class Order implements Auditable {
       <title>Validation routine</title>
 
       <para>For a given group to validate, the validation routine applied on a
-      given bean instance is expected to execute the constraint validations in
-      no particular order:</para>
+      given bean instance is expected to execute the following constraint
+      validations in no particular order:</para>
 
       <itemizedlist>
         <listitem>
@@ -2584,7 +2596,7 @@ public class Order implements Auditable {
           <classname>ConstraintViolation</classname> object(s) according to
           the rules defined in <xref
           linkend="constraintsdefinitionimplementation-validationimplementation" />
-          and appends these objects to the list of returned invalid
+          and appends these objects to the list of constraint
           violations.</para>
         </listitem>
       </itemizedlist>
@@ -2595,7 +2607,7 @@ public class Order implements Auditable {
         <para>The <classname>@Valid</classname> annotation on a given
         association (i.e. object reference or collection, array,
         <classname>Iterable</classname> of objects), dictates the Bean
-        Validator implementation to apply recursively the bean validation
+        Validator implementation to apply recursively the Bean Validation
         routine on (each of) the associated object(s). This mechanism is
         recursive: an associated object can itself contain cascaded
         references.</para>
@@ -2842,9 +2854,10 @@ public interface TraversableResolver {
         true.</para>
 
         <para><methodname>isCascadable</methodname> is called for every
-        property about to be cascaded (ie. marked as
+        property about to be cascaded (i.e. marked as
         <classname>@Valid</classname>). A property is
-        <emphasis>cascadable</emphasis> if this method returns true.</para>
+        <emphasis>cascadable</emphasis> if it is reachable and if the
+        <methodname>isCascadable</methodname> method returns true.</para>
 
         <note>
           <para><methodname>isCascadable</methodname> for a given property is
@@ -3147,7 +3160,7 @@ public class Address {
 
         <para>When validating a constraint A placed on a target declaring the
         type <classname>T</classname>, the following resolution rules
-        apply.</para>
+        apply:</para>
 
         <itemizedlist>
           <listitem>
@@ -3219,7 +3232,7 @@ public class Address {
           provide such a tool to their users.</para>
         </note>
 
-        <para>Let's see a couple of declarations their respective
+        <para>Let's see a couple of declarations and their respective
         <classname>ConstraintValidator</classname> resolution. Assuming the
         definitions shown in <xref
         linkend="example-constraintvalidator-resolution" />:</para>
@@ -3945,10 +3958,10 @@ public interface Validator {
       <para><methodname>getConstraintsForClass</methodname> is described in
       <xref linkend="constraintmetadata" />.</para>
 
-      <para><methodname>unwrap</methodname> is provided as a way to access a
-      Bean Provider specific object of a given type typically as a complement
-      to the <classname>Validator</classname> contract. Using this method
-      makes your code non portable.</para>
+      <para><methodname>unwrap</methodname> is provided as a way to access
+      objects of a given type specific to a Bean Validation provider typically
+      as a complement to the <classname>Validator</classname> contract. Using
+      this method makes your code non portable.</para>
 
       <example>
         <title>Using unwrap to access a provider specific contract</title>
@@ -3992,7 +4005,7 @@ acmeValidator.setSpecificConfiguration(...);</programlisting>
         linkend="constraintdeclarationvalidationprocess-validationroutine" />
         and apply it only to the given property and for the given value.
         <literal>@Valid</literal> is not honored by this method. This method
-        is useful for ahead of time validation (ie. before the JavaBean is
+        is useful for ahead of time validation (i.e. before the JavaBean is
         populated or updated).</para>
 
         <note>
@@ -4117,7 +4130,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
         <para>When more than one group is evaluated and passed to the various
         validate methods, order is not constrained. It is equivalent to the
-        validation of a group <literal>G</literal> inheriting all groups (ie
+        validation of a group <literal>G</literal> inheriting all groups (i.e.
         implementing all interfaces) passed to the validation method.</para>
 
         <section>
@@ -4614,7 +4627,7 @@ public class Review {
         <classname>Serializable</classname> provided that the root bean, the
         leaf bean, the invalid value and keys in the
         <classname>Path</classname> object are
-        <classname>Serializable</classname> objects. </para>
+        <classname>Serializable</classname> objects.</para>
 
         <para>If a user wishes to send
         <classname>ConstraintViolation</classname> remotely, it should make
@@ -4772,8 +4785,7 @@ assert false == nodeIter.hasNext();</programlisting>
       <title>Message interpolation</title>
 
       <para>A message interpolator is responsible for transforming the message
-      string from the constraint and return a human readable error
-      message.</para>
+      string from the constraint into a human readable error message.</para>
 
       <section id="default-messageresolver">
         <title>Default message interpolation</title>
@@ -4825,7 +4837,8 @@ assert false == nodeIter.hasNext();</programlisting>
         <section id="default-resolution-algorithm">
           <title>Default message interpolation algorithm</title>
 
-          <para>The default message interpolator uses the following steps:<!--SCP: Do we want to allow MessageFormat style formatting here?--></para>
+          <para>The default message interpolator uses the following
+          steps:</para>
 
           <orderedlist>
             <listitem>
@@ -4838,7 +4851,7 @@ assert false == nodeIter.hasNext();</programlisting>
               locale variations) using the defined locale (see below). If a
               property is found, the message parameter is replaced with the
               property value in the message string. Step 1 is applied
-              recursively until no replacement is performed (ie. a message
+              recursively until no replacement is performed (i.e. a message
               parameter value can itself contain a message parameter).</para>
             </listitem>
 
@@ -4870,9 +4883,8 @@ assert false == nodeIter.hasNext();</programlisting>
           <itemizedlist>
             <listitem>
               <para>if the locale is passed to the interpolator method
-              i<methodname>nterpolate(String, CosntraintDescriptor, Object,
-              Locale)</methodname>, this <classname>Locale</classname>
-              instance is used.</para>
+              i<methodname>nterpolate(String, Context, Locale)</methodname>,
+              this <classname>Locale</classname> instance is used.</para>
             </listitem>
 
             <listitem>
@@ -4979,8 +4991,9 @@ public interface MessageInterpolator {
         <para>The message interpolator is provided to the
         <classname>ValidatorFactory</classname> at construction time using
         <methodname>Configuration.messageInterpolator(MessageInterpolator)</methodname>.
-        This message interpolator is shared by all validators generated by
-        this <classname>ValidatorFactory</classname>.</para>
+        This message interpolator is shared by all
+        <classname>Validator</classname> objects generated by this
+        <classname>ValidatorFactory</classname>.</para>
 
         <para>It is possible to override the
         <classname>MessageInterpolator</classname> implementation for a given
@@ -5063,8 +5076,6 @@ myapp.creditcard.error=credit card number not valid</programlisting>
             </tbody>
           </tgroup>
         </table>
-
-        <!--SCP: add example of {value} here. Add use of MessageFormat style formatting-->
 
         <para>Here is an approach to specify the <classname>Locale</classname>
         value to choose on a given <classname>Validator</classname>.
@@ -5214,9 +5225,9 @@ Validator validator = factory.getValidator();</programlisting>
         <listitem>
           <para><classname>Validation</classname>: API entry point. Lets you
           optionally define the Bean Validation provider targeted as well as a
-          provider resolution strategy. Validation generates
-          <classname>Configuration</classname> objects and can bootstrap any
-          provider implementation.</para>
+          provider resolution strategy. <classname>Validation</classname>
+          generates <classname>Configuration</classname> objects and can
+          bootstrap any provider implementation.</para>
         </listitem>
 
         <listitem>
@@ -5236,8 +5247,8 @@ Validator validator = factory.getValidator();</programlisting>
           configuration details that will be used to build
           <classname>ValidatorFactory</classname>. A specific sub interface of
           <classname>Configuration</classname> must be provided by Bean
-          Validation providers as a unique identifier. This sub interface
-          typically hosts provider specific configurations.</para>
+          Validation providers. This sub interface typically hosts provider
+          specific configurations.</para>
         </listitem>
 
         <listitem>
@@ -5490,10 +5501,11 @@ public interface ValidatorFactory {
         <para>A <classname>ValidatorFactory</classname> is provided by a
         <classname>Configuration</classname> object.</para>
 
-        <para><methodname>unwrap</methodname> is provided as a way to access a
-        Bean Provider specific object of a given type typically as a
-        complement to the <classname>ValidatorFactory</classname> contract.
-        Using this method makes your code non portable.</para>
+        <para><methodname>unwrap</methodname> is provided as a way to access
+        objects of a given type specific to a Bean Validation provider
+        typically as a complement to the
+        <classname>ValidatorFactory</classname> contract. Using this method
+        makes your code non portable.</para>
 
         <example>
           <title>Using unwrap to access a provider specific contract</title>
@@ -5652,9 +5664,10 @@ Validator validatorUsingCustomTraversable = factory
         <para>A <classname>Configuration</classname> does provide a
         <classname>MessageInterpolator</classname> implementation following
         the default Bean Validation <classname>MessageInterpolator</classname>
-        rules as defined in <xref linkend="default-messageresolver" /> by
-        calling <methodname>getDefaultMessageInterpolator()</methodname>. Such
-        an implementation is useful to let a custom
+        rules as defined in <xref linkend="default-messageresolver" />. You
+        can access it by calling
+        <methodname>getDefaultMessageInterpolator()</methodname>. Such an
+        implementation is useful to let a custom
         <classname>MessageInterpolator</classname> delegate to the standard
         <classname>MessageInterpolator</classname> (see <xref
         linkend="custom-message-resolution" /> and an example making use of
@@ -5665,9 +5678,10 @@ Validator validatorUsingCustomTraversable = factory
         <classname>TraversableResolver</classname> implementation following
         the default Bean Validation <classname>TraversableResolver</classname>
         rules as defined in <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine-traversable" />
-        by calling <methodname>getDefaultTraversableResolver()</methodname>.
-        Such an implementation is useful to let a custom
+        linkend="constraintdeclarationvalidationprocess-validationroutine-traversable" />.
+        You can access it by calling
+        <methodname>getDefaultTraversableResolver()</methodname>. Such an
+        implementation is useful to let a custom
         <classname>TraversableResolver</classname> delegate to the standard
         <classname>TraversableResolver</classname>.</para>
 
@@ -5676,8 +5690,8 @@ Validator validatorUsingCustomTraversable = factory
         following the default Bean Validation
         <classname>ConstraintValidatorFactory</classname> rules as defined in
         <xref
-        linkend="constraintsdefinitionimplementation-constraintfactory" /> by
-        calling
+        linkend="constraintsdefinitionimplementation-constraintfactory" />.
+        You can access it by calling
         <methodname>getDefaultConstraintValidatorFactory()</methodname>. Such
         an implementation is useful to let a custom
         <classname>ConstraintValidatorFactory</classname> delegate to the
@@ -5939,7 +5953,7 @@ public interface ACMEConfiguration
         the <classname>Configuration</classname> implementation after the
         <classname>ValidatorFactory</classname> creation (or if an exception
         occurs). Streams provided programmatically are the responsibility of
-        the application.<!--talk about extensibility--></para>
+        the application.</para>
 
         <example>
           <title>ConfigurationState interface</title>
@@ -6137,7 +6151,7 @@ ValidatorFactory factory = configuration
         <para><classname>ValidationProvider</classname> is the contract
         between the bootstrap process and a specific Bean Validation provider.
         <classname>ValidationProviderResolver</classname> implements the
-        discovery mechanism for Bean Validation provider implementation. Any
+        discovery mechanism for Bean Validation provider implementations. Any
         Bean Validation client can implement such a discovery mechanism but it
         is typically implemented by containers having specific classloader
         structures and restrictions.</para>
@@ -6225,10 +6239,8 @@ public interface ValidationProviderResolver {
 
           <itemizedlist>
             <listitem>
-              <para>Determine if a provider matches a given
-              <classname>Configuration</classname> sub interface. One
-              <classname>Configuration</classname> sub interface specifically
-              represents one Bean Validation provider.</para>
+              <para>Provide a generic <classname>Configuration</classname>
+              implementation (i.e. not tied to a given provider).</para>
             </listitem>
 
             <listitem>
@@ -7119,7 +7131,7 @@ public enum Scope {
       for example by restricting the constraints to the one described on
       fields or on getters or by restricting to a given set of groups, you can
       use the <classname>ConstraintFinder</classname> fluent API by calling
-      <methodname>findConstraints</methodname>. </para>
+      <methodname>findConstraints</methodname>.</para>
 
       <para>Here is an example restricting the list of constraints on getters,
       matching the default group and declared physically on the
@@ -7161,7 +7173,8 @@ assert 2 == constraints.size();      </programlisting>
       linkend="constraintmetadata-constraintdescriptor" />) matching the set
       of groups passed as parameters and present on the element. Order is not
       respected but group inheritance and inheritance via sequence (including
-      the Default group overriding at the class level) are honored.</para>
+      the <classname>Default</classname> group overriding at the class level)
+      are honored.</para>
 
       <para><methodname>declaredOn</methodname> lets you restrict the list of
       element types constraints are hosted on. This is particularly useful to
@@ -7233,7 +7246,7 @@ public interface BeanDescriptor extends ElementDescriptor {
 }</programlisting>
 
       <para><methodname>isBeanConstrained</methodname> returns true if the
-      given class (and superclasses and interfaces) host at least one
+      given class (and superclasses and interfaces) hosts at least one
       validation declaration (either constraint or
       <classname>@Valid</classname> annotation). If the method returns false,
       the Bean Validation engine can safely ignore the bean as it will not be
@@ -7263,7 +7276,8 @@ public interface BeanDescriptor extends ElementDescriptor {
       <classname>javax.validation.metadata</classname> package.</para>
 
       <para>This interface is returned by
-      <methodname>BeanDescriptor.getConstraintsForProperty(String)</methodname>.
+      <methodname>BeanDescriptor.getConstraintsForProperty(String)</methodname>
+      or <methodname>BeanDescriptor.getConstrainedProperties</methodname>.
       Constraints declared on the attribute and the getter of the same name
       according to the Java Bean rules are returned by this descriptor.</para>
 
@@ -7395,7 +7409,7 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
       <classname>ConstraintDescriptor</classname> represents a composing
       annotation (see <xref
       linkend="constraintsdefinitionimplementation-constraintcomposition" />),
-      the returned <classname>Map</classname> must reflect attribute
+      the returned <classname>Map</classname> must reflects attribute
       overriding.</para>
 
       <para><methodname>getGroups</methodname> returns the groups the
@@ -8567,9 +8581,10 @@ public @interface Pattern {
           <para>A new constraint declaration is represented by the
           <literal>constraint</literal> element. The
           <literal>annotation</literal> attribute is the class name of the
-          annotation representing the constraint. Message and groups are
-          defined respectively by the <literal>message</literal> and
-          <literal>groups</literal> elements.</para>
+          annotation representing the constraint. Message, groups and payload
+          are defined respectively by the <literal>message</literal>,
+          <literal>groups</literal> and <literal>payload</literal>
+          elements.</para>
 
           <para>Other custom elements of an annotation are represented by
           <literal>element</literal>. The <literal>name</literal> attribute is
@@ -8691,7 +8706,7 @@ public @interface Pattern {
       <section id="xml-mapping-constraintdefinition">
         <title>Overriding constraint definitions in XML</title>
 
-        <para>A constraint definition (ie. the annotation representing a
+        <para>A constraint definition (i.e. the annotation representing a
         constraint), cannot be fully expressed in XML but the list of
         <classname>ConstraintValidator</classname> associated to a given
         constraint can be altered.</para>
@@ -9171,7 +9186,7 @@ public class ConstraintViolationException extends ValidationException {
       <note>
         <para>If this exception is meant to be send remotely,
         <classname>ConstraintViolation</classname> objects should be
-        <classname>Serializable</classname> as defined in <xref
+        <classname>Serializable</classname> as defined an explained in <xref
         linkend="validationapi-constraintviolation" />.</para>
       </note>
     </section>
@@ -9222,8 +9237,8 @@ public class ConstraintViolationException extends ValidationException {
       requested.</para>
 
       <note>
-        <para>These exception cases can be determined at compile time by
-        tooling (such as an annotation processor).</para>
+        <para>These exception cases can be determined at compile time by a
+        tool such as an annotation processor.</para>
       </note>
     </section>
 
@@ -9240,8 +9255,8 @@ public class ConstraintViolationException extends ValidationException {
       <classname>ValidationException</classname>.</para>
 
       <note>
-        <para>These exception cases can generally be determined at compile
-        time by tooling (such as an annotation processor).</para>
+        <para>These exception cases can be determined at compile time by a
+        tool such as an annotation processor.</para>
       </note>
     </section>
   </chapter>
@@ -9419,8 +9434,9 @@ javax.validation.constraints.Pattern.message=must match the following regular ex
 
     <para>This proposition has not been integrated into the core specification
     and is not part of it. It remains here for archaeological purposes and
-    will be seriously considered for a future revision of this
-    specification.</para>
+    will be seriously considered for a future revision of this specification.
+    This proposal is likely to be a bit out of sync with the rest of the
+    specification artifacts.</para>
 
     <note>
       <para>Bean Validation providers are free to implement this proposal as a
@@ -9646,7 +9662,7 @@ For each entity, apply the following algorithm.
 For each persistent property in a given entity: 
  - extract the list of BV constraints (including the composing constraints) 
  - determine the subset of applicable constraints 
-    (ie constraints understood by the persistence provider)
+    (i.e. constraints understood by the persistence provider)
  - apply these constraints on the persistent property metadata 
  - if the property type is an embeddable object or a collection 
 of embeddable objects, apply the algorithm on the embeddable object properties
@@ -9725,10 +9741,8 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
 
     <para></para>
 
-    <para>TODO: This section needs update as the Java EE spec has included
-    some wording already.</para>
-
-    <para></para>
+    <para>TODO: This section is outdated. See the latest version in the Java
+    EE 6 specification.</para>
 
     <para><classname>Validator</classname> and
     <classname>ValidatorFactory</classname> are very good candidates for
@@ -9774,7 +9788,7 @@ Provide a way to disable BV metadata use by a persistence provider (property bas
   <appendix id="changelog">
     <title>Changelog</title>
 
-    <programlisting>1.0.0 final (2009-10-05)
+    <programlisting>1.0.0 final (2009-10-12)
 ------------------------
 
 ** Bug
