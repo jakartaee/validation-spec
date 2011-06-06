@@ -1,0 +1,671 @@
+<chapter id="constraintmetadata">
+    <title>Constraint metadata request APIs</title>
+
+    <para>The Bean Validation specification provides a way to query the
+    constraint repository. This API is expected to be used for tooling support
+    as well as integration with other frameworks, libraries and JSRs. The Bean
+    Validation specification aims to provide both a validation engine and a
+    metadata repository for object constraints. Frameworks (EE or SE) in need
+    for constraint definition, validation and metadata will be able to rely on
+    the Bean Validation specification for these services avoiding any
+    unnecessary duplication work from an application and infrastructure point
+    of view.</para>
+
+    <section>
+      <title>Validator</title>
+
+      <para>The main API to access all metadata related to a given object is
+      <classname>Validator</classname> (see <xref linkend="bootstrapping" />
+      for more information on how to retrieve a
+      <classname>Validator</classname> instance).</para>
+
+      <para>A <classname>Validator</classname> instance hosts the method to
+      access to the metadata repository for a given class. It is recommended
+      to leave the caching of <classname>Validator</classname> instances to
+      the <classname>ValidatorFactory</classname>.
+      <classname>Validator</classname> implementations are thread-safe.</para>
+
+      <programlisting>/**
+ * Validate bean instances. Implementations of this interface must be thread-safe.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+public interface Validator {
+
+    [...] //See 4.1
+
+    /**
+     * Return the descriptor object describing bean constraints.
+     * The returned object (and associated objects including
+     * &lt;code&gt;ConstraintDescriptor&lt;code&gt;s) are immutable.
+     *
+     * @param clazz class or interface type evaluated
+     *
+     * @return the bean descriptor for the specified class.
+     *
+     * @throws IllegalArgumentException if clazz is null
+     * @throws ValidationException if a non recoverable error happens
+     *                             during the metadata discovery or if some
+     *                             constraints are invalid.
+     */
+    BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
+}</programlisting>
+
+      <para><methodname>getConstraintsForClass</methodname> returns a
+      <classname>BeanDescriptor</classname> object describing the bean level
+      constraints (see <xref
+      linkend="constraintdeclarationvalidationprocess-requirements-object" />)
+      and providing access to the property level constraints metadata.</para>
+
+      <para>If a constraint definition or declaration hosted by the requested
+      class (or any of it's superclasses and interfaces according to the
+      constraint propagation rules) is invalid, a
+      <classname>ValidationException</classname> is raised. This can be a
+      subclass of <classname>ValidationException</classname> like
+      <classname>ConstraintDefinitionException</classname>,
+      <classname>ConstraintDeclarationException</classname>,
+      <classname>UnexpectedTypeException</classname>.</para>
+    </section>
+
+    <section id="constraintmetadata-elementdescriptor">
+      <title>ElementDescriptor</title>
+
+      <para><classname>ElementDescriptor</classname> is the root interface
+      describing elements hosting constraints. It is used to describe the list
+      of constraints for a given element (whether it be a field, a method or a
+      class).</para>
+
+      <para><classname>ElementDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
+
+      <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a validated element (class, field or property).
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+public interface ElementDescriptor {
+
+    /**
+     * Return &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration is present
+     * for this element in the class hierarchy, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean hasConstraints();
+
+    /**
+     * @return Statically defined returned type.
+     */
+    Class&lt;?&gt; getElementClass();
+
+    /**
+     * Return all constraint descriptors for this element in the class hierarchy
+     * or an empty &lt;code&gt;Set&lt;/code&gt; if none are present.
+     *
+     * @return &lt;code&gt;Set&lt;/code&gt; of constraint descriptors for this element
+     */
+    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+
+    /**
+     * Find constraints and potentially restricts them to certain criteria.
+     *
+     * @return ConstraintFinder object.
+     */
+    ConstraintFinder findConstraints();
+
+    /**
+     * Declare restrictions on retrieved constraints.
+     * Restrictions are cumulative.
+     *
+     * A &lt;code&gt;ConstraintFinder&lt;/code&gt; is not thread-safe. The set of matching
+     * &lt;code&gt;ConstraintDescriptor&lt;/code&gt; is.
+     */
+    interface ConstraintFinder {
+        /**
+         * Restrict to the constraints matching a given set of groups for this element
+         *
+         * This method respects group sequences and group inheritance (including
+         * class-level &lt;code&gt;Default&lt;/code&gt; group overriding) but does not return
+         * &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s in any particular order.
+         * Specifically, ordering of the group sequence is not respected.
+         *
+         * @param groups groups targeted
+         *
+         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         */
+        ConstraintFinder unorderedAndMatchingGroups(Class&lt;?&gt;... groups);
+
+        /**
+         * Restrict to the constraints matching the provided scope for this element.
+         *
+         * Defaults to &lt;code&gt;Scope.HIERARCHY&lt;/code&gt;
+         *
+         * @param scope expected scope
+         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         */
+        ConstraintFinder lookingAt(Scope scope);
+
+        /**
+         * Restrict to the constraints hosted on the listed &lt;code&gt;types&lt;/code&gt;
+         * for a given element.
+         *
+         * Default to all possible types of the element.
+         *
+         * Typically used to restrict to fields (&lt;code&gt;FIELD&lt;/code&gt;)
+         * or getters (&lt;code&gt;METHOD&lt;/code&gt;)
+         *
+         * @param types targeted types
+         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         */
+        ConstraintFinder declaredOn(ElementType... types);
+
+        /**
+         * Retrieve the constraint descriptors following the defined
+         * restrictions and hosted on the element described by
+         * &lt;code&gt;ElementDescriptor&lt;/code&gt;
+         *
+         * @return matching constraint descriptors
+         */
+        Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+
+        /**
+         * Returns &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration
+         * matching the restrictions is present on the element,
+         * &lt;code&gt;false&lt;/code&gt; otherwise.
+         *
+         * @return is there any constraint
+         */
+        boolean hasConstraints();
+    }
+}</programlisting>
+
+      <programlisting>package javax.validation.metadata;
+
+/**
+ * Scope looked at when discovering constraints
+ *
+ * @author Emmanuel Bernard
+ */
+public enum Scope {
+    /**
+     * Look for constraints declared on the current class element
+     * and ignore inheritance and elements with the same name in
+     * the class hierarchy.
+     */
+    LOCAL_ELEMENT,
+
+    /**
+     * Look for constraints declared on all elements of the class hierarchy
+     * with the same name.
+     */
+    HIERARCHY
+}</programlisting>
+
+      <para><methodname>getElementClass</methodname> returns either the object
+      type for a class, or the returned type for a property.</para>
+
+      <para><classname>getConstraintDescriptors</classname> returns all the
+      <classname>ConstraintDescriptor</classname>s (see <xref
+      linkend="constraintmetadata-constraintdescriptor" />) hosted on the
+      given element in the class hierarchy, each
+      <classname>ConstraintDescriptor</classname> describing one of the
+      constraints declared on the given element.</para>
+
+      <para><methodname>hasConstraints</methodname> returns true if the given
+      element (class, field or property) in the class hierarchy holds at least
+      one constraint declaration.</para>
+
+      <para>If you need to query the metadata API in a more fine grained way
+      for example by restricting the constraints to the one described on
+      fields or on getters or by restricting to a given set of groups, you can
+      use the <classname>ConstraintFinder</classname> fluent API by calling
+      <methodname>findConstraints</methodname>.</para>
+
+      <para>Here is an example restricting the list of constraints on getters,
+      matching the default group and declared physically on the
+      <literal>name</literal> getter of <classname>Customer</classname> (and
+      not any of the getters on the super classes).</para>
+
+      <example>
+        <title>Using the fluent API to restrict matching constraints</title>
+
+        <programlisting>public class User {
+    @Size(max=50) 
+    String getName() { ... }
+    ...
+}
+
+public class Customer extends User {
+    @NotNull
+    String getName() { ... }
+}
+
+PropertyDescriptor pd = 
+    validator.getConstraintsForClass(Customer.class).getConstraintsForProperty("name");
+Set&lt;ConstraintDescriptor&lt;?&gt;&gt; constraints = 
+    pd.findConstraints()
+        .declaredOn(ElementType.METHOD)
+        .unorderedAndMatchingGroups(Default.class)
+        .lookingAt(Scope.LOCAL_ELEMENT)
+            .getConstraintDescriptors();
+
+assert 1 == constraints.size();
+
+constraints = pd.getConstraintDescriptors();
+//equivalent to pd.findConstraints()..getConstraintDescriptors();
+assert 2 == constraints.size();      </programlisting>
+      </example>
+
+      <para><classname>unorderedAndMatchingGroups</classname> restricts to the
+      <classname>ConstraintDescriptor</classname>s (see <xref
+      linkend="constraintmetadata-constraintdescriptor" />) matching the set
+      of groups passed as parameters and present on the element. Order is not
+      respected but group inheritance and inheritance via sequence (including
+      the <classname>Default</classname> group overriding at the class level)
+      are honored.</para>
+
+      <para><methodname>declaredOn</methodname> lets you restrict the list of
+      element types constraints are hosted on. This is particularly useful to
+      retrieve constraints only hosted on fields
+      (<classname>ElementType.FIELD</classname>) or only hosted on getters
+      (<classname>ElementType.METHOD</classname>).</para>
+
+      <para><methodname>lookingAt</methodname> lets you restrict which
+      constraints are considered. Either constraints belonging to the element
+      but hosted on the class represented by
+      <classname>BeanDescritptor</classname>
+      (<classname>Scope.LOCAL_ELEMENT</classname>), or constraints belonging
+      to the element but hosted anywhere in the class hierarchy
+      (<classname>Scope.HIERARCHY</classname>).</para>
+    </section>
+
+    <section>
+      <title>BeanDescriptor</title>
+
+      <para>The <classname>BeanDescriptor</classname> interface describes a
+      constrained Java Bean. This interface is returned by
+      <methodname>Validator.getConstraintsForClass(Class&lt;?&gt;)</methodname>.</para>
+
+      <para><classname>BeanDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
+
+      <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a constrained Java Bean and the constraints associated to it.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface BeanDescriptor extends ElementDescriptor {
+    /**
+     * Returns &lt;code&gt;true&lt;/code&gt; if the bean involves validation:
+     * &lt;ul&gt;
+     * &lt;li&gt; a constraint is hosted on the bean itself &lt;/li&gt;
+     * &lt;li&gt; a constraint is hosted on one of the bean properties&lt;/li&gt;
+     * &lt;li&gt; or a bean property is marked for cascade (&lt;code&gt;@Valid&lt;/code&gt;)&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return &lt;code&gt;true&lt;/code&gt; if the bean involves validation, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isBeanConstrained();
+
+    /**
+     * Return the property descriptor for a given property.
+     * Return &lt;code&gt;null&lt;/code&gt; if the property does not exist or has no
+     * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
+     * &lt;p/&gt;
+     * The returned object (and associated objects including &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s)
+     * are immutable.
+     *
+     * @param propertyName property evaluated
+     *
+     * @return the property descriptor for a given property.
+     *
+     * @throws IllegalArgumentException if propertyName is null
+     */
+    PropertyDescriptor getConstraintsForProperty(String propertyName);
+
+    /**
+     * Returns a set of property descriptors having at least one constraint defined 
+     * or marked as cascaded (&lt;code&gt;@Valid&lt;c/ode&gt;). If not property matches, 
+     * an empty set is returned.
+     */
+    Set&lt;PropertyDescriptor&gt; getConstrainedProperties();
+}</programlisting>
+
+      <para><methodname>isBeanConstrained</methodname> returns true if the
+      given class (and superclasses and interfaces) hosts at least one
+      validation declaration (either constraint or
+      <classname>@Valid</classname> annotation). If the method returns false,
+      the Bean Validation engine can safely ignore the bean as it will not be
+      impacted by validation.</para>
+
+      <para><methodname>getConstraintsForProperty</methodname> returns a
+      <classname>PropertyDescriptor</classname> object describing the property
+      level constraints (See <xref
+      linkend="constraintdeclarationvalidationprocess-requirements-property" />).
+      The property is uniquely identified by its name as per the JavaBeans
+      convention: field level and getter level constraints of the given name
+      are all returned.</para>
+
+      <para><methodname>getConstrainedProperties</methodname> returns the
+      <classname>PropertyDescriptor</classname>s of the bean properties having
+      at least one constraint or being cascaded (<classname>@Valid</classname>
+      annotation).</para>
+    </section>
+
+    <section>
+      <title>PropertyDescriptor</title>
+
+      <para>The <classname>PropertyDescriptor</classname> interface describes
+      a constrained property of a Java Bean.</para>
+
+      <para><classname>PropertyDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
+
+      <para>This interface is returned by
+      <methodname>BeanDescriptor.getConstraintsForProperty(String)</methodname>
+      or <methodname>BeanDescriptor.getConstrainedProperties</methodname>.
+      Constraints declared on the attribute and the getter of the same name
+      according to the Java Bean rules are returned by this descriptor.</para>
+
+      <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a Java Bean property hosting validation constraints.
+ *
+ * Constraints placed on the attribute and the getter of a given property
+ * are all referenced.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface PropertyDescriptor extends ElementDescriptor {
+    /**
+     * Is the property marked by the &lt;code&gt;@Valid&lt;/code&gt; annotation.
+     * @return &lt;code&gt;true&lt;/code&gt; if the annotation is present, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isCascaded();
+
+    /**
+     * Name of the property acording to the Java Bean specification.
+     * @return property name.
+     */
+    String getPropertyName();
+}</programlisting>
+
+      <para>The <methodname>isCascaded</methodname> method returns
+      <literal>true</literal> if the property is marked with
+      <classname>@Valid</classname>.</para>
+
+      <para><methodname>getPropertyName</methodname> returns the property name
+      as described in <xref
+      linkend="validationapi-constraintviolation" />.</para>
+    </section>
+
+    <section id="constraintmetadata-constraintdescriptor">
+      <title>ConstraintDescriptor</title>
+
+      <para>A <classname>ConstraintDescriptor</classname> object describes a
+      given constraint declaration (i.e. a constraint annotation).</para>
+
+      <para><classname>ConstraintDescriptor</classname> lives in the
+      <classname>javax.validation.metadata</classname> package.</para>
+
+      <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a single constraint and its composing constraints.
+ * &lt;code&gt;T&lt;/code&gt; is the constraint's annotation type.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
+    /**
+     * Returns the annotation describing the constraint declaration.
+     * If a composing constraint, attribute values are reflecting
+     * the overridden attributes of the composing constraint
+     *
+     * @return The annotation for this constraint.
+     */
+    T getAnnotation();
+
+    /**
+     * The set of groups the constraint is applied on.
+     * If the constraint declares no group, a set with only the &lt;code&gt;Default&lt;/code&gt;
+     * group is returned.
+     *
+     * @return The groups the constraint is applied on.
+     */
+    Set&lt;Class&lt;?&gt;&gt; getGroups();
+
+    /**
+     * The set of payload the constraint hosts.
+     *
+     * @return payload classes hosted on the constraint or an empty set if none.
+     */
+    Set&lt;Class&lt;? extends Payload&gt;&gt; getPayload();
+
+    /**
+     * List of the constraint validation implementation classes.
+     *
+     * @return list of the constraint validation implementation classes.
+     */
+    List&lt;Class&lt;? extends ConstraintValidator&lt;T, ?&gt;&gt;&gt;
+    getConstraintValidatorClasses();
+
+    /**
+     * Returns a map containing the annotation attribute names as keys and the
+     * annotation attribute values as value.
+     * If this constraint is used as part of a composed constraint, attribute
+     * values are reflecting the overridden attribute of the composing constraint.
+     *
+     * @return a map containing the annotation attribute names as keys
+     *         and the annotation attribute values as value.
+     */
+    Map&lt;String, Object&gt; getAttributes();
+
+    /**
+     * Return a set of composing &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s where each
+     * descriptor describes a composing constraint. &lt;code&gt;ConstraintDescriptor&lt;/code&gt;
+     * instances of composing constraints reflect overridden attribute values in
+     * {@link #getAttributes()}  and {@link #getAnnotation()}.
+     *
+     * @return a set of &lt;code&gt;ConstraintDescriptor&lt;code&gt; objects or an empty set
+     *         in case there are no composing constraints.
+     */
+    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getComposingConstraints();
+
+    /**
+     * @return true if the constraint is annotated with &lt;code&gt;@ReportAsSingleViolation&lt;/code&gt;
+     */
+    boolean isReportAsSingleViolation();
+}</programlisting>
+
+      <para><methodname>getAnnotation</methodname> returns the annotation
+      instance (or an annotation instance representing the given constraint
+      declaration). If <classname>ConstraintDescriptor</classname> represents
+      a composing annotation (see <xref
+      linkend="constraintsdefinitionimplementation-constraintcomposition" />),
+      the returned annotation must reflect parameter overriding. In other
+      words, the annotation parameter values are the overridden values.</para>
+
+      <para><methodname>getAttributes</methodname> returns a map containing
+      the annotation attribute names as a key, and the annotation attribute
+      values as a value (this API is anticipated to be simpler to use by tools
+      than reflection over the annotation instance). If
+      <classname>ConstraintDescriptor</classname> represents a composing
+      annotation (see <xref
+      linkend="constraintsdefinitionimplementation-constraintcomposition" />),
+      the returned <classname>Map</classname> must reflects attribute
+      overriding.</para>
+
+      <para><methodname>getGroups</methodname> returns the groups the
+      constraint is supposed to be applied upon. If no group is set on the
+      constraint declaration, the <classname>Default</classname> group is
+      returned. The groups of a composing constraint are the groups of the
+      composed constraint.</para>
+
+      <para><literal>getPayload</literal> returns the payloads associated to
+      the constraint or an empty set if none.</para>
+
+      <para><methodname>getConstraintValidatorClasses</methodname> returns the
+      <classname>ConstraintValidator</classname> classes associated with the
+      constraint.</para>
+    </section>
+
+    <section>
+      <title>Example</title>
+
+      <para>Assuming the following <classname>@NotEmpty</classname>
+      definition</para>
+
+      <programlisting>package com.acme.constraint;
+
+@Documented
+@NotNull
+@Size(min=1)
+@ReportAsSingleViolation
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface NotEmpty {
+    String message() default "{com.acme.constraint.NotEmpty.message}"
+    Class&lt;?&gt; groups() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        NotEmpty[] value();
+    }
+
+    class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
+        public void initialize(NotEmpty constraintAnnotation) {}
+
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            return true;
+        }
+    }
+}</programlisting>
+
+      <para>and the following class definitions</para>
+
+      <programlisting>public class Author {
+    private String firstName;
+    
+    @NotEmpty(message="lastname must not be null")
+    private String lastName;
+
+    @Size(max=30)
+    private String company;
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+}
+
+public class Book {
+    private String title;
+    private String description;
+
+    @Valid
+    @NotNull
+    private Author author;
+
+    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
+    @Size(max=30)
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setAuthor(String description) {
+        this.description = description;
+    }
+}</programlisting>
+
+      <para>The following assertions are true.</para>
+
+      <programlisting>BeanDescriptor bookDescriptor = validator.getConstraintsForClass(Book.class);
+
+assert ! bookDescriptor.hasConstraints();
+
+assert bookDescriptor.isBeanConstrained();
+
+assert bookDescriptor.getConstraintDescriptors().size() == 0 //no bean-level constraint
+
+//more specifically "author" and "title"
+assert bookDescriptor.getConstrainedProperties().size() == 2;
+
+//not a property
+assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null; 
+
+//property with no constraint
+assert bookDescriptor.getConstraintsForProperty("description") == null; 
+
+ElementDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
+assert propertyDescriptor.getConstraintDescriptors().size() == 2
+assert "title".equals( propertyDescriptor.getPropertyName() );
+
+//assuming the implementation returns the @NotEmpty constraint first
+ConstraintDescriptor&lt;?&gt; constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
+                                                              .iterator().next();
+assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
+assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
+assert constraintDescriptor.getComposingConstraints().size() == 2;
+assert constraintDescriptor.isReportAsSingleViolation() == true
+
+//@NotEmpty cannot be null
+boolean notNullPresence = false;
+for ( ConstraintDescriptor&lt;?&gt; composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
+    if ( composingDescriptor.getAnnotation().getAnnotationType().equals( NotNull.class ) ) {
+        notNullPresence = true;
+    }
+}
+assert notNullPresence; 
+
+//assuming the implementation returns the Size constraint second
+constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next().next();
+assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Size.class );
+assert constraintDescriptor.getAttributes().get("max") == 30; 
+assert constraintDescriptor.getGroups().size() == 1;
+
+propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
+assert propertyDescriptor.getConstraintDescriptors().size() == 1
+assert propertyDescriptor.isCascaded()</programlisting>
+    </section>
+  </chapter>
