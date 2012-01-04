@@ -5,53 +5,52 @@
 %BOOK_ENTITIES;
 ]>
 <appendix id="appendix-methodlevelvalidation">
-    <title>Proposal for method-level validation</title>
+  <title>Proposal for method-level validation</title>
 
-    <para>This proposition has not been integrated into the core specification
-    and is not part of it. It remains here for archaeological purposes and
-    will be seriously considered for a future revision of this specification.
-    This proposal is likely to be a bit out of sync with the rest of the
-    specification artifacts.</para>
+  <para>This proposition has not been integrated into the core specification
+  and is not part of it. It remains here for archaeological purposes and will
+  be seriously considered for a future revision of this specification. This
+  proposal is likely to be a bit out of sync with the rest of the
+  specification artifacts.</para>
 
-    <note>
-      <para>Bean Validation providers are free to implement this proposal as a
-      specific extension. Such specific extension could for example be
-      accessed via the use of the <methodname>Validator.unwrap</methodname>
-      method.</para>
-    </note>
+  <note>
+    <para>Bean Validation providers are free to implement this proposal as a
+    specific extension. Such specific extension could for example be accessed
+    via the use of the <methodname>Validator.unwrap</methodname>
+    method.</para>
+  </note>
 
-    <para>A popular demand was to provide a method and parameter level
-    validation mechanism reusing the constraint descriptions of the
-    specification. This set of APIs is meant to be used by interceptor
-    frameworks such as:</para>
+  <para>A popular demand was to provide a method and parameter level
+  validation mechanism reusing the constraint descriptions of the
+  specification. This set of APIs is meant to be used by interceptor
+  frameworks such as:</para>
 
-    <itemizedlist>
-      <listitem>
-        <para>application frameworks like JSR-299</para>
-      </listitem>
+  <itemizedlist>
+    <listitem>
+      <para>application frameworks like JSR-299</para>
+    </listitem>
 
-      <listitem>
-        <para>component frameworks like Enterprise Java Beans</para>
-      </listitem>
+    <listitem>
+      <para>component frameworks like Enterprise Java Beans</para>
+    </listitem>
 
-      <listitem>
-        <para>aspect based frameworks</para>
-      </listitem>
-    </itemizedlist>
+    <listitem>
+      <para>aspect based frameworks</para>
+    </listitem>
+  </itemizedlist>
 
-    <para>These frameworks can call the validation APIs to validate either the
-    parameter list or the returned value of a method when such method is
-    called. More precisely, validation occurs around a method
-    invocation.</para>
+  <para>These frameworks can call the validation APIs to validate either the
+  parameter list or the returned value of a method when such method is called.
+  More precisely, validation occurs around a method invocation.</para>
 
-    <para>This extension of the Bean Validation API allows to reuse the core
-    engine as well as the constraint definition and declaration for such
-    method level validations.</para>
+  <para>This extension of the Bean Validation API allows to reuse the core
+  engine as well as the constraint definition and declaration for such method
+  level validations.</para>
 
-    <para>The following APIs are added to
-    <classname>Validator</classname>.</para>
+  <para>The following APIs are added to
+  <classname>Validator</classname>.</para>
 
-    <programlisting>public interface Validator {
+  <programlisting>public interface Validator {
     // [...]
     
     
@@ -145,49 +144,48 @@
                                                    Object parameterValue, int parameterIndex,
                                                    Class&lt;?&gt;... groups);</programlisting>
 
-    <para>The constraints declarations evaluated are the constraints hosted on
-    the parameters of the method or constructor. If
-    <classname>@Valid</classname> is placed on a parameter, constraints
-    declared on the object itself are considered.</para>
+  <para>The constraints declarations evaluated are the constraints hosted on
+  the parameters of the method or constructor. If
+  <classname>@Valid</classname> is placed on a parameter, constraints declared
+  on the object itself are considered.</para>
 
-    <para><methodname>validateReturnedValue</methodname> evaluates the
-    constraints hosted on the method itself. If <classname>@Valid</classname>
-    is placed on the method, the constraints declared on the object itself are
-    considered.</para>
+  <para><methodname>validateReturnedValue</methodname> evaluates the
+  constraints hosted on the method itself. If <classname>@Valid</classname> is
+  placed on the method, the constraints declared on the object itself are
+  considered.</para>
 
-    <programlisting>public @NotNull String saveItem(@Valid @NotNull Item item, @Max(23) BigDecimal price)</programlisting>
+  <programlisting>public @NotNull String saveItem(@Valid @NotNull Item item, @Max(23) BigDecimal price)</programlisting>
 
-    <para>In the previous example,</para>
+  <para>In the previous example,</para>
 
-    <itemizedlist>
-      <listitem>
-        <para><literal>item</literal> is validated against
-        <classname>@NotNull</classname> and all the constraints it
-        hosts</para>
-      </listitem>
+  <itemizedlist>
+    <listitem>
+      <para><literal>item</literal> is validated against
+      <classname>@NotNull</classname> and all the constraints it hosts</para>
+    </listitem>
 
-      <listitem>
-        <para><literal>price</literal> is validated against
-        <classname>@Max(23)</classname></para>
-      </listitem>
+    <listitem>
+      <para><literal>price</literal> is validated against
+      <classname>@Max(23)</classname></para>
+    </listitem>
 
-      <listitem>
-        <para>the result of <methodname>saveItem</methodname> is validated
-        against <classname>@NotNull</classname></para>
-      </listitem>
-    </itemizedlist>
+    <listitem>
+      <para>the result of <methodname>saveItem</methodname> is validated
+      against <classname>@NotNull</classname></para>
+    </listitem>
+  </itemizedlist>
 
-    <para>Note that the Bean Validation specification does not trigger the
-    validation call. An external framework is responsible for calling one of
-    the <methodname>validateParameters</methodname>,
-    <methodname>validateParameter</methodname> and
-    <methodname>validateReturnedValue</methodname> methods at the appropriate
-    time.</para>
+  <para>Note that the Bean Validation specification does not trigger the
+  validation call. An external framework is responsible for calling one of the
+  <methodname>validateParameters</methodname>,
+  <methodname>validateParameter</methodname> and
+  <methodname>validateReturnedValue</methodname> methods at the appropriate
+  time.</para>
 
-    <para>For completeness, Bean Validation exposes metadata for constraints
-    hosted on parameters and methods.</para>
+  <para>For completeness, Bean Validation exposes metadata for constraints
+  hosted on parameters and methods.</para>
 
-    <programlisting>public interface ParameterDescriptor extends ElementDescriptor { 
+  <programlisting>public interface ParameterDescriptor extends ElementDescriptor { 
     boolean isCascaded(); 
     int getIndex(); 
 } 

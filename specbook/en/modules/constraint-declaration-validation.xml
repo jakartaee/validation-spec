@@ -5,224 +5,223 @@
 %BOOK_ENTITIES;
 ]>
 <chapter id="constraintdeclarationvalidationprocess">
-    <title>Constraint declaration and validation process</title>
+  <title>Constraint declaration and validation process</title>
 
-    <para>The Bean Validation specification defines a framework for declaring
-    constraints on JavaBean classes, fields and properties.</para>
+  <para>The Bean Validation specification defines a framework for declaring
+  constraints on JavaBean classes, fields and properties.</para>
 
-    <para>Constraints are declared on types and evaluated against instances or
-    graphs of instances.</para>
+  <para>Constraints are declared on types and evaluated against instances or
+  graphs of instances.</para>
 
-    <section id="constraintdeclarationvalidationprocess-requirements">
-      <title>Requirements on classes to be validated</title>
+  <section id="constraintdeclarationvalidationprocess-requirements">
+    <title>Requirements on classes to be validated</title>
 
-      <para>Objects that are to be validated must fulfill the following
-      requirements:</para>
+    <para>Objects that are to be validated must fulfill the following
+    requirements:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para>Properties to be validated must follow the method signature
-          conventions for JavaBeans read properties, as defined by the
-          JavaBeans specification.</para>
-        </listitem>
+    <itemizedlist>
+      <listitem>
+        <para>Properties to be validated must follow the method signature
+        conventions for JavaBeans read properties, as defined by the JavaBeans
+        specification.</para>
+      </listitem>
 
-        <listitem>
-          <para>Static fields and static methods are excluded from
-          validation.</para>
-        </listitem>
+      <listitem>
+        <para>Static fields and static methods are excluded from
+        validation.</para>
+      </listitem>
 
-        <listitem>
-          <para>Constraints can be applied to interfaces and
-          superclasses.</para>
-        </listitem>
-      </itemizedlist>
+      <listitem>
+        <para>Constraints can be applied to interfaces and
+        superclasses.</para>
+      </listitem>
+    </itemizedlist>
 
-      <para>The target of an annotation definition can be a field, property,
-      or type, provided that:</para>
+    <para>The target of an annotation definition can be a field, property, or
+    type, provided that:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para>the constraint definition supports the specified target
-          (<classname>java.lang.annotation.Target</classname>)</para>
-        </listitem>
+    <itemizedlist>
+      <listitem>
+        <para>the constraint definition supports the specified target
+        (<classname>java.lang.annotation.Target</classname>)</para>
+      </listitem>
 
-        <listitem>
-          <para>the one of the <classname>ConstraintValidator</classname>s
-          declared on the constraint supports the declared type of the target
-          (see <xref linkend="typevalidatorresolution" />).</para>
-        </listitem>
-      </itemizedlist>
+      <listitem>
+        <para>the one of the <classname>ConstraintValidator</classname>s
+        declared on the constraint supports the declared type of the target
+        (see <xref linkend="typevalidatorresolution" />).</para>
+      </listitem>
+    </itemizedlist>
 
-      <section id="constraintdeclarationvalidationprocess-requirements-object">
-        <title>Object validation</title>
+    <section id="constraintdeclarationvalidationprocess-requirements-object">
+      <title>Object validation</title>
 
-        <para>Constraint declarations can be applied to a class or an
-        interface. Applying a constraint to a class or interface expresses a
-        validation over the state of the class or the class implementing the
-        interface.</para>
-      </section>
+      <para>Constraint declarations can be applied to a class or an interface.
+      Applying a constraint to a class or interface expresses a validation
+      over the state of the class or the class implementing the
+      interface.</para>
+    </section>
 
-      <section id="constraintdeclarationvalidationprocess-requirements-property">
-        <title>Field and property validation</title>
+    <section id="constraintdeclarationvalidationprocess-requirements-property">
+      <title>Field and property validation</title>
 
-        <para>Constraint declarations can be applied on both fields and
-        properties for the same object type. The same constraint should
-        however not be duplicated between a field and its associated property
-        (the constraint validation would be applied twice). It is recommended
-        for objects holding constraint declarations to adhere to a single
-        state access strategy (either annotated fields or properties).</para>
+      <para>Constraint declarations can be applied on both fields and
+      properties for the same object type. The same constraint should however
+      not be duplicated between a field and its associated property (the
+      constraint validation would be applied twice). It is recommended for
+      objects holding constraint declarations to adhere to a single state
+      access strategy (either annotated fields or properties).</para>
 
-        <note>
-          <title>Java Persistence and Bean Validation</title>
+      <note>
+        <title>Java Persistence and Bean Validation</title>
 
-          <para>For maximum portability, persistent properties hosting Bean
-          Validation constraints should use the same access strategy used in
-          Java Persistence. In other words, place your Bean Validation
-          constraint annotations on the same element (field or getter) as your
-          Java Persistence annotations.</para>
-        </note>
+        <para>For maximum portability, persistent properties hosting Bean
+        Validation constraints should use the same access strategy used in
+        Java Persistence. In other words, place your Bean Validation
+        constraint annotations on the same element (field or getter) as your
+        Java Persistence annotations.</para>
+      </note>
 
-        <para>When a field is annotated with a constraint declaration, field
-        access strategy is used to access the state validated by such
-        constraint.</para>
+      <para>When a field is annotated with a constraint declaration, field
+      access strategy is used to access the state validated by such
+      constraint.</para>
 
-        <para>When a property is annotated with a constraint declaration,
-        property access strategy is used to access the state validated by such
-        constraint.</para>
+      <para>When a property is annotated with a constraint declaration,
+      property access strategy is used to access the state validated by such
+      constraint.</para>
 
-        <para>When using field access strategy, the bean validation provider
-        accesses the instance variable directly. When using the property
-        access strategy, the bean validation provider accesses the state via
-        the property accessor method. It is required that the class follows
-        the method signature conventions for JavaBeans read properties (as
-        defined by the JavaBeans <classname>Introspector</classname> class)
-        for constrained properties when constrained properties are used. In
-        this case, for every constraint property of type
-        <classname>T</classname>, there is a getter method,
-        <methodname>get&lt;Property-name&gt;</methodname>. For
-        <code>boolean</code> properties,
-        <methodname>is&lt;Property-name&gt;</methodname> is an alternative
-        name for the getter method. Specifically, if
-        <methodname>getX</methodname> is the name of the getter method, where
-        <classname>X</classname> is a string, the name of the persistent
-        property is defined by the result of
-        <code>java.beans.Introspector.decapitalize(X)</code>.</para>
+      <para>When using field access strategy, the bean validation provider
+      accesses the instance variable directly. When using the property access
+      strategy, the bean validation provider accesses the state via the
+      property accessor method. It is required that the class follows the
+      method signature conventions for JavaBeans read properties (as defined
+      by the JavaBeans <classname>Introspector</classname> class) for
+      constrained properties when constrained properties are used. In this
+      case, for every constraint property of type <classname>T</classname>,
+      there is a getter method,
+      <methodname>get&lt;Property-name&gt;</methodname>. For
+      <code>boolean</code> properties,
+      <methodname>is&lt;Property-name&gt;</methodname> is an alternative name
+      for the getter method. Specifically, if <methodname>getX</methodname> is
+      the name of the getter method, where <classname>X</classname> is a
+      string, the name of the persistent property is defined by the result of
+      <code>java.beans.Introspector.decapitalize(X)</code>.</para>
 
-        <para>The fields or methods visibility are not constrained.
-        Constraints on non getter methods are not supported.</para>
-      </section>
-
-      <section>
-        <title>Graph validation</title>
-
-        <para>In addition to supporting instance validation, validation of
-        graphs of object is also supported. The result of a graph validation
-        is returned as a unified set of constraint violations.</para>
-
-        <para>Consider the situation where bean <classname>X</classname>
-        contains a field of type <classname>Y</classname>. By annotating field
-        <classname>Y</classname> with the <classname>@Valid</classname>
-        annotation, the Validator will validate <classname>Y</classname> (and
-        its properties) when <classname>X</classname> is validated. The exact
-        type <classname>Z</classname> of the value contained in the field
-        declared of type <classname>Y</classname> (subclass, implementation)
-        is determined at runtime. The constraint definitions of
-        <classname>Z</classname> are used. This ensures proper polymorphic
-        behavior for associations marked <classname>@Valid</classname>.</para>
-
-        <para>Collection-valued, array-valued and generally
-        <classname>Iterable</classname> fields and properties may also be
-        decorated with the <classname>@Valid</classname> annotation. This
-        causes the contents of the iterator to be validated. Any object
-        implementing <classname>java.lang.Iterable</classname> is supported.
-        This includes specifically:</para>
-
-        <itemizedlist>
-          <listitem>
-            <para>arrays of objects</para>
-          </listitem>
-
-          <listitem>
-            <para><classname>java.util.Collection</classname></para>
-          </listitem>
-
-          <listitem>
-            <para><classname>java.util.Set</classname></para>
-          </listitem>
-
-          <listitem>
-            <para><classname>java.util.List</classname></para>
-          </listitem>
-
-          <listitem>
-            <para><classname>java.util.Map</classname> (special treatment see
-            below)</para>
-          </listitem>
-        </itemizedlist>
-
-        <para>Each object provided by the iterator is validated. For
-        <classname>Map</classname>, the value of each
-        <classname>Map.Entry</classname> is validated (the key is not
-        validated).</para>
-
-        <para>Like regular references, its type is determined at runtime and
-        the constraint definitions for this particular type are used.</para>
-
-        <para>The <classname>@Valid</classname> annotation is applied
-        recursively. A conforming implementation avoids infinite loops
-        according to the rules described in <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />.</para>
-      </section>
+      <para>The fields or methods visibility are not constrained. Constraints
+      on non getter methods are not supported.</para>
     </section>
 
     <section>
-      <title>Constraint declaration</title>
+      <title>Graph validation</title>
 
-      <para>Constraint declarations are placed on classes or interfaces
-      primarily through annotations. A constraint annotation (see <xref
-      linkend="constraintsdefinitionimplementation-constraintdefinition" />),
-      can be applied to a type, on any of the type's fields or on any of the
-      JavaBeans-compliant properties.</para>
+      <para>In addition to supporting instance validation, validation of
+      graphs of object is also supported. The result of a graph validation is
+      returned as a unified set of constraint violations.</para>
 
-      <para>When a constraint is defined on a class, the class instance being
-      validated is passed to the <classname>ConstraintValidator</classname>.
-      When a constraint is defined on a field, the value of the field is
-      passed to the <classname>ConstraintValidator</classname>. When a
-      constraint is defined on a getter, the result of the getter invocation
-      is passed to the <classname>ConstraintValidator</classname>.</para>
+      <para>Consider the situation where bean <classname>X</classname>
+      contains a field of type <classname>Y</classname>. By annotating field
+      <classname>Y</classname> with the <classname>@Valid</classname>
+      annotation, the Validator will validate <classname>Y</classname> (and
+      its properties) when <classname>X</classname> is validated. The exact
+      type <classname>Z</classname> of the value contained in the field
+      declared of type <classname>Y</classname> (subclass, implementation) is
+      determined at runtime. The constraint definitions of
+      <classname>Z</classname> are used. This ensures proper polymorphic
+      behavior for associations marked <classname>@Valid</classname>.</para>
+
+      <para>Collection-valued, array-valued and generally
+      <classname>Iterable</classname> fields and properties may also be
+      decorated with the <classname>@Valid</classname> annotation. This causes
+      the contents of the iterator to be validated. Any object implementing
+      <classname>java.lang.Iterable</classname> is supported. This includes
+      specifically:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>arrays of objects</para>
+        </listitem>
+
+        <listitem>
+          <para><classname>java.util.Collection</classname></para>
+        </listitem>
+
+        <listitem>
+          <para><classname>java.util.Set</classname></para>
+        </listitem>
+
+        <listitem>
+          <para><classname>java.util.List</classname></para>
+        </listitem>
+
+        <listitem>
+          <para><classname>java.util.Map</classname> (special treatment see
+          below)</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Each object provided by the iterator is validated. For
+      <classname>Map</classname>, the value of each
+      <classname>Map.Entry</classname> is validated (the key is not
+      validated).</para>
+
+      <para>Like regular references, its type is determined at runtime and the
+      constraint definitions for this particular type are used.</para>
+
+      <para>The <classname>@Valid</classname> annotation is applied
+      recursively. A conforming implementation avoids infinite loops according
+      to the rules described in <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />.</para>
     </section>
+  </section>
 
-    <section id="constraintdeclarationvalidationprocess-inheritance">
-      <title>Inheritance (interface and superclass)</title>
+  <section>
+    <title>Constraint declaration</title>
 
-      <para>A constraint declaration can be placed on an interface. For a
-      given class, constraint declarations held on superclasses as well as
-      interfaces are evaluated by the Bean Validation provider. Rules are
-      formally described in <xref
-      linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition" />.</para>
+    <para>Constraint declarations are placed on classes or interfaces
+    primarily through annotations. A constraint annotation (see <xref
+    linkend="constraintsdefinitionimplementation-constraintdefinition" />),
+    can be applied to a type, on any of the type's fields or on any of the
+    JavaBeans-compliant properties.</para>
 
-      <para>The effect of constraint declarations is cumulative. Constraints
-      declared on a superclass getter will be validated along with any
-      constraints defined on an overridden version of the getter according to
-      the Java Language Specification visibility rules.</para>
-    </section>
+    <para>When a constraint is defined on a class, the class instance being
+    validated is passed to the <classname>ConstraintValidator</classname>.
+    When a constraint is defined on a field, the value of the field is passed
+    to the <classname>ConstraintValidator</classname>. When a constraint is
+    defined on a getter, the result of the getter invocation is passed to the
+    <classname>ConstraintValidator</classname>.</para>
+  </section>
 
-    <section id="constraintdeclarationvalidationprocess-groupsequence">
-      <title>Group and group sequence</title>
+  <section id="constraintdeclarationvalidationprocess-inheritance">
+    <title>Inheritance (interface and superclass)</title>
 
-      <para>A group defines a subset of constraints. Instead of validating all
-      constraints for a given object graph, only a subset is validated. This
-      subset is defined by the the group or groups targeted. Each constraint
-      declaration defines the list of groups it belongs to. If no group is
-      explicitly declared, a constraint belongs to the
-      <classname>Default</classname> group.</para>
+    <para>A constraint declaration can be placed on an interface. For a given
+    class, constraint declarations held on superclasses as well as interfaces
+    are evaluated by the Bean Validation provider. Rules are formally
+    described in <xref
+    linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition" />.</para>
 
-      <para>Groups are represented by interfaces.</para>
+    <para>The effect of constraint declarations is cumulative. Constraints
+    declared on a superclass getter will be validated along with any
+    constraints defined on an overridden version of the getter according to
+    the Java Language Specification visibility rules.</para>
+  </section>
 
-      <example>
-        <title>Definition of groups</title>
+  <section id="constraintdeclarationvalidationprocess-groupsequence">
+    <title>Group and group sequence</title>
 
-        <programlisting>/**
+    <para>A group defines a subset of constraints. Instead of validating all
+    constraints for a given object graph, only a subset is validated. This
+    subset is defined by the the group or groups targeted. Each constraint
+    declaration defines the list of groups it belongs to. If no group is
+    explicitly declared, a constraint belongs to the
+    <classname>Default</classname> group.</para>
+
+    <para>Groups are represented by interfaces.</para>
+
+    <example>
+      <title>Definition of groups</title>
+
+      <programlisting>/**
  * Validation group verifing that a user is billable
  */
 public interface Billable {}
@@ -232,14 +231,14 @@ public interface Billable {}
  */
 public interface BuyInOneClick {
 }</programlisting>
-      </example>
+    </example>
 
-      <para>A constraint can belong to one or more groups.</para>
+    <para>A constraint can belong to one or more groups.</para>
 
-      <example id="example-assigngrouptoconstraints">
-        <title>Assign groups to constraints</title>
+    <example id="example-assigngrouptoconstraints">
+      <title>Assign groups to constraints</title>
 
-        <programlisting>/**
+      <programlisting>/**
  * User representation
  */
 public class User {
@@ -252,24 +251,23 @@ public class User {
     @NotNull(groups = {Billable.class, BuyInOneClick.class})
     private CreditCard defaultCreditCard;
 }</programlisting>
-      </example>
+    </example>
 
-      <para>During the validation call, one or more groups are validated. All
-      the constraints belonging to this set of group is evaluated on the
-      object graph. In <xref linkend="example-assigngrouptoconstraints" />,
-      <classname>@NotNull</classname> is checked on
-      <literal>defaultCreditCard</literal> when either the
-      <classname>Billable</classname> or <classname>BuyInOneClick</classname>
-      group is validated. <classname>@NotNull</classname> on
-      <literal>firstname</literal> and <literal>lastname</literal> are
-      validated when the <classname>Default</classname> group is validated.
-      Reminder: constraints held on superclasses and interfaces are
-      considered.</para>
+    <para>During the validation call, one or more groups are validated. All
+    the constraints belonging to this set of group is evaluated on the object
+    graph. In <xref linkend="example-assigngrouptoconstraints" />,
+    <classname>@NotNull</classname> is checked on
+    <literal>defaultCreditCard</literal> when either the
+    <classname>Billable</classname> or <classname>BuyInOneClick</classname>
+    group is validated. <classname>@NotNull</classname> on
+    <literal>firstname</literal> and <literal>lastname</literal> are validated
+    when the <classname>Default</classname> group is validated. Reminder:
+    constraints held on superclasses and interfaces are considered.</para>
 
-      <para><classname>Default</classname> is a group predefined by the
-      specification</para>
+    <para><classname>Default</classname> is a group predefined by the
+    specification</para>
 
-      <programlisting>package javax.validation.groups;
+    <programlisting>package javax.validation.groups;
 
 /**
  * Default Bean Validation group.
@@ -285,35 +283,35 @@ public class User {
 public interface Default {
 }</programlisting>
 
-      <section id="constraintdeclarationvalidationprocess-groupsequence-groupinheritance">
-        <title>Group inheritance</title>
+    <section id="constraintdeclarationvalidationprocess-groupsequence-groupinheritance">
+      <title>Group inheritance</title>
 
-        <para>In some situations, a group is a superset of one or more groups.
-        This can be described by Bean Validation. A group may inherit one or
-        more groups by using interface inheritance.</para>
+      <para>In some situations, a group is a superset of one or more groups.
+      This can be described by Bean Validation. A group may inherit one or
+      more groups by using interface inheritance.</para>
 
-        <example>
-          <title>Groups can inherit other groups</title>
+      <example>
+        <title>Groups can inherit other groups</title>
 
-          <programlisting>/**
+        <programlisting>/**
  * Customer can buy without harrassing checking process
  */
 public interface BuyInOneClick extends Default, Billable {}</programlisting>
-        </example>
+      </example>
 
-        <para>For a given interface <classname>Z</classname>, constraints
-        marked as belonging to the group <classname>Z</classname> (i.e. where
-        the annotation element <methodname>groups</methodname> contains the
-        interface <classname>Z</classname>) or any of the super interfaces of
-        <classname>Z</classname> (inherited groups) are considered part of the
-        group <classname>Z</classname>.</para>
+      <para>For a given interface <classname>Z</classname>, constraints marked
+      as belonging to the group <classname>Z</classname> (i.e. where the
+      annotation element <methodname>groups</methodname> contains the
+      interface <classname>Z</classname>) or any of the super interfaces of
+      <classname>Z</classname> (inherited groups) are considered part of the
+      group <classname>Z</classname>.</para>
 
-        <para>In the following example:</para>
+      <para>In the following example:</para>
 
-        <example>
-          <title>Use of a inherited group</title>
+      <example>
+        <title>Use of a inherited group</title>
 
-          <programlisting>/**
+        <programlisting>/**
  * User representation
  */
 public class User {
@@ -326,97 +324,96 @@ public class User {
     @NotNull(groups = Billable.class)
     private CreditCard defaultCreditCard;
 }</programlisting>
-        </example>
+      </example>
 
-        <para>validating the group <classname>BuyInOneClick</classname> will
-        lead to the following constraints checking:</para>
+      <para>validating the group <classname>BuyInOneClick</classname> will
+      lead to the following constraints checking:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para><classname>@NotNull</classname> on
-            <literal>firstname</literal> and
-            <literal>lastname</literal></para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para><classname>@NotNull</classname> on
+          <literal>firstname</literal> and <literal>lastname</literal></para>
+        </listitem>
 
-          <listitem>
-            <para><classname>@NotNull</classname> on
-            <literal>defaultCreditCard</literal></para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para><classname>@NotNull</classname> on
+          <literal>defaultCreditCard</literal></para>
+        </listitem>
+      </itemizedlist>
 
-        <para>because <classname>Default</classname> and
-        <classname>Billable</classname> are superinterfaces of
-        <classname>BuyInOneClick</classname>.</para>
-      </section>
+      <para>because <classname>Default</classname> and
+      <classname>Billable</classname> are superinterfaces of
+      <classname>BuyInOneClick</classname>.</para>
+    </section>
 
-      <section id="constraintdeclarationvalidationprocess-groupsequence-groupsequence">
-        <title>Group sequence</title>
+    <section id="constraintdeclarationvalidationprocess-groupsequence-groupsequence">
+      <title>Group sequence</title>
 
-        <para>By default, constraints are evaluated in no particular order
-        regardless of which groups they belong to. It is however useful in
-        some situations to control the order of constraints evaluation. There
-        are often scenarios where a preliminary set of constraints should be
-        evaluated prior to other constraints. Here are two examples:</para>
+      <para>By default, constraints are evaluated in no particular order
+      regardless of which groups they belong to. It is however useful in some
+      situations to control the order of constraints evaluation. There are
+      often scenarios where a preliminary set of constraints should be
+      evaluated prior to other constraints. Here are two examples:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para>The second group depends on a stable state to run properly.
-            This stable state is verified by the first group.</para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para>The second group depends on a stable state to run properly.
+          This stable state is verified by the first group.</para>
+        </listitem>
 
-          <listitem>
-            <para>The second group is a heavy consumer of time, CPU or memory
-            and its evaluation should be avoided if possible.</para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para>The second group is a heavy consumer of time, CPU or memory
+          and its evaluation should be avoided if possible.</para>
+        </listitem>
+      </itemizedlist>
 
-        <para>To implement such ordering, a group can be defined as a sequence
-        of other groups. Each group in a group sequence must be processed
-        sequentially in the order defined by
-        <methodname>@GroupSequence.value</methodname> when the group defined
-        as a sequence is requested. Note that a group member of a sequence can
-        itself be composed of several groups via inheritance or sequence
-        definition. In this case, each composed group must respect the
-        sequence order as well.</para>
+      <para>To implement such ordering, a group can be defined as a sequence
+      of other groups. Each group in a group sequence must be processed
+      sequentially in the order defined by
+      <methodname>@GroupSequence.value</methodname> when the group defined as
+      a sequence is requested. Note that a group member of a sequence can
+      itself be composed of several groups via inheritance or sequence
+      definition. In this case, each composed group must respect the sequence
+      order as well.</para>
 
-        <!--TODO add example-->
+      <!--TODO add example-->
 
-        <para>Processing a group is defined in <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine" />
-        ; if one of the groups processed in the sequence generates one or more
-        constraint violations, the groups following in the sequence must not
-        be processed. This ensures that a set of constraint is evaluated only
-        if another set of constraint is valid.</para>
+      <para>Processing a group is defined in <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine" /> ;
+      if one of the groups processed in the sequence generates one or more
+      constraint violations, the groups following in the sequence must not be
+      processed. This ensures that a set of constraint is evaluated only if
+      another set of constraint is valid.</para>
 
-        <para>Groups defining a sequence and groups composing a sequence must
-        not be involved in a cyclic dependency:</para>
+      <para>Groups defining a sequence and groups composing a sequence must
+      not be involved in a cyclic dependency:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para>either directly or indirectly</para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para>either directly or indirectly</para>
+        </listitem>
 
-          <listitem>
-            <para>either through cascaded sequence definitions or group
-            inheritance</para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para>either through cascaded sequence definitions or group
+          inheritance</para>
+        </listitem>
+      </itemizedlist>
 
-        <para>If a group containing such a circularity is evaluated, a
-        <classname>GroupDefinitionException</classname> is raised.</para>
+      <para>If a group containing such a circularity is evaluated, a
+      <classname>GroupDefinitionException</classname> is raised.</para>
 
-        <para>Groups defining a sequence should not directly inherit other
-        groups. In other words, the interface hosting the group sequence
-        should not have any super interface.</para>
+      <para>Groups defining a sequence should not directly inherit other
+      groups. In other words, the interface hosting the group sequence should
+      not have any super interface.</para>
 
-        <para>Groups defining a sequence should not be used directly in
-        constraint declarations. In other words, the interface hosting the
-        group sequence should not be used in a constraint declaration.</para>
+      <para>Groups defining a sequence should not be used directly in
+      constraint declarations. In other words, the interface hosting the group
+      sequence should not be used in a constraint declaration.</para>
 
-        <para>To define a group as a sequence, the interface must be annotated
-        with the <classname>@GroupSequence</classname> annotation.</para>
+      <para>To define a group as a sequence, the interface must be annotated
+      with the <classname>@GroupSequence</classname> annotation.</para>
 
-        <programlisting>/**
+      <programlisting>/**
  * Define a group sequence
  * The interface hosting &lt;code&gt;@GroupSequence&lt;/code&gt; is representing 
  * the group sequence.
@@ -432,12 +429,12 @@ public @interface GroupSequence {
     Class&lt;?&gt;[] value();
 }</programlisting>
 
-        <para>Here is a usage example</para>
+      <para>Here is a usage example</para>
 
-        <example id="example-groupsequence">
-          <title>Make use of group sequence</title>
+      <example id="example-groupsequence">
+        <title>Make use of group sequence</title>
 
-          <programlisting>@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+        <programlisting>@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
 public class Address {
     @NotNull @Size(max = 50)
     private String street1;
@@ -461,47 +458,47 @@ public class Address {
     @GroupSequence({Default.class, HighLevelCoherence.class})
     public interface Complete {}
 }</programlisting>
-        </example>
+      </example>
 
-        <para>In <xref linkend="example-groupsequence" />, when the
-        <classname>Address.Complete</classname> group is validated, all
-        constraints belonging to the <classname>Default</classname> group are
-        validated. If any of them fail, the validation skips the
-        <classname>HighLevelCoherence</classname> group. If all
-        <classname>Default</classname> constraints pass,
-        <classname>HighLevelCoherence</classname> constraints are
-        evaluated.</para>
+      <para>In <xref linkend="example-groupsequence" />, when the
+      <classname>Address.Complete</classname> group is validated, all
+      constraints belonging to the <classname>Default</classname> group are
+      validated. If any of them fail, the validation skips the
+      <classname>HighLevelCoherence</classname> group. If all
+      <classname>Default</classname> constraints pass,
+      <classname>HighLevelCoherence</classname> constraints are
+      evaluated.</para>
 
-        <note>
-          <para>A given constraint can belong to two or more groups ordered by
-          a sequence. In this case, the constraint is evaluated as part of the
-          first group and ignored in the subsequent group(s). See <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine" />
-          for more information.</para>
-        </note>
+      <note>
+        <para>A given constraint can belong to two or more groups ordered by a
+        sequence. In this case, the constraint is evaluated as part of the
+        first group and ignored in the subsequent group(s). See <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine" />
+        for more information.</para>
+      </note>
 
-        <!--Make explicit what happens if a group is part of a group sequence and also explicitly called in validator.validate()-->
-      </section>
+      <!--Make explicit what happens if a group is part of a group sequence and also explicitly called in validator.validate()-->
+    </section>
 
-      <section id="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup">
-        <title>Redefining the Default group for a class</title>
+    <section id="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup">
+      <title>Redefining the Default group for a class</title>
 
-        <para>In <xref linkend="example-groupsequence" />, validating the
-        <classname>Default</classname> group does not validate
-        <classname>HighLevelCoherence</classname> constraints. To ensure a
-        complete validation, a user must use the
-        <classname>Complete</classname> group. This breaks some of the
-        encapsulation you could expect. You can work around this by redefining
-        what the <classname>Default</classname> group means for a given class.
-        To redefine <classname>Default</classname> for a class, place a
-        <classname>@GroupSequence</classname> annotation on the class ; this
-        sequence expresses the sequence of groups that does substitute
-        <classname>Default</classname> for this class.</para>
+      <para>In <xref linkend="example-groupsequence" />, validating the
+      <classname>Default</classname> group does not validate
+      <classname>HighLevelCoherence</classname> constraints. To ensure a
+      complete validation, a user must use the <classname>Complete</classname>
+      group. This breaks some of the encapsulation you could expect. You can
+      work around this by redefining what the <classname>Default</classname>
+      group means for a given class. To redefine
+      <classname>Default</classname> for a class, place a
+      <classname>@GroupSequence</classname> annotation on the class ; this
+      sequence expresses the sequence of groups that does substitute
+      <classname>Default</classname> for this class.</para>
 
-        <example id="example-overridedefaultgroup">
-          <title>Redefining Default group for Address</title>
+      <example id="example-overridedefaultgroup">
+        <title>Redefining Default group for Address</title>
 
-          <programlisting>@GroupSequence({Address.class, HighLevelCoherence.class})
+        <programlisting>@GroupSequence({Address.class, HighLevelCoherence.class})
 @ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
 public class Address {
     @NotNull @Size(max = 50)
@@ -519,54 +516,53 @@ public class Address {
      */
     public interface HighLevelCoherence {}
 }</programlisting>
-        </example>
+      </example>
 
-        <para>In <xref linkend="example-overridedefaultgroup" />, when an
-        address object is validated for the group
-        <classname>Default</classname>, all constraints belonging to the group
-        <classname>Default</classname> and hosted on
-        <classname>Address</classname> are evaluated. If none fails, all
-        <classname>HighLevelCoherence</classname> constraints present on
-        <classname>Address</classname> are evaluated. In other words, when
-        validating the <classname>Default</classname> group for
-        <classname>Address</classname>, the group sequence defined on the
-        <classname>Address</classname> class is used.</para>
+      <para>In <xref linkend="example-overridedefaultgroup" />, when an
+      address object is validated for the group
+      <classname>Default</classname>, all constraints belonging to the group
+      <classname>Default</classname> and hosted on
+      <classname>Address</classname> are evaluated. If none fails, all
+      <classname>HighLevelCoherence</classname> constraints present on
+      <classname>Address</classname> are evaluated. In other words, when
+      validating the <classname>Default</classname> group for
+      <classname>Address</classname>, the group sequence defined on the
+      <classname>Address</classname> class is used.</para>
 
-        <para>Since sequences cannot have circular dependencies, using
-        <classname>Default</classname> in the declaration of a sequence is not
-        an option. Constraints hosted on a class <classname>A</classname> and
-        belonging to the <classname>Default</classname> group (by default or
-        explicitly) implicitly belong to the group
-        <classname>A</classname>.</para>
+      <para>Since sequences cannot have circular dependencies, using
+      <classname>Default</classname> in the declaration of a sequence is not
+      an option. Constraints hosted on a class <classname>A</classname> and
+      belonging to the <classname>Default</classname> group (by default or
+      explicitly) implicitly belong to the group
+      <classname>A</classname>.</para>
 
-        <para>A sequence defined on a class <classname>A</classname> (i.e.
-        redefining the <classname>Default</classname> groups for the class)
-        must contain the group <classname>A</classname>. In other words, the
-        default constraints hosted on a class must be part of the sequence
-        definition. If a <classname>@GroupSequence</classname> redefining the
-        <classname>Default</classname> group for a class
-        <classname>A</classname> does not contain the group
-        <classname>A</classname>, a
-        <classname>GroupDefinitionException</classname> is raised when the
-        class is validated or when its metadata is requested.</para>
-      </section>
+      <para>A sequence defined on a class <classname>A</classname> (i.e.
+      redefining the <classname>Default</classname> groups for the class) must
+      contain the group <classname>A</classname>. In other words, the default
+      constraints hosted on a class must be part of the sequence definition.
+      If a <classname>@GroupSequence</classname> redefining the
+      <classname>Default</classname> group for a class
+      <classname>A</classname> does not contain the group
+      <classname>A</classname>, a
+      <classname>GroupDefinitionException</classname> is raised when the class
+      is validated or when its metadata is requested.</para>
+    </section>
 
-      <section id="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping">
-        <title>Implicit grouping</title>
+    <section id="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping">
+      <title>Implicit grouping</title>
 
-        <para>It is possible to implicitly group several constraints in the
-        same group without explicitly listing such a group in the constraint
-        declaration. Every constraint hosted on an interface
-        <classname>Z</classname> and part of the
-        <classname>Default</classname> group (implicitly or explicitly)
-        belongs to the group <classname>Z</classname>. This is useful to
-        validate the partial state of an object based on a role represented by
-        an interface.</para>
+      <para>It is possible to implicitly group several constraints in the same
+      group without explicitly listing such a group in the constraint
+      declaration. Every constraint hosted on an interface
+      <classname>Z</classname> and part of the <classname>Default</classname>
+      group (implicitly or explicitly) belongs to the group
+      <classname>Z</classname>. This is useful to validate the partial state
+      of an object based on a role represented by an interface.</para>
 
-        <example>
-          <title>Example of interface / group hosting constraints</title>
+      <example>
+        <title>Example of interface / group hosting constraints</title>
 
-          <programlisting>/**
+        <programlisting>/**
  * Auditable object contract
  */
 public interface Auditable {
@@ -608,449 +604,440 @@ public class Order implements Auditable {
         return this.orderNumber;
     }
 }</programlisting>
-        </example>
+      </example>
 
-        <para>When an <classname>Order</classname> object is validated on the
-        <classname>Default</classname> group, the following constraints are
-        validated: <classname>@NotNull</classname> on
-        <methodname>getCreationDate</methodname>,
-        <methodname>getLastUpdate</methodname>,
-        <methodname>getLastModifier</methodname>,
-        <methodname>getLastReader</methodname>,
-        <methodname>getOrderNumber</methodname> and
-        <classname>@Size</classname> on
-        <methodname>getOrderNumber</methodname> as all belong to the
-        <classname>Default</classname> group.</para>
+      <para>When an <classname>Order</classname> object is validated on the
+      <classname>Default</classname> group, the following constraints are
+      validated: <classname>@NotNull</classname> on
+      <methodname>getCreationDate</methodname>,
+      <methodname>getLastUpdate</methodname>,
+      <methodname>getLastModifier</methodname>,
+      <methodname>getLastReader</methodname>,
+      <methodname>getOrderNumber</methodname> and <classname>@Size</classname>
+      on <methodname>getOrderNumber</methodname> as all belong to the
+      <classname>Default</classname> group.</para>
 
-        <para>When an <classname>Order</classname> object is validated on the
-        <classname>Auditable</classname> group, the following constraints are
-        validated: <classname>@NotNull</classname> on
-        <methodname>getCreationDate</methodname>,
-        <methodname>getLastUpdate</methodname>,
-        <methodname>getLastModifier</methodname>,
-        <methodname>getLastReader</methodname>. Only the constraints present
-        on <classname>Auditable</classname> (and any of its super interfaces)
-        and belonging to the <classname>Default</classname> group are
-        validated when the group <classname>Auditable</classname> is
-        requested. It allows the caller to validate that a given object can be
-        safely audited even if the object state itself is not valid.</para>
-      </section>
-
-      <section id="constraintdeclarationvalidationprocess-groupsequence-formaldefinition">
-        <title>Formal group definitions</title>
-
-        <para>The formal rules defining groups are as followed. <emphasis>Text
-        in italic are comments about the rules.</emphasis></para>
-
-        <para>For every class <classname>X</classname>:</para>
-
-        <orderedlist numeration="upperalpha">
-          <listitem>
-            <para>For each superclass <classname>Y</classname> of
-            <classname>X</classname>, the group <classname>Y</classname>
-            contains all constraints of the group <classname>Y</classname> of
-            <classname>Y</classname></para>
-
-            <para><emphasis>this rule prepares formal concepts for recursive
-            discovery</emphasis></para>
-          </listitem>
-
-          <listitem>
-            <para>The group <classname>X</classname> contains the following
-            constraints:</para>
-
-            <para><emphasis>group <classname>X</classname> is a group used on
-            sequences redefining the default group on a class (see <xref
-            linkend="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup" />)</emphasis></para>
-
-            <orderedlist>
-              <listitem>
-                <para>every constraint declared by the class
-                <classname>X</classname> which does not declare a group or
-                does declare the group <classname>Default</classname>
-                explicitly.</para>
-
-                <para><emphasis>all <classname>Default</classname> constraints
-                hosted on <classname>X</classname></emphasis></para>
-              </listitem>
-
-              <listitem>
-                <para>every constraint declared by any interface implemented
-                by <classname>X</classname> and not annotated
-                <classname>@GroupSequence</classname> which does not
-                explicitly declare a group or does declare the group
-                <classname>Default</classname> explicitly.</para>
-
-                <para><emphasis>all <classname>Default</classname> constraints
-                hosted on interfaces of <classname>X</classname>: constraints
-                are inherited by the class hierarchy. Interfaces marked as
-                <classname>@GroupSequence</classname> are
-                ignored.</emphasis></para>
-              </listitem>
-
-              <listitem>
-                <para>if <classname>X</classname> has a direct superclass
-                <classname>Y</classname>, every constraint in the group
-                <classname>Y</classname></para>
-
-                <para><emphasis>all <classname>Default</classname> constraints
-                hosted on the superclasses of <classname>X</classname>:
-                constraints are inherited by the class
-                hierarchy</emphasis></para>
-              </listitem>
-            </orderedlist>
-          </listitem>
-
-          <listitem>
-            <para>If <classname>X</classname> has no
-            <classname>@GroupSequence</classname> annotation, the group
-            <classname>Default</classname> contains the following
-            constraints:</para>
-
-            <para><emphasis>this rule defines which constraints are evaluated
-            when validating <classname>Default</classname> on
-            <classname>X</classname>.</emphasis></para>
-
-            <orderedlist>
-              <listitem>
-                <para>every constraint in the group
-                <classname>X</classname></para>
-              </listitem>
-
-              <listitem>
-                <para>if <classname>X</classname> has a direct superclass
-                <classname>Y</classname>, every constraint in the group
-                <classname>Default</classname> of
-                <classname>Y</classname></para>
-
-                <para><emphasis>this rule is necessary in case
-                <classname>Y</classname> redefines the group
-                <classname>Default</classname></emphasis></para>
-              </listitem>
-            </orderedlist>
-          </listitem>
-
-          <listitem>
-            <para>If <classname>X</classname> does have a
-            <classname>@GroupSequence</classname> annotation, the group
-            <classname>Default</classname> contains every constraint belonging
-            to every group declared by the
-            <classname>@GroupSequence</classname> annotation.</para>
-
-            <para><emphasis>this rule describes how a class can redefine the
-            group <classname>Default</classname> for itself (see <xref
-            linkend="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup" />)</emphasis></para>
-
-            <itemizedlist>
-              <listitem>
-                <para>the <classname>@GroupSequence</classname> annotation
-                must declare the group <classname>X</classname></para>
-              </listitem>
-            </itemizedlist>
-          </listitem>
-
-          <listitem>
-            <para>For every interface <classname>Z</classname>, the group
-            <classname>Z</classname> contains the following
-            constraints:</para>
-
-            <para><emphasis>this rule defines how non
-            <classname>Default</classname> groups are
-            defined</emphasis></para>
-
-            <orderedlist>
-              <listitem>
-                <para>every constraint declared by the interface
-                <classname>Z</classname> which does not explicitly declare a
-                group or does declare the group <classname>Default</classname>
-                explicitly.</para>
-
-                <para><emphasis>all <classname>Default</classname> constraints
-                hosted on <classname>Z</classname>: this rule formally defines
-                implicit grouping per interface (see <xref
-                linkend="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping" />)</emphasis></para>
-              </listitem>
-
-              <listitem>
-                <para>every constraint (which does not explicitly declare a
-                group) declared by any superinterface not annotated
-                <classname>@GroupSequence</classname> of the interface
-                <classname>Z</classname></para>
-
-                <para><emphasis>all <classname>Default</classname> constraints
-                hosted on interfaces of <classname>Z</classname>: groups can
-                be inherited (see <xref
-                linkend="constraintdeclarationvalidationprocess-groupsequence-groupinheritance" />)</emphasis></para>
-              </listitem>
-
-              <listitem>
-                <para>every constraint declared by the class
-                <classname>X</classname> which explicitly declares the group
-                <classname>Z</classname></para>
-
-                <para><emphasis>every constraint hosted by
-                <classname>X</classname> and marked as belonging to the group
-                <classname>Z</classname></emphasis></para>
-              </listitem>
-
-              <listitem>
-                <para>every constraint declared by any interface implemented
-                by <classname>X</classname> and not annotated
-                <classname>@GroupSequence</classname> which explicitly
-                declares the group <classname>Z</classname></para>
-
-                <para><emphasis>every constraint hosted by any interface of
-                <classname>X</classname> and marked as belonging to the group
-                <classname>Z</classname></emphasis></para>
-              </listitem>
-
-              <listitem>
-                <para>if <classname>X</classname> has a direct superclass
-                <classname>Y</classname>, every constraint in the group
-                <classname>Z</classname> of <classname>Y</classname></para>
-
-                <para><emphasis>every constraint hosted by any superclass of
-                <classname>X</classname> and marked as belonging to the group
-                <classname>Z</classname></emphasis></para>
-              </listitem>
-            </orderedlist>
-          </listitem>
-
-          <listitem>
-            <para>For every interface <classname>Z</classname> annotated
-            <classname>@GroupSequence</classname>, the group
-            <classname>Z</classname> contains every constraint belonging to
-            every group declared by the <classname>@GroupSequence</classname>
-            annotation.</para>
-
-            <para><emphasis>defines the composition side of group sequence but
-            does not define the ordering behavior of sequence (see <xref
-            linkend="constraintdeclarationvalidationprocess-groupsequence-groupsequence" />)</emphasis></para>
-          </listitem>
-        </orderedlist>
-
-        <para>When a given group <classname>G</classname> (represented by an
-        interface <classname>G</classname>) is requested for the validation of
-        a class <classname>X</classname>:</para>
-
-        <itemizedlist>
-          <listitem>
-            <para>constraints belonging to the group <classname>G</classname>
-            are evaluated</para>
-          </listitem>
-
-          <listitem>
-            <para>if the interface <classname>G</classname> is not annotated
-            <classname>@GroupSequence</classname>, every group represented by
-            the super interface of <classname>G</classname> are requested for
-            validation</para>
-          </listitem>
-
-          <listitem>
-            <para>if the interface <classname>G</classname> is annotated with
-            <classname>@GroupSequence</classname>, every group represented by
-            the interfaces declared by the
-            <classname>@GroupSequence</classname> annotation are requested for
-            validation</para>
-
-            <itemizedlist>
-              <listitem>
-                <para>the validation of groups declared to the
-                <classname>@GroupSequence</classname> must happen in the
-                sequencing order declared by
-                <classname>@GroupSequence</classname>: the sequencing order is
-                propagated to the groups composing the sequenced group (via
-                inheritance or group sequence)</para>
-              </listitem>
-
-              <listitem>
-                <para>if a group validation triggers the failure of one or
-                more constraints, groups following in the sequence must not be
-                evaluated.</para>
-              </listitem>
-            </itemizedlist>
-          </listitem>
-
-          <listitem>
-            <para>if the group <classname>G</classname> represents the
-            <classname>Default</classname> group of <classname>X</classname>
-            overridden by <classname>@GroupSequence</classname>, operations
-            are equivalent</para>
-          </listitem>
-        </itemizedlist>
-
-        <para>When the <classname>Default</classname> group of a given class
-        <classname>X</classname> is overridden via
-        <classname>@GroupSequence</classname>, its validation is as
-        followed:</para>
-
-        <itemizedlist>
-          <listitem>
-            <para>every group represented by the interfaces declared by the
-            <classname>@GroupSequence</classname> annotation are requested for
-            validation</para>
-
-            <itemizedlist>
-              <listitem>
-                <para>the validation of groups declared to the
-                <classname>@GroupSequence</classname> must happen in the
-                sequencing order declared by
-                <classname>@GroupSequence</classname>: the sequencing order is
-                propagated to the groups composing the sequenced group (via
-                inheritance or group sequence)</para>
-              </listitem>
-
-              <listitem>
-                <para>if a group validation triggers the failure of one or
-                more constraints, groups following in the sequence must not be
-                evaluated.</para>
-              </listitem>
-            </itemizedlist>
-          </listitem>
-        </itemizedlist>
-
-        <para>Unless defined by a <classname>@GroupSequence</classname>,
-        evaluation ordering is not constrained. In particular, several groups
-        can be validated in the same pass. If a group definition leads to a
-        circular sequencing order between groups, a
-        <classname>GroupDefinitionException</classname> is raised.</para>
-
-        <note>
-          <para>A group <classname>G</classname> sequenced (directly or
-          indirectly) to be executed before itself is not considered a
-          circular reference.</para>
-        </note>
-      </section>
+      <para>When an <classname>Order</classname> object is validated on the
+      <classname>Auditable</classname> group, the following constraints are
+      validated: <classname>@NotNull</classname> on
+      <methodname>getCreationDate</methodname>,
+      <methodname>getLastUpdate</methodname>,
+      <methodname>getLastModifier</methodname>,
+      <methodname>getLastReader</methodname>. Only the constraints present on
+      <classname>Auditable</classname> (and any of its super interfaces) and
+      belonging to the <classname>Default</classname> group are validated when
+      the group <classname>Auditable</classname> is requested. It allows the
+      caller to validate that a given object can be safely audited even if the
+      object state itself is not valid.</para>
     </section>
 
-    <section id="constraintdeclarationvalidationprocess-validationroutine">
-      <title>Validation routine</title>
+    <section id="constraintdeclarationvalidationprocess-groupsequence-formaldefinition">
+      <title>Formal group definitions</title>
 
-      <para>For a given group to validate, the validation routine applied on a
-      given bean instance is expected to execute the following constraint
-      validations in no particular order:</para>
+      <para>The formal rules defining groups are as followed. <emphasis>Text
+      in italic are comments about the rules.</emphasis></para>
+
+      <para>For every class <classname>X</classname>:</para>
+
+      <orderedlist numeration="upperalpha">
+        <listitem>
+          <para>For each superclass <classname>Y</classname> of
+          <classname>X</classname>, the group <classname>Y</classname>
+          contains all constraints of the group <classname>Y</classname> of
+          <classname>Y</classname></para>
+
+          <para><emphasis>this rule prepares formal concepts for recursive
+          discovery</emphasis></para>
+        </listitem>
+
+        <listitem>
+          <para>The group <classname>X</classname> contains the following
+          constraints:</para>
+
+          <para><emphasis>group <classname>X</classname> is a group used on
+          sequences redefining the default group on a class (see <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup" />)</emphasis></para>
+
+          <orderedlist>
+            <listitem>
+              <para>every constraint declared by the class
+              <classname>X</classname> which does not declare a group or does
+              declare the group <classname>Default</classname>
+              explicitly.</para>
+
+              <para><emphasis>all <classname>Default</classname> constraints
+              hosted on <classname>X</classname></emphasis></para>
+            </listitem>
+
+            <listitem>
+              <para>every constraint declared by any interface implemented by
+              <classname>X</classname> and not annotated
+              <classname>@GroupSequence</classname> which does not explicitly
+              declare a group or does declare the group
+              <classname>Default</classname> explicitly.</para>
+
+              <para><emphasis>all <classname>Default</classname> constraints
+              hosted on interfaces of <classname>X</classname>: constraints
+              are inherited by the class hierarchy. Interfaces marked as
+              <classname>@GroupSequence</classname> are
+              ignored.</emphasis></para>
+            </listitem>
+
+            <listitem>
+              <para>if <classname>X</classname> has a direct superclass
+              <classname>Y</classname>, every constraint in the group
+              <classname>Y</classname></para>
+
+              <para><emphasis>all <classname>Default</classname> constraints
+              hosted on the superclasses of <classname>X</classname>:
+              constraints are inherited by the class
+              hierarchy</emphasis></para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+
+        <listitem>
+          <para>If <classname>X</classname> has no
+          <classname>@GroupSequence</classname> annotation, the group
+          <classname>Default</classname> contains the following
+          constraints:</para>
+
+          <para><emphasis>this rule defines which constraints are evaluated
+          when validating <classname>Default</classname> on
+          <classname>X</classname>.</emphasis></para>
+
+          <orderedlist>
+            <listitem>
+              <para>every constraint in the group
+              <classname>X</classname></para>
+            </listitem>
+
+            <listitem>
+              <para>if <classname>X</classname> has a direct superclass
+              <classname>Y</classname>, every constraint in the group
+              <classname>Default</classname> of
+              <classname>Y</classname></para>
+
+              <para><emphasis>this rule is necessary in case
+              <classname>Y</classname> redefines the group
+              <classname>Default</classname></emphasis></para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+
+        <listitem>
+          <para>If <classname>X</classname> does have a
+          <classname>@GroupSequence</classname> annotation, the group
+          <classname>Default</classname> contains every constraint belonging
+          to every group declared by the <classname>@GroupSequence</classname>
+          annotation.</para>
+
+          <para><emphasis>this rule describes how a class can redefine the
+          group <classname>Default</classname> for itself (see <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup" />)</emphasis></para>
+
+          <itemizedlist>
+            <listitem>
+              <para>the <classname>@GroupSequence</classname> annotation must
+              declare the group <classname>X</classname></para>
+            </listitem>
+          </itemizedlist>
+        </listitem>
+
+        <listitem>
+          <para>For every interface <classname>Z</classname>, the group
+          <classname>Z</classname> contains the following constraints:</para>
+
+          <para><emphasis>this rule defines how non
+          <classname>Default</classname> groups are defined</emphasis></para>
+
+          <orderedlist>
+            <listitem>
+              <para>every constraint declared by the interface
+              <classname>Z</classname> which does not explicitly declare a
+              group or does declare the group <classname>Default</classname>
+              explicitly.</para>
+
+              <para><emphasis>all <classname>Default</classname> constraints
+              hosted on <classname>Z</classname>: this rule formally defines
+              implicit grouping per interface (see <xref
+              linkend="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping" />)</emphasis></para>
+            </listitem>
+
+            <listitem>
+              <para>every constraint (which does not explicitly declare a
+              group) declared by any superinterface not annotated
+              <classname>@GroupSequence</classname> of the interface
+              <classname>Z</classname></para>
+
+              <para><emphasis>all <classname>Default</classname> constraints
+              hosted on interfaces of <classname>Z</classname>: groups can be
+              inherited (see <xref
+              linkend="constraintdeclarationvalidationprocess-groupsequence-groupinheritance" />)</emphasis></para>
+            </listitem>
+
+            <listitem>
+              <para>every constraint declared by the class
+              <classname>X</classname> which explicitly declares the group
+              <classname>Z</classname></para>
+
+              <para><emphasis>every constraint hosted by
+              <classname>X</classname> and marked as belonging to the group
+              <classname>Z</classname></emphasis></para>
+            </listitem>
+
+            <listitem>
+              <para>every constraint declared by any interface implemented by
+              <classname>X</classname> and not annotated
+              <classname>@GroupSequence</classname> which explicitly declares
+              the group <classname>Z</classname></para>
+
+              <para><emphasis>every constraint hosted by any interface of
+              <classname>X</classname> and marked as belonging to the group
+              <classname>Z</classname></emphasis></para>
+            </listitem>
+
+            <listitem>
+              <para>if <classname>X</classname> has a direct superclass
+              <classname>Y</classname>, every constraint in the group
+              <classname>Z</classname> of <classname>Y</classname></para>
+
+              <para><emphasis>every constraint hosted by any superclass of
+              <classname>X</classname> and marked as belonging to the group
+              <classname>Z</classname></emphasis></para>
+            </listitem>
+          </orderedlist>
+        </listitem>
+
+        <listitem>
+          <para>For every interface <classname>Z</classname> annotated
+          <classname>@GroupSequence</classname>, the group
+          <classname>Z</classname> contains every constraint belonging to
+          every group declared by the <classname>@GroupSequence</classname>
+          annotation.</para>
+
+          <para><emphasis>defines the composition side of group sequence but
+          does not define the ordering behavior of sequence (see <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-groupsequence" />)</emphasis></para>
+        </listitem>
+      </orderedlist>
+
+      <para>When a given group <classname>G</classname> (represented by an
+      interface <classname>G</classname>) is requested for the validation of a
+      class <classname>X</classname>:</para>
 
       <itemizedlist>
         <listitem>
-          <para>for all <emphasis>reachable</emphasis> fields, execute all
-          field level validations (including the ones expressed on
-          superclasses) matching the targeted group unless the given
-          validation constraint has already been processed during this
-          validation routine for a given navigation path (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
-          as part of a previous group match.</para>
+          <para>constraints belonging to the group <classname>G</classname>
+          are evaluated</para>
         </listitem>
 
         <listitem>
-          <para>for all <emphasis>reachable</emphasis> getters, execute all
-          getter level validations (including the ones expressed on interfaces
-          and superclasses) matching the targeted group unless the given
-          validation constraint has already been processed during this
-          validation routine for a given navigation path (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
-          as part of a previous group match.</para>
+          <para>if the interface <classname>G</classname> is not annotated
+          <classname>@GroupSequence</classname>, every group represented by
+          the super interface of <classname>G</classname> are requested for
+          validation</para>
         </listitem>
 
         <listitem>
-          <para>execute all class level validations (including the ones
-          expressed on interfaces and superclasses) matching the targeted
-          group unless the given validation constraint has already been
-          processed during this validation routine for a given navigation path
-          (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
-          as part of a previous group match.</para>
+          <para>if the interface <classname>G</classname> is annotated with
+          <classname>@GroupSequence</classname>, every group represented by
+          the interfaces declared by the <classname>@GroupSequence</classname>
+          annotation are requested for validation</para>
+
+          <itemizedlist>
+            <listitem>
+              <para>the validation of groups declared to the
+              <classname>@GroupSequence</classname> must happen in the
+              sequencing order declared by
+              <classname>@GroupSequence</classname>: the sequencing order is
+              propagated to the groups composing the sequenced group (via
+              inheritance or group sequence)</para>
+            </listitem>
+
+            <listitem>
+              <para>if a group validation triggers the failure of one or more
+              constraints, groups following in the sequence must not be
+              evaluated.</para>
+            </listitem>
+          </itemizedlist>
         </listitem>
 
         <listitem>
-          <para>for all <emphasis>reachable</emphasis> and
-          <emphasis>cascadable</emphasis> associations, execute all cascading
-          validations (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
-          including the ones expressed on interfaces and superclasses (see
-          <xref
-          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition" />)</para>
+          <para>if the group <classname>G</classname> represents the
+          <classname>Default</classname> group of <classname>X</classname>
+          overridden by <classname>@GroupSequence</classname>, operations are
+          equivalent</para>
         </listitem>
       </itemizedlist>
 
-      <para>Reachable fields, getters and associations as well as cascadable
-      associations are defined in <xref
-      linkend="constraintdeclarationvalidationprocess-validationroutine-traversable" />.</para>
-
-      <para>Note that this implies that a given validation constraint will not
-      be processed more than once per validation.</para>
-
-      <para>Unless ordered by group sequences, groups can be validated in no
-      particular order. This implies that the validation routine can be run
-      for several groups in the same pass.</para>
-
-      <para>The object validation routine is described as such. For each
-      constraint declaration:</para>
+      <para>When the <classname>Default</classname> group of a given class
+      <classname>X</classname> is overridden via
+      <classname>@GroupSequence</classname>, its validation is as
+      followed:</para>
 
       <itemizedlist>
         <listitem>
-          <para>determine for the constraint declaration, the appropriate
-          <classname>ConstraintValidator</classname> to use (see <xref
-          linkend="typevalidatorresolution" />).</para>
-        </listitem>
+          <para>every group represented by the interfaces declared by the
+          <classname>@GroupSequence</classname> annotation are requested for
+          validation</para>
 
-        <listitem>
-          <para>execute the <methodname>isValid</methodname> operation (from
-          the constraint validation implementation) on the appropriate data
-          (see <xref
-          linkend="constraintsdefinitionimplementation-validationimplementation" />)</para>
-        </listitem>
+          <itemizedlist>
+            <listitem>
+              <para>the validation of groups declared to the
+              <classname>@GroupSequence</classname> must happen in the
+              sequencing order declared by
+              <classname>@GroupSequence</classname>: the sequencing order is
+              propagated to the groups composing the sequenced group (via
+              inheritance or group sequence)</para>
+            </listitem>
 
-        <listitem>
-          <para>if <methodname>isValid</methodname> returns true, continue to
-          the next constraint,</para>
-        </listitem>
-
-        <listitem>
-          <para>if <methodname>isValid</methodname> returns false, the Bean
-          Validation provider populates
-          <classname>ConstraintViolation</classname> object(s) according to
-          the rules defined in <xref
-          linkend="constraintsdefinitionimplementation-validationimplementation" />
-          and appends these objects to the list of constraint
-          violations.</para>
+            <listitem>
+              <para>if a group validation triggers the failure of one or more
+              constraints, groups following in the sequence must not be
+              evaluated.</para>
+            </listitem>
+          </itemizedlist>
         </listitem>
       </itemizedlist>
 
-      <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
-        <title>Object graph validation</title>
+      <para>Unless defined by a <classname>@GroupSequence</classname>,
+      evaluation ordering is not constrained. In particular, several groups
+      can be validated in the same pass. If a group definition leads to a
+      circular sequencing order between groups, a
+      <classname>GroupDefinitionException</classname> is raised.</para>
 
-        <para>The <classname>@Valid</classname> annotation on a given
-        association (i.e. object reference or collection, array,
-        <classname>Iterable</classname> of objects), dictates the Bean
-        Validator implementation to apply recursively the Bean Validation
-        routine on (each of) the associated object(s). This mechanism is
-        recursive: an associated object can itself contain cascaded
-        references.</para>
+      <note>
+        <para>A group <classname>G</classname> sequenced (directly or
+        indirectly) to be executed before itself is not considered a circular
+        reference.</para>
+      </note>
+    </section>
+  </section>
 
-        <para>Null references are ignored.</para>
+  <section id="constraintdeclarationvalidationprocess-validationroutine">
+    <title>Validation routine</title>
 
-        <para>To prevent infinite loops, the Bean Validation implementation
-        must ignore the cascading operation if the associated object instance
-        has already been validated in the current navigation path (starting
-        from the root object). See <xref linkend="example-oglimit" /> for an
-        example. A navigation path is defined as a set of
-        <classname>@Valid</classname> associations starting from the root
-        object instance and reaching the associated instance. A given
-        navigation path cannot contain the same instance multiple times (the
-        complete validated object graph can though). See <xref
-        linkend="example-oglimit" /> for an example.</para>
+    <para>For a given group to validate, the validation routine applied on a
+    given bean instance is expected to execute the following constraint
+    validations in no particular order:</para>
 
-        <note>
-          <para>This object graph navigation can lead to multiple validations
-          of the same constraint and the same object instance but the set of
-          constraint validation is deterministic and the algorithm prevents
-          infinite loops.</para>
-        </note>
+    <itemizedlist>
+      <listitem>
+        <para>for all <emphasis>reachable</emphasis> fields, execute all field
+        level validations (including the ones expressed on superclasses)
+        matching the targeted group unless the given validation constraint has
+        already been processed during this validation routine for a given
+        navigation path (see <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+        as part of a previous group match.</para>
+      </listitem>
 
-        <example id="example-oglimit">
-          <title>Object graph limits</title>
+      <listitem>
+        <para>for all <emphasis>reachable</emphasis> getters, execute all
+        getter level validations (including the ones expressed on interfaces
+        and superclasses) matching the targeted group unless the given
+        validation constraint has already been processed during this
+        validation routine for a given navigation path (see <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+        as part of a previous group match.</para>
+      </listitem>
 
-          <programlisting>#assuming the following object graph
+      <listitem>
+        <para>execute all class level validations (including the ones
+        expressed on interfaces and superclasses) matching the targeted group
+        unless the given validation constraint has already been processed
+        during this validation routine for a given navigation path (see <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+        as part of a previous group match.</para>
+      </listitem>
+
+      <listitem>
+        <para>for all <emphasis>reachable</emphasis> and
+        <emphasis>cascadable</emphasis> associations, execute all cascading
+        validations (see <xref
+        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+        including the ones expressed on interfaces and superclasses (see <xref
+        linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition" />)</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>Reachable fields, getters and associations as well as cascadable
+    associations are defined in <xref
+    linkend="constraintdeclarationvalidationprocess-validationroutine-traversable" />.</para>
+
+    <para>Note that this implies that a given validation constraint will not
+    be processed more than once per validation.</para>
+
+    <para>Unless ordered by group sequences, groups can be validated in no
+    particular order. This implies that the validation routine can be run for
+    several groups in the same pass.</para>
+
+    <para>The object validation routine is described as such. For each
+    constraint declaration:</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>determine for the constraint declaration, the appropriate
+        <classname>ConstraintValidator</classname> to use (see <xref
+        linkend="typevalidatorresolution" />).</para>
+      </listitem>
+
+      <listitem>
+        <para>execute the <methodname>isValid</methodname> operation (from the
+        constraint validation implementation) on the appropriate data (see
+        <xref
+        linkend="constraintsdefinitionimplementation-validationimplementation" />)</para>
+      </listitem>
+
+      <listitem>
+        <para>if <methodname>isValid</methodname> returns true, continue to
+        the next constraint,</para>
+      </listitem>
+
+      <listitem>
+        <para>if <methodname>isValid</methodname> returns false, the Bean
+        Validation provider populates
+        <classname>ConstraintViolation</classname> object(s) according to the
+        rules defined in <xref
+        linkend="constraintsdefinitionimplementation-validationimplementation" />
+        and appends these objects to the list of constraint violations.</para>
+      </listitem>
+    </itemizedlist>
+
+    <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
+      <title>Object graph validation</title>
+
+      <para>The <classname>@Valid</classname> annotation on a given
+      association (i.e. object reference or collection, array,
+      <classname>Iterable</classname> of objects), dictates the Bean Validator
+      implementation to apply recursively the Bean Validation routine on (each
+      of) the associated object(s). This mechanism is recursive: an associated
+      object can itself contain cascaded references.</para>
+
+      <para>Null references are ignored.</para>
+
+      <para>To prevent infinite loops, the Bean Validation implementation must
+      ignore the cascading operation if the associated object instance has
+      already been validated in the current navigation path (starting from the
+      root object). See <xref linkend="example-oglimit" /> for an example. A
+      navigation path is defined as a set of <classname>@Valid</classname>
+      associations starting from the root object instance and reaching the
+      associated instance. A given navigation path cannot contain the same
+      instance multiple times (the complete validated object graph can
+      though). See <xref linkend="example-oglimit" /> for an example.</para>
+
+      <note>
+        <para>This object graph navigation can lead to multiple validations of
+        the same constraint and the same object instance but the set of
+        constraint validation is deterministic and the algorithm prevents
+        infinite loops.</para>
+      </note>
+
+      <example id="example-oglimit">
+        <title>Object graph limits</title>
+
+        <programlisting>#assuming the following object graph
 
 Order -(lines)-&gt; Orderline1
 Order -(lines)-&gt; Orderline2
@@ -1088,25 +1075,25 @@ Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User
 
 Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; Address1
   - inhabitant is ignored: User is already present in the branch</programlisting>
-        </example>
+      </example>
 
-        <para>The <classname>ConstraintViolation</classname> objects are built
-        when a failing constraint on an associated object is found. They
-        reflect the path to reach the object from the root validated object
-        (See <xref linkend="validationapi-constraintviolation" />).</para>
+      <para>The <classname>ConstraintViolation</classname> objects are built
+      when a failing constraint on an associated object is found. They reflect
+      the path to reach the object from the root validated object (See <xref
+      linkend="validationapi-constraintviolation" />).</para>
 
-        <para><classname>@Valid</classname> is an orthogonal concept to the
-        notion of group. If two groups are in sequence, the first group must
-        pass for all associated objects before the second group is evaluated.
-        Note however that the <classname>Default</classname> group sequence
-        overriding is local to the class it is defined on and is not
-        propagated to the associated objects. The following example
-        illustrates this:</para>
+      <para><classname>@Valid</classname> is an orthogonal concept to the
+      notion of group. If two groups are in sequence, the first group must
+      pass for all associated objects before the second group is evaluated.
+      Note however that the <classname>Default</classname> group sequence
+      overriding is local to the class it is defined on and is not propagated
+      to the associated objects. The following example illustrates
+      this:</para>
 
-        <para><example>
-            <title>Class Driver with redefined default group</title>
+      <para><example>
+          <title>Class Driver with redefined default group</title>
 
-            <programlisting>@GroupSequence({ Minimal.class, Driver.class })
+          <programlisting>@GroupSequence({ Minimal.class, Driver.class })
 public class Driver {
   @Min(value = 18, groups = Minimal.class)
   int age;
@@ -1119,10 +1106,10 @@ public class Driver {
 
   // setter/getters
 }</programlisting>
-          </example><example>
-            <title>Class Car with redefined default group</title>
+        </example><example>
+          <title>Class Car with redefined default group</title>
 
-            <programlisting>@GroupSequence({ Car.class, Later.class })
+          <programlisting>@GroupSequence({ Car.class, Later.class })
 public class Car {
   @NotNull
   String type;
@@ -1132,17 +1119,17 @@ public class Car {
 
   // setter/getters
 }</programlisting>
-          </example><example>
-            <title>Defining a group sequence</title>
+        </example><example>
+          <title>Defining a group sequence</title>
 
-            <programlisting>@GroupSequence({ Minimal.class, Later.class })
+          <programlisting>@GroupSequence({ Minimal.class, Later.class })
 public interface SequencedGroups {
 }</programlisting>
-          </example><example>
-            <title>Group sequence overriding is not propagated to associated
-            objects</title>
+        </example><example>
+          <title>Group sequence overriding is not propagated to associated
+          objects</title>
 
-            <programlisting>Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+          <programlisting>Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
 Driver driver = new Driver();
 driver.setAge(16);
@@ -1157,57 +1144,54 @@ assert violations.size() == 2;
 violations = validator.validate( driver, SequencedGroups.class );
 
 assert violations.size() == 1;</programlisting>
-          </example>The default group sequence is redefined for the
-        <classname>Driver</classname> as well as <classname>Car</classname>.
-        When the default group is requested via
-        <methodname>validator.validate( driver )</methodname> the group
-        <classname>Minimal</classname> gets validated in class
-        <classname>Driver</classname>. The constraint will fail since the
-        driver's age in the example is only 16. The constraint on
-        <property>passedDrivingTest</property> will not be evaluated due to
-        the redefined default sequence of <classname>Driver</classname>.
-        However, there is one more constraint violation, namely the
-        <classname>@NotNull</classname> on <property>Car.type</property>. The
-        reason for this is that the group <classname>Default</classname> gets
-        propagated to <classname>Car</classname> (not
-        <classname>Minimal</classname>). Class <classname>Driver</classname>
-        defines its own group sequence which means that <classname>only
-        @NotNull</classname> on <property>type</property> gets
-        evaluated.</para>
+        </example>The default group sequence is redefined for the
+      <classname>Driver</classname> as well as <classname>Car</classname>.
+      When the default group is requested via <methodname>validator.validate(
+      driver )</methodname> the group <classname>Minimal</classname> gets
+      validated in class <classname>Driver</classname>. The constraint will
+      fail since the driver's age in the example is only 16. The constraint on
+      <property>passedDrivingTest</property> will not be evaluated due to the
+      redefined default sequence of <classname>Driver</classname>. However,
+      there is one more constraint violation, namely the
+      <classname>@NotNull</classname> on <property>Car.type</property>. The
+      reason for this is that the group <classname>Default</classname> gets
+      propagated to <classname>Car</classname> (not
+      <classname>Minimal</classname>). Class <classname>Driver</classname>
+      defines its own group sequence which means that <classname>only
+      @NotNull</classname> on <property>type</property> gets evaluated.</para>
 
-        <para>In the second call to <methodname>validate</methodname> the
-        group <classname>SequencedGroups</classname> is requested which
-        defines a sequence of <classname>Minimal</classname> followed by
-        <classname>Later</classname>. In this case there is only one
-        constraint violation. Again <classname>@Min</classname> on
-        <property>age</property> fails, but in this case the group
-        <classname>Minimal</classname> gets propagated to
-        <classname>Car</classname> which does not have any constraints defined
-        against this group. Constraints belonging to the group
-        <classname>Later</classname> won't get validated until all constraints
-        belonging to <classname>Minimal</classname> pass.</para>
-      </section>
+      <para>In the second call to <methodname>validate</methodname> the group
+      <classname>SequencedGroups</classname> is requested which defines a
+      sequence of <classname>Minimal</classname> followed by
+      <classname>Later</classname>. In this case there is only one constraint
+      violation. Again <classname>@Min</classname> on <property>age</property>
+      fails, but in this case the group <classname>Minimal</classname> gets
+      propagated to <classname>Car</classname> which does not have any
+      constraints defined against this group. Constraints belonging to the
+      group <classname>Later</classname> won't get validated until all
+      constraints belonging to <classname>Minimal</classname> pass.</para>
+    </section>
 
-      <section id="constraintdeclarationvalidationprocess-validationroutine-traversable">
-        <title>Traversable property</title>
+    <section id="constraintdeclarationvalidationprocess-validationroutine-traversable">
+      <title>Traversable property</title>
 
-        <para>In some cases, the state of some properties should not be
-        accessed. For example, if a property loaded by a Java Persistence
-        provider is a lazy property or a lazy association, accessing its state
-        would trigger a load from the database. An undesired behavior.</para>
+      <para>In some cases, the state of some properties should not be
+      accessed. For example, if a property loaded by a Java Persistence
+      provider is a lazy property or a lazy association, accessing its state
+      would trigger a load from the database. An undesired behavior.</para>
 
-        <para>Bean Validation offers a way to control which property can and
-        cannot be accessed via the
-        <classname>TraversableResolver.isReachable</classname>()
-        contract.</para>
+      <para>Bean Validation offers a way to control which property can and
+      cannot be accessed via the
+      <classname>TraversableResolver.isReachable</classname>()
+      contract.</para>
 
-        <para>Likewise, it is sometimes undesirable to cascade validation
-        despite the use of <classname>@Valid</classname>. Java Persistence 2
-        for example does not cascade to associated entities during flush. You
-        can control this behavior by implementing
-        <methodname>Traversable.isCascadable()</methodname>.</para>
+      <para>Likewise, it is sometimes undesirable to cascade validation
+      despite the use of <classname>@Valid</classname>. Java Persistence 2 for
+      example does not cascade to associated entities during flush. You can
+      control this behavior by implementing
+      <methodname>Traversable.isCascadable()</methodname>.</para>
 
-        <programlisting>/**
+      <programlisting>/**
  * Contract determining if a property can be accessed by the Bean Validation provider.
  * This contract is called for each property that is being either validated or cascaded.
  *
@@ -1263,73 +1247,70 @@ public interface TraversableResolver {
                          ElementType elementType);
 }</programlisting>
 
-        <para><methodname>isReachable</methodname> is called for every
-        property about to be accessed either for validation or for cascading.
-        A property is <emphasis>reachable</emphasis> if this method returns
-        true.</para>
+      <para><methodname>isReachable</methodname> is called for every property
+      about to be accessed either for validation or for cascading. A property
+      is <emphasis>reachable</emphasis> if this method returns true.</para>
 
-        <para><methodname>isCascadable</methodname> is called for every
-        property about to be cascaded (i.e. marked as
-        <classname>@Valid</classname>). A property is
-        <emphasis>cascadable</emphasis> if it is reachable and if the
-        <methodname>isCascadable</methodname> method returns true.</para>
+      <para><methodname>isCascadable</methodname> is called for every property
+      about to be cascaded (i.e. marked as <classname>@Valid</classname>). A
+      property is <emphasis>cascadable</emphasis> if it is reachable and if
+      the <methodname>isCascadable</methodname> method returns true.</para>
 
-        <note>
-          <para><methodname>isCascadable</methodname> for a given property is
-          only called if <methodname>isReachable</methodname> returns true. In
-          other words, <methodname>isReachable</methodname> is always called
-          before <methodname>isCascadable</methodname> for a given
-          property.</para>
-        </note>
-
-        <para><literal>traversableObject</literal> is the object instance
-        being evaluated. <literal>null</literal> if the check is triggered as
-        part of a <methodname>validateValue</methodname> call.</para>
-
-        <para><literal>traversableProperty</literal> is the
-        <classname>Node</classname> representing the property hosted by the
-        <methodname>traversableObject</methodname> being considered for
-        traversal. The name of a property is defined in <xref
-        linkend="constraintdeclarationvalidationprocess-requirements-property" />.</para>
-
-        <para><literal>rootBeanType</literal> is the class of the root being
-        validated (and passed to the <methodname>validate</methodname>
-        method).</para>
-
-        <para><literal>pathToTraversableObject</literal> is the
-        <classname>Path</classname> from the
-        <methodname>rootBeanType</methodname> down to the
-        <methodname>traversableObject</methodname>. If the root object is
-        <classname>traversableObject</classname>,
-        <classname>pathToTraversableObject</classname> is composed of a single
-        Node whose name is null. The path is described following the
-        conventions described in <xref
-        linkend="validationapi-constraintviolation" />
-        (<methodname>getPropertyPath</methodname>).</para>
-
-        <para><literal>elementType</literal> is the
-        <classname>java.lang.annotation.ElementType</classname> the annotation
-        is placed on. It can be either <literal>FIELD</literal> or
-        <literal>METHOD</literal>. Any other value is not expected.</para>
-
-        <para>The Bean Validation provider must not access the state of a
-        property, nor validate its constraints if the property is not
-        traversable. A property is traversable if
-        <classname>TraversableResolver</classname> returns true for this
+      <note>
+        <para><methodname>isCascadable</methodname> for a given property is
+        only called if <methodname>isReachable</methodname> returns true. In
+        other words, <methodname>isReachable</methodname> is always called
+        before <methodname>isCascadable</methodname> for a given
         property.</para>
+      </note>
 
-        <para>If an exception occurs when the
-        <classname>TraversableResolver</classname> is called, the exception is
-        wrapped into a <classname>ValidationException</classname>.</para>
+      <para><literal>traversableObject</literal> is the object instance being
+      evaluated. <literal>null</literal> if the check is triggered as part of
+      a <methodname>validateValue</methodname> call.</para>
 
-        <para>The following example assumes the object graph defined in <xref
-        linkend="example-ognav-definitions" /> and assumes the validation
-        operation is applied on an address object.</para>
+      <para><literal>traversableProperty</literal> is the
+      <classname>Node</classname> representing the property hosted by the
+      <methodname>traversableObject</methodname> being considered for
+      traversal. The name of a property is defined in <xref
+      linkend="constraintdeclarationvalidationprocess-requirements-property" />.</para>
 
-        <example id="example-ognav-definitions">
-          <title>Definitions used in the example</title>
+      <para><literal>rootBeanType</literal> is the class of the root being
+      validated (and passed to the <methodname>validate</methodname>
+      method).</para>
 
-          <programlisting>public class Country {
+      <para><literal>pathToTraversableObject</literal> is the
+      <classname>Path</classname> from the
+      <methodname>rootBeanType</methodname> down to the
+      <methodname>traversableObject</methodname>. If the root object is
+      <classname>traversableObject</classname>,
+      <classname>pathToTraversableObject</classname> is composed of a single
+      Node whose name is null. The path is described following the conventions
+      described in <xref linkend="validationapi-constraintviolation" />
+      (<methodname>getPropertyPath</methodname>).</para>
+
+      <para><literal>elementType</literal> is the
+      <classname>java.lang.annotation.ElementType</classname> the annotation
+      is placed on. It can be either <literal>FIELD</literal> or
+      <literal>METHOD</literal>. Any other value is not expected.</para>
+
+      <para>The Bean Validation provider must not access the state of a
+      property, nor validate its constraints if the property is not
+      traversable. A property is traversable if
+      <classname>TraversableResolver</classname> returns true for this
+      property.</para>
+
+      <para>If an exception occurs when the
+      <classname>TraversableResolver</classname> is called, the exception is
+      wrapped into a <classname>ValidationException</classname>.</para>
+
+      <para>The following example assumes the object graph defined in <xref
+      linkend="example-ognav-definitions" /> and assumes the validation
+      operation is applied on an address object.</para>
+
+      <example id="example-ognav-definitions">
+        <title>Definitions used in the example</title>
+
+        <programlisting>public class Country {
     @NotNull private String name;
     @Size(max=2) private String ISO2Code;
     @Size(max=3) private String ISO3Code;
@@ -1412,89 +1393,89 @@ public class Address {
         this.country = country;
     }
 }</programlisting>
-        </example>
+      </example>
 
-        <para>When the Bean Validation provider is about to check constraints
-        of <literal>ISO3Code</literal>, it calls the
-        <classname>TraversableResolver.isReachable()</classname> instance to
-        ensure that the <literal>ISO3Code</literal> property is reachable with
-        the following parameter values:</para>
+      <para>When the Bean Validation provider is about to check constraints of
+      <literal>ISO3Code</literal>, it calls the
+      <classname>TraversableResolver.isReachable()</classname> instance to
+      ensure that the <literal>ISO3Code</literal> property is reachable with
+      the following parameter values:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para><literal>traversableObject</literal>: country. The instance
-            returned by <code>address.getCountry()</code>.</para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para><literal>traversableObject</literal>: country. The instance
+          returned by <code>address.getCountry()</code>.</para>
+        </listitem>
 
-          <listitem>
-            <para><literal>traversableProperty</literal>: a
-            <classname>Node</classname> whose name is "ISO3Code". The name of
-            the property of <literal>traversableObject</literal> being
-            verified.</para>
-          </listitem>
+        <listitem>
+          <para><literal>traversableProperty</literal>: a
+          <classname>Node</classname> whose name is "ISO3Code". The name of
+          the property of <literal>traversableObject</literal> being
+          verified.</para>
+        </listitem>
 
-          <listitem>
-            <para><methodname>rootBeanType</methodname>: Address.class. The
-            type of the root object being validated.</para>
-          </listitem>
+        <listitem>
+          <para><methodname>rootBeanType</methodname>: Address.class. The type
+          of the root object being validated.</para>
+        </listitem>
 
-          <listitem>
-            <para><literal>pathtoTraversableObject</literal>: a
-            <classname>Path</classname> containing a single
-            <classname>Node</classname> whose name is "country". The path from
-            address to the country instance.</para>
-          </listitem>
+        <listitem>
+          <para><literal>pathtoTraversableObject</literal>: a
+          <classname>Path</classname> containing a single
+          <classname>Node</classname> whose name is "country". The path from
+          address to the country instance.</para>
+        </listitem>
 
-          <listitem>
-            <para><literal>elementType</literal>:
-            <classname>ElementType.FIELD</classname>. The ISO3Code property is
-            annotated on its field.</para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para><literal>elementType</literal>:
+          <classname>ElementType.FIELD</classname>. The ISO3Code property is
+          annotated on its field.</para>
+        </listitem>
+      </itemizedlist>
 
-        <para>When the Bean Validation provider is about to cascade validation
-        on <literal>country</literal> (<classname>Address</classname> object),
-        it calls the <classname>TraversableResolver.isReachable()</classname>
-        instance to ensure that the <literal>country</literal> property is
-        reachable and if this method returns true, it calls
-        <classname>TraversableResolver.isCascadable()</classname> with the
-        following parameter values:</para>
+      <para>When the Bean Validation provider is about to cascade validation
+      on <literal>country</literal> (<classname>Address</classname> object),
+      it calls the <classname>TraversableResolver.isReachable()</classname>
+      instance to ensure that the <literal>country</literal> property is
+      reachable and if this method returns true, it calls
+      <classname>TraversableResolver.isCascadable()</classname> with the
+      following parameter values:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para><literal>traversableObject</literal>: address. The address
-            instance.</para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para><literal>traversableObject</literal>: address. The address
+          instance.</para>
+        </listitem>
 
-          <listitem>
-            <para><literal>traversableProperty</literal>: a
-            <classname>Node</classname> whose name is "country". The name of
-            the property of <literal>traversableObject</literal> being
-            verified.</para>
-          </listitem>
+        <listitem>
+          <para><literal>traversableProperty</literal>: a
+          <classname>Node</classname> whose name is "country". The name of the
+          property of <literal>traversableObject</literal> being
+          verified.</para>
+        </listitem>
 
-          <listitem>
-            <para><methodname>rootBeanType</methodname>: Address.class. The
-            type of the root object being validated.</para>
-          </listitem>
+        <listitem>
+          <para><methodname>rootBeanType</methodname>: Address.class. The type
+          of the root object being validated.</para>
+        </listitem>
 
-          <listitem>
-            <para><literal>pathtoTraversableObject</literal>: a
-            <classname>Path</classname> containing a single
-            <classname>Node</classname> whose name is null.</para>
-          </listitem>
+        <listitem>
+          <para><literal>pathtoTraversableObject</literal>: a
+          <classname>Path</classname> containing a single
+          <classname>Node</classname> whose name is null.</para>
+        </listitem>
 
-          <listitem>
-            <para><literal>elementType</literal>:
-            <classname>ElementType.FIELD</classname>. The country property is
-            annotated on its field.</para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para><literal>elementType</literal>:
+          <classname>ElementType.FIELD</classname>. The country property is
+          annotated on its field.</para>
+        </listitem>
+      </itemizedlist>
 
-        <example>
-          <title>Java Persistence aware TraversableResolver</title>
+      <example>
+        <title>Java Persistence aware TraversableResolver</title>
 
-          <programlisting>public class JPATraversableResolver implements TraversableResolver {
+        <programlisting>public class JPATraversableResolver implements TraversableResolver {
 
     public boolean isReachable(Object traversableObject, 
                                Path.Node traversableProperty, 
@@ -1515,147 +1496,144 @@ public class Address {
         return true;
     }
 }</programlisting>
-        </example>
+      </example>
 
-        <para>The traversable resolver used by default in a Bean Validation
-        behaves as followed:</para>
+      <para>The traversable resolver used by default in a Bean Validation
+      behaves as followed:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para>if Java Persistence is available in the runtime environment,
-            a property is considered reachable if Java Persistence considers
-            the property as loaded. A typical implementation will use
-            <code>Persistence.getPersistenceUtil().isLoaded(Object,
-            String)</code> to implement such contract.</para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para>if Java Persistence is available in the runtime environment, a
+          property is considered reachable if Java Persistence considers the
+          property as loaded. A typical implementation will use
+          <code>Persistence.getPersistenceUtil().isLoaded(Object,
+          String)</code> to implement such contract.</para>
+        </listitem>
 
-          <listitem>
-            <para>if Java Persistence is not available in the runtime
-            environment, all properties are considered reachable.</para>
-          </listitem>
+        <listitem>
+          <para>if Java Persistence is not available in the runtime
+          environment, all properties are considered reachable.</para>
+        </listitem>
 
-          <listitem>
-            <para>all properties are considered cascadable.</para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para>all properties are considered cascadable.</para>
+        </listitem>
+      </itemizedlist>
 
-        <para>See <xref linkend="bootstrapping" /> to know how to pass a
-        custom <classname>TraversableResolver</classname>.</para>
-      </section>
+      <para>See <xref linkend="bootstrapping" /> to know how to pass a custom
+      <classname>TraversableResolver</classname>.</para>
+    </section>
 
-      <section id="typevalidatorresolution">
-        <title>ConstraintValidator resolution algorithm</title>
+    <section id="typevalidatorresolution">
+      <title>ConstraintValidator resolution algorithm</title>
 
-        <para>A constraint is associated to one or more
-        <classname>ConstraintValidator</classname> implementations. Each
-        <classname>ConstraintValidator&lt;A, T&gt;</classname> accepts the
-        type <classname>T</classname>. The
-        <classname>ConstraintValidator</classname> executed depends on the
-        type hosting the constraint. For a given constraint evaluation, a
-        single <classname>ConstraintValidator</classname> is
-        considered.</para>
+      <para>A constraint is associated to one or more
+      <classname>ConstraintValidator</classname> implementations. Each
+      <classname>ConstraintValidator&lt;A, T&gt;</classname> accepts the type
+      <classname>T</classname>. The <classname>ConstraintValidator</classname>
+      executed depends on the type hosting the constraint. For a given
+      constraint evaluation, a single
+      <classname>ConstraintValidator</classname> is considered.</para>
 
-        <para>If the constraint declaration is hosted on a class or an
-        interface, the targeted type is the class or the interface. If the
-        constraint is hosted on a class attribute, the type of the attribute
-        is the targeted type. If the constraint is hosted on a getter, the
-        return type of the getter is the targeted type. In other words, the
-        resolution algorithm considers the type as defined in the method
-        signature and not the runtime type of the value.</para>
+      <para>If the constraint declaration is hosted on a class or an
+      interface, the targeted type is the class or the interface. If the
+      constraint is hosted on a class attribute, the type of the attribute is
+      the targeted type. If the constraint is hosted on a getter, the return
+      type of the getter is the targeted type. In other words, the resolution
+      algorithm considers the type as defined in the method signature and not
+      the runtime type of the value.</para>
 
-        <para>The rules written below describe formally the following
-        statement: the <classname>ConstraintValidator</classname> chosen to
-        validate a declared type <classname>T</classname> is the one where the
-        type supported by the <classname>ConstraintValidator</classname> is a
-        supertype of <classname>T</classname> and where there is no other
-        <classname>ConstraintValidator</classname> whose supported type is a
-        supertype of <classname>T</classname> and not a supertype of the
-        chosen <classname>ConstraintValidator</classname> supported
-        type.</para>
+      <para>The rules written below describe formally the following statement:
+      the <classname>ConstraintValidator</classname> chosen to validate a
+      declared type <classname>T</classname> is the one where the type
+      supported by the <classname>ConstraintValidator</classname> is a
+      supertype of <classname>T</classname> and where there is no other
+      <classname>ConstraintValidator</classname> whose supported type is a
+      supertype of <classname>T</classname> and not a supertype of the chosen
+      <classname>ConstraintValidator</classname> supported type.</para>
 
-        <para>When validating a constraint A placed on a target declaring the
-        type <classname>T</classname>, the following resolution rules
-        apply:</para>
+      <para>When validating a constraint A placed on a target declaring the
+      type <classname>T</classname>, the following resolution rules
+      apply:</para>
 
-        <itemizedlist>
-          <listitem>
-            <para>Primitive types are considered equivalent to their
-            respective primitive wrapper class. Likewise, arrays of primitive
-            types are considered equivalent to arrays of their wrapper
-            classes.</para>
-          </listitem>
+      <itemizedlist>
+        <listitem>
+          <para>Primitive types are considered equivalent to their respective
+          primitive wrapper class. Likewise, arrays of primitive types are
+          considered equivalent to arrays of their wrapper classes.</para>
+        </listitem>
 
-          <listitem>
-            <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname> is
-            said to be <emphasis>compliant</emphasis> with
-            <classname>T</classname> if <classname>T</classname> is a subtype
-            of <classname>U</classname> (according to the<ulink
-            url="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10">
-            Java Language Specification 3rd edition chapter 4.10
-            Subtyping</ulink>). Note that <classname>T</classname> is a
-            subtype of <classname>U</classname> if <classname>T</classname> =
-            <classname>U</classname>.</para>
-          </listitem>
+        <listitem>
+          <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname> is
+          said to be <emphasis>compliant</emphasis> with
+          <classname>T</classname> if <classname>T</classname> is a subtype of
+          <classname>U</classname> (according to the<ulink
+          url="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10">
+          Java Language Specification 3rd edition chapter 4.10
+          Subtyping</ulink>). Note that <classname>T</classname> is a subtype
+          of <classname>U</classname> if <classname>T</classname> =
+          <classname>U</classname>.</para>
+        </listitem>
 
-          <listitem>
-            <para>If no <classname>ConstraintValidator</classname> compliant
-            with <classname>T</classname> is found amongst the
-            <classname>ConstraintValidator</classname>s listed by the
-            constraint <classname>A</classname>, a
-            <classname>UnexpectedTypeException</classname> is raised.</para>
-          </listitem>
+        <listitem>
+          <para>If no <classname>ConstraintValidator</classname> compliant
+          with <classname>T</classname> is found amongst the
+          <classname>ConstraintValidator</classname>s listed by the constraint
+          <classname>A</classname>, a
+          <classname>UnexpectedTypeException</classname> is raised.</para>
+        </listitem>
 
-          <listitem>
-            <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname>
-            compliant with <classname>T</classname> is considered
-            <emphasis>strictly more specific</emphasis> than a
-            <classname>ConstraintValidator&lt;A, V&gt;</classname> compliant
-            with <classname>T</classname> if <classname>U</classname> is a
-            strict subtype of <classname>V</classname>.
-            <classname>U</classname> is a strict subtype of
-            <classname>V</classname> if <classname>U</classname> is a subtype
-            of <classname>V</classname> and <classname>U</classname> !=
-            <classname>V</classname> (according to the <ulink
-            url="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10">Java
-            Language Specification 3rd edition chapter 4.10
-            Subtyping</ulink>).</para>
-          </listitem>
+        <listitem>
+          <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname>
+          compliant with <classname>T</classname> is considered
+          <emphasis>strictly more specific</emphasis> than a
+          <classname>ConstraintValidator&lt;A, V&gt;</classname> compliant
+          with <classname>T</classname> if <classname>U</classname> is a
+          strict subtype of <classname>V</classname>. <classname>U</classname>
+          is a strict subtype of <classname>V</classname> if
+          <classname>U</classname> is a subtype of <classname>V</classname>
+          and <classname>U</classname> != <classname>V</classname> (according
+          to the <ulink
+          url="http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10">Java
+          Language Specification 3rd edition chapter 4.10
+          Subtyping</ulink>).</para>
+        </listitem>
 
-          <listitem>
-            <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname>
-            compliant with <classname>T</classname> is considered maximally
-            specific if no other <classname>ConstraintValidator&lt;A,
-            V&gt;</classname> compliant with <classname>T</classname> is
-            strictly more specific than <classname>ConstraintValidator&lt;A,
-            U&gt;</classname>.</para>
-          </listitem>
+        <listitem>
+          <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname>
+          compliant with <classname>T</classname> is considered maximally
+          specific if no other <classname>ConstraintValidator&lt;A,
+          V&gt;</classname> compliant with <classname>T</classname> is
+          strictly more specific than <classname>ConstraintValidator&lt;A,
+          U&gt;</classname>.</para>
+        </listitem>
 
-          <listitem>
-            <para>If more than one maximally specific
-            <classname>ConstraintValidator</classname> is found, a
-            <classname>UnexpectedTypeException</classname> is raised.</para>
-          </listitem>
-        </itemizedlist>
+        <listitem>
+          <para>If more than one maximally specific
+          <classname>ConstraintValidator</classname> is found, a
+          <classname>UnexpectedTypeException</classname> is raised.</para>
+        </listitem>
+      </itemizedlist>
 
-        <note>
-          <para>While the Java compiler itself cannot determine if a
-          constraint declaration will lead to a
-          <classname>UnexpectedTypeException</classname>, rules can be
-          statically checked. A tool such as an IDE or a Java 6 annotation
-          processor can apply these rules and prevent compilation in case of
-          ambiguity. The specification encourages Bean Validation providers to
-          provide such a tool to their users.</para>
-        </note>
+      <note>
+        <para>While the Java compiler itself cannot determine if a constraint
+        declaration will lead to a
+        <classname>UnexpectedTypeException</classname>, rules can be
+        statically checked. A tool such as an IDE or a Java 6 annotation
+        processor can apply these rules and prevent compilation in case of
+        ambiguity. The specification encourages Bean Validation providers to
+        provide such a tool to their users.</para>
+      </note>
 
-        <para>Let's see a couple of declarations and their respective
-        <classname>ConstraintValidator</classname> resolution. Assuming the
-        definitions shown in <xref
-        linkend="example-constraintvalidator-resolution" />:</para>
+      <para>Let's see a couple of declarations and their respective
+      <classname>ConstraintValidator</classname> resolution. Assuming the
+      definitions shown in <xref
+      linkend="example-constraintvalidator-resolution" />:</para>
 
-        <example id="example-constraintvalidator-resolution">
-          <title>ConstraintValidator and type resolution</title>
+      <example id="example-constraintvalidator-resolution">
+        <title>ConstraintValidator and type resolution</title>
 
-          <programlisting>[...]
+        <programlisting>[...]
 @Constraint(validatedBy={
     SizeValidatorForCollection.class,
     SizeValidatorForSet.class,
@@ -1667,107 +1645,106 @@ public class SizeValidatorForSet implements ConstraintValidator&lt;Size, Set&gt;
 public class SizeValidatorForSerializable implements ConstraintValidator&lt;Size, Serializable&gt; { ... }
 
 public interface SerializableCollection extends Serializable,  Collection {}</programlisting>
-        </example>
+      </example>
 
-        <para>The resolutions shown in <xref
-        linkend="table-constraintvalidator-resolution" /> occur.</para>
+      <para>The resolutions shown in <xref
+      linkend="table-constraintvalidator-resolution" /> occur.</para>
 
-        <table id="table-constraintvalidator-resolution">
-          <title>Resolution of ConstraintValidator for various constraints
-          declarations</title>
+      <table id="table-constraintvalidator-resolution">
+        <title>Resolution of ConstraintValidator for various constraints
+        declarations</title>
 
-          <tgroup cols="2">
-            <colspec align="center" />
+        <tgroup cols="2">
+          <colspec align="center" />
 
-            <thead>
-              <row>
-                <entry>Declaration</entry>
+          <thead>
+            <row>
+              <entry>Declaration</entry>
 
-                <entry>Resolution</entry>
-              </row>
-            </thead>
+              <entry>Resolution</entry>
+            </row>
+          </thead>
 
-            <tbody>
-              <row>
-                <entry><code>@Size Collection getAddresses() { ...
-                }</code></entry>
+          <tbody>
+            <row>
+              <entry><code>@Size Collection getAddresses() { ...
+              }</code></entry>
 
-                <entry><classname>SizeValidatorForCollection</classname>:
-                direct match</entry>
-              </row>
+              <entry><classname>SizeValidatorForCollection</classname>: direct
+              match</entry>
+            </row>
 
-              <row>
-                <entry><code>@Size Collection&lt;?&gt; getAddresses() { ...
-                }</code></entry>
+            <row>
+              <entry><code>@Size Collection&lt;?&gt; getAddresses() { ...
+              }</code></entry>
 
-                <entry><classname>SizeValidatorForCollection</classname>:
-                <classname>Collection</classname> is a direct supertype of
-                <classname>Collection&lt;?&gt;</classname></entry>
-              </row>
+              <entry><classname>SizeValidatorForCollection</classname>:
+              <classname>Collection</classname> is a direct supertype of
+              <classname>Collection&lt;?&gt;</classname></entry>
+            </row>
 
-              <row>
-                <entry><code>@Size Collection&lt;Address&gt; getAddresses() {
-                ... }</code></entry>
+            <row>
+              <entry><code>@Size Collection&lt;Address&gt; getAddresses() {
+              ... }</code></entry>
 
-                <entry><classname>SizeValidatorForCollection</classname>:
-                <classname>Collection</classname> is a direct supertype of
-                <classname>Collection&lt;Address&gt;</classname></entry>
-              </row>
+              <entry><classname>SizeValidatorForCollection</classname>:
+              <classname>Collection</classname> is a direct supertype of
+              <classname>Collection&lt;Address&gt;</classname></entry>
+            </row>
 
-              <row>
-                <entry><code>@Size Set&lt;Address&gt; getAddresses() { ...
-                }</code></entry>
+            <row>
+              <entry><code>@Size Set&lt;Address&gt; getAddresses() { ...
+              }</code></entry>
 
-                <entry><classname>SizeValidatorForSet</classname>: direct
-                supertype of <classname>Set&lt;Address&gt;</classname></entry>
-              </row>
+              <entry><classname>SizeValidatorForSet</classname>: direct
+              supertype of <classname>Set&lt;Address&gt;</classname></entry>
+            </row>
 
-              <row>
-                <entry><code>@Size SortedSet&lt;Address&gt; getAddresses() {
-                ... }</code></entry>
+            <row>
+              <entry><code>@Size SortedSet&lt;Address&gt; getAddresses() { ...
+              }</code></entry>
 
-                <entry><classname>SizeValidatorForSet</classname>:
-                <classname>Set</classname> is the closest supertype of
-                <classname>SortedSet&lt;Address&gt;</classname></entry>
-              </row>
+              <entry><classname>SizeValidatorForSet</classname>:
+              <classname>Set</classname> is the closest supertype of
+              <classname>SortedSet&lt;Address&gt;</classname></entry>
+            </row>
 
-              <row>
-                <entry><code>@Size SerializableCollection getAddresses() { ...
-                }</code></entry>
+            <row>
+              <entry><code>@Size SerializableCollection getAddresses() { ...
+              }</code></entry>
 
-                <entry><classname>UnexpectedTypeException</classname>:
-                <classname>SerializableCollection</classname> is a subtype of
-                both <classname>Collection</classname> and
-                <classname>Serializable</classname> and neither
-                <classname>Collection</classname> nor
-                <classname>Serializable</classname> are subtypes of each
-                other.</entry>
-              </row>
+              <entry><classname>UnexpectedTypeException</classname>:
+              <classname>SerializableCollection</classname> is a subtype of
+              both <classname>Collection</classname> and
+              <classname>Serializable</classname> and neither
+              <classname>Collection</classname> nor
+              <classname>Serializable</classname> are subtypes of each
+              other.</entry>
+            </row>
 
-              <row>
-                <entry><code>@Size String getName() { ... }</code></entry>
+            <row>
+              <entry><code>@Size String getName() { ... }</code></entry>
 
-                <entry><classname>UnexpectedTypeException</classname>: none of
-                the <classname>ConstraintValidator</classname> types are
-                supertypes of <classname>String</classname>.</entry>
-              </row>
-            </tbody>
-          </tgroup>
-        </table>
-      </section>
+              <entry><classname>UnexpectedTypeException</classname>: none of
+              the <classname>ConstraintValidator</classname> types are
+              supertypes of <classname>String</classname>.</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
     </section>
+  </section>
 
-    <section>
-      <title>Examples</title>
+  <section>
+    <title>Examples</title>
 
-      <para>The first example demonstrates how beans, fields and getters are
-      annotated to express some constraints.</para>
+    <para>The first example demonstrates how beans, fields and getters are
+    annotated to express some constraints.</para>
 
-      <example>
-        <title>Place constraint declarations on the element to
-        validate</title>
+    <example>
+      <title>Place constraint declarations on the element to validate</title>
 
-        <programlisting>@ZipCodeCityCoherenceChecker
+      <programlisting>@ZipCodeCityCoherenceChecker
 public class Address {
     @NotNull @Size(max=30)
     private String addressline1;
@@ -1812,45 +1789,44 @@ public class Address {
         this.city = city;
     }
 }</programlisting>
-      </example>
+    </example>
 
-      <para>During the validation routine execution on an
-      <classname>Address</classname> object,</para>
+    <para>During the validation routine execution on an
+    <classname>Address</classname> object,</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><methodname>addressline1</methodname> field value is passed to
-          the <classname>@NotNull</classname> as well as
-          <classname>@Size</classname> constraint validation
-          implementation.</para>
-        </listitem>
+    <itemizedlist>
+      <listitem>
+        <para><methodname>addressline1</methodname> field value is passed to
+        the <classname>@NotNull</classname> as well as
+        <classname>@Size</classname> constraint validation
+        implementation.</para>
+      </listitem>
 
-        <listitem>
-          <para><methodname>addressline2</methodname> field value is passed to
-          the <classname>@Size</classname> constraint validation
-          implementation.</para>
-        </listitem>
+      <listitem>
+        <para><methodname>addressline2</methodname> field value is passed to
+        the <classname>@Size</classname> constraint validation
+        implementation.</para>
+      </listitem>
 
-        <listitem>
-          <para><methodname>getCity</methodname> value is passed to the
-          <classname>@Size</classname> and <classname>@NotNull</classname>
-          constraint validation implementations</para>
-        </listitem>
+      <listitem>
+        <para><methodname>getCity</methodname> value is passed to the
+        <classname>@Size</classname> and <classname>@NotNull</classname>
+        constraint validation implementations</para>
+      </listitem>
 
-        <listitem>
-          <para><classname>@ZipCodeCoherenceChecker</classname> is a
-          constraint whose validation implementation's
-          <methodname>isValid</methodname> method receives the
-          <classname>Address</classname> object</para>
-        </listitem>
-      </itemizedlist>
+      <listitem>
+        <para><classname>@ZipCodeCoherenceChecker</classname> is a constraint
+        whose validation implementation's <methodname>isValid</methodname>
+        method receives the <classname>Address</classname> object</para>
+      </listitem>
+    </itemizedlist>
 
-      <para>The second example demonstrates object graph validation</para>
+    <para>The second example demonstrates object graph validation</para>
 
-      <example>
-        <title>Define object graph validation</title>
+    <example>
+      <title>Define object graph validation</title>
 
-        <programlisting>public class Country {
+      <programlisting>public class Country {
     @NotNull
     private String name;
     @Size(max=2) private String ISO2Code;
@@ -1934,24 +1910,23 @@ public class Address {
         this.country = country;
     }
 }</programlisting>
-      </example>
+    </example>
 
-      <para>During the validation routine execution on an
-      <classname>Address</classname> object, constraints on
-      <methodname>addressLine1</methodname>,
-      <methodname>addressLine2</methodname>, <methodname>zipCode</methodname>,
-      <classname>getCity</classname> and <methodname>country</methodname> are
-      processed as well as the validation of the
-      <classname>Country</classname> object itself, more specifically
-      <methodname>country.name</methodname> is checked for
-      <classname>@NotNull</classname>, <methodname>ISO2Code</methodname> and
-      <methodname>ISO3Code</methodname> are checked for
-      <classname>@Size</classname>.</para>
+    <para>During the validation routine execution on an
+    <classname>Address</classname> object, constraints on
+    <methodname>addressLine1</methodname>,
+    <methodname>addressLine2</methodname>, <methodname>zipCode</methodname>,
+    <classname>getCity</classname> and <methodname>country</methodname> are
+    processed as well as the validation of the <classname>Country</classname>
+    object itself, more specifically <methodname>country.name</methodname> is
+    checked for <classname>@NotNull</classname>,
+    <methodname>ISO2Code</methodname> and <methodname>ISO3Code</methodname>
+    are checked for <classname>@Size</classname>.</para>
 
-      <para>Assuming that <classname>@NotEmpty</classname> is defined as
-      such</para>
+    <para>Assuming that <classname>@NotEmpty</classname> is defined as
+    such</para>
 
-      <programlisting>package com.acme.constraint;
+    <programlisting>package com.acme.constraint;
 
 @Documented
 @NotNull
@@ -1981,14 +1956,14 @@ public @interface NotEmpty {
     }
 }</programlisting>
 
-      <para>The third example demonstrates superclass, inheritance and
-      composite constraints.</para>
+    <para>The third example demonstrates superclass, inheritance and composite
+    constraints.</para>
 
-      <example>
-        <title>Use inheritance, constraints on superclasses and composite
-        constraints</title>
+    <example>
+      <title>Use inheritance, constraints on superclasses and composite
+      constraints</title>
 
-        <programlisting>public interface Person {
+      <programlisting>public interface Person {
     @NotEmpty
     String getFirstName();
 
@@ -2062,73 +2037,71 @@ public class PreferredGuest extends Customer {
 }
 
 public class CommonGuest extends customer {}</programlisting>
-      </example>
+    </example>
 
-      <para>When validating a <classname>PreferredGuest</classname> the
-      following constraints are processed:</para>
+    <para>When validating a <classname>PreferredGuest</classname> the
+    following constraints are processed:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><classname>@NotEmpty</classname>,
-          <classname>@NotNull</classname> and
-          <classname>@Size(min=1)</classname> on
-          <methodname>firstName</methodname></para>
-        </listitem>
+    <itemizedlist>
+      <listitem>
+        <para><classname>@NotEmpty</classname>,
+        <classname>@NotNull</classname> and
+        <classname>@Size(min=1)</classname> on
+        <methodname>firstName</methodname></para>
+      </listitem>
 
-        <listitem>
-          <para><classname>@NotEmpty</classname>,
-          <classname>@NotNull</classname> and
-          <classname>@Size(min=1)</classname> on
-          <methodname>lastName</methodname></para>
-        </listitem>
+      <listitem>
+        <para><classname>@NotEmpty</classname>,
+        <classname>@NotNull</classname> and
+        <classname>@Size(min=1)</classname> on
+        <methodname>lastName</methodname></para>
+      </listitem>
 
-        <listitem>
-          <para><classname>@NotNull</classname> on
-          <methodname>customerId</methodname>,
-          <classname>@Password</classname> on
-          <methodname>password</methodname></para>
-        </listitem>
+      <listitem>
+        <para><classname>@NotNull</classname> on
+        <methodname>customerId</methodname>, <classname>@Password</classname>
+        on <methodname>password</methodname></para>
+      </listitem>
 
-        <listitem>
-          <para><classname>@CreditCard</classname> on
-          <methodname>guestCreditCardNumber</methodname></para>
-        </listitem>
-      </itemizedlist>
+      <listitem>
+        <para><classname>@CreditCard</classname> on
+        <methodname>guestCreditCardNumber</methodname></para>
+      </listitem>
+    </itemizedlist>
 
-      <para>When validating <classname>CommonGuest</classname>, the following
-      constraints are processed:</para>
+    <para>When validating <classname>CommonGuest</classname>, the following
+    constraints are processed:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><classname>@NotEmpty</classname>,
-          <classname>@NotNull</classname> and
-          <classname>@Size(min=1)</classname> on
-          <methodname>firstName</methodname></para>
-        </listitem>
+    <itemizedlist>
+      <listitem>
+        <para><classname>@NotEmpty</classname>,
+        <classname>@NotNull</classname> and
+        <classname>@Size(min=1)</classname> on
+        <methodname>firstName</methodname></para>
+      </listitem>
 
-        <listitem>
-          <para><classname>@NotEmpty</classname>,
-          <classname>@NotNull</classname> and
-          <classname>@Size(min=1)</classname> on
-          <methodname>lastName</methodname></para>
-        </listitem>
+      <listitem>
+        <para><classname>@NotEmpty</classname>,
+        <classname>@NotNull</classname> and
+        <classname>@Size(min=1)</classname> on
+        <methodname>lastName</methodname></para>
+      </listitem>
 
-        <listitem>
-          <para><classname>@NotNull</classname> on
-          <methodname>customerId</methodname>,
-          <classname>@Password</classname> on
-          <methodname>password</methodname></para>
-        </listitem>
-      </itemizedlist>
+      <listitem>
+        <para><classname>@NotNull</classname> on
+        <methodname>customerId</methodname>, <classname>@Password</classname>
+        on <methodname>password</methodname></para>
+      </listitem>
+    </itemizedlist>
 
-      <para>The fourth example demonstrates the influence of group
-      sequence.</para>
+    <para>The fourth example demonstrates the influence of group
+    sequence.</para>
 
-      <example>
-        <title>Use groups and group sequence to define constraint
-        ordering</title>
+    <example>
+      <title>Use groups and group sequence to define constraint
+      ordering</title>
 
-        <programlisting><emphasis role="bold">@GroupSequence({First.class, Second.class, Last.class})</emphasis>
+      <programlisting><emphasis role="bold">@GroupSequence({First.class, Second.class, Last.class})</emphasis>
 public interface Complete {}
 
 public class Book {
@@ -2201,52 +2174,52 @@ public class Author {
         this.company = company;
     }
 }</programlisting>
-      </example>
+    </example>
 
-      <para>Assuming the validation of the <classname>Complete</classname>
-      group on the following book instance:</para>
+    <para>Assuming the validation of the <classname>Complete</classname> group
+    on the following book instance:</para>
 
-      <programlisting>Author author = new Author();
+    <programlisting>Author author = new Author();
 author.setLastName( "Baudelaire" );
 author.setFirstName( "" );
 Book book = new Book();
 book.setAuthor( author );</programlisting>
 
-      <para>the validation routine will return the following failure:</para>
+    <para>the validation routine will return the following failure:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><classname>@NotNull</classname> failure (from
-          <classname>@NotEmpty</classname>) on the <literal>title</literal>
-          field</para>
-        </listitem>
-      </itemizedlist>
+    <itemizedlist>
+      <listitem>
+        <para><classname>@NotNull</classname> failure (from
+        <classname>@NotEmpty</classname>) on the <literal>title</literal>
+        field</para>
+      </listitem>
+    </itemizedlist>
 
-      <para>As both <methodname>title</methodname> and
-      <methodname>author.lastname</methodname> are checked as part of the
-      <literal><classname>First</classname></literal> group. If the instance
-      is updated:</para>
+    <para>As both <methodname>title</methodname> and
+    <methodname>author.lastname</methodname> are checked as part of the
+    <literal><classname>First</classname></literal> group. If the instance is
+    updated:</para>
 
-      <programlisting>book.setTitle( "Les fleurs du mal" );
+    <programlisting>book.setTitle( "Les fleurs du mal" );
 author.setCompany("Some random publisher with a very very very long name");</programlisting>
 
-      <para>the validation routine will return the following failures:</para>
+    <para>the validation routine will return the following failures:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><methodname>author.firstName</methodname> fails to pass the
-          <classname>@Size(min=1)</classname> (from
-          <classname>@NotEmpty</classname>) constraint</para>
-        </listitem>
+    <itemizedlist>
+      <listitem>
+        <para><methodname>author.firstName</methodname> fails to pass the
+        <classname>@Size(min=1)</classname> (from
+        <classname>@NotEmpty</classname>) constraint</para>
+      </listitem>
 
-        <listitem>
-          <para><methodname>author.company</methodname> fails to pass the
-          <classname>@Size</classname> constraint</para>
-        </listitem>
-      </itemizedlist>
+      <listitem>
+        <para><methodname>author.company</methodname> fails to pass the
+        <classname>@Size</classname> constraint</para>
+      </listitem>
+    </itemizedlist>
 
-      <para>As the <classname>First</classname> and
-      <classname>Second</classname> groups pass without failure, the
-      <classname>Last</classname> group is going through validation.</para>
-    </section>
-  </chapter>
+    <para>As the <classname>First</classname> and
+    <classname>Second</classname> groups pass without failure, the
+    <classname>Last</classname> group is going through validation.</para>
+  </section>
+</chapter>
