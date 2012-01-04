@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../global.ent">
+%BOOK_ENTITIES;
+]>
+<appendix id="appendix-ee">
+    <title>Proposal for Java EE integration</title>
+
+    <para>This proposal is being discussed with the EE expert group. It
+    proposes a way to smoothly integrates Bean Validation to the platform.
+    This proposition is the result of the work done on JSF and JPA
+    integrations.</para>
+
+    <para>Java Persistence and Java Server Faces have deep integration
+    proposals with Bean Validation. Java EE Connector Architecture uses Bean
+    Validation to validate particular artifacts.</para>
+
+    <para></para>
+
+    <para></para>
+
+    <para>TODO: This section is outdated. See the latest version in the Java
+    EE 6 specification.</para>
+
+    <para><classname>Validator</classname> and
+    <classname>ValidatorFactory</classname> are very good candidates for
+    injectable Java EE resources (<classname>ValidatorFactory</classname> is
+    responsible for providing <classname>Validator</classname> instances which
+    executes the validation logic). To tie everything together in a unified
+    way for the Java EE application developer, some integration at the Java EE
+    level would be beneficial.</para>
+
+    <para>A <classname>ValidatorFactory</classname> is built by the EE
+    container and exposed to applications as well as services like JPA, JSF
+    and Java EE Connectors (this imply a
+    <classname>ValidatorFactory</classname> must be built and ready before
+    these services). While not required, it is recommended to cache and share
+    the same <classname>ValidatorFactory</classname> for a given deployment
+    unit. <emphasis>Should we mandate it?</emphasis>.</para>
+
+    <para>The container passes the <classname>ValidatorFactory</classname>
+    instance to the JPA provider via the configuration Map of
+    <code>PersistenceProvider.createContainerEntityManagerFactory(PersistenceUnitInfo,
+    Map)</code>. The property name is
+    <literal>javax.persistence.validation.factory</literal>
+    (<literal>Persistence.VALIDATOR_FACTORY</literal>).</para>
+
+    <para>The container places the <classname>ValidatorFactory</classname>
+    instance under the following JNDI name. JSF 2 implementations are required
+    to look in this entry for any <classname>ValidatorFactory</classname> and
+    use it.</para>
+
+    <para>In addition, <classname>Validator</classname> and
+    <classname>ValidatorFactory</classname> should be considered as Java EE
+    resources: injection aware services should allow injection of
+    <classname>Validator</classname> instances as well as
+    <classname>ValidatorFactory</classname> instances.
+    <classname>@Resource</classname> is used for this. If
+    <classname>Validator</classname> instances are injected, the default
+    validation context is used. In other words,
+    <classname>Validator</classname> are provided by
+    <code>validatorFactory.getValidator()</code>. The factory is available for
+    the lifetime of the deployment.</para>
+  </appendix>
