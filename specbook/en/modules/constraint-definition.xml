@@ -883,9 +883,10 @@ public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? exte
       version of the specification will likely allow it.</para>
     </note>
 
-    <para>The life cycle of a constraint validation implementation instance is
-    undefined. Compliant implementations are allowed to cache
-    <classname>ConstraintValidator</classname> instances retrieved from the
+    <para revisionflag="changed">The life cycle of a constraint validation
+    implementation instance is undefined. Bean Validation providers are
+    allowed to cache <classname>ConstraintValidator</classname> instances
+    retrieved from the
     <classname>ConstraintValidatorFactory</classname>.</para>
 
     <!--EBE should we make explicit that instances cannot be shared if the annotations attributes are not the same?-->
@@ -1323,7 +1324,17 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
     <para>Constraint validation implementation instances are created by a
     <classname>ConstraintValidatorFactory</classname>.</para>
 
-    <programlisting>/**
+    <para revisionflag="added">The life cycle of
+    <classname>ConstraintValidator</classname> instances is fully dependent of
+    the Bean Validation provider and piloted by the
+    <classname>ConstraintValidatorFactory</classname> methods. Therefore,
+    <classname>ConstraintValidatorFactory</classname> implementations (such as
+    dependency injection frameworks) must consider these instances as
+    belonging to a dependent scope. Bean Validation Provider must release each
+    instance retrieved. This is typically done when the
+    <classname>ValidatorFactory</classname> is being closed.</para>
+
+    <programlisting revisionflag="changed">/**
  * Instantiate a &lt;code&gt;ConstraintValidator&lt;/code&gt; instance based off its class.
  * The &lt;code&gt;ConstraintValidatorFactory&lt;/code&gt; is &lt;b&gt;not&lt;/b&gt; responsible
  * for calling {@link ConstraintValidator#initialize(java.lang.annotation.Annotation)}.
@@ -1337,21 +1348,35 @@ public interface ConstraintValidatorFactory {
     /**
      * @param key The class of the constraint validator to instantiate.
      *
-     * @return A constraint validator instance of the specified class.
+     * @return A new constraint validator instance of the specified class.
      */
     &lt;T extends ConstraintValidator&lt;?,?&gt;&gt; T getInstance(Class&lt;T&gt; key);
+    
+    /**
+     * Signal ConstraintValidatorFactory that the instance is no longer
+     * being used by the Bean Validation provider
+     *
+     * @param instance validator being released
+     */
+    void releaseInstance(ConstraintValidator&lt;?,?&gt; instance);
 }</programlisting>
 
-    <para>The default <classname>ConstraintValidatorFactory</classname>
-    provided by the Bean Validation provider implementation uses the public
-    no-arg constructor of the <classname>ConstraintValidator</classname>
-    class. A custom <classname>ConstraintValidatorFactory</classname> can be
-    provided; for example it may benefit from dependency injection control in
-    constraint implementations. Any constraint implementation relying on
+    <para revisionflag="changed">The default
+    <classname>ConstraintValidatorFactory</classname> provided by the Bean
+    Validation provider implementation uses the public no-arg constructor of
+    the <classname>ConstraintValidator</classname> class. A custom
+    <classname>ConstraintValidatorFactory</classname> can be provided; for
+    example it may benefit from dependency injection control in constraint
+    implementations (see <xref
+    linkend="bootstrapping-usageandcontainerexpectation"/>). Any constraint
+    implementation relying on
     <classname>ConstraintValidatorFactory</classname> behaviors specific to an
     implementation (dependency injection, no no-arg constructor and so on) are
-    not considered portable, hence great care should be given before walking
-    that path.</para>
+    not portable, hence great care should be given before walking that path.
+    Make sure to configure the Bean Validation provider to honor any specific
+    needs your <classname>ConstraintValidator</classname> have. As constraint
+    designer and writer, make sure to document any specific non compliant
+    requirements.</para>
 
     <para><classname>ConstraintValidatorFactory</classname> should not cache
     instances as the state of each instance can be altered in the
