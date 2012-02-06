@@ -1434,10 +1434,13 @@ Validator validator = factory.getValidator();</programlisting>
       <example>
         <title>Simple Bean Validation bootstrap sequence</title>
 
-        <programlisting>ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        <programlisting revisionflag="changed">ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 
 //cache the factory somewhere
-Validator validator = factory.getValidator();</programlisting>
+Validator validator = factory.getValidator();
+
+//when the application shuts down, close ValidatorFactory
+factory.close()</programlisting>
       </example>
 
       <para>The <classname>ValidatorFactory</classname> object is thread-safe.
@@ -1453,7 +1456,7 @@ Validator validator = factory.getValidator();</programlisting>
         <title>Customize message resolution, traversable resolver and
         constraint Validator factory implementation</title>
 
-        <programlisting>//some customization from a container
+        <programlisting revisionflag="changed">//some customization from a container
 ValidatorFactory factory = Validation
        .byDefaultProvider().configure()
           .messageInterpolator( new ContainerMessageInterpolator() )
@@ -1462,7 +1465,10 @@ ValidatorFactory factory = Validation
           .buildValidatorFactory();
 
 //cache the factory somewhere
-Validator validator = factory.getValidator();</programlisting>
+Validator validator = factory.getValidator();
+
+//when the application shuts down, close ValidatorFactory
+factory.close()</programlisting>
       </example>
 
       <para>The third example shows how to bootstrap Bean Validation in an
@@ -1475,7 +1481,7 @@ Validator validator = factory.getValidator();</programlisting>
         <title>Customize the Bean Validation provider resolution
         mechanism</title>
 
-        <programlisting>//osgi environment
+        <programlisting revisionflag="changed">//osgi environment
 ValidatorFactory factory = Validation
        .byDefaultProvider()
           .providerResolver( new OSGiServiceDiscoverer() )
@@ -1483,7 +1489,10 @@ ValidatorFactory factory = Validation
              .buildValidatorFactory();
 
 //cache the factory somewhere
-Validator validator = factory.getValidator();</programlisting>
+Validator validator = factory.getValidator();
+
+//when the bundle shuts down, close ValidatorFactory
+factory.close()</programlisting>
       </example>
 
       <para>The next example shows how a client can choose a specific Bean
@@ -1563,14 +1572,17 @@ Validator localizedValidator =
     <section>
       <title>ValidatorFactory</title>
 
-      <para><classname>ValidatorFactory</classname> objects build and provide
-      initialized instances of <classname>Validator</classname> to Bean
-      Validation clients. Each <classname>Validator</classname> instance is
-      configured for a given context (message interpolator, traversable
-      resolver). Clients should cache <classname>ValidatorFactory</classname>
-      objects and reuse them for optimal performances. The API is designed to
-      allow implementors to share constraint metadata in
-      <classname>ValidatorFactory</classname>.</para>
+      <para revisionflag="changed"><classname>ValidatorFactory</classname>
+      objects build and provide initialized instances of
+      <classname>Validator</classname> to Bean Validation clients. Each
+      <classname>Validator</classname> instance is configured for a given
+      context (message interpolator, traversable resolver). Clients should
+      cache <classname>ValidatorFactory</classname> objects and reuse them for
+      optimal performances. The API is designed to allow implementors to share
+      constraint metadata in <classname>ValidatorFactory</classname>.
+      <classname>ValidatorFactory</classname> instances must be closed (by
+      calling the <methodname>close()</methodname> method) by its creator when
+      no longer in use.</para>
 
       <para><classname>ValidatorFactory</classname> implementations must be
       thread-safe. <classname>ValidatorFactory</classname> implementations can
@@ -1579,7 +1591,7 @@ Validator localizedValidator =
       <example>
         <title>ValidatorFactory interface</title>
 
-        <programlisting>/**
+        <programlisting revisionflag="changed">/**
  * Factory returning initialized &lt;code&gt;Validator&lt;/code&gt; instances.
  * Implementations are thread-safe
  * This object is typically cached and reused.
@@ -1648,6 +1660,16 @@ public interface ValidatorFactory {
      *         support the call.
      */
     public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+
+    /**
+     * Close the &lt;code&gt;ValidatorFactory&lt;/code&gt; instance.
+     *
+     * Execution of
+     * - methods of this &lt;code&gt;ValidatorFactory&lt;/code&gt; instance
+     * - &lt;code&gt;Validator&lt;/code&gt; instances created by this &lt;code&gt;ValidatorFactory&lt;/code&gt; instance
+     * are not allowed after the &lt;code&gt;ValidatorFactory&lt;/code&gt; instance is closed.
+     */
+    public void close();
 }</programlisting>
       </example>
 
@@ -1658,6 +1680,12 @@ public interface ValidatorFactory {
       objects of a given type specific to a Bean Validation provider typically
       as a complement to the <classname>ValidatorFactory</classname> contract.
       Using this method makes your code non portable.</para>
+
+      <para revisionflag="added"><methodname>close</methodname> closes the
+      <classname>ValidatorFactory</classname> instance which becomes
+      unavailable and should be immediately discarded. This is also true of
+      all the <classname>Validator</classname> instances it has
+      spawned.</para>
 
       <example>
         <title>Using unwrap to access a provider specific contract</title>
@@ -3096,13 +3124,19 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       <title>Usage</title>
 
       <para>The Bean Validation bootstrap API can be used directly by the
-      application, through the use of a container or by framework in need for
+      application, through the use of a container or by frameworks in need for
       validation. In all cases, the following rules apply:</para>
 
       <itemizedlist>
         <listitem>
           <para><classname>ValidatorFactory</classname> is a thread-safe
           object that should be built once per deployment unit</para>
+        </listitem>
+
+        <listitem>
+          <para revisionflag="added"><classname>ValidatorFactory</classname>
+          should be closed after it is no longer needed (eg when the unit is
+          undeployed or the server stopped).</para>
         </listitem>
 
         <listitem>
