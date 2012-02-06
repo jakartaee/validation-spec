@@ -3120,8 +3120,8 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       linkend="xml-config-xsd"/>.</para>
     </section>
 
-    <section>
-      <title>Usage</title>
+    <section id="bootstrapping-usageandcontainerexpectation">
+      <title>Usage and container requirements</title>
 
       <para>The Bean Validation bootstrap API can be used directly by the
       application, through the use of a container or by frameworks in need for
@@ -3148,12 +3148,77 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
         </listitem>
       </itemizedlist>
 
-      <para>Containers such as Java EE, dependency injection frameworks,
-      component frameworks are encouraged to propose access to
-      <classname>ValidatorFactory</classname> and
-      <classname>Validator</classname> objects in a way that respects the
-      previous rules. For example, injection of
-      <classname>Validator</classname> should be possible.</para>
+      <para revisionflag="added">Containers controlling the life cycle of
+      objects such as Java EE, dependency injection frameworks, component
+      frameworks should:</para>
+
+      <itemizedlist revisionflag="added">
+        <listitem>
+          <para>build and bootstrap the
+          <classname>ValidatorFactory</classname> instance for an
+          application</para>
+        </listitem>
+
+        <listitem>
+          <para>provide access to the <classname>ValidatorFactory</classname>
+          instance as well as <classname>Validator</classname> instances in
+          their default configuration. This should be done in the paradigm of
+          the container: for example, such instances would be injectable in
+          other objects via a dependency injection framework.</para>
+        </listitem>
+
+        <listitem>
+          <para>if no custom <classname>ConstraintValidatorFactory</classname>
+          is requested by the user, configure
+          <classname>ValidatorFactory</classname> with a custom
+          <classname>ConstraintValidatorFactory</classname> instance that
+          returns managed <classname>ConstraintValidator</classname>
+          instances. The scope of <classname>ConstraintValidator</classname>
+          instances is still fully controlled by Bean Validation provider as
+          described in <xref
+          linkend="constraintsdefinitionimplementation-constraintfactory"/>
+          but as managed beans can receive expected services like injection of
+          other objects.</para>
+        </listitem>
+
+        <listitem>
+          <para>if a <classname>ConstraintValidatorFactory</classname>,
+          <classname>MessageInterpolator</classname> or
+          <classname>TraversableResovler</classname> class name is defined in
+          the XML deployment descriptor, configure
+          <classname>ValidatorFactory</classname> with a managed instance of
+          the requested class. Services provided by the container (like
+          dependency injection) should thus be available to this instance.
+          </para>
+        </listitem>
+      </itemizedlist>
+
+      <para revisionflag="added">A user is free to explicitly use the
+      bootstrap API to customize the <classname>ValidatorFactory</classname>
+      as needed.</para>
+
+      <note revisionflag="added">
+        <para>Containers are not forced to follow these rules but each non
+        compliance should be carefully weighted and customers should be
+        warned. With great power comes great responsibility.</para>
+      </note>
+
+      <important revisionflag="added">
+        <title>Questions to the readers and expert group</title>
+
+        <para>Should we ask containers to provide a way to customize the
+        <classname>ValidatorFactory</classname> creation process for example
+        by allowing a user to redefine the
+        <classname>MessageInterpolator</classname> (and use a managed object).
+        In CDI that would be a (qualified?) provider.</para>
+
+        <para>Likewise, should we allow for the injection of the Bean
+        Validation default implementations for
+        <classname>MessageInterpolator</classname>,
+        <classname>TraversableResolver</classname> and
+        <classname>ConstraintValidatorFactory</classname>? Should we propose
+        qualifiers?</para>
+      </important>
     </section>
   </section>
 </chapter>
