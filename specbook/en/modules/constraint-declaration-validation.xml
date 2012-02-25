@@ -915,6 +915,555 @@ public class Order implements Auditable {
     </section>
   </section>
 
+  <section>
+    <title>Method-level constraints</title>
+
+    <note>
+      <para>In the following, the term "method-level constraint" refers to
+      constraints declared on methods as well as constructors.</para>
+    </note>
+
+    <para>Method constraints are defined by adding constraint annotations to
+    method or constructor parameters (parameter constraints) or methods
+    (return value constraints). As with bean constraints, this can happen
+    using either actual Java annotations or using an XML constraint mapping
+    file (see ...) <remark>TODO: Add link</remark>. BV providers are free to
+    provide additional means of defining method constraints such as an
+    API-based aproach.</para>
+
+    <section>
+      <title>Requirements on methods to be validated</title>
+
+      <para>Methods which shall be annotated with parameter or return value
+      constraints must be non-static. No other restrictions exist from the
+      perspective of this specification, however it is possible that
+      technologies integrating with method validation impose further
+      restrictions to methods to which a validation shall be applied. For
+      instance a given integration technology might support only the
+      validation of methods with <methodname>public</methodname>
+      visibility.</para>
+    </section>
+
+    <section>
+      <title>Defining parameter constraints</title>
+
+      <para>Parameter constraints are defined by putting constraint
+      annotations to method or constructor parameters.</para>
+
+      <example>
+        <title>Declaring parameter constraints</title>
+
+        <programlisting>public class OrderService {
+
+    public OrderService(@NotNull CreditCardProcessor creditCardProcessor) {
+        //...
+    }
+
+    public void placeOrder(@NotNull @Size(min=3, max=20) String customerCode, @NotNull Item item, @Min(1) int quantity) {
+        //...
+    }
+}</programlisting>
+      </example>
+
+      <para>Using constraint annotations the following preconditions are
+      defined which must be satisfied in order to legally invoke the methods
+      of the <classname>OrderService</classname>:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>The <classname>CreditCardProcessor</classname> passed to the
+          constructor must not be null.</para>
+        </listitem>
+
+        <listitem>
+          <para>The customer code passed to the
+          <methodname>placeOrder()</methodname> method must not be null and
+          must be between 3 and 20 characters long.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <classname>Item</classname> passed to the
+          <methodname>placeOrder()</methodname> method must not be
+          null.</para>
+        </listitem>
+
+        <listitem>
+          <para>The quantity value passed to the
+          <methodname>placeOrder()</methodname> method must be 1 at
+          least.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Note that declaring these constraints does not automatically cause
+      their validation when the concerned methods are invoked. It's the
+      responsibility of an integration layer to trigger the validation of the
+      constraints using a method interceptor, dynamic proxy or similar. See
+      chapter ... for more details. <remark>TODO: Add link</remark></para>
+
+      <tip>
+        <para>In order to use constraint annotations for method or constructor
+        parameters, their element type must be
+        <varname>ELEMENT_TYPE.PARAMETER</varname>. In order to use constraint
+        annotations for the return values of methods or constructors (see
+        following sections), their element type must be
+        <varname>ELEMENT_TYPE.METHOD</varname> respectively
+        <varname>ELEMENT_TYPE.CONSTRUCTOR</varname>. All built-in constraints
+        support these element types and it's considered a best practice to do
+        the same for custom constraints.</para>
+      </tip>
+
+      <section>
+        <title>Cross-parameter constraints</title>
+
+        <para><remark>TODO: Chose approaches from
+        http://beanvalidation.org/proposals/BVAL-241/#cross_parameter, likely
+        a combined approach of options #2 and #3</remark></para>
+      </section>
+
+      <section>
+        <title>Naming parameters</title>
+
+        <para>In case the validation of a parameter constraint fails the
+        concerned parameter needs to be identified in the resulting
+        <classname>MethodConstraintViolation</classname> (see ...)
+        <remark>TODO: Add link</remark>. As of version 7, Java doesn't provide
+        a portable way to retrieve parameter names. Bean Validation therefore
+        defines the
+        <classname>javax.validation.ParameterNameProvider</classname> API to
+        which the retrieval of parameter names is delegated:</para>
+
+        <programlisting>/**
+ * &lt;p&gt;
+ * Provides names for method and constructor parameters.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Used by the Bean Validation runtime when creating constraint violation
+ * objects for violated method-level constraints. The default implementation
+ * will return names in the form &lt;code&gt;arg&amp;lt;PARAMETER_INDEX&amp;gt;&lt;/code&gt; where
+ * &lt;code&gt;PARAMETER_INDEX&lt;/code&gt; starts at 0 for the first parameter, e.g.
+ * &lt;code&gt;arg0&lt;/code&gt;, &lt;code&gt;arg1&lt;/code&gt; etc.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Implementations must be thread-safe.
+ * &lt;/p&gt;
+ *
+ * @author Gunnar Morling
+ *
+ */
+public interface ParameterNameProvider {
+
+    /**
+     * Returns the names of the parameters of the given constructor.
+     *
+     * @param constructor
+     *            The constructor for which the parameter names shall be
+     *            retrieved. Never null.
+     *
+     * @return An array with the names of the parameters of the given
+     *         constructor. May be empty but never null.
+     *
+     * @throws ValidationException
+     *             In case an unexpected problem occurred during retrieval of
+     *             the parameter names.
+     */
+    String[] getParameterNames(Constructor&lt;?&gt; constructor);
+
+    /**
+     * Returns the names of the parameters of the given method.
+     *
+     * @param method
+     *            The method for which the parameter names shall be retrieved.
+     *            Never null.
+     *
+     * @return An array with the names of the parameters of the given method.
+     *         May be empty but never null.
+     *
+     * @throws ValidationException
+     *             In case an unexpected problem occurred during retrieval of
+     *             the parameter names.
+     */
+    String[] getParameterNames(Method method);
+}</programlisting>
+
+        <para>A conforming Bean Validation implementation provides a default
+        <classname>ParameterNameProvider</classname> implementation which
+        returns parameter names in the form
+        <varname>arg&lt;PARAMETER_INDEX&gt;</varname>, where
+        <varname>PARAMETER_INDEX</varname> starts at 0 for the first
+        parameter, e.g. <varname>arg0</varname>, <varname>arg1</varname>
+        etc.</para>
+
+        <para>Bean Validation providers and integrators are free to provide
+        additional implementations (e.g. based on annotations specifying
+        parameter names, debug symbols etc.). If a user wishes to use another
+        parameter name provider than the default implementation, she may
+        specify the provider to use with help of the bootstrap API (see ...)
+        or the XML configuration (see ...).</para>
+
+        <para><remark>TODO: Add links. Add options to bootstrap API and XML
+        schema.</remark></para>
+      </section>
+    </section>
+
+    <section>
+      <title>Defining return value constraints</title>
+
+      <para>Return value constraints are defined by putting constraint
+      annotations directly to a method or constructor.</para>
+
+      <example>
+        <title>Declaring return value constraints</title>
+
+        <programlisting>public class OrderService {
+
+    private CreditCardProcessor creditCardProcessor;
+
+    @ValidOnlineOrderService
+    public OrderService(OnlineCreditCardProcessor creditCardProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+    }
+
+    @ValidBatchOrderService
+    public OrderService(BatchCreditCardProcessor creditCardProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+    }
+
+    @NotNull
+    @Size(min=1)
+    public Set&lt;CreditCardProcessor&gt; getCreditCardProcessors() { ... }
+
+    @NotNull
+    @Future
+    public Date getNextAvailableDeliveryDate() { ... }
+}</programlisting>
+      </example>
+
+      <para>Here the following postconditions are defined which are guaranteed
+      to the caller of the methods and constructors of the
+      <classname>OrderService</classname> class:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>The newly created <classname>OrderService</classname> object
+          returned by the first constructor satisfies the conditions of the
+          custom <classname>@ValidOnlineOrderService</classname>
+          constraint.</para>
+        </listitem>
+
+        <listitem>
+          <para>The newly created <classname>OrderService</classname> object
+          returned by the second constructor satisfiesthe conditions of the
+          custom <classname>@ValidBatchOrderService</classname>
+          constraint.</para>
+        </listitem>
+
+        <listitem>
+          <para>The set of <classname>CreditCardProcessor</classname> objects
+          returned by <methodname>getCreditCardProcessors()</methodname> will
+          neither be null nor empty.</para>
+        </listitem>
+
+        <listitem>
+          <para>The <classname>Date</classname> object returned by
+          <methodname>getNextAvailableDeliveryDate()</methodname> will not be
+          null and be in the future.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>As with parameter constraints, these return value constraints are
+      not per-se validated upon method invocation, but instead an integration
+      layer invoking the validation is required.</para>
+    </section>
+
+    <section>
+      <title>Marking parameters and return values for cascaded
+      validation</title>
+
+      <para>Similar to normal bean validation, the @Valid annotation can be
+      used to declare that a cascaded validation of given method parameters or
+      return values shall be performed by the Bean Validation provider.
+      Generally the same rules as for standard object graph validation (see
+      <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
+      apply, in particular</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>null arguments and return values are ignored</para>
+        </listitem>
+
+        <listitem>
+          <para>The validation is recursive; that is, if validated parameter
+          or return value objects have references marked with @Valid
+          themselves, these references will also be validated</para>
+        </listitem>
+
+        <listitem>
+          <para>Bean Validation providers must guarantee the prevention of
+          infinite loops during cascaded validation</para>
+        </listitem>
+      </itemizedlist>
+
+      <example>
+        <title>Marking parameters and return values for cascaded
+        validation</title>
+
+        <programlisting>public class OrderService {
+
+    @NotNull @Valid
+    private CreditCardProcessor creditCardProcessor;
+
+    @Valid
+    public OrderService(@NotNull @Valid CreditCardProcessor creditCardProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+    }
+
+    @NotNull @Valid
+    public Order getOrderByPk(@NotNull @Valid OrderPK orderPk) { ... }
+
+    @NotNull @Valid
+    public Set&lt;Order&gt; getOrdersByCustomer(@NotNull @Valid CustomerPK customerPk) { ... }
+}</programlisting>
+      </example>
+
+      <para>Here the following recursive validations will happen when
+      validating the methods of the <classname>OrderService</classname>
+      class:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>Validation of the constraints on the object passed for the
+          <varname>creditCardProcessor</varname> parameter of the
+          constructor</para>
+        </listitem>
+
+        <listitem>
+          <para>Validation of the constraints on the newly created
+          <classname>OrderService</classname> instance returned by the
+          constructor, i.e. the <classname>@NotNull</classname> constraint on
+          the field <varname>creditCardProcessor</varname> and the constraints
+          on the referenced <classname>CreditCardProcessor</classname>
+          instance (as the field is annotated with
+          <classname>@Valid</classname>).</para>
+        </listitem>
+
+        <listitem>
+          <para>Validation of the constraints on the object passed for the
+          <varname>orderPk</varname> parameter and the returned
+          <classname>Order</classname> object of the
+          <methodname>getOrderByPk()</methodname> method</para>
+        </listitem>
+
+        <listitem>
+          <para>Validation of the constraints on the object passed for the
+          <varname>customerPk</varname> parameter and the constraints on each
+          object contained within the returned
+          <varname>Set&lt;Order&gt;</varname> of the
+          <methodname>getOrdersByCustomer()</methodname> method</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Again, solely marking parameters and return values for cascaded
+      validation does not trigger the actual validation.</para>
+    </section>
+
+    <section>
+      <title>Method-level constraints in inheritance hierarchies</title>
+
+      <para>When defining method-level constraints within inheritance
+      hierarchies (that is, class inheritance by extending base classes and
+      interface inheritance by implementing or extending interfaces) one has
+      to obey the <ulink
+      url="http://en.wikipedia.org/wiki/Liskov_substitution_principle">Liskov
+      substitution</ulink> principle which mandates that</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>a method's preconditions (as represented by parameter
+          constraints) may not be strengthened in sub types</para>
+        </listitem>
+
+        <listitem>
+          <para>a method's postconditions (as represented by return value
+          constraints) may not be weakened in sub types</para>
+        </listitem>
+      </itemizedlist>
+
+      <tip>
+        <para>Very informally speaking, the Liskov substituation principle
+        says that where a given type T is used, it should be possible to
+        replace T with a sub-type S of T ("Behavioral subtyping"). If S
+        overrides/implements a method from T and S would strengthen the
+        method's preconditions (e.g. by adding parameter constraints) this
+        principle would be violated as client code working correctly against T
+        might fail when working against S. Also if S overrides/implements a
+        method from T and S weakens the method's postconditions this principle
+        would be violated. However S may strengthen the method's
+        postconditions (by adding return value constraints), as client code
+        working against T still will work against S.</para>
+      </tip>
+
+      <para>Therefore the following rules with respect to the definition of
+      method level constraints in inheritance hierarchies apply:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>In sub types (be it sub classes/interfaces or interface
+          implementations) no parameter constraints must be declared on
+          overridden or implemented methods, nor may parameters be marked for
+          cascaded validation (since this would pose a strengthening of
+          preconditions to be fulfilled by the caller).</para>
+        </listitem>
+
+        <listitem>
+          <para>If a sub type overrides/implements a method originally defined
+          in several parallel types of the hierarchy (e.g. two interfaces not
+          extending each other, or a class and an interface not implemented by
+          said class) no parameter constraints may be declared for that method
+          at all. This again is to avoid an unexpected strengethening of
+          preconditions to be fulfilled by the caller.</para>
+        </listitem>
+
+        <listitem>
+          <para>In sub types (be it sub classes/interfaces or interface
+          implementations) return value constraints may be declared on
+          overridden or implemented methods and the return value may be marked
+          for cascaded validation. Upon validation, all return value
+          constraints of the method in question are validated, wherever they
+          are declared in the hierarchy (since this only poses possibly a
+          strengthening but no weakening of the method's postconditions
+          guaranteed to the caller).</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>A conforming Bean Validation provider must throw a
+      <classname>ConstraintDefinitionException</classname> when discovering
+      that any of these rules are violated.</para>
+
+      <section>
+        <title>Examples</title>
+
+        <para>This sections provides some examples of illegal constraint
+        definitions which violate the rules stated above in one way or
+        another.</para>
+
+        <example>
+          <title>Illegally declared parameter constraints on interface
+          implementation</title>
+
+          <programlisting>public interface OrderService {
+
+    void placeOrder(String customerCode, Item item, int quantity);
+
+}
+
+public class SimpleOrderService implements OrderService {
+
+    @Override
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity) { ... }
+
+}</programlisting>
+        </example>
+
+        <para>The constraints in <classname>SimpleOrderService</classname> are
+        illegal, as they strengthen the preconditions of the
+        <methodname>placeOrder()</methodname> method as constituted by the
+        interface <classname>OrderService</classname>.</para>
+
+        <para><example>
+            <title>Illegally declared parameter constraints on sub
+            class</title>
+
+            <programlisting>public class OrderService {
+
+    void placeOrder(String customerCode, Item item, int quantity) { ... }
+
+}
+
+public class SimpleOrderService extends OrderService {
+
+    @Override
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity) { ... }
+
+}</programlisting>
+          </example></para>
+
+        <para>The constraints in <classname>SimpleOrderService</classname> are
+        illegal, as they strengthen the preconditions of the
+        <methodname>placeOrder()</methodname> method as constituted by the
+        super class <classname>OrderService</classname>.</para>
+
+        <para><example id="illegal_constraints_in_parallel_types">
+            <title>Illegally declared parameter constraints on parallel
+            types</title>
+
+            <programlisting>public interface OrderService {
+
+    void placeOrder(String customerCode, Item item, int quantity);
+
+}
+
+public interface OrderPlacementService {
+
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity);
+
+}
+
+public class SimpleOrderService implements OrderService, OrderPlacementService {
+
+    @Override
+    public void placeOrder(String customerCode, Item item, int quantity) { ... }
+
+}</programlisting>
+          </example>Here the class <classname>SimpleOrderService</classname>
+        implements the interfaces <classname>OrderService</classname> and
+        <classname>OrderPlacementService</classname>, which themselves are
+        unrelated to each other but both define a method
+        <methodname>placeOrder()</methodname> with an identical signature.
+        This hierarchy is illegal with respect to the parameter constraints as
+        a client of <classname>SimpleOrderService</classname> would have to
+        fulfill the constraints defined on the interface
+        <classname>OrderPlacementService</classname> also if she only has a
+        reference of the static type
+        <classname>OrderService</classname>.</para>
+
+        <para><example>
+            <title>Correctly declared return value constraints on sub
+            class</title>
+
+            <programlisting>public class OrderService {
+
+    Order placeOrder(String customerCode, Item item, int quantity) { ... }
+
+}
+
+public class SimpleOrderService extends OrderService {
+
+    @Override
+    @NotNull
+    @Valid
+    public Order placeOrder(String customerCode, Item item, int quantity) { ... }
+
+}</programlisting>
+          </example>The return value constraints in
+        <classname>DefaultOrderService</classname> are legal, as they
+        strengthen the postconditions of the
+        <methodname>placeOrder()</methodname> method as constituted by the
+        super class <classname>OrderService</classname> but don't weaken
+        them.</para>
+      </section>
+    </section>
+  </section>
+
   <section id="constraintdeclarationvalidationprocess-validationroutine">
     <title>Validation routine</title>
 
