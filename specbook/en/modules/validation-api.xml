@@ -1544,6 +1544,132 @@ Validator validator = factory.getValidator();</programlisting>
     </section>
   </section>
 
+  <section>
+    <title>Triggering method validation</title>
+
+    <para>It's important to understand that Bean Validation itself doesn't
+    trigger the evaluation of any method-level constraints. That is, just
+    annotating any methods or constructors with parameter or return value
+    constraints doesn't automatically enforce these constraints, just as
+    annotating any fields or properties with bean constraints doesn't enforce
+    these either. </para>
+
+    <para>Instead method-level constraints must be validated by invoking the
+    appropriate methods on <classname>javax.validation.Validator</classname>.
+    It is expected that this usually doesn't happen by manually invoking these
+    methods but rather automatically using approaches and techniques such
+    as</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>CDI/EJB interceptors,</para>
+      </listitem>
+
+      <listitem>
+        <para>aspect-oriented programming or</para>
+      </listitem>
+
+      <listitem>
+        <para>dynamic proxies.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>How integrators enable or disable the validation of method-level
+    constraints using such means is out of scope of this specification. It is
+    expected though, that a common approach will be to use an annotation for
+    this. Thus the Bean Validation API defines the annotation
+    <classname>javax.validation.MethodValidated</classname> which can be used
+    by integrators for that purpose.</para>
+
+    <programlisting>/**
+ * Marker for a type or method indicating in which way method-level constraints shall be
+ * validated upon invocation of the given method or any methods of the given type.
+ *
+ * @author Gunnar Morling
+ */
+@Target({ ElementType.METHOD, ElementType.TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+public @interface MethodValidated {
+
+    /**
+     * Returns the group(s) to validate. Defaults to
+     * {@link Default}.
+     *
+     * @return The group(s) to validate.
+     */
+    Class&lt;?&gt;[] groups() default { };
+
+    /**
+     * Returns the validation mode. Defaults to {@link ValidationMode#ALL}.
+     *
+     * @return The validation mode.
+     */
+    ValidationMode validationMode() default ValidationMode.ALL;
+
+    /**
+     * A mode of method-level validation. Can be used to specify the validation
+     * behavior on a type and method level.
+     *
+     * @author Gunnar Morling
+     */
+    public enum ValidationMode {
+
+        /**
+         * Indicates that method and constructor parameters shall be validated automatically
+         * upon invocation of methods or constructors.
+         */
+        PARAMETERS,
+
+        /**
+         * Indicates that the return value shall be validated automatically
+         * upon invocation of methods or constructors.
+         */
+        RETURN_VALUE,
+
+        /**
+         * Indicates that method and constructor parameters as well as the return value shall be validated automatically
+         * upon invocation of methods or constructors.
+         */
+        ALL,
+
+        /**
+         * Indicates that neither method or constructor parameters nor the return value shall be validated automatically
+         * upon invocation of methods or constructors.
+         */
+        NONE;
+    }
+}</programlisting>
+
+    <para>Integrators are encouraged to reuse this annotation instead of
+    creating their own one. </para>
+
+    <para>Using the <methodname>groups</methodname> attribute the groups to be
+    validated can be specified. If no value is given, implicitely the group
+    <classname>javax.validation.groups.Default</classname> will be validated.
+    Using the <methodname>validationMode</methodname> attribute it can be
+    controlled whether only parameters, only return values, both or none of
+    these shall be validated. </para>
+
+    <para>The <classname>@MethodValidated</classname> annotation can be
+    specified on type as well as on method level. It is left to integrators
+    how to handle situations where the annotation is given on a type and a
+    method of the same at the same time. It is highly recommended though, to
+    give method level annotations precedence, effectively allowing a default
+    configuration to be given on the class level which can be overridden on
+    the method level (e.g. to turn off validation for single methods using
+    <varname>ValidationMode.NONE</varname>). </para>
+
+    <para>It is also left to integrators how to handle situations where the
+    annotation is given on several types (be it classes or interfaces) within
+    an inheritance hierarchy. It is recommended though that the most specific
+    occurrence should take precedence over occurrences up in the inheritance
+    hierarchy.</para>
+
+    <para><remark>TODO: Verify/prototype that integration works with EE JSRs
+    like CDI, JAX-RS, JSF as well as with alternative technologies (Spring
+    Framework, Guice).</remark></para>
+  </section>
+
   <section id="bootstrapping">
     <title>Bootstrapping</title>
 
