@@ -1792,8 +1792,8 @@ factory.close()</programlisting>
       Validator resource handling to match its own behavior.</para>
 
       <example>
-        <title>Customize message resolution, traversable resolver and
-        constraint Validator factory implementation</title>
+        <title>Customize message resolution, traversable resolver, constraint
+        Validator factory and parameter name provider implementation</title>
 
         <programlisting revisionflag="changed">//some customization from a container
 ValidatorFactory factory = Validation
@@ -1801,6 +1801,7 @@ ValidatorFactory factory = Validation
           .messageInterpolator( new ContainerMessageInterpolator() )
           .constraintValidatorFactory( new ContainerComponentConstraintValidatorFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
+          .parameterNameProvider( new AnnotationBasedParameterNameProvider() )
           .buildValidatorFactory();
 
 //cache the factory somewhere
@@ -1936,6 +1937,7 @@ Validator localizedValidator =
  * This object is typically cached and reused.
  *
  * @author Emmanuel Bernard
+ * @author Gunnar Morling
  */
 public interface ValidatorFactory {
     /**
@@ -1985,6 +1987,14 @@ public interface ValidatorFactory {
      */
     ConstraintValidatorFactory getConstraintValidatorFactory();
 
+    /**
+     * Returns the &lt;code&gt;ParameterNameProvider&lt;/code&gt; instance configured at
+     * initialization time for the &lt;code&gt;ValidatorFactory&lt;code&gt;.
+     * This is the instance used by #getValidator().
+     *
+     * @return ParameterNameProvider instance.
+     */
+    ParameterNameProvider getParameterNameProvider();
     /**
      * Return an instance of the specified type allowing access to
      * provider-specific APIs. If the Bean Validation provider
@@ -2056,6 +2066,13 @@ acmeFactory.setSpecificConfiguration(...);</programlisting>
       <classname>ConstraintValidatorFactory</classname> wrapping the one from
       the <classname>ValidatorFactory</classname>.</para>
 
+      <para><methodname>getParameterNameProvider()</methodname> returns the
+      <classname>ParameterNameProvider</classname> instance configured during
+      the initialization of the <classname>ValidatorFactory</classname>. It is
+      particularly useful to build a <classname>Validator</classname> specific
+      <classname>ParameterNameProvider</classname> wrapping the one from the
+      <classname>ValidatorFactory</classname>.</para>
+
       <para><classname>ValidatorContext</classname> returned by
       <methodname>usingContext</methodname> can be used to customize the state
       in which the <classname>Validator</classname> must be initialized. This
@@ -2077,6 +2094,7 @@ acmeFactory.setSpecificConfiguration(...);</programlisting>
  * traversable resolvers).
  * 
  * @author Emmanuel Bernard
+ * @author Gunnar Morling
  */
 public interface ValidatorContext {
     /**
@@ -2111,6 +2129,17 @@ public interface ValidatorContext {
     ValidatorContext constraintValidatorFactory(ConstraintValidatorFactory factory);
 
     /**
+     * Defines the parameter name provider implementation used by the
+     * &lt;code&gt;Validator&lt;/code&gt;. If not set or if null is passed as a parameter,
+     * the parameter name provider of the &lt;code&gt;ValidatorFactory&lt;/code&gt; is used.
+     *
+     * @param parameterNameProvider Parameter name provider implementation.
+     *
+     * @return self following the chaining method pattern
+     */
+    ValidatorContext parameterNameProvider(ParameterNameProvider parameterNameProvider);
+
+    /**
      * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
      * Validator instances can be pooled and shared by the implementation.
      */
@@ -2119,12 +2148,15 @@ public interface ValidatorContext {
       </example>
 
       <para>The <classname>MessageInterpolator</classname>, the
-      <classname>TraversableResolver</classname> or the
-      <classname>ConstraintValidatorFactory</classname> passed to the
+      <classname>TraversableResolver</classname>, the
+      <classname>ConstraintValidatorFactory</classname> or the
+      <classname>ParameterNameProvider</classname> passed to the
       <classname>ValidatorContext</classname> are used instead of the
       <classname>ValidatorFactory</classname>'s
-      <classname>MessageInterpolator</classname> or
-      <classname>TraversableResolver</classname> instances.</para>
+      <classname>MessageInterpolator</classname>,
+      <classname>TraversableResolver</classname>,
+      <classname>ConstraintValidatorFactory</classname> or
+      <classname>ParameterNameProvider</classname> instances.</para>
 
       <example>
         <title>Use of ValidatorFactory</title>
@@ -2162,6 +2194,10 @@ Validator validatorUsingCustomTraversable = factory
 
         <listitem>
           <para>the constraint validator factory instance</para>
+        </listitem>
+
+        <listitem>
+          <para>the parameter name provider instance</para>
         </listitem>
 
         <listitem>
@@ -2211,6 +2247,17 @@ Validator validatorUsingCustomTraversable = factory
       implementation is useful to let a custom
       <classname>ConstraintValidatorFactory</classname> delegate to the
       standard <classname>ConstraintValidatorFactory</classname>.</para>
+
+      <para>A <classname>Configuration</classname> does provide a
+      <classname>ParameterNameProvider</classname> implementation following
+      the default Bean Validation <classname>ParameterNameProvider</classname>
+      rules as defined in <xref
+      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters" />.
+      You can access it by calling
+      <methodname>getDefaultParameterNameProvider()</methodname>. Such an
+      implementation is useful to let a custom
+      <classname>ParameterNameProvider</classname> delegate to the standard
+      <classname>ParameterNameProvider</classname>.</para>
 
       <para revisionflag="added"><classname>Configuration</classname> also
       exposes data stored in <classname>META-INF/validation.xml</classname>
@@ -2263,6 +2310,7 @@ Validator validatorUsingCustomTraversable = factory
  * Implementations are not meant to be thread-safe.
  *
  * @author Emmanuel Bernard
+ * @author Gunnar Morling
  */
 public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
 
@@ -2307,11 +2355,23 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * If null is passed, the default constraint validator factory is used
      * (defined in XML or the specification default).
      *
-     * @param constraintValidatorFactory constraint factory inmplementation.
+     * @param constraintValidatorFactory constraint factory implementation.
      *
      * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
      */
     T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
+
+    /**
+     * Defines the parameter name provider. Has priority over the configuration
+     * based provider.
+     * If null is passed, the default parameter name provider is used
+     * (defined in XML or the specification default).
+     *
+     * @param parameterNameProvider Parameter name provider implementation.
+     *
+     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     */
+    T parameterNameProvider(ParameterNameProvider parameterNameProvider);
 
     /**
      * Add a stream describing constraint mapping in the Bean Validation
@@ -2401,6 +2461,21 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * @return default ConstraintValidatorFactory implementation compliant with the specification
      */
     ConstraintValidatorFactory getDefaultConstraintValidatorFactory();
+
+    /**
+     * Return an implementation of the &lt;code&gt;ParameterNameProvider&lt;/code&gt;
+     * interface following the default &lt;code&gt;ParameterNameProvider&lt;/code&gt;
+     * defined in the specification:
+     * &lt;ul&gt;
+     * &lt;li&gt;returns names in the form &lt;code&gt;arg&amp;lt;PARAMETER_INDEX&amp;gt;&lt;/code&gt;
+     * where &lt;code&gt;PARAMETER_INDEX&lt;/code&gt; starts at 0 for the first parameter,
+     * e.g. &lt;code&gt;arg0&lt;/code&gt;, &lt;code&gt;arg1&lt;/code&gt; etc.&lt;/code&gt;&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return default ParameterNameProvider implementation compliant with the
+     *         specification
+     */
+    ParameterNameProvider getDefaultParameterNameProvider();
 
     /**
      * Return information stored in the configuration source (typically the &lt;i&gt;META-INF/validation.xml&lt;/i&gt;
@@ -2557,6 +2632,7 @@ public interface ACMEConfiguration
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
+ * @author Gunnar Morling
  */
 public interface ConfigurationState {
 
@@ -2627,6 +2703,22 @@ public interface ConfigurationState {
      * @return traversable provider instance or {@code null} if not defined
      */
     TraversableResolver getTraversableResolver();
+
+    /**
+     * Returns the parameter name provider for this configuration.
+     * &lt;code&gt;ParameterNameProvider&lt;/code&gt; is defined in the following decreasing
+     * priority:
+     * &lt;ul&gt;
+     * &lt;li&gt;set via the &lt;code&gt;Configuration&lt;/code&gt; programmatic API&lt;/li&gt;
+     * &lt;li&gt;defined in META-INF/validation.xml provided that
+     * ignoredXmlConfiguration is false. In this case the instance is created
+     * via its no-arg constructor.&lt;/li&gt;
+     * &lt;li&gt;{@code null} if undefined.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return parameter name provider instance or {@code null} if not defined
+     */
+    ParameterNameProvider getParameterNameProvider();
 
     /**
      * Returns a map of non type-safe custom properties.
