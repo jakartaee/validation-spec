@@ -15,7 +15,8 @@
 
 <!-- ==================================================================== -->
 
-<xsl:import href="docbook.xsl"/>
+<!-- changebars.xsl imports docbook.xsl -->
+<xsl:import href="changebars.xsl"/>
 <xsl:import href="chunk-common.xsl"/>
 <xsl:include href="manifest.xsl"/>
 

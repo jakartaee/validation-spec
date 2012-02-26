@@ -23,7 +23,8 @@
                 xmlns="http://www.w3.org/TR/xhtml1/transitional"
                 exclude-result-prefixes="#default">
 
-   <xsl:import href="&db_xsl_path;/html/docbook.xsl"/>
+   <!-- changebars.xsl imports docbook.xsl -->
+   <xsl:import href="&db_xsl_path;/html/changebars.xsl"/>
 
    <!--###################################################
                    HTML Settings
