@@ -98,14 +98,14 @@ public interface Validator {
      *
      * @param &lt;T&gt; The type hosting the method to validate.
      * @param object The object on which the method to validate was invoked.
-     * @param method The method which's parameter constraints shall be validated.
+     * @param method The method for which the parameter constraints shall be validated.
      * @param parameterValues The values provided by the caller for the given method's
      * parameters.
      * @param groups group or list of groups targeted for validation (default to
      * {@link javax.validation.groups.Default})
      *
      * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, of no error occurs, but never null.
+     *         Will be empty, if no error occurs, but never null.
      *
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
@@ -117,13 +117,13 @@ public interface Validator {
      *
      * @param &lt;T&gt; The type hosting the method to validate.
      * @param object The object on which the method to validate was invoked.
-     * @param method The method which's return constraints shall be validated.
+     * @param method The method for which the return constraints shall be validated.
      * @param returnValue The value returned by the given method.
      * @param groups group or list of groups targeted for validation (default to
      * {@link javax.validation.groups.Default})
      *
      * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, of no error occurs, but never null.
+     *         Will be empty, if no error occurs, but never null.
      *
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
@@ -134,14 +134,14 @@ public interface Validator {
      * Validates all constraints placed on the parameters of the given constructor.
      *
      * @param &lt;T&gt; The type hosting the constructor to validate.
-     * @param constructor The constructor which's parameter constraints shall be validated.
+     * @param constructor The constructor for which the parameter constraints shall be validated.
      * @param parameterValues The values provided by the caller for the given constructor's
      * parameters.
      * @param groups group or list of groups targeted for validation (default to
      * {@link javax.validation.groups.Default})
      *
      * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, of no error occurs, but never null.
+     *         Will be empty, if no error occurs, but never null.
      *
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
@@ -153,13 +153,13 @@ public interface Validator {
      * Validates all return value constraints of the given constructor.
      *
      * @param &lt;T&gt; The type hosting the constructor to validate.
-     * @param constructor The method which's return constraints shall be validated.
+     * @param constructor The constructor for which the return constraints shall be validated.
      * @param createdObject The object instantiated by the given method.
      * @param groups group or list of groups targeted for validation (default to
      * {@link javax.validation.groups.Default})
      *
      * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, of no error occurs, but never null.
+     *         Will be empty, if no error occurs, but never null.
      *
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
@@ -355,6 +355,10 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
     <section revisionflag="added">
       <title>Method-level validation methods</title>
+
+      <remark>TODO: Emmanuel suggests to introduce an indirection for these
+      methods, such as onMethod(), onConstructor(). Consider pro's and con's
+      of both approaches.</remark>
 
       <para><methodname>&lt;T&gt;
       Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateParameters(T
@@ -1547,18 +1551,16 @@ Validator validator = factory.getValidator();</programlisting>
   <section id="validationapi-triggeringmethodvalidation" revisionflag="added">
     <title>Triggering method validation</title>
 
-    <para>It's important to understand that Bean Validation itself doesn't
-    trigger the evaluation of any method-level constraints. That is, just
-    annotating any methods or constructors with parameter or return value
-    constraints doesn't automatically enforce these constraints, just as
-    annotating any fields or properties with bean constraints doesn't enforce
-    these either.</para>
+    <para>Bean Validation itself doesn't trigger the evaluation of any
+    method-level constraints. That is, just annotating any methods or
+    constructors with parameter or return value constraints doesn't
+    automatically enforce these constraints, just as annotating any fields or
+    properties with bean constraints doesn't enforce these either.</para>
 
     <para>Instead method-level constraints must be validated by invoking the
     appropriate methods on <classname>javax.validation.Validator</classname>.
-    It is expected that this usually doesn't happen by manually invoking these
-    methods but rather automatically using approaches and techniques such
-    as</para>
+    Typically this won't happen by manually invoking these methods but rather
+    automatically using approaches and techniques such as</para>
 
     <itemizedlist>
       <listitem>
@@ -1641,14 +1643,14 @@ public @interface MethodValidated {
 }</programlisting>
 
     <para>Integrators are encouraged to reuse this annotation instead of
-    creating their own one.</para>
+    creating their own.</para>
 
     <para>Using the <methodname>groups</methodname> attribute the groups to be
     validated can be specified. If no value is given, implicitely the group
     <classname>javax.validation.groups.Default</classname> will be validated.
-    Using the <methodname>validationMode</methodname> attribute it can be
-    controlled whether only parameters, only return values, both or none of
-    these shall be validated.</para>
+    Using the <methodname>validationMode</methodname> attribute you can
+    control whether only parameters, only return values, both or none of these
+    shall be validated.</para>
 
     <para>The <classname>@MethodValidated</classname> annotation can be
     specified on type as well as on method level. It is left to integrators
@@ -2251,7 +2253,7 @@ Validator validatorUsingCustomTraversable = factory
       <classname>ConstraintValidatorFactory</classname> delegate to the
       standard <classname>ConstraintValidatorFactory</classname>.</para>
 
-      <para revisionflag="added">A <classname>Configuration</classname> does
+      <para revisionflag="added"><classname>Configuration</classname> does
       provide a <classname>ParameterNameProvider</classname> implementation
       following the default Bean Validation
       <classname>ParameterNameProvider</classname> rules as defined in <xref
@@ -2264,10 +2266,10 @@ Validator validatorUsingCustomTraversable = factory
 
       <para revisionflag="added"><classname>Configuration</classname> also
       exposes data stored in <classname>META-INF/validation.xml</classname>
-      (see <xref linkend="xml-config"/>). This is particularly useful for
+      (see <xref linkend="xml-config" />). This is particularly useful for
       containers wishing to control the instance creation and life cycle (more
       information at <xref
-      linkend="bootstrapping-usageandcontainerexpectation"/>).</para>
+      linkend="bootstrapping-usageandcontainerexpectation" />).</para>
 
       <para>Clients call
       <methodname>Configuration.buildValidatorFactory()</methodname> to
@@ -2503,6 +2505,7 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
  * &lt;i&gt;META-INF/validation.xml&lt;/i&gt;
  *
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @author Gunnar Morling
  */
 public interface ConfigurationSource {
     /**
@@ -2536,6 +2539,14 @@ public interface ConfigurationSource {
      * @return traversable resolver class name or null
      */
     public String getTraversableResolverClassName();
+
+    /**
+     * Class name of the {@code ParameterNameProvider} implementation
+     * or null if none is specified.
+     *
+     * @return parameter name provider class name or null
+     */
+    public String getParameterNameProviderClassName();
 
     /**
      * Returns a set of resource path pointing to XML constraint mapping files.
@@ -3620,7 +3631,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
           instances. The scope of <classname>ConstraintValidator</classname>
           instances is still fully controlled by Bean Validation provider as
           described in <xref
-          linkend="constraintsdefinitionimplementation-constraintfactory"/>
+          linkend="constraintsdefinitionimplementation-constraintfactory" />
           but as managed beans can receive expected services like injection of
           other objects.</para>
         </listitem>
@@ -3632,8 +3643,8 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
           the XML deployment descriptor, configure
           <classname>ValidatorFactory</classname> with a managed instance of
           the requested class. Services provided by the container (like
-          dependency injection) should thus be available to this instance.
-          </para>
+          dependency injection) should thus be available to this
+          instance.</para>
         </listitem>
       </itemizedlist>
 
