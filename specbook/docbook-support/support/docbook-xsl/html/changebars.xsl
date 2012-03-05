@@ -20,16 +20,16 @@
 <xsl:template name="system.head.content">
 <style type="text/css">
 <xsl:text>
-div.added    { background-color: #DDFFDD; }
+div.added    { background-color: #ffff99; }
 div.deleted  { text-decoration: line-through;
-               background-color: #FFDDDD; }
-div.changed  { background-color: #FFFFDD; }
+               background-color: #FF7F7F; }
+div.changed  { background-color: #99ff99; }
 div.off      {  }
 
-span.added   { background-color: #DDFFDD; }
+span.added   { background-color: #ffff99; }
 span.deleted { text-decoration: line-through;
                background-color: #FFDDDD; }
-span.changed { background-color: #FFFFDD; }
+span.changed { background-color: #99ff99; }
 span.off     {  }
 </xsl:text>
 </style>
