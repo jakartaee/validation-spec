@@ -925,12 +925,12 @@ public class Order implements Auditable {
 
     <para>Method constraints are defined by adding constraint annotations to
     method or constructor parameters (parameter constraints) or methods
-    (return value constraints). As with bean constraints, this can happen
+    (return value constraints). As with bean constraints, this can be done
     using either actual Java annotations or using an XML constraint mapping
     file (see <xref
     linkend="xml-mapping-constraintdeclarationinxml-methodleveloverriding" />).
-    BV providers are free to provide additional means of defining method
-    constraints such as an API-based aproach.</para>
+    Bean Validation providers are free to provide additional means of defining
+    method constraints such as an API-based aproach.</para>
 
     <section>
       <title>Requirements on methods to be validated</title>
@@ -940,9 +940,9 @@ public class Order implements Auditable {
       perspective of this specification, however it is possible that
       technologies integrating with method validation impose further
       restrictions to methods to which a validation shall be applied. For
-      instance a given integration technology might support only the
-      validation of methods with <methodname>public</methodname>
-      visibility.</para>
+      instance certain integration technologies might require that methods to
+      be validated must have <methodname>public</methodname> visibility and/or
+      must not be final.</para>
     </section>
 
     <section>
@@ -966,9 +966,9 @@ public class Order implements Auditable {
 }</programlisting>
       </example>
 
-      <para>Using constraint annotations the following preconditions are
-      defined which must be satisfied in order to legally invoke the methods
-      of the <classname>OrderService</classname>:</para>
+      <para>Using constraint annotations, several preconditions are defined
+      here. These preconditions which must be satisfied in order to legally
+      invoke the methods of <classname>OrderService</classname> are:</para>
 
       <itemizedlist>
         <listitem>
@@ -1017,9 +1017,16 @@ public class Order implements Auditable {
       <section>
         <title>Cross-parameter constraints</title>
 
+        <para>Cross-parameter constraints allow to express constraints based
+        on the value of several method parameters, similar to class-level
+        constraints which are based on several properties of a given
+        class.</para>
+
         <para><remark>TODO: Choose approach from
-        http://beanvalidation.org/proposals/BVAL-241/#cross_parameter, likely
-        a combined approach of options #2 and #3</remark></para>
+        http://beanvalidation.org/proposals/BVAL-241/#cross_parameter. Based
+        on previous discussions, most likely we'll go for option #3, possibly
+        combined with option #2 to allow for generic cross-parameter
+        constraints.</remark></para>
       </section>
 
       <section id="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters">
@@ -1067,10 +1074,6 @@ public interface ParameterNameProvider {
      *
      * @return An array with the names of the parameters of the given
      *         constructor. May be empty but never null.
-     *
-     * @throws ValidationException
-     *             In case an unexpected problem occurred during retrieval of
-     *             the parameter names.
      */
     String[] getParameterNames(Constructor&lt;?&gt; constructor);
 
@@ -1083,10 +1086,6 @@ public interface ParameterNameProvider {
      *
      * @return An array with the names of the parameters of the given method.
      *         May be empty but never null.
-     *
-     * @throws ValidationException
-     *             In case an unexpected problem occurred during retrieval of
-     *             the parameter names.
      */
     String[] getParameterNames(Method method);
 }</programlisting>
@@ -1094,8 +1093,8 @@ public interface ParameterNameProvider {
         <para>A conforming Bean Validation implementation provides a default
         <classname>ParameterNameProvider</classname> implementation which
         returns parameter names in the form
-        <varname>arg&lt;PARAMETER_INDEX&gt;</varname>, where
-        <varname>PARAMETER_INDEX</varname> starts at 0 for the first
+        <varname>arg</varname><emphasis>PARAMETER_INDEX</emphasis>, where
+        <emphasis>PARAMETER_INDEX</emphasis> starts at 0 for the first
         parameter, e.g. <varname>arg0</varname>, <varname>arg1</varname>
         etc.</para>
 
@@ -1106,6 +1105,11 @@ public interface ParameterNameProvider {
         specify the provider to use with help of the bootstrap API (see <xref
         linkend="bootstrapping" />) or the XML configuration (see <xref
         linkend="xml-config" />).</para>
+
+        <para>If an exception occurs during invocation of the
+        <methodname>getParameterName()</methodname> methods, the runtime
+        exception is wrapped into a <classname>ValidationException</classname>
+        by the Bean Validation engine.</para>
       </section>
     </section>
 
@@ -1156,7 +1160,7 @@ public interface ParameterNameProvider {
 
         <listitem>
           <para>The newly created <classname>OrderService</classname> object
-          returned by the second constructor satisfiesthe conditions of the
+          returned by the second constructor satisfies the conditions of the
           custom <classname>@ValidBatchOrderService</classname>
           constraint.</para>
         </listitem>
@@ -1170,12 +1174,12 @@ public interface ParameterNameProvider {
         <listitem>
           <para>The <classname>Date</classname> object returned by
           <methodname>getNextAvailableDeliveryDate()</methodname> will not be
-          null and be in the future.</para>
+          null and will be in the future.</para>
         </listitem>
       </itemizedlist>
 
-      <para>As with parameter constraints, these return value constraints are
-      not per-se validated upon method invocation, but instead an integration
+      <para>Like parameter constraints, these return value constraints are not
+      per-se validated upon method invocation, but instead an integration
       layer invoking the validation is required.</para>
     </section>
 
@@ -1183,11 +1187,11 @@ public interface ParameterNameProvider {
       <title>Marking parameters and return values for cascaded
       validation</title>
 
-      <para>Similar to normal bean validation, the @Valid annotation can be
-      used to declare that a cascaded validation of given method parameters or
-      return values shall be performed by the Bean Validation provider.
-      Generally the same rules as for standard object graph validation (see
-      <xref
+      <para>Similar to normal bean validation, the
+      <classname>@Valid</classname> annotation can be used to declare that a
+      cascaded validation of given method parameters or return values shall be
+      performed by the Bean Validation provider. Generally the same rules as
+      for standard object graph validation (see <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation" />)
       apply, in particular</para>
 
@@ -1198,8 +1202,9 @@ public interface ParameterNameProvider {
 
         <listitem>
           <para>The validation is recursive; that is, if validated parameter
-          or return value objects have references marked with @Valid
-          themselves, these references will also be validated</para>
+          or return value objects have references marked with
+          <classname>@Valid</classname> themselves, these references will also
+          be validated</para>
         </listitem>
 
         <listitem>
