@@ -110,7 +110,7 @@ public interface Validator {
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateParameters(T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
 
     /**
      * Validates all return value constraints of the given method.
@@ -128,7 +128,7 @@ public interface Validator {
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
 
     /**
      * Validates all constraints placed on the parameters of the given constructor.
@@ -147,7 +147,7 @@ public interface Validator {
      * validation process
      */
 
-    &lt;T&gt; Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(Constructor&lt;T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(Constructor&lt;T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
 
     /**
      * Validates all return value constraints of the given constructor.
@@ -164,7 +164,7 @@ public interface Validator {
      * @throws ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
 
     /**
      * Return the descriptor object describing bean constraints.
@@ -361,44 +361,40 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
       methods, such as onMethod(), onConstructor(). Consider pro's and con's
       of both approaches.</remark>
 
-      <para><methodname>&lt;T&gt;
-      Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateParameters(T
-      object, Method method, Object[] parameterValues, Class&lt;?&gt;...
-      groups)</methodname> validates the arguments (as given in
-      <varname>parameterValues</varname>) for the parameters of a given method
+      <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
+      validateParameters(T object, Method method, Object[] parameterValues,
+      Class&lt;?&gt;... groups)</methodname> validates the arguments (as given
+      in <varname>parameterValues</varname>) for the parameters of a given
+      method (identified by <varname>method</varname>). A set containing all
+      <classname>ConstraintViolation</classname> objects representing the
+      failing constraints is returned, an empty set is returned if no
+      constraint violation occurred.</para>
+
+      <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
+      validateReturnValue(T object, Method method, Object returnValue,
+      Class&lt;?&gt;... groups)</methodname> validates the return value
+      (specified by <varname>returnValue</varname>) of a given method
       (identified by <varname>method</varname>). A set containing all
-      <classname>MethodConstraintViolation</classname> objects representing
-      the failing constraints is returned, an empty set is returned if no
+      <classname>ConstraintViolation</classname> objects representing the
+      failing constraints is returned, an empty set is returned if no
       constraint violation occurred.</para>
 
-      <para><methodname>&lt;T&gt;
-      Set&lt;MethodConstraintViolation&lt;T&gt;&gt; validateReturnValue(T
-      object, Method method, Object returnValue, Class&lt;?&gt;...
-      groups)</methodname> validates the return value (specified by
-      <varname>returnValue</varname>) of a given method (identified by
-      <varname>method</varname>). A set containing all
-      <classname>MethodConstraintViolation</classname> objects representing
-      the failing constraints is returned, an empty set is returned if no
-      constraint violation occurred.</para>
-
-      <para><methodname>&lt;T&gt;
-      Set&lt;MethodConstraintViolation&lt;T&gt;&gt;
+      <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
       validateConstructorParameters(Constructor&lt;T&gt; constructor, Object[]
       parameterValues, Class&lt;?&gt;... groups)</methodname> validates the
       arguments (as given in <varname>parameterValues</varname>) for the
       parameters of a given constructor (identified by
       <varname>constructor</varname>). A set containing all
-      <classname>MethodConstraintViolation</classname> objects representing
-      the failing constraints is returned, an empty set is returned if no
+      <classname>ConstraintViolation</classname> objects representing the
+      failing constraints is returned, an empty set is returned if no
       constraint violation occurred.</para>
 
-      <para><methodname>&lt;T&gt;
-      Set&lt;MethodConstraintViolation&lt;T&gt;&gt;
+      <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
       validateConstructorReturnValue(Constructor&lt;T&gt; constructor, T
       createdObject, Class&lt;?&gt;... groups)</methodname> validates the
       object (specified by <varname>createdObject</varname>) of a given
       constructor (identified by <varname>constructor</varname>). A set
-      containing all <classname>MethodConstraintViolation</classname> objects
+      containing all <classname>ConstraintViolation</classname> objects
       representing the failing constraints is returned, an empty set is
       returned if no constraint violation occurred.</para>
 
@@ -445,14 +441,14 @@ Method&lt;OrderService&gt; placeOrder = ... ; //get method object
 OrderService orderService = new OrderService(new DefaultCreditCardProcessor());</programlisting>
 
         <para>The following method parameter validation will return one
-        <classname>MethodConstraintViolation</classname> object as the
-        customer code is null:</para>
+        <classname>ConstraintViolation</classname> object as the customer code
+        is null:</para>
 
         <programlisting>//orderService.placeOrder(null, item1, 1);
 validator.validateParameters(orderService, placeOrder, new Object[] { null, item1, 1 }).size() == 1</programlisting>
 
         <para>The following method parameter validation will return one
-        <classname>MethodConstraintViolation</classname> object as the
+        <classname>ConstraintViolation</classname> object as the
         <varname>item</varname> parameter is marked for cascaded validation
         and the given <classname>Item</classname> instance is not valid (its
         name is null):</para>
@@ -461,9 +457,8 @@ validator.validateParameters(orderService, placeOrder, new Object[] { null, item
 validator.validateParameters(orderService, placeOrder, new Object[] { "CUST-123", item2, 1 }).size() == 1</programlisting>
 
         <para>The following constructor parameter validation will return one
-        <classname>MethodConstraintViolation</classname> object as null is
-        passed for the <varname>creditCardProcessor</varname>
-        parameter:</para>
+        <classname>ConstraintViolation</classname> object as null is passed
+        for the <varname>creditCardProcessor</varname> parameter:</para>
 
         <programlisting>//new OrderService(null);
 validator.validateConstructorParameters(constructor, new Object[] { null }).size() == 1</programlisting>
@@ -471,7 +466,7 @@ validator.validateConstructorParameters(constructor, new Object[] { null }).size
         <para>Assuming the <methodname>placeOrder()</methodname> method
         returned <varname>null</varname>, the following return value
         validation will return one
-        <classname>MethodConstraintViolation</classname>:</para>
+        <classname>ConstraintViolation</classname>:</para>
 
         <programlisting>validator.validateReturnValue(orderService, placeOrder, null).size() == 1</programlisting>
 
@@ -731,7 +726,7 @@ public interface ConstraintViolation&lt;T&gt; {
     representing the navigation path from the root object to the failing
     object.</para>
 
-    <programlisting>/**
+    <programlisting revisionflag="changed">/**
  * Represent the navigation path from an object to another
  * in an object graph.
  * Each path element is represented by a &lt;code&gt;Node&lt;/code&gt;.
@@ -740,6 +735,7 @@ public interface ConstraintViolation&lt;T&gt; {
  * in the order they are returned by the &lt;code&gt;Iterator&lt;/code&gt;
  *
  * @author Emmanuel Bernard
+ * @author Gunnar Morling
  */
 public interface Path extends Iterable&lt;Path.Node&gt; {
 
@@ -774,6 +770,28 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
          * in a Map. Null otherwise.
          */
         Object getKey();
+
+        /**
+         * @return A descriptor for the method which the node represents or null
+         *         if the node doesn't represent a method.
+         */
+        MethodDescriptor getMethodDescriptor();
+
+        /**
+         * @return A descriptor for the constructor which the node represents or
+         *         null if the node doesn't represent a constructor.
+         */
+        ConstructorDescriptor getConstructorDescriptor();
+
+        /**
+         * @return A descriptor for the method or constructor parameter which
+         *         the node represents or null if the node doesn't represent a
+         *         method or constructor parameter. Can only be not null, if
+         *         either {@link Node#getMethodDescriptor()} or
+         *         {@link Node#getConstructorDescriptor()} return a non-null
+         *         value.
+         */
+        ParameterDescriptor getParameterDescriptor();
     }
 }</programlisting>
 
@@ -854,13 +872,70 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
           </listitem>
         </itemizedlist>
       </listitem>
+
+      <listitem revisionflag="added">
+        <para>For a method-level constraint (parameter or return value
+        constraint on a method or constructor):</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>a <classname>Node</classname> object is added to the
+            <classname>Path</classname> which represents the validated method
+            or constructor (both for parameter and return value validation)
+            and the validated parameter (in case of parameter
+            validation)</para>
+          </listitem>
+
+          <listitem>
+            <para>the property path is considered complete</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
+
+      <listitem revisionflag="added">
+        <para>If a parameter or the return value of a method or constructor is
+        traversed:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>a <classname>Node</classname> object is added to the
+            <classname>Path</classname> which represents the validated method
+            or constructor (both for parameter and return value validation)
+            and the validated parameter (in case of parameter
+            validation)</para>
+          </listitem>
+
+          <listitem>
+            <para>if the parameter/return value is a
+            <classname>List</classname> or an array, the following
+            <classname>Node</classname> object added contains the index value
+            in <methodname>getIndex</methodname>.</para>
+          </listitem>
+
+          <listitem>
+            <para>if the parameter/return value is a
+            <classname>Map</classname>, the following
+            <classname>Node</classname> object added (representing a given map
+            entry) contains the key value in
+            <methodname>getKey</methodname></para>
+          </listitem>
+
+          <listitem>
+            <para>for all <classname>Iterable</classname> or
+            <classname>Map</classname>, the following
+            <classname>Node</classname> object added is marked as
+            <literal>inIterable</literal>
+            (<methodname>isInIterable</methodname>)</para>
+          </listitem>
+        </itemizedlist>
+      </listitem>
     </itemizedlist>
 
-    <note>
+    <note revisionflag="changed">
       <para>A given <classname>Node</classname> object derives its
       <literal>inIterable</literal>, <literal>key</literal> and
-      <literal>index</literal> properties from the previous association
-      traversed.</para>
+      <literal>index</literal> properties from the previous association,
+      method parameter or return value traversed.</para>
     </note>
 
     <note>
@@ -869,10 +944,29 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
       context of the failure</para>
     </note>
 
-    <para>Assuming the following object definitions and when book is
-    validated:</para>
+    <remark revisionflag="added">TODO: Consider alternatives for the
+    representation of method-level constraints. Options include: </remark>
 
-    <programlisting>@SecurityChecking
+    <itemizedlist revisionflag="added">
+      <listitem>
+        <para>add separate nodes for parameter/return value in addition to the
+        node representing the validated method/constructor</para>
+      </listitem>
+
+      <listitem>
+        <para>dedicated sub types of <classname>Node</classname></para>
+      </listitem>
+
+      <listitem>
+        <para>new type <classname>MethodConstraintViolation</classname>,
+        inheriting <classname>ConstraintViolation</classname></para>
+      </listitem>
+    </itemizedlist>
+
+    <para revisionflag="changed">Let there be the following object
+    definitions:</para>
+
+    <programlisting revisionflag="changed">@SecurityChecking
 public class Author {
     private String firstName;
     
@@ -904,10 +998,40 @@ public class Book {
 public class Review {
     @Min(0) private int rating;
     ...
+}
+
+public class Library {
+
+    public Library(@NotNull name, @NotNull location) {
+        ...
+    }
+
+    public void addBook(@NotNull @Valid Book book) {
+        ...
+    }
+
+    public void addAllBooks(@NotNull @Not@Valid List&lt;Book&gt; books) {
+        ...
+    }
+
+    @NotNull
+    public String getLocation() {
+        ...
+    }
+
+    @Valid
+    public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() {
+        ...
+    }
 }</programlisting>
 
-    <para><literal>propertyPath</literal> evaluations are described in <xref
-    linkend="table-propertypath" />:</para>
+    <para revisionflag="changed">Assuming a <classname>Book</classname>
+    instance gets validated, the property pathes to the different constraints
+    would be as described in <xref linkend="table-propertypath" />
+    (<varname>methodDescriptor</varname>,
+    <varname>constructorDescriptor</varname> and
+    <varname>parameterDescriptor</varname> would all be null in this
+    case):</para>
 
     <table id="table-propertypath">
       <title>propertyPath examples</title>
@@ -994,6 +1118,109 @@ public class Review {
         </tbody>
       </tgroup>
     </table>
+
+    <para revisionflag="added">Assuming the constructor and methods of the
+    <classname>Library</classname> class are subject to method-level
+    validation, the following property pathes would exist for the different
+    constraints:</para>
+
+    <para><table id="table-method-level-propertypath" revisionflag="added">
+        <title>method-level property path examples</title>
+
+        <tgroup cols="2">
+          <thead>
+            <row>
+              <entry>Constraint</entry>
+
+              <entry>propertyPath</entry>
+            </row>
+          </thead>
+
+          <tbody>
+            <row>
+              <entry><classname>@NotNull</classname> on the <varname>location
+              </varname>parameter of the constructor</entry>
+
+              <entry>Node(name=null, inIterable=false, index=null, key=null,
+              methodDescriptor=null,
+              constructorDescriptor=(parameterDescriptors=[ParameterDescriptor(index=0,
+              name=arg0), ParameterDescriptor(index=1, name=arg1)]),
+              parameterDescriptor=ParameterDescriptor(index=1,
+              name=arg1))</entry>
+            </row>
+
+            <row>
+              <entry><classname>@NotNull </classname>on the <varname>book
+              </varname>parameter of the <methodname>addBook()</methodname>
+              method</entry>
+
+              <entry><para>Node(name=null, inIterable=false, index=null,
+              key=null, methodDescriptor=MethodDescriptor(name=addBook,
+              parameterDescriptors=[ParameterDescriptor(index=0, name=arg0)]),
+              constructorDescriptor=null,
+              parameterDescriptor=ParameterDescriptor(index=0,
+              name=arg0))</para></entry>
+            </row>
+
+            <row>
+              <entry><classname>@NotEmpty</classname> on
+              <classname>Book.title</classname> during validation of
+              <methodname>addBook()</methodname> </entry>
+
+              <entry><para>Node(name=null, inIterable=false, index=null,
+              key=null, methodDescriptor=MethodDescriptor(name=addBook,
+              parameterDescriptors=[ParameterDescriptor(index=0, name=arg0)]),
+              constructorDescriptor=null,
+              parameterDescriptor=ParameterDescriptor(index=0,
+              name=arg0))</para><para>Node(name=title, inIterable=false,
+              index=null, key=null, methodDescriptor=null,
+              parameterDescriptor=null,
+              constructorDescriptor=null)</para></entry>
+            </row>
+
+            <row>
+              <entry><classname>@NotEmpty</classname> on fourth book,
+              <classname>Book.title</classname> during validation of
+              <methodname>addAllBooks()</methodname> </entry>
+
+              <entry><para>Node(name=null, inIterable=false, index=null,
+              key=null, methodDescriptor=MethodDescriptor(name=addAllBooks,
+              parameterDescriptors=[ParameterDescriptor(index=0, name=arg0)]),
+              constructorDescriptor=null,
+              parameterDescriptor=ParameterDescriptor(index=0,
+              name=arg0))</para><para>Node(name=null,inIterable=true, index=3,
+              key=null, methodDescriptor=null, constructorDescriptor=null,
+              parameterDescriptor=null)</para></entry>
+            </row>
+
+            <row>
+              <entry><classname>@NotNull</classname> on the return value of
+              the <methodname>getLocation()</methodname> method</entry>
+
+              <entry><para>Node(name=null, inIterable=false, index=null,
+              key=null, methodDescriptor=MethodDescriptor(name=getLocation,
+              parameterDescriptors=[], constructorDescriptor=null,
+              parameterDescriptor=null)</para></entry>
+            </row>
+
+            <row>
+              <entry><classname>@NotEmpty</classname> on most popular book of
+              author "John Doe", <classname>Book.title</classname> during
+              validation of
+              <methodname>getMostPopularBookPerAuthor()</methodname></entry>
+
+              <entry><para>Node(name=null, inIterable=false, index=null,
+              key=null,
+              methodDescriptor=MethodDescriptor(name=getMostPopularBookPerAuthor,
+              parameterDescriptors=[]), constructorDescriptor=null,
+              parameterDescriptor=null)</para><para>Node(name=null,inIterable=true,
+              index=null, key=Author(firstName=John, lastName=Doe),
+              methodDescriptor=null, constructorDescriptor=null,
+              parameterDescriptor=null)</para></entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table></para>
 
     <note>
       <para>Bean Validation implementations should ensure that a
@@ -1151,15 +1378,10 @@ Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator()
 assert "author".equals( nodeIter.next().getName() );
 assert "lastName".equals( nodeIter.next().getName() );
 assert false == nodeIter.hasNext();</programlisting>
+
+      <remark revisionflag="added">TODO: Extend example for method-level
+      validation</remark>
     </section>
-  </section>
-
-  <section id="valiadationapi-methodconstraintviolation" revisionflag="added">
-    <title>MethodConstraintViolation</title>
-
-    <para><remark>TODO: work out MethodConstraintViolation type. Emmanuel
-    suggested a solution around dedicated Node sub-types. This needs further
-    investigation.</remark></para>
   </section>
 
   <section id="validationapi-message">
