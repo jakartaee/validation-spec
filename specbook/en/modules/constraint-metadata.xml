@@ -21,7 +21,7 @@
     <title>Validator</title>
 
     <para>The main API to access all metadata related to a given object is
-    <classname>Validator</classname> (see <xref linkend="bootstrapping"/> for
+    <classname>Validator</classname> (see <xref linkend="bootstrapping" /> for
     more information on how to retrieve a <classname>Validator</classname>
     instance).</para>
 
@@ -31,15 +31,16 @@
     <classname>ValidatorFactory</classname>. <classname>Validator</classname>
     implementations are thread-safe.</para>
 
-    <programlisting>/**
+    <programlisting revisionflag="changed">/**
  * Validate bean instances. Implementations of this interface must be thread-safe.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
+ * @author Gunnar Morling
  */
 public interface Validator {
 
-    [...] //See 4.1
+    [...] //See 5.1
 
     /**
      * Return the descriptor object describing bean constraints.
@@ -61,7 +62,7 @@ public interface Validator {
     <para><methodname>getConstraintsForClass</methodname> returns a
     <classname>BeanDescriptor</classname> object describing the bean level
     constraints (see <xref
-    linkend="constraintdeclarationvalidationprocess-requirements-object"/>)
+    linkend="constraintdeclarationvalidationprocess-requirements-object" />)
     and providing access to the property level constraints metadata.</para>
 
     <para>If a constraint definition or declaration hosted by the requested
@@ -214,7 +215,7 @@ public enum Scope {
 
     <para><classname>getConstraintDescriptors</classname> returns all the
     <classname>ConstraintDescriptor</classname>s (see <xref
-    linkend="constraintmetadata-constraintdescriptor"/>) hosted on the given
+    linkend="constraintmetadata-constraintdescriptor" />) hosted on the given
     element in the class hierarchy, each
     <classname>ConstraintDescriptor</classname> describing one of the
     constraints declared on the given element.</para>
@@ -266,7 +267,7 @@ assert 2 == constraints.size();      </programlisting>
 
     <para><classname>unorderedAndMatchingGroups</classname> restricts to the
     <classname>ConstraintDescriptor</classname>s (see <xref
-    linkend="constraintmetadata-constraintdescriptor"/>) matching the set of
+    linkend="constraintmetadata-constraintdescriptor" />) matching the set of
     groups passed as parameters and present on the element. Order is not
     respected but group inheritance and inheritance via sequence (including
     the <classname>Default</classname> group overriding at the class level)
@@ -297,12 +298,15 @@ assert 2 == constraints.size();      </programlisting>
     <para><classname>BeanDescriptor</classname> lives in the
     <classname>javax.validation.metadata</classname> package.</para>
 
-    <programlisting>package javax.validation.metadata;
+    <programlisting revisionflag="changed">package javax.validation.metadata;
 
 /**
- * Describes a constrained Java Bean and the constraints associated to it.
+ * Describes a constrained Java Bean and the constraints associated to it. All
+ * objects returned by the methods of this descriptor (and associated objects
+ * including {@code ConstraintDescriptor}s) are immutable.
  *
  * @author Emmanuel Bernard
+ * @author Gunnar Morling
  */
 public interface BeanDescriptor extends ElementDescriptor {
     /**
@@ -322,8 +326,6 @@ public interface BeanDescriptor extends ElementDescriptor {
      * Return &lt;code&gt;null&lt;/code&gt; if the property does not exist or has no
      * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
      * &lt;p/&gt;
-     * The returned object (and associated objects including &lt;code&gt;ConstraintDescriptor&lt;/code&gt;s)
-     * are immutable.
      *
      * @param propertyName property evaluated
      *
@@ -339,6 +341,58 @@ public interface BeanDescriptor extends ElementDescriptor {
      * an empty set is returned.
      */
     Set&lt;PropertyDescriptor&gt; getConstrainedProperties();
+
+   /**
+     * Returns a method descriptor for the given method. Returns {@code null} if
+     * no method with the given name and parameter types exists or the specified
+     * method neither has parameter or return value constraints nor a parameter
+     * or return value marked for cascaded validation.
+     *
+     * @param methodName The name of the method.
+     * @param parameterTypes The parameter types of the method.
+     *
+     * @return A method descriptor for the given method.
+     *
+     * @throws IllegalArgumentException if methodName is null
+     */
+    MethodDescriptor getConstraintsForMethod(String methodName, Class&lt;?&gt;... parameterTypes);
+
+    /**
+     * Returns a set with descriptors for the constrained methods of the type
+     * represented by this descriptor. Constrained are all those methods which
+     * have at least one parameter or return value constraint or at least one
+     * parameter or return value marked for cascaded validation.
+     *
+     * @return A set with descriptors for the constrained methods of this type.
+     *         Will be empty if this type has no constrained methods but never
+     *         {@code null}.
+     */
+    Set&lt;MethodDescriptor&gt; getConstrainedMethods();
+
+    /**
+     * Returns a constructor descriptor for the given constructor. Returns
+     * {@code null} if no constructor with the given parameter types exists or
+     * the specified constructor neither has parameter or return value
+     * constraints nor a parameter or return value marked for cascaded
+     * validation.
+     *
+     * @param parameterTypes The parameter types of the constructor.
+     *
+     * @return A constructor descriptor for the given constructor.
+     */
+    ConstructorDescriptor getConstraintsForConstructor(Class&lt;?&gt;... parameterTypes);
+
+    /**
+     * Returns a set with descriptors for the constrained constructors of the
+     * type represented by this descriptor. Constrained are all those
+     * constructors which have at least one parameter or return value constraint
+     * or at least one parameter or return value marked for cascaded validation.
+     *
+     * @return A set with descriptors for the constrained constructor of this
+     *         type. Will be empty if this type has no constrained constructor
+     *         but never {@code null}.
+     */
+    Set&lt;ConstructorDescriptor&gt; getConstrainedConstructors();
 }</programlisting>
 
     <para><methodname>isBeanConstrained</methodname> returns true if the given
@@ -347,10 +401,14 @@ public interface BeanDescriptor extends ElementDescriptor {
     annotation). If the method returns false, the Bean Validation engine can
     safely ignore the bean as it will not be impacted by validation.</para>
 
+    <para revisionflag="added"><remark>TODO: Specify behavior with respect to
+    method-level constraints, or add a dedicated method for that (see
+    http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html)</remark></para>
+
     <para><methodname>getConstraintsForProperty</methodname> returns a
     <classname>PropertyDescriptor</classname> object describing the property
     level constraints (See <xref
-    linkend="constraintdeclarationvalidationprocess-requirements-property"/>).
+    linkend="constraintdeclarationvalidationprocess-requirements-property" />).
     The property is uniquely identified by its name as per the JavaBeans
     convention: field level and getter level constraints of the given name are
     all returned.</para>
@@ -359,6 +417,28 @@ public interface BeanDescriptor extends ElementDescriptor {
     <classname>PropertyDescriptor</classname>s of the bean properties having
     at least one constraint or being cascaded (<classname>@Valid</classname>
     annotation).</para>
+
+    <para
+    revisionflag="added"><methodname>getConstraintsForMethod</methodname>
+    returns a <classname>MethodDescriptor</classname> ojbect describing the
+    method-level constraints of the given method. The method is uniquely
+    identified by its name and the types of its parameters.</para>
+
+    <para revisionflag="added"><methodname>getConstrainedMethods</methodname>
+    returns the <classname>MethodDescriptor</classname>s of the methods having
+    at least one constraint or cascaded parameter or return value.</para>
+
+    <para
+    revisionflag="added"><methodname>getConstraintsForConstructor</methodname>
+    returns a <classname>ConstructorDescriptor</classname> ojbect describing
+    the method-level constraints of the given constructor. The constructor is
+    uniquely identified by its name and the types of its parameters.</para>
+
+    <para
+    revisionflag="added"><methodname>getConstrainedConstructors</methodname>
+    returns the <classname>ConstructorDescriptor</classname>s of the
+    constructors having at least one constraint or cascaded parameter or
+    return value.</para>
   </section>
 
   <section>
@@ -406,7 +486,204 @@ public interface PropertyDescriptor extends ElementDescriptor {
 
     <para><methodname>getPropertyName</methodname> returns the property name
     as described in <xref
-    linkend="validationapi-constraintviolation"/>.</para>
+    linkend="validationapi-constraintviolation" />.</para>
+  </section>
+
+  <section revisionflag="added">
+    <title>MethodDescriptor</title>
+
+    <para>The <classname>MethodDescriptor</classname> interface describes a
+    constrained method of a Java type.</para>
+
+    <para><classname>MethodDescriptor</classname> lives in the
+    <classname>javax.validation.metadata</classname> package.</para>
+
+    <para>This interface is returned by
+    <methodname>BeanDescriptor#getConstraintsForMethod(String,
+    Class&lt;?&gt;...)</methodname> and
+    <methodname>BeanDescriptor#getConstrainedMethods()</methodname>.</para>
+
+    <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a validated method.
+ *
+ * @author Gunnar Morling
+ */
+public interface MethodDescriptor extends ElementDescriptor {
+
+    /**
+     * Returns the name of the method represented by this descriptor.
+     *
+     * @return The name of the method represented by this descriptor.
+     */
+    String getName();
+
+    /**
+     * &lt;p&gt;
+     * Returns a list with descriptors for this method's parameters.
+     * The size of this list corresponds with the number of this method's
+     * parameters.
+     * &lt;/p&gt;
+     *
+     * @return A list with descriptors for this method's parameters. An empty
+     *         list will be returned if this method has no parameters, but never &lt;code&gt;null&lt;/code&gt;.
+     */
+    List&lt;ParameterDescriptor&gt; getParameterDescriptors();
+
+    /**
+     * Whether a cascaded validation for this method's return value shall be
+     * performed or not.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt;, if this method's return value shall be
+     *         validated recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isCascaded();
+}</programlisting>
+
+    <para><methodname>getName()</methodname> returns the name of the
+    represented method.</para>
+
+    <para><methodname>getParameterDescriptors</methodname>() returns a list of
+    <classname>ParameterDescriptor</classname>s representing the method's
+    parameters in their natural order. An empty list will be returned in case
+    the method has no parameters.</para>
+
+    <para><methodname>isCascaded()</methodname> returns true, if the
+    represented method's return value is marked for cascaded validation, false
+    otherwise.</para>
+
+    <para><remark>TODO: Should we have something like
+    <methodname>hasParameterConstraints()</methodname> allowing quickly to
+    check whether parameter validation is required or not?</remark></para>
+
+    <para><remark>TODO: Consider to introduce
+    <classname>ReturnValueDescriptor</classname> instead of modelling return
+    value constraints directly on
+    <classname>MethodDescriptor</classname>.</remark></para>
+
+    <para><remark>TODO: Investigate how cross-parameter constraints fit into
+    the picture.</remark></para>
+  </section>
+
+  <section revisionflag="added">
+    <title>ConstructorDescriptor</title>
+
+    <para>The <classname>ConstructorDescriptor</classname> interface describes
+    a constrained constructor of a Java type.</para>
+
+    <para><classname>ConstructorDescriptor</classname> lives in the
+    <classname>javax.validation.metadata</classname> package.</para>
+
+    <para>This interface is returned by
+    <methodname>BeanDescriptor#getConstraintsForConstructor(String,
+    Class&lt;?&gt;...)</methodname> and
+    <methodname>BeanDescriptor#getConstrainedConstructors()</methodname>.</para>
+
+    <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a validated constructor.
+ *
+ * @author Gunnar Morling
+ */
+public interface ConstructorDescriptor extends ElementDescriptor {
+
+    /**
+     * &lt;p&gt;
+     * Returns a list with descriptors for this constructor parameters. The size
+     * of this list corresponds with the number of this constructor parameters.
+     * &lt;/p&gt;
+     *
+     * @return A list with descriptors for this constructor's parameters. An
+     *         empty list will be returned if this constructor has no
+     *         parameters, but never &lt;code&gt;null&lt;/code&gt;.
+     */
+    List&lt;ParameterDescriptor&gt; getParameterDescriptors();
+
+    /**
+     * Whether a cascaded validation for this constructor's return value shall
+     * be performed or not.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt;, if this constructor's return value shall be
+     *         validated recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isCascaded();
+}</programlisting>
+
+    <para><methodname>getParameterDescriptors</methodname>() returns a list of
+    <classname>ParameterDescriptor</classname>s representing the constructor's
+    parameters in their natural order. An empty list will be returned in case
+    the constructor has no parameters.</para>
+
+    <para><methodname>isCascaded()</methodname> returns true, if the
+    represented constructor's return value is marked for cascaded validation,
+    false otherwise.</para>
+
+    <para><remark>TODO: Should we have something like
+    <methodname>hasParameterConstraints()</methodname> allowing quickly to
+    check whether parameter validation is required or not?</remark></para>
+  </section>
+
+  <section revisionflag="added">
+    <title>ParameterDescriptor</title>
+
+    <para>The <classname>ParameterDescriptor</classname> interface describes a
+    constrained parameter of a Java type.</para>
+
+    <para><classname>ParameterDescriptor</classname> lives in the
+    <classname>javax.validation.metadata</classname> package.</para>
+
+    <para>This interface is returned by
+    <methodname>MethodDescriptor#getParameterConstructors()</methodname> and
+    <methodname>ConstructorDescriptor#getParameterConstructors()</methodname>.</para>
+
+    <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes a validated method or constructor parameter.
+ *
+ * @author Gunnar Morling
+ *
+ */
+public interface ParameterDescriptor extends ElementDescriptor {
+
+    /**
+     * Returns this parameter's index within the parameter array of the method
+     * or constructor holding it.
+     *
+     * @return This parameter's index.
+     */
+    int getIndex();
+
+    /**
+     * Returns this parameter's name as retrieved by the current parameter name
+     * resolver.
+     *
+     * @return This parameter's name.
+     */
+    String getName();
+
+    /**
+     * Whether a cascaded validation for this method's return value shall be
+     * performed or not.
+     *
+     * @return &lt;code&gt;true&lt;/code&gt;, if this method's return value shall be
+     *         validated recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
+     */
+    boolean isCascaded();
+}</programlisting>
+
+    <para><methodname>getIndex()</methodname> returns the index of the
+    represented parameter within the parameter array of the method or
+    constructor holding it.</para>
+
+    <para><methodname>getName()</methodname> returns the name of the
+    represented parameter.</para>
+
+    <para><methodname>isCascaded()</methodname> returns true, if the
+    represented parameter is marked for cascaded validation, false
+    otherwise.</para>
   </section>
 
   <section id="constraintmetadata-constraintdescriptor">
@@ -493,7 +770,7 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
     instance (or an annotation instance representing the given constraint
     declaration). If <classname>ConstraintDescriptor</classname> represents a
     composing annotation (see <xref
-    linkend="constraintsdefinitionimplementation-constraintcomposition"/>),
+    linkend="constraintsdefinitionimplementation-constraintcomposition" />),
     the returned annotation must reflect parameter overriding. In other words,
     the annotation parameter values are the overridden values.</para>
 
@@ -503,7 +780,7 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
     reflection over the annotation instance). If
     <classname>ConstraintDescriptor</classname> represents a composing
     annotation (see <xref
-    linkend="constraintsdefinitionimplementation-constraintcomposition"/>),
+    linkend="constraintsdefinitionimplementation-constraintcomposition" />),
     the returned <classname>Map</classname> must reflects attribute
     overriding.</para>
 
@@ -523,6 +800,9 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 
   <section>
     <title>Example</title>
+
+    <para revisionflag="added"><remark>TODO: Extend example to cover
+    method-level constraints, too.</remark></para>
 
     <para>Assuming the following <classname>@NotEmpty</classname>
     definition</para>
