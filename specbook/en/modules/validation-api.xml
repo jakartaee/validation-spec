@@ -726,7 +726,7 @@ public interface ConstraintViolation&lt;T&gt; {
     object.</para>
 
     <programlisting revisionflag="changed">/**
- * Represent the navigation path from an object to another
+ * Represents the navigation path from an object to another
  * in an object graph.
  * Each path element is represented by a &lt;code&gt;Node&lt;/code&gt;.
  *
@@ -739,16 +739,17 @@ public interface ConstraintViolation&lt;T&gt; {
 public interface Path extends Iterable&lt;Path.Node&gt; {
 
     /**
-     * Represents an element of a navigation path
+     * Represents an element of a navigation path.
      */
     interface Node {
         /**
-         * Property name the node represents
-         * or null if representing an entity on the leaf node
-         * (in particular the node in a &lt;code&gt;Path&lt;/code&gt; representing
-         * the root object has its name null).
+         * Name of the property, constructor, method or parameter which the node
+         * represents or null if representing an entity on the leaf node or the
+         * return value of a constructor or method (in particular the node in a
+         * &lt;code&gt;Path&lt;/code&gt; representing the root object has its name null).
          * 
-         * @return property name the node represents
+         * @return Name of the property, constructor, method or parameter which
+         *         the node represents
          */
         String getName();
 
@@ -771,26 +772,13 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         Object getKey();
 
         /**
-         * @return A descriptor for the method which the node represents or null
-         *         if the node doesn't represent a method.
+         * Returns a descriptor for the element (bean, property, method etc.)
+         * represented by this node. The specific type of the element can be
+         * determined using {@link ElementDescriptor#getKind()}.
+         *
+         * @return An element descriptor for this node.
          */
-        MethodDescriptor getMethodDescriptor();
-
-        /**
-         * @return A descriptor for the constructor which the node represents or
-         *         null if the node doesn't represent a constructor.
-         */
-        ConstructorDescriptor getConstructorDescriptor();
-
-        /**
-         * @return A descriptor for the method or constructor parameter which
-         *         the node represents or null if the node doesn't represent a
-         *         method or constructor parameter. Can only be not null, if
-         *         either {@link Node#getMethodDescriptor()} or
-         *         {@link Node#getConstructorDescriptor()} return a non-null
-         *         value.
-         */
-        ParameterDescriptor getParameterDescriptor();
+        ElementDescriptor getElementDescriptor();
     }
 }</programlisting>
 
@@ -880,9 +868,18 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
           <listitem>
             <para>a <classname>Node</classname> object is added to the
             <classname>Path</classname> which represents the validated method
-            or constructor (both for parameter and return value validation)
-            and the validated parameter (in case of parameter
-            validation)</para>
+            or constructor. The <literal>name</literal> of the node equals the
+            validated method or constructor.</para>
+          </listitem>
+
+          <listitem>
+            <para>a <classname>Node</classname> object is added to the
+            <classname>Path</classname> which represents the validated
+            parameter or return value. In the parameter case, the
+            <literal>name</literal> of the node equals the parameter name as
+            determined by the current parameter name provider (see <xref
+            linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>),
+            otherwise the <literal>name</literal> of the node is null.</para>
           </listitem>
 
           <listitem>
@@ -898,10 +895,19 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         <itemizedlist>
           <listitem>
             <para>a <classname>Node</classname> object is added to the
-            <classname>Path</classname> which represents the validated method
-            or constructor (both for parameter and return value validation)
-            and the validated parameter (in case of parameter
-            validation)</para>
+            <classname>Path</classname> which represents the concerned method
+            or constructor. The <literal>name</literal> of the node equals the
+            concerned method or constructor.</para>
+          </listitem>
+
+          <listitem>
+            <para>a <classname>Node</classname> object is added to the
+            <classname>Path</classname> which represents the traversed
+            parameter or return value. In the parameter case, the
+            <literal>name</literal> of the node equals the parameter name as
+            determined by the current parameter name provider (see <xref
+            linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>),
+            otherwise the <literal>name</literal> of the node is null.</para>
           </listitem>
 
           <listitem>
@@ -915,8 +921,8 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <para>if the parameter/return value is a
             <classname>Map</classname>, the following
             <classname>Node</classname> object added (representing a given map
-            entry) contains the key value in
-            <methodname>getKey</methodname></para>
+            entry) contains the key value
+            in<methodname>getKey</methodname>.</para>
           </listitem>
 
           <listitem>
@@ -943,24 +949,19 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
       context of the failure</para>
     </note>
 
-    <remark revisionflag="added">TODO: Consider alternatives for the
-    representation of method-level constraints. Options include: </remark>
+    <note revisionflag="added">
+      <para><classname>ConstraintViolation</classname>s occurred during
+      standard bean validation can be distinguished from violations occurred
+      during method-level validation by analyzing the
+      <classname>Kind</classname> of the
+      <classname>ElementDescriptor</classname> of the first node in the
+      violation's property path. In case of method-validation, that
+      <classname>Kind</classname> will be either
+      <varname>CONSTRUCTOR</varname> or <varname>METHOD</varname>.</para>
+    </note>
 
-    <itemizedlist revisionflag="added">
-      <listitem>
-        <para>add separate nodes for parameter/return value in addition to the
-        node representing the validated method/constructor</para>
-      </listitem>
-
-      <listitem>
-        <para>dedicated sub types of <classname>Node</classname></para>
-      </listitem>
-
-      <listitem>
-        <para>new type <classname>MethodConstraintViolation</classname>,
-        inheriting <classname>ConstraintViolation</classname></para>
-      </listitem>
-    </itemizedlist>
+    <remark revisionflag="added">TODO: mention
+    <varname>elementDescriptor</varname> in the previous section.</remark>
 
     <para revisionflag="changed">Let there be the following object
     definitions:</para>
@@ -1001,36 +1002,20 @@ public class Review {
 
 public class Library {
 
-    public Library(@NotNull name, @NotNull location) {
-        ...
-    }
+    public Library(@NotNull name, @NotNull location) { ... }
 
-    public void addBook(@NotNull @Valid Book book) {
-        ...
-    }
+    public void addBook(@NotNull @Valid Book book) { ... }
 
-    public void addAllBooks(@NotNull @Not@Valid List&lt;Book&gt; books) {
-        ...
-    }
+    public void addAllBooks(@NotNull @Valid List&lt;Book&gt; books) { ... }
 
-    @NotNull
-    public String getLocation() {
-        ...
-    }
+    @NotNull public String getLocation() { ... }
 
-    @Valid
-    public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() {
-        ...
-    }
+    @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() { ... }
 }</programlisting>
 
     <para revisionflag="changed">Assuming a <classname>Book</classname>
     instance gets validated, the property pathes to the different constraints
-    would be as described in <xref linkend="table-propertypath" />
-    (<varname>methodDescriptor</varname>,
-    <varname>constructorDescriptor</varname> and
-    <varname>parameterDescriptor</varname> would all be null in this
-    case):</para>
+    would be as described in <xref linkend="table-propertypath"/>:</para>
 
     <table id="table-propertypath">
       <title>propertyPath examples</title>
@@ -1050,7 +1035,8 @@ public class Library {
             <classname>Book</classname></entry>
 
             <entry><para>Node(name=null,inIterable=false, index=null,
-            key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=BeanDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1058,7 +1044,8 @@ public class Library {
             <classname>Book.title</classname></entry>
 
             <entry><para>Node(name=title,inIterable=false, index=null,
-            key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1066,7 +1053,8 @@ public class Library {
             <classname>Book.authors</classname></entry>
 
             <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1074,8 +1062,10 @@ public class Library {
             author, <classname>Author</classname></entry>
 
             <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null)</para><para>Node(name=null,inIterable=true, index=3,
-            key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=null,inIterable=true,
+            index=3, key=null<phrase revisionflag="added">,
+            elementDescriptor=BeanDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1083,8 +1073,10 @@ public class Library {
             <classname>Author.lastname</classname></entry>
 
             <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null)</para><para>Node(name=lastname,inIterable=true, index=4,
-            key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=lastname,inIterable=true,
+            index=4, key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1092,8 +1084,10 @@ public class Library {
             <classname>Author.company</classname></entry>
 
             <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null)</para><para>Node(name=company,inIterable=true, index=0,
-            key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=company,inIterable=true,
+            index=0, key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1101,9 +1095,10 @@ public class Library {
             Consumer Report, <classname>Review.rating</classname></entry>
 
             <entry><para>Node(name=reviewsPerSource,inIterable=false,
-            index=null,
-            key=null)</para><para>Node(name=rating,inIterable=true,
-            index=null, key="Consumer Report")</para></entry>
+            index=null, key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=rating,inIterable=true,
+            index=null, key="Consumer Report"<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
           </row>
 
           <row>
@@ -1111,8 +1106,10 @@ public class Library {
             <classname>Review.rating</classname></entry>
 
             <entry><para>Node(name=pickedReview,inIterable=false, index=null,
-            key=null)</para><para>Node(name=rating,inIterable=false,
-            index=null, key=null)</para></entry>
+            key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=rating,inIterable=false,
+            index=null, key=null<phrase revisionflag="added">,
+            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
           </row>
         </tbody>
       </tgroup>
@@ -1140,12 +1137,11 @@ public class Library {
               <entry><classname>@NotNull</classname> on the <varname>location
               </varname>parameter of the constructor</entry>
 
-              <entry>Node(name=null, inIterable=false, index=null, key=null,
-              methodDescriptor=null,
-              constructorDescriptor=(parameterDescriptors=[ParameterDescriptor(index=0,
-              name=arg0), ParameterDescriptor(index=1, name=arg1)]),
-              parameterDescriptor=ParameterDescriptor(index=1,
-              name=arg1))</entry>
+              <entry><para>Node(name=Library, inIterable=false, index=null,
+              key=null,
+              elementDescriptor=ConstructorDescriptor())</para><para>Node(name=arg1,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=ParameterDescriptor())</para></entry>
             </row>
 
             <row>
@@ -1153,53 +1149,50 @@ public class Library {
               </varname>parameter of the <methodname>addBook()</methodname>
               method</entry>
 
-              <entry><para>Node(name=null, inIterable=false, index=null,
-              key=null, methodDescriptor=MethodDescriptor(name=addBook,
-              parameterDescriptors=[ParameterDescriptor(index=0, name=arg0)]),
-              constructorDescriptor=null,
-              parameterDescriptor=ParameterDescriptor(index=0,
-              name=arg0))</para></entry>
+              <entry><para>Node(name=addBook, inIterable=false, index=null,
+              key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=arg0,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=ParameterDescriptor())</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotEmpty</classname> on
               <classname>Book.title</classname> during validation of
-              <methodname>addBook()</methodname> </entry>
+              <methodname>addBook()</methodname></entry>
 
-              <entry><para>Node(name=null, inIterable=false, index=null,
-              key=null, methodDescriptor=MethodDescriptor(name=addBook,
-              parameterDescriptors=[ParameterDescriptor(index=0, name=arg0)]),
-              constructorDescriptor=null,
-              parameterDescriptor=ParameterDescriptor(index=0,
-              name=arg0))</para><para>Node(name=title, inIterable=false,
-              index=null, key=null, methodDescriptor=null,
-              parameterDescriptor=null,
-              constructorDescriptor=null)</para></entry>
+              <entry><para>Node(name=addBook, inIterable=false, index=null,
+              key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=arg0,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=ParameterDescriptor())</para><para>Node(name=title,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=PropertyDescriptor())</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotEmpty</classname> on fourth book,
               <classname>Book.title</classname> during validation of
-              <methodname>addAllBooks()</methodname> </entry>
+              <methodname>addAllBooks()</methodname></entry>
 
-              <entry><para>Node(name=null, inIterable=false, index=null,
-              key=null, methodDescriptor=MethodDescriptor(name=addAllBooks,
-              parameterDescriptors=[ParameterDescriptor(index=0, name=arg0)]),
-              constructorDescriptor=null,
-              parameterDescriptor=ParameterDescriptor(index=0,
-              name=arg0))</para><para>Node(name=null,inIterable=true, index=3,
-              key=null, methodDescriptor=null, constructorDescriptor=null,
-              parameterDescriptor=null)</para></entry>
+              <entry><para>Node(name=addAllBooks, inIterable=false,
+              index=null, key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=arg0,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=ParameterDescriptor())</para><para>Node(name=title,inIterable=true,
+              index=3, key=null,
+              elementDescriptor=PropertyDescriptor())</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotNull</classname> on the return value of
               the <methodname>getLocation()</methodname> method</entry>
 
-              <entry><para>Node(name=null, inIterable=false, index=null,
-              key=null, methodDescriptor=MethodDescriptor(name=getLocation,
-              parameterDescriptors=[], constructorDescriptor=null,
-              parameterDescriptor=null)</para></entry>
+              <entry><para>Node(name=getLocation, inIterable=false,
+              index=null, key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=null,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=ReturnValueDescriptor())</para></entry>
             </row>
 
             <row>
@@ -1208,14 +1201,13 @@ public class Library {
               validation of
               <methodname>getMostPopularBookPerAuthor()</methodname></entry>
 
-              <entry><para>Node(name=null, inIterable=false, index=null,
-              key=null,
-              methodDescriptor=MethodDescriptor(name=getMostPopularBookPerAuthor,
-              parameterDescriptors=[]), constructorDescriptor=null,
-              parameterDescriptor=null)</para><para>Node(name=null,inIterable=true,
+              <entry><para>Node(name=getMostPopularBookPerAuthor,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=null,
+              inIterable=false, index=null, key=null,
+              elementDescriptor=ReturnValueDescriptor())</para><para>Node(name=title,inIterable=true,
               index=null, key=Author(firstName=John, lastName=Doe),
-              methodDescriptor=null, constructorDescriptor=null,
-              parameterDescriptor=null)</para></entry>
+              elementDescriptor=PropertyDescriptor())</para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -2479,7 +2471,7 @@ Validator validatorUsingCustomTraversable = factory
       provide a <classname>ParameterNameProvider</classname> implementation
       following the default Bean Validation
       <classname>ParameterNameProvider</classname> rules as defined in <xref
-      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters" />.
+      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>.
       You can access it by calling
       <methodname>getDefaultParameterNameProvider()</methodname>. Such an
       implementation is useful to let a custom
@@ -2488,10 +2480,10 @@ Validator validatorUsingCustomTraversable = factory
 
       <para revisionflag="added"><classname>Configuration</classname> also
       exposes data stored in <classname>META-INF/validation.xml</classname>
-      (see <xref linkend="xml-config" />). This is particularly useful for
+      (see <xref linkend="xml-config"/>). This is particularly useful for
       containers wishing to control the instance creation and life cycle (more
       information at <xref
-      linkend="bootstrapping-usageandcontainerexpectation" />).</para>
+      linkend="bootstrapping-usageandcontainerexpectation"/>).</para>
 
       <para>Clients call
       <methodname>Configuration.buildValidatorFactory()</methodname> to
@@ -3853,7 +3845,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
           instances. The scope of <classname>ConstraintValidator</classname>
           instances is still fully controlled by Bean Validation provider as
           described in <xref
-          linkend="constraintsdefinitionimplementation-constraintfactory" />
+          linkend="constraintsdefinitionimplementation-constraintfactory"/>
           but as managed beans can receive expected services like injection of
           other objects.</para>
         </listitem>
