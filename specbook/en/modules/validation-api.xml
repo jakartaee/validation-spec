@@ -789,7 +789,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
       <listitem>
         <para>if the failing object is the root object, a
         <classname>Node</classname> with name set to null is added to the
-        <classname>Path</classname>.</para>
+        <classname>Path</classname>. <phrase revisionflag="added">The
+        <classname>Kind</classname> of the node's
+        <classname>ElementDescriptor</classname> is
+        <varname>Kind.BEAN</varname>. </phrase></para>
       </listitem>
 
       <listitem>
@@ -800,7 +803,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <para>a <classname>Node</classname> object whose
             <literal>name</literal> equals the name of the association
             property (field name or Java Bean property name) is added to
-            <classname>Path</classname></para>
+            <classname>Path</classname>. <phrase revisionflag="added">The
+            <classname>Kind</classname> of the node's
+            <classname>ElementDescriptor</classname> is
+            <varname>Kind.PROPERTY</varname>.</phrase></para>
           </listitem>
 
           <listitem>
@@ -834,8 +840,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
           <listitem>
             <para>a <classname>Node</classname> object is added to
             <classname>Path</classname> whose <literal>name</literal> equals
-            the name of the property (field name or Java Bean property
-            name)</para>
+            the name of the property (field name or Java Bean property name).
+            <phrase revisionflag="added">The <classname>Kind</classname> of
+            the node's <classname>ElementDescriptor</classname> is
+            <varname>Kind.PROPERTY</varname>.</phrase></para>
           </listitem>
 
           <listitem>
@@ -850,8 +858,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         <itemizedlist>
           <listitem>
             <para>a <classname>Node</classname> object is added to
-            <classname>Path</classname> whose <literal>name</literal> is
-            null</para>
+            <classname>Path</classname> whose <literal>name</literal> is null.
+            <phrase revisionflag="added">The <classname>Kind</classname> of
+            the node's <classname>ElementDescriptor</classname> is
+            <varname>Kind.BEAN</varname>.</phrase></para>
           </listitem>
 
           <listitem>
@@ -869,7 +879,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <para>a <classname>Node</classname> object is added to the
             <classname>Path</classname> which represents the validated method
             or constructor. The <literal>name</literal> of the node equals the
-            validated method or constructor.</para>
+            validated method or constructor, the <classname>Kind</classname>
+            of the node's <classname>ElementDescriptor</classname> is
+            <varname>Kind.METHOD</varname> respectively
+            <varname>Kind.CONSTRUCTOR</varname>.</para>
           </listitem>
 
           <listitem>
@@ -879,7 +892,11 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <literal>name</literal> of the node equals the parameter name as
             determined by the current parameter name provider (see <xref
             linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>),
-            otherwise the <literal>name</literal> of the node is null.</para>
+            otherwise the <literal>name</literal> of the node is null. The
+            <classname>Kind</classname> of the node's
+            <classname>ElementDescriptor</classname> is
+            <varname>Kind.PARAMETER</varname> respectively
+            <varname>Kind.RETURN_VALUE</varname>.</para>
           </listitem>
 
           <listitem>
@@ -897,7 +914,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <para>a <classname>Node</classname> object is added to the
             <classname>Path</classname> which represents the concerned method
             or constructor. The <literal>name</literal> of the node equals the
-            concerned method or constructor.</para>
+            concerned method or constructor, the <classname>Kind</classname>
+            of the node's <classname>ElementDescriptor</classname> is
+            <varname>Kind.METHOD</varname> respectively
+            <varname>Kind.CONSTRUCTOR</varname>.</para>
           </listitem>
 
           <listitem>
@@ -905,9 +925,12 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <classname>Path</classname> which represents the traversed
             parameter or return value. In the parameter case, the
             <literal>name</literal> of the node equals the parameter name as
-            determined by the current parameter name provider (see <xref
-            linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>),
-            otherwise the <literal>name</literal> of the node is null.</para>
+            determined by the current parameter name provider, otherwise the
+            <literal>name</literal> of the node is null. The
+            <classname>Kind</classname> of the node's
+            <classname>ElementDescriptor</classname> is
+            <varname>Kind.PARAMETER</varname> respectively
+            <varname>Kind.RETURN_VALUE</varname>.</para>
           </listitem>
 
           <listitem>
@@ -959,9 +982,6 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
       <classname>Kind</classname> will be either
       <varname>CONSTRUCTOR</varname> or <varname>METHOD</varname>.</para>
     </note>
-
-    <remark revisionflag="added">TODO: mention
-    <varname>elementDescriptor</varname> in the previous section.</remark>
 
     <para revisionflag="changed">Let there be the following object
     definitions:</para>
@@ -1341,15 +1361,20 @@ Set&lt;ConstraintViolation&gt; constraintViolations = validator.validate(book);<
       <para>The <classname>ConstraintViolation</classname> object for this
       failure passes the following assertions:</para>
 
-      <programlisting>//assuming an english locale, the interpolated message is returned
+      <programlisting revisionflag="changed">//assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( constraintViolation.getMessage() );
 assert book == constraintViolation.getRootBean();
 assert book == constraintViolation.getLeafBean();
+
 //the offending value
 assert book.getTitle().equals( constraintViolation.getInvalidValue() );
+
 //the offending property
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
-assert "title".equals( nodeIter.next().getName() );
+Node node = nodeIter.next();
+assert "title".equals( node.getName() );
+assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+
 assert false == nodeIter.hasNext();</programlisting>
 
       <para>The second failure, <literal>@NotEmpty</literal> (or more
@@ -1362,16 +1387,143 @@ assert false == nodeIter.hasNext();</programlisting>
       <programlisting>assert "lastname must not be null".equals( constraintViolation.getMessage() );
 assert book == constraintViolation.getRootBean();
 assert author == constraintViolation.getLeafBean();
+
 //the offending value
 assert book.getAuthor().getLastName() == constraintViolation.getInvalidValue();
+
 //the offending property
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
-assert "author".equals( nodeIter.next().getName() );
-assert "lastName".equals( nodeIter.next().getName() );
+
+Node node = nodeIter.next();
+assert "author".equals( node.getName() );
+assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+
+node = nodeIter.next();
+assert "lastName".equals( node.getName() );
+assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+
+assert false == nodeIter.hasNext();</programlisting>
+    </section>
+
+    <section revisionflag="added">
+      <title>Examples for method-level constraint violations</title>
+
+      <remark>TODO: Do we need more examples here?</remark>
+
+      <para>The following examples assume the constraint, class and object
+      definitions given in the previous section. Additionally the following
+      class and object definitions are assumed:</para>
+
+      <programlisting>public class Library {
+
+    public void addBook(@NotNull @Valid Book book) { ... }
+
+    @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() { ... }
+}
+
+Library library = new Library();
+author.setLastName("Doe");</programlisting>
+
+      <para>Assuming the following invocation of
+      <methodname>addBook()</methodname> is subject to method-level
+      validation:</para>
+
+      <programlisting>library.addBook(null);</programlisting>
+
+      <para>Then one <classname>ConstraintViolation</classname> object would
+      be returned by <methodname>Validator#validateParameters()</methodname>
+      which satisfies the following assertions:</para>
+
+      <programlisting>//assuming an english locale, the interpolated message is returned
+assert "may not be null".equals( constraintViolation.getMessage() );
+assert library == constraintViolation.getRootBean();
+assert library == constraintViolation.getLeafBean();
+
+assert null == constraintViolation.getInvalidValue();
+
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+
+Node node = nodeIter.next();
+assert "addBook".equals( node.getName() );
+assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
+
+node = nodeIter.next();
+//assuming the default parameter name provider is used
+assert "arg0".equals( node.getName() );
+assert Kind.PARAMETER.equals( node.getElementDescriptor().getKind() );
+
 assert false == nodeIter.hasNext();</programlisting>
 
-      <remark revisionflag="added">TODO: Extend example for method-level
-      validation</remark>
+      <para>Assuming the following invocation of
+      <methodname>addBook()</methodname> is subject to method-level
+      validation:</para>
+
+      <programlisting>library.addBook(book);</programlisting>
+
+      <para>Then one <classname>ConstraintViolation</classname> object would
+      be returned by <methodname>Validator#validateParameters()</methodname>
+      which satisfies the following assertions:</para>
+
+      <programlisting>//assuming an english locale, the interpolated message is returned
+assert "may not be null or empty".equals( constraintViolation.getMessage() );
+assert library == constraintViolation.getRootBean();
+assert book == constraintViolation.getLeafBean();
+
+assert book.getTitle().equals( constraintViolation.getInvalidValue() );
+
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+
+Node node = nodeIter.next();
+assert "addBook".equals( node.getName() );
+assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
+
+node = nodeIter.next();
+//assuming the default parameter name provider is used
+assert "arg0".equals( node.getName() );
+assert Kind.PARAMETER.equals( node.getElementDescriptor().getKind() );
+
+node = nodeIter.next();
+assert "title".equals( node.getName() );
+assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+
+assert false == nodeIter.hasNext();</programlisting>
+
+      <para>Assuming the following invocation of
+      <methodname>getMostPopularBookPerAuthor()</methodname> is subject to
+      method-level validation and returns a <classname>Map</classname>
+      containing one entry with key <varname>author</varname> and value
+      <varname>book</varname>:</para>
+
+      <programlisting>Map&lt;Author, Book&gt; mostPopularBookPerAuthor = library.getMostPopularBookPerAuthor();</programlisting>
+
+      <para>Then one <classname>ConstraintViolation</classname> object would
+      be returned by <methodname>Validator#validateReturnValue()</methodname>
+      which satisfies the following assertions:</para>
+
+      <programlisting>//assuming an english locale, the interpolated message is returned
+assert "may not be null or empty".equals( constraintViolation.getMessage() );
+assert library == constraintViolation.getRootBean();
+assert book == constraintViolation.getLeafBean();
+
+assert book.getTitle().equals( constraintViolation.getInvalidValue() );
+
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+
+Node node = nodeIter.next();
+assert "getMostPopularBookPerAuthor".equals( node.getName() );
+assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
+
+node = nodeIter.next();
+assert null == node.getName();
+assert Kind.RETURN_VALUE.equals( node.getElementDescriptor().getKind() );
+
+node = nodeIter.next();
+assert "title".equals( node.getName() );
+assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+assert author.equals( node.getKey() );
+assert true == node.isInIterable();
+
+assert false == nodeIter.hasNext();</programlisting>
     </section>
   </section>
 
