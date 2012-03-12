@@ -294,9 +294,9 @@ public enum Scope {
     <varname>METHOD</varname>, <varname>CONSTRUCTOR</varname>,
     <varname>PARAMETER</varname> or <varname>RETURN_VALUE</varname>.</para>
 
-    <para revisionflag="added"><methodname>as</methodname> returns the given
-    element casted down to one of the specific descriptor types, e.g.
-    <classname>BeanDescriptor</classname>,
+    <para revisionflag="added">The method <methodname>as</methodname> returns
+    the given element casted down to one of the specific descriptor types,
+    e.g. <classname>BeanDescriptor</classname>,
     <classname>PropertyDescriptor</classname> etc.</para>
 
     <para>If you need to query the metadata API in a more fine grained way for
@@ -361,6 +361,9 @@ assert 2 == constraints.size();      </programlisting>
     (<classname>Scope.LOCAL_ELEMENT</classname>), or constraints belonging to
     the element but hosted anywhere in the class hierarchy
     (<classname>Scope.HIERARCHY</classname>).</para>
+
+    <para revisionflag="added">TODO: add examples for method level constraint
+    filtering and see if the API fits.</para>
   </section>
 
   <section>
@@ -481,8 +484,8 @@ public interface BeanDescriptor extends ElementDescriptor {
     safely ignore the bean as it will not be impacted by validation.</para>
 
     <para revisionflag="added"><remark>TODO: Specify behavior with respect to
-    method-level constraints, or add a dedicated method for that (see
-    http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html)</remark></para>
+    method-level constraints, or add a dedicated method for that (see <ulink
+    url="http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html">http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html</ulink>)</remark></para>
 
     <para><methodname>getConstraintsForProperty</methodname> returns a
     <classname>PropertyDescriptor</classname> object describing the property
@@ -616,6 +619,7 @@ public interface MethodDescriptor extends ElementDescriptor {
      * @return A descriptor for this method's return value or &lt;code&gt;null&lt;/code&gt;
      *         if this method has no return value.
      */
+    ReturnValueDescriptor getReturnValueDescriptor();
 }</programlisting>
 
     <para><methodname>getName()</methodname> returns the name of the
@@ -632,7 +636,12 @@ public interface MethodDescriptor extends ElementDescriptor {
 
     <para><remark>TODO: Should we have something like
     <methodname>hasParameterConstraints()</methodname> allowing quickly to
-    check whether parameter validation is required or not?</remark></para>
+    check whether parameter validation is required or not? Same for
+    hasReturnValueConstraints()</remark></para>
+
+    <remark>TODO: Consider overriding ElementDescriptor.hasConstraints() to
+    make it return true if at least one a parameter or the return value host a
+    constraint</remark>
 
     <para><remark>TODO: Investigate how cross-parameter constraints fit into
     the picture.</remark></para>
