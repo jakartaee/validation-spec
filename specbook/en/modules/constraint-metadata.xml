@@ -289,10 +289,7 @@ public enum Scope {
     one constraint declaration.</para>
 
     <para revisionflag="added"><methodname>getKind</methodname> returns the
-    <classname>Kind</classname> of the given element which can be
-    <varname>BEAN</varname>, <varname>PROPERTY</varname>,
-    <varname>METHOD</varname>, <varname>CONSTRUCTOR</varname>,
-    <varname>PARAMETER</varname> or <varname>RETURN_VALUE</varname>.</para>
+    concrete type of the given element.</para>
 
     <para revisionflag="added">The method <methodname>as</methodname> returns
     the given element casted down to one of the specific descriptor types,
@@ -362,8 +359,13 @@ assert 2 == constraints.size();      </programlisting>
     the element but hosted anywhere in the class hierarchy
     (<classname>Scope.HIERARCHY</classname>).</para>
 
-    <para revisionflag="added">TODO: add examples for method level constraint
-    filtering and see if the API fits.</para>
+    <para revisionflag="added"><remark>TODO: add examples for method level
+    constraint filtering and see if the API fits.</remark></para>
+
+    <para revisionflag="added"><remark>TODO: Consider renaming
+    <classname>ElementDescriptor$Kind</classname> to
+    <classname>ElementType</classname> or <classname>Type</classname> and
+    making it a top-level type.</remark></para>
   </section>
 
   <section>
@@ -604,7 +606,7 @@ public interface MethodDescriptor extends ElementDescriptor {
     /**
      * &lt;p&gt;
      * Returns a list with descriptors for this method's parameters. The size of
-     * this list corresponds with the number of this method's parameters.
+     * this list corresponds to the number of this method's parameters.
      * &lt;/p&gt;
      *
      * @return A list with descriptors for this method's parameters. An empty
@@ -643,6 +645,11 @@ public interface MethodDescriptor extends ElementDescriptor {
     make it return true if at least one a parameter or the return value host a
     constraint</remark>
 
+    <para><remark>TODO: Should
+    <methodname>getReturnValueDescriptor()</methodname> return null for void
+    methods or a void
+    <classname>ReturnValueDescriptor</classname>?</remark></para>
+
     <para><remark>TODO: Investigate how cross-parameter constraints fit into
     the picture.</remark></para>
   </section>
@@ -673,7 +680,7 @@ public interface ConstructorDescriptor extends ElementDescriptor {
     /**
      * &lt;p&gt;
      * Returns a list with descriptors for this constructor parameters. The size
-     * of this list corresponds with the number of this constructor parameters.
+     * of this list corresponds to the number of this constructor parameters.
      * &lt;/p&gt;
      *
      * @return A list with descriptors for this constructor's parameters. An
@@ -742,11 +749,11 @@ public interface ParameterDescriptor extends ElementDescriptor {
     String getName();
 
     /**
-     * Whether a cascaded validation for this method's return value shall be
-     * performed or not.
+     * Whether a cascaded validation of this parameter shall be performed or
+     * not.
      *
-     * @return &lt;code&gt;true&lt;/code&gt;, if this method's return value shall be
-     *         validated recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
+     * @return &lt;code&gt;true&lt;/code&gt;, if this parameter shall be validated
+     *         recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
      */
     boolean isCascaded();
 }</programlisting>
@@ -794,6 +801,10 @@ public interface ReturnValueDescriptor extends ElementDescriptor {
      */
     boolean isCascaded();
 }</programlisting>
+
+    <para><methodname>isCascaded()</methodname> returns true, if the
+    represented return value is marked for cascaded validation, false
+    otherwise.</para>
   </section>
 
   <section id="constraintmetadata-constraintdescriptor">
