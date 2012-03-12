@@ -959,11 +959,17 @@ public class Order implements Auditable {
         //...
     }
 
-    public void placeOrder(@NotNull @Size(min=3, max=20) String customerCode, @NotNull Item item, @Min(1) int quantity) {
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity) {
+
         //...
     }
 }</programlisting>
       </example>
+
+      <remark>TODO: Consistently use "..." or "//..." for omissions</remark>
 
       <para>Using constraint annotations, several preconditions are defined
       here. These preconditions which must be satisfied in order to legally
@@ -1004,11 +1010,11 @@ public class Order implements Auditable {
       <tip>
         <para>In order to use constraint annotations for method or constructor
         parameters, their element type must be
-        <varname>ELEMENT_TYPE.PARAMETER</varname>. In order to use constraint
+        <varname>ElementType.PARAMETER</varname>. In order to use constraint
         annotations for the return values of methods or constructors (see
         following sections), their element type must be
-        <varname>ELEMENT_TYPE.METHOD</varname> respectively
-        <varname>ELEMENT_TYPE.CONSTRUCTOR</varname>. All built-in constraints
+        <varname>ElementType.METHOD</varname> respectively
+        <varname>ElementType.CONSTRUCTOR</varname>. All built-in constraints
         support these element types and it's considered a best practice to do
         the same for custom constraints.</para>
       </tip>
@@ -1021,10 +1027,10 @@ public class Order implements Auditable {
         constraints which are based on several properties of a given
         class.</para>
 
-        <para><remark>TODO: Choose approach from
-        http://beanvalidation.org/proposals/BVAL-241/#cross_parameter. Based
-        on previous discussions, most likely we'll go for option #3, possibly
-        combined with option #2 to allow for generic cross-parameter
+        <para><remark>TODO: Choose approach from <ulink
+        url="http://beanvalidation.org/proposals/BVAL-241/#cross_parameter">http://beanvalidation.org/proposals/BVAL-241/#cross_parameter</ulink>.
+        Based on previous discussions, most likely we'll go for option #3,
+        possibly combined with option #2 to allow for generic cross-parameter
         constraints.</remark></para>
       </section>
 
@@ -1035,7 +1041,7 @@ public class Order implements Auditable {
         <classname>ParameterNameProvider</classname> to a
         sub-package.</remark></para>
 
-        <para>In case the validation of a parameter constraint fails the
+        <para>In case the validation of a parameter constraint fails, the
         concerned parameter needs to be identified in the resulting
         <classname>ConstraintViolation</classname> (see section <xref
         linkend="validationapi-constraintviolation"/>). As of version 7, Java
@@ -1101,9 +1107,9 @@ public interface ParameterNameProvider {
         linkend="xml-config"/>).</para>
 
         <para>If an exception occurs during invocation of the
-        <methodname>getParameterNames()</methodname> methods, the runtime
-        exception is wrapped into a <classname>ValidationException</classname>
-        by the Bean Validation engine.</para>
+        <methodname>getParameterNames()</methodname> methods, this exception
+        is wrapped into a <classname>ValidationException</classname> by the
+        Bean Validation engine.</para>
       </section>
     </section>
 
@@ -1191,7 +1197,7 @@ public interface ParameterNameProvider {
 
       <itemizedlist>
         <listitem>
-          <para>null arguments and return values are ignored</para>
+          <para>null arguments and null return values are ignored</para>
         </listitem>
 
         <listitem>
@@ -1342,6 +1348,12 @@ public interface ParameterNameProvider {
       <para>A conforming Bean Validation provider must throw a
       <classname>ConstraintDefinitionException</classname> when discovering
       that any of these rules are violated.</para>
+
+      <note>
+        <para>Question: should we relax that and say that the exception is
+        raised if the provider does not support non compliant models? I am
+        concerned that we would limit innovation here.</para>
+      </note>
 
       <section>
         <title>Examples</title>
