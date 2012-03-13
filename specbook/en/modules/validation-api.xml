@@ -22,7 +22,10 @@
     <classname>ValidatorFactory</classname>. <classname>Validator</classname>
     implementations are thread-safe.</para>
 
-    <programlisting revisionflag="changed">/**
+    <example revisionflag="changed">
+      <title>Validator interface</title>
+
+      <programlisting>/**
  * Validate bean instances. Implementations of this interface must be thread-safe.
  *
  * @author Emmanuel Bernard
@@ -196,6 +199,7 @@ public interface Validator {
      */
     public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
+    </example>
 
     <para><methodname>getConstraintsForClass</methodname> is described in
     <xref linkend="constraintmetadata"/>.</para>
@@ -731,7 +735,10 @@ public interface ConstraintViolation&lt;T&gt; {
     representing the navigation path from the root object to the failing
     object.</para>
 
-    <programlisting revisionflag="changed">/**
+    <example revisionflag="changed">
+      <title>Path and Node interfaces</title>
+
+      <programlisting>/**
  * Represents the navigation path from an object to another
  * in an object graph.
  * Each path element is represented by a &lt;code&gt;Node&lt;/code&gt;.
@@ -787,6 +794,7 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         ElementDescriptor getElementDescriptor();
     }
 }</programlisting>
+    </example>
 
     <para><classname>Path</classname> is made of <classname>Node</classname>s
     and is built according to the following rules:</para>
@@ -992,7 +1000,10 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
     <para revisionflag="changed">Let there be the following object
     definitions:</para>
 
-    <programlisting revisionflag="changed">@SecurityChecking
+    <example revisionflag="changed">
+      <title>Object model definition for examples</title>
+
+      <programlisting>@SecurityChecking
 public class Author {
     private String firstName;
     
@@ -1038,6 +1049,7 @@ public class Library {
 
     @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() { ... }
 }</programlisting>
+    </example>
 
     <para revisionflag="changed">Assuming a <classname>Book</classname>
     instance gets validated, the property paths to the different constraints
@@ -1367,7 +1379,10 @@ Set&lt;ConstraintViolation&gt; constraintViolations = validator.validate(book);<
       <para>The <classname>ConstraintViolation</classname> object for this
       failure passes the following assertions:</para>
 
-      <programlisting revisionflag="changed">//assuming an english locale, the interpolated message is returned
+      <example revisionflag="changed">
+        <title>Test assertions on ContraintViolation</title>
+
+        <programlisting>//assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( constraintViolation.getMessage() );
 assert book == constraintViolation.getRootBean();
 assert book == constraintViolation.getLeafBean();
@@ -1382,6 +1397,7 @@ assert "title".equals( node.getName() );
 assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
 
 assert false == nodeIter.hasNext();</programlisting>
+      </example>
 
       <para>The second failure, <literal>@NotEmpty</literal> (or more
       precisely <classname>@NotNull</classname> a composing constraint of
@@ -2144,10 +2160,10 @@ public @interface MethodValidated {
       The <classname>ValidatorFactory</classname> is then ready to provide
       <classname>Validator</classname> instances.</para>
 
-      <example>
+      <example revisionflag="changed">
         <title>Simple Bean Validation bootstrap sequence</title>
 
-        <programlisting revisionflag="changed">ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        <programlisting>ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 
 //cache the factory somewhere
 Validator validator = factory.getValidator();
@@ -2169,7 +2185,7 @@ factory.close()</programlisting>
         <title>Customize message resolution, traversable resolver, constraint
         Validator factory and parameter name provider implementation</title>
 
-        <programlisting revisionflag="changed">//some customization from a container
+        <programlisting>//some customization from a container
 ValidatorFactory factory = Validation
        .byDefaultProvider().configure()
           .messageInterpolator( new ContainerMessageInterpolator() )
@@ -2191,11 +2207,11 @@ factory.close()</programlisting>
       provider some alternative provider resolution strategy to discover Bean
       Validation providers.</para>
 
-      <example>
+      <example revisionflag="changed">
         <title>Customize the Bean Validation provider resolution
         mechanism</title>
 
-        <programlisting revisionflag="changed">//osgi environment
+        <programlisting>//osgi environment
 ValidatorFactory factory = Validation
        .byDefaultProvider()
           .providerResolver( new OSGiServiceDiscoverer() )
@@ -2305,7 +2321,7 @@ Validator localizedValidator =
       <example revisionflag="changed">
         <title>ValidatorFactory interface</title>
 
-        <programlisting revisionflag="changed">/**
+        <programlisting>/**
  * Factory returning initialized &lt;code&gt;Validator&lt;/code&gt; instances.
  * Implementations are thread-safe
  * This object is typically cached and reused.
@@ -2648,11 +2664,10 @@ Validator validatorUsingCustomTraversable = factory
       retrieve the initialized <classname>ValidatorFactory</classname>
       instance.</para>
 
-      <example>
-        <title revisionflag="changed">Configuration and ConfigurationSource
-        interfaces</title>
+      <example revisionflag="changed">
+        <title>Configuration and ConfigurationSource interfaces</title>
 
-        <programlisting revisionflag="changed">/**
+        <programlisting>/**
  * Receives configuration information, selects the appropriate
  * Bean Validation provider and builds the appropriate &lt;code&gt;ValidatorFactory&lt;/code&gt;.
  * &lt;p/&gt;
