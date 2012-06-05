@@ -1288,22 +1288,24 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
      */
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if ( value == null ) return true;
-        Set&lt;Format&gt; guessedFormats = guessFormat(value);
+        Set&lt;Format&gt; guessedFormats = guessFormats(value);
 
         context.disableDefaultConstraintViolation();
         if ( guessedFormats.size() == 0 ) {
             String unknown = "{com.acme.constraint.Syntax.unknown}";
             context.buildConstraintViolationWithTemplate(unknown)
                        .addConstraintViolation();
+            return false;
         }
-        else {
+        if ( allowedFormats.size() != 0 
+            &amp;&amp; Collections.disjoint( guessedFormats, allowedFormats ) ) {
+
             String unauthorized = "{com.acme.constraint.Syntax.unauthorized}";
             context.buildConstraintViolationWithTemplate(unauthorized)
                        .addConstraintViolation();
+            return false;
         }
-
-        return allowedFormats.size() == 0 
-            || (! Collections.disjoint( guessFormat(value), allowedFormats ) ));
+        return true;
     }
 
     Set&lt;Format&gt; guessFormats(String text) { ... }
