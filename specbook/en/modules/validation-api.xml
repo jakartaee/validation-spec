@@ -2583,18 +2583,20 @@ Validator validatorUsingCustomTraversable = factory
     <section>
       <title>Configuration</title>
 
-      <para><classname>Configuration</classname> collects configuration
-      information, determines the correct provider implementation and
-      delegates it the <classname>ValidatorFactory</classname> creation. This
-      class lets you define:</para>
+      <para><classname>The reponsibiltiy of the Configuration</classname> is
+      to collect configuration information, to determine the correct provider
+      implementation and to delegate the
+      <classname>ValidatorFactory</classname> creation to the seleced
+      provider. More concretely <classname>Configuration</classname> lets you
+      define:</para>
 
       <itemizedlist>
         <listitem>
-          <para>the message interpolator strategy instance</para>
+          <para>the message interpolator instance</para>
         </listitem>
 
         <listitem>
-          <para>the traversable resolver strategy instance</para>
+          <para>the traversable resolver instance</para>
         </listitem>
 
         <listitem>
@@ -2615,7 +2617,7 @@ Validator validatorUsingCustomTraversable = factory
 
         <listitem>
           <para>whether or not <classname>META-INF/validation.xml</classname>
-          is considered.</para>
+          is considered</para>
         </listitem>
       </itemizedlist>
 
@@ -2679,9 +2681,28 @@ Validator validatorUsingCustomTraversable = factory
       <example revisionflag="changed">
         <title>Configuration and ConfigurationSource interfaces</title>
 
-        <programlisting>/**
+        <programlisting>/*
+* Copyright 2009-2012, Red Hat, Inc. and/or its affiliates, and individual contributors
+* by the @authors tag. See the copyright.txt in the distribution for a
+* full listing of individual contributors.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* http://www.apache.org/licenses/LICENSE-2.0
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+package javax.validation;
+
+import java.io.InputStream;
+
+/**
  * Receives configuration information, selects the appropriate
- * Bean Validation provider and builds the appropriate &lt;code&gt;ValidatorFactory&lt;/code&gt;.
+ * Bean Validation provider and builds the appropriate {@code ValidatorFactory}.
  * &lt;p/&gt;
  * Usage:
  * &lt;pre&gt;
@@ -2695,26 +2716,27 @@ Validator validatorUsingCustomTraversable = factory
  * By default, the configuration information is retrieved from
  * &lt;i&gt;META-INF/validation.xml&lt;/i&gt;.
  * It is possible to override the configuration retrieved from the XML file
- * by using one or more of the &lt;code&gt;Configuration&lt;/code&gt; methods.
+ * by using one or more of the {@code Configuration} methods.
  * &lt;p/&gt;
  * The {@link ValidationProviderResolver} is specified at configuration time
  * (see {@link javax.validation.spi.ValidationProvider}).
- * If none is explicitly requested, the default &lt;code&gt;ValidationProviderResolver&lt;/code&gt; is used.
+ * If none is explicitly requested, the default {@code ValidationProviderResolver} is used.
  * &lt;p/&gt;
  * The provider is selected in the following way:
  * &lt;ul&gt;
  * &lt;li&gt;if a specific provider is requested programmatically using
- * &lt;code&gt;Validation.byProvider(Class)&lt;/code&gt;, find the first provider implementing
+ * {@code Validation.byProvider(Class)}, find the first provider implementing
  * the provider class requested and use it&lt;/li&gt;
  * &lt;li&gt;if a specific provider is requested in &lt;i&gt;META-INF/validation.xml&lt;/i&gt;,
  * find the first provider implementing the provider class requested and use it&lt;/li&gt;
- * &lt;li&gt;otherwise, use the first provider returned by the &lt;code&gt;ValidationProviderResolver&lt;code&gt;&lt;/li&gt;
+ * &lt;li&gt;otherwise, use the first provider returned by the {@code ValidationProviderResolver}&lt;/li&gt;
  * &lt;/ul&gt;
  * &lt;p/&gt;
  * Implementations are not meant to be thread-safe.
  *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
+ * @author Hardy Ferentschik
  */
 public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
 
@@ -2723,33 +2745,33 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * method is called.
      * This method is typically useful for containers that parse
      * &lt;i&gt;META-INF/validation.xml&lt;/i&gt; themselves and pass the information
-     * via the &lt;code&gt;Configuration&lt;/code&gt; methods.
+     * via the {@code Configuration} methods.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     * @return {@code this} following the chaining method pattern.
      */
     T ignoreXmlConfiguration();
 
     /**
      * Defines the message interpolator used. Has priority over the configuration
      * based message interpolator.
-     * If &lt;code&gt;null&lt;/code&gt; is passed, the default message interpolator is used
+     * If {@code null} is passed, the default message interpolator is used
      * (defined in XML or the specification default).
      *
      * @param interpolator message interpolator implementation.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     * @return {@code this} following the chaining method pattern.
      */
     T messageInterpolator(MessageInterpolator interpolator);
 
     /**
      * Defines the traversable resolver used. Has priority over the configuration
      * based traversable resolver.
-     * If &lt;code&gt;null&lt;/code&gt; is passed, the default traversable resolver is used
+     * If {@code null} is passed, the default traversable resolver is used
      * (defined in XML or the specification default).
      *
      * @param resolver traversable resolver implementation.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     * @return {@code this} following the chaining method pattern.
      */
     T traversableResolver(TraversableResolver resolver);
 
@@ -2761,7 +2783,7 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      *
      * @param constraintValidatorFactory constraint factory implementation.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     * @return {@code this} following the chaining method pattern.
      */
     T constraintValidatorFactory(ConstraintValidatorFactory constraintValidatorFactory);
 
@@ -2773,7 +2795,7 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      *
      * @param parameterNameProvider Parameter name provider implementation.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
+     * @return {@code this} following the chaining method pattern.
      */
     T parameterNameProvider(ParameterNameProvider parameterNameProvider);
 
@@ -2782,13 +2804,14 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * XML format.
      * &lt;p/&gt;
      * The stream should be closed by the client API after the
-     * &lt;code&gt;ValidatorFactory&lt;/code&gt; has been built. The Bean Validation provider
+     * {@code ValidatorFactory} has been built. The Bean Validation provider
      * must not close the stream.
      *
      * @param stream XML mapping stream.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
-     * @throws IllegalArgumentException if &lt;code&gt;stream&lt;/code&gt; is null
+     * @return {@code this} following the chaining method pattern.
+     *
+     * @throws IllegalArgumentException if {@code stream} is null
      */
     T addMapping(InputStream stream);
 
@@ -2801,32 +2824,33 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * Note: Using this non type-safe method is generally not recommended.
      * &lt;p/&gt;
      * It is more appropriate to use, if available, the type-safe equivalent provided
-     * by a specific provider via its &lt;code&gt;Configuration&lt;code&gt; subclass.
-     * &lt;code&gt;ValidatorFactory factory = Validation.byProvider(ACMEPrivoder.class)
+     * by a specific provider via its {@code Configuration} subclass.
+     * &lt;pre&gt;{@code ValidatorFactory factory = Validation.byProvider(ACMEProvider.class)
      * .configure()
      * .providerSpecificProperty(ACMEState.FAST)
-     * .buildValidatorFactory();
-     * &lt;/code&gt;
+     * .buildValidatorFactory();}
+     * &lt;/pre&gt;
      * This method is typically used by containers parsing &lt;i&gt;META-INF/validation.xml&lt;/i&gt;
      * themselves and injecting the state to the Configuration object.
      * &lt;p/&gt;
      * If a property with a given name is defined both via this method and in the
      * XML configuration, the value set programmatically has priority.
-     *
+     * &lt;p/&gt;
      * If null is passed as a value, the value defined in XML is used. If no value
      * is defined in XML, the property is considered unset.
      *
      * @param name property name.
      * @param value property value.
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern.
      *
-     * @throws IllegalArgumentException if &lt;code&gt;name&lt;/code&gt; is null
+     * @return {@code this} following the chaining method pattern.
+     *
+     * @throws IllegalArgumentException if {@code name} is null
      */
     T addProperty(String name, String value);
 
     /**
-     * Return an implementation of the &lt;code&gt;MessageInterpolator&lt;/code&gt; interface
-     * following the default &lt;code&gt;MessageInterpolator&lt;/code&gt; defined in the
+     * Return an implementation of the {@code MessageInterpolator} interface
+     * following the default {@code MessageInterpolator} defined in the
      * specification:
      * &lt;ul&gt;
      * &lt;li&gt;use the ValidationMessages resource bundle to load keys&lt;/li&gt;
@@ -2838,11 +2862,11 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
     MessageInterpolator getDefaultMessageInterpolator();
 
     /**
-     * Return an implementation of the &lt;code&gt;TraversableResolver&lt;/code&gt; interface
-     * following the default &lt;code&gt;TraversableResolver&lt;/code&gt; defined in the
+     * Return an implementation of the {@code TraversableResolver} interface
+     * following the default {@code TraversableResolver} defined in the
      * specification:
      * &lt;ul&gt;
-     * &lt;li&gt;if Java Persistence is available in the runtime environment, 
+     * &lt;li&gt;if Java Persistence is available in the runtime environment,
      * a property is considered reachable if Java Persistence considers
      * the property as loaded&lt;/li&gt;
      * &lt;li&gt;if Java Persistence is not available in the runtime environment,
@@ -2855,11 +2879,11 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
     TraversableResolver getDefaultTraversableResolver();
 
     /**
-     * Return an implementation of the &lt;code&gt;ConstraintValidatorFactory&lt;/code&gt; interface
-     * following the default &lt;code&gt;ConstraintValidatorFactory&lt;/code&gt; defined in the
+     * Return an implementation of the {@code ConstraintValidatorFactory} interface
+     * following the default {@code ConstraintValidatorFactory} defined in the
      * specification:
      * &lt;ul&gt;
-     * &lt;li&gt;uses the public no-arg constructor of the &lt;code&gt;ConstraintValidator&lt;/code&gt;&lt;/li&gt;
+     * &lt;li&gt;uses the public no-arg constructor of the {@code ConstraintValidator}&lt;/li&gt;
      * &lt;/ul&gt;
      *
      * @return default ConstraintValidatorFactory implementation compliant with the specification
@@ -2867,49 +2891,74 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
     ConstraintValidatorFactory getDefaultConstraintValidatorFactory();
 
     /**
-     * Return an implementation of the &lt;code&gt;ParameterNameProvider&lt;/code&gt;
-     * interface following the default &lt;code&gt;ParameterNameProvider&lt;/code&gt;
+     * Return an implementation of the {@code ParameterNameProvider}
+     * interface following the default {@code ParameterNameProvider}
      * defined in the specification:
      * &lt;ul&gt;
-     * &lt;li&gt;returns names in the form &lt;code&gt;arg&amp;lt;PARAMETER_INDEX&amp;gt;&lt;/code&gt;
-     * where &lt;code&gt;PARAMETER_INDEX&lt;/code&gt; starts at 0 for the first parameter,
-     * e.g. &lt;code&gt;arg0&lt;/code&gt;, &lt;code&gt;arg1&lt;/code&gt; etc.&lt;/code&gt;&lt;/li&gt;
+     * &lt;li&gt;returns names in the form {@code arg&amp;lt;PARAMETER_INDEX&amp;gt;}
+     * where {@code PARAMETER_INDEX} starts at 0 for the first parameter,
+     * e.g. {@code arg0}, {@code arg1} etc.&lt;/li&gt;
      * &lt;/ul&gt;
      *
-     * @return default ParameterNameProvider implementation compliant with the
-     *         specification
+     * @return default ParameterNameProvider implementation compliant with
+     *         the specification
      */
     ParameterNameProvider getDefaultParameterNameProvider();
 
     /**
-     * Return information stored in the configuration source (typically the &lt;i&gt;META-INF/validation.xml&lt;/i&gt;
-     * file).
+     * Return configuration information stored in the &lt;i&gt;META-INF/validation.xml&lt;/i&gt; file.
+     * &lt;p/&gt;
+     * &lt;b&gt;Note&lt;/b&gt;:&lt;br/&gt;
      * Implementations are encouraged to lazily build this object to delay parsing.
      *
-     * @return {@code ConfigurationSource} object
+     * @return Returns an instance of {@code XMLConfiguration}. This method returns never {@code null}. If there
+     *         is no &lt;i&gt;META-INF/validation.xml&lt;/i&gt; the different getters of the returned instance will return {@code null} respective
+     *         the empty set or map.
      */
-    ConfigurationSource getConfigurationSource();
+    XMLConfiguration getXMLConfiguration();
 
     /**
-     * Build a &lt;code&gt;ValidatorFactory&lt;/code&gt; implementation.
+     * Build a {@code ValidatorFactory} implementation.
      *
      * @return ValidatorFactory
+     *
      * @throws ValidationException if the ValidatorFactory cannot be built
      */
     ValidatorFactory buildValidatorFactory();
-}</programlisting>
+}
+</programlisting>
 
-        <programlisting revisionflag="added">/**
- * Represents a configuration source. In particular
- * &lt;i&gt;META-INF/validation.xml&lt;/i&gt;
+        <programlisting revisionflag="added">/*
+* Copyright 2012, Red Hat, Inc. and/or its affiliates, and individual contributors
+* by the @authors tag. See the copyright.txt in the distribution for a
+* full listing of individual contributors.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+* http://www.apache.org/licenses/LICENSE-2.0
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+package javax.validation;
+
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * Represents the user specified default configuration in &lt;i&gt;META-INF/validation.xml&lt;/i&gt;.
  *
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  * @author Gunnar Morling
+ * @author Hardy Ferentschik
  */
-public interface ConfigurationSource {
+public interface XMLConfiguration {
     /**
      * Class name of the {@code ValidationProvider} implementation
-     * or null if none is specified.
+     * or {@code null} if none is specified.
      *
      * @return validation provider class name
      */
@@ -2917,7 +2966,7 @@ public interface ConfigurationSource {
 
     /**
      * Class name of the {@code ConstraintValidatorFactory} implementation
-     * or null if none is specified.
+     * or {@code null} if none is specified.
      *
      * @return constraint validator factory class name
      */
@@ -2925,43 +2974,43 @@ public interface ConfigurationSource {
 
     /**
      * Class name of the {@code MessageInterpolator} implementation
-     * or null if none is specified.
+     * or {@code null} if none is specified.
      *
-     * @return message interpolator class name or null
+     * @return message interpolator class name or {@code null}
      */
     public String getMessageInterpolatorClassName();
 
     /**
      * Class name of the {@code TraversableResolver} implementation
-     * or null if none is specified.
+     * or {@code null} if none is specified.
      *
-     * @return traversable resolver class name or null
+     * @return traversable resolver class name or {@code null}
      */
     public String getTraversableResolverClassName();
 
     /**
      * Class name of the {@code ParameterNameProvider} implementation
-     * or null if none is specified.
+     * or {@code null} if none is specified.
      *
-     * @return parameter name provider class name or null
+     * @return parameter name provider class name or {@code null}
      */
     public String getParameterNameProviderClassName();
 
     /**
-     * Returns a set of resource path pointing to XML constraint mapping files.
-     * The Set is empty if none are specified.
+     * Returns a set of resource paths pointing to XML constraint mapping files.
+     * The set is empty if none are specified.
      *
-     * @return set of constraint mapping resource path
+     * @return set of constraint mapping resource paths
      */
-    public Set&lt;String&gt; getConstraintMappingResourcePath();
+    public Set&lt;String&gt; getConstraintMappingResourcePaths();
 
     /**
-     * Returns properties as a Map of property name as key and property value as value.
-     * The Map is empty if no property has been specified.
+     * Returns properties as a map of string based key/value pairs.
+     * The map is empty if no property has been specified.
      *
-     * @return properties
+     * @return the properties map
      */
-    public Map&lt;String,String&gt; getProperties();
+    public Map&lt;String, String&gt; getProperties();
 }
 </programlisting>
       </example>
