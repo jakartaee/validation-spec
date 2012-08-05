@@ -2668,17 +2668,34 @@ Validator validatorUsingCustomTraversable = factory
       <classname>ParameterNameProvider</classname> delegate to the standard
       <classname>ParameterNameProvider</classname>.</para>
 
-      <para revisionflag="added"><classname>Configuration</classname> also
-      exposes data stored in <classname>META-INF/validation.xml</classname>
-      (see <xref linkend="xml-config"/>). This is particularly useful for
-      containers wishing to control the instance creation and life cycle (more
+      <para revisionflag="added">Via
+      <classname>getBootstrapConfiguration()</classname>,
+      <classname>Configuration</classname> also exposes data stored in
+      <classname>META-INF/validation.xml</classname> (see <xref
+      linkend="xml-config"/>). This is particularly useful for containers
+      wishing to control the instance creation and life cycle (more
       information at <xref
       linkend="bootstrapping-usageandcontainerexpectation"/>).</para>
+
+      <para revisionflag="added">Using <methodname>addMapping()</methodname>,
+      additional constraint mapping XML descriptors can be added to the
+      configuration (see <xref linkend="xml-config"/>). The given input
+      streams should support the <methodname>mark()</methodname> and
+      <methodname>reset()</methodname> methods defined by
+      <classname>java.io.InputStream</classname>. Streams not supporting the
+      <methodname>mark()</methodname> and <methodname>reset()</methodname>
+      methods will be wrapped with an <classname>InputStream</classname>
+      implementation supporting these methods by the Bean Validation provider
+      in order to allow the streams to be read several times.</para>
 
       <para>Clients call
       <methodname>Configuration.buildValidatorFactory()</methodname> to
       retrieve the initialized <classname>ValidatorFactory</classname>
-      instance.</para>
+      instance.<phrase revisionflag="added"> It is legal to invoke
+      <methodname>buildValidatorFactory()</methodname> several times, e.g. in
+      order to retrieval several <classname>ValidatorFactory</classname>
+      instances with a slightly different configuration (see <xref
+      linkend="using-configuration-several-times"/>).</phrase></para>
 
       <example revisionflag="changed">
         <title>Configuration and BootstrapConfiguration interfaces</title>
@@ -2785,18 +2802,23 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
     T parameterNameProvider(ParameterNameProvider parameterNameProvider);
 
     /**
-     * Add a stream describing constraint mapping in the Bean Validation
-     * XML format.
+     * Add a stream describing constraint mapping in the Bean Validation XML
+     * format.
      * &lt;p/&gt;
      * The stream should be closed by the client API after the
      * {@code ValidatorFactory} has been built. The Bean Validation provider
      * must not close the stream.
      *
-     * @param stream XML mapping stream.
+     * @param stream
+     *            XML mapping stream. The given stream should support the
+     *            mark/reset contract (see {@link InputStream#markSupported()}).
+     *            If it doesn't, it will be wrapped into a stream supporting the
+     *            mark/reset contract by the Bean Validation provider.
      *
      * @return {@code this} following the chaining method pattern.
      *
-     * @throws IllegalArgumentException if {@code stream} is null
+     * @throws IllegalArgumentException
+     *             if {@code stream} is null
      */
     T addMapping(InputStream stream);
 
@@ -3052,11 +3074,11 @@ public interface ACMEConfiguration
         <programlisting>package javax.validation.spi;
 
 /**
- * Contract between a &lt;code&gt;Configuration&lt;/code&gt; and a
- * &lt;/code&gt;ValidatorProvider&lt;/code&gt; to create a &lt;code&gt;ValidatorFactory&lt;/code&gt;.
+ * Contract between a {@code Configuration} and a
+ * &lt;@code ValidatorProvider} to create a {@code ValidatorFactory}.
  * The configuration artifacts defined in the XML configuration and provided to the
- * &lt;code&gt;Configuration&lt;/code&gt; are merged and passed along via
- * &lt;code&gt;ConfigurationState&lt;/code&gt;.
+ * {@code Configuration} are merged and passed along via
+ * {@code ConfigurationState}.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -3076,7 +3098,7 @@ public interface ConfigurationState {
      * Returns the message interpolator of this configuration.
      * Message interpolator is defined in the following decreasing priority:
      * &lt;ul&gt;
-     * &lt;li&gt;set via the &lt;code&gt;Configuration&lt;/code&gt; programmatic API&lt;/li&gt;
+     * &lt;li&gt;set via the {@code Configuration} programmatic API&lt;/li&gt;
      * &lt;li&gt;defined in META-INF/validation.xml provided that ignoreXmlConfiguration
      * is false. In this case the instance is created via its no-arg constructor.&lt;/li&gt;
      * &lt;li&gt;{@code null} if undefined.&lt;/li&gt;
@@ -3087,17 +3109,18 @@ public interface ConfigurationState {
     MessageInterpolator getMessageInterpolator();
 
     /**
-     * Returns a set of configuration streams.
-     * The streams are defined by:
+     * Returns a set of configuration streams. The streams are defined by:
      * &lt;ul&gt;
-     * &lt;li&gt;mapping XML streams passed programmatically in &lt;code&gt;Configuration&lt;/code&gt;&lt;/li&gt;
-     * &lt;li&gt;mapping XML stream located in the resources defined in&lt;/li&gt;
+     * &lt;li&gt;mapping XML streams passed programmatically in {@code Configuration}&lt;/li&gt;
+     * &lt;li&gt;mapping XML streams located in the resources defined in&lt;/li&gt;
      * META-INF/validation.xml (constraint-mapping element)
      * &lt;/ul&gt;
      * Streams represented in the XML configuration and opened by the
-     * &lt;code&gt;Configuration&lt;/code&gt; implementation must be closed by the
-     * &lt;code&gt;Configuration&lt;/code&gt; implementation after the &lt;code&gt;ValidatorFactory&lt;/code&gt;
-     * creation (or if an exception occurs).
+     * {@code Configuration} implementation must be closed by the
+     * {@code Configuration} implementation after the {@code ValidatorFactory}
+     * creation (or if an exception occurs). All streams are guaranteed to
+     * adhere to the mark/reset contract (see
+     * {@link InputStream#markSupported()} by the Bean Validation provider.
      *
      * @return set of input stream
      */
@@ -3108,7 +3131,7 @@ public interface ConfigurationState {
      * The {@code ConstraintValidatorFactory} implementation is defined in the following
      * decreasing priority:
      * &lt;ul&gt;
-     * &lt;li&gt;set via the &lt;code&gt;Configuration&lt;/code&gt; programmatic API&lt;/li&gt;
+     * &lt;li&gt;set via the {@code Configuration} programmatic API&lt;/li&gt;
      * &lt;li&gt;defined in META-INF/validation.xml provided that ignoredXmlConfiguration
      * is false. In this case the instance is created via its no-arg constructor.&lt;/li&gt;
      * &lt;li&gt;{@code null} if undefined.&lt;/li&gt;
@@ -3120,27 +3143,25 @@ public interface ConfigurationState {
 
     /**
      * Returns the traversable resolver for this configuration.
-     * &lt;code&gt;TraversableResolver&lt;/code&gt; is defined in the following decreasing priority:
+     * {@code TraversableResolver} is defined in the following decreasing priority:
      * &lt;ul&gt;
-     * &lt;li&gt;set via the &lt;code&gt;Configuration&lt;/code&gt; programmatic API&lt;/li&gt;
+     * &lt;li&gt;set via the {@code Configuration} programmatic API&lt;/li&gt;
      * &lt;li&gt;defined in META-INF/validation.xml provided that ignoredXmlConfiguration
      * is false. In this case the instance is created via its no-arg constructor.&lt;/li&gt;
      * &lt;li&gt;{@code null} if undefined.&lt;/li&gt;
      * &lt;/ul&gt;
      *
-     * @return traversable provider instance or {@code null} if not defined
+     * @return traversable resolver instance or {@code null} if not defined
      */
     TraversableResolver getTraversableResolver();
 
     /**
      * Returns the parameter name provider for this configuration.
-     * &lt;code&gt;ParameterNameProvider&lt;/code&gt; is defined in the following decreasing
-     * priority:
+     * {@code ParameterNameProvider} is defined in the following decreasing priority:
      * &lt;ul&gt;
-     * &lt;li&gt;set via the &lt;code&gt;Configuration&lt;/code&gt; programmatic API&lt;/li&gt;
-     * &lt;li&gt;defined in META-INF/validation.xml provided that
-     * ignoredXmlConfiguration is false. In this case the instance is created
-     * via its no-arg constructor.&lt;/li&gt;
+     * &lt;li&gt;set via the {@code Configuration} programmatic API&lt;/li&gt;
+     * &lt;li&gt;defined in META-INF/validation.xml provided that ignoredXmlConfiguration
+     * is false. In this case the instance is created via its no-arg constructor.&lt;/li&gt;
      * &lt;li&gt;{@code null} if undefined.&lt;/li&gt;
      * &lt;/ul&gt;
      *
@@ -3250,6 +3271,30 @@ ValidatorFactory factory = configuration
               .traversableResolver( new JPAAwareTraversableResolver() )
               .buildValidatorFactory();</programlisting>
       </example>
+
+      <para revisionflag="added">The following shows an example of setting up
+      a <classname>Configuration</classname>, retrieving a validator factory
+      from it, subsequently altering the configuration and then retrieving
+      another factory:</para>
+
+      <example id="using-configuration-several-times" revisionflag="added">
+        <title>Using Configuration to create several validator
+        factories</title>
+
+        <programlisting>Configuration&lt;?&gt; configuration = ...
+ValidatorFactory factory1 = configuration
+              .messageInterpolator( new WBMessageInterpolator() )
+              .buildValidatorFactory();
+
+ValidatorFactory factory2 = configuration
+              .traversableResolver( new JPAAwareTraversableResolver() )
+              .buildValidatorFactory();</programlisting>
+      </example>
+
+      <para revisionflag="added">Here, <varname>factory1</varname> is set up
+      using a custom message interpolator, while <varname>factory2</varname>
+      is set up using the same message interpolator and additionally using a
+      custom traversable resolver.</para>
     </section>
 
     <section>
@@ -3940,7 +3985,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       path of an XML mapping file. More than one
       <literal>constraint-mapping</literal> element can be present. Mappings
       provided via
-      <methodname>Configuration.addMapping(InputString)</methodname> are added
+      <methodname>Configuration.addMapping(InputStream)</methodname> are added
       to the list of mappings described via
       <literal>constraint-mapping</literal>.</para>
 
@@ -3963,7 +4008,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       <methodname>Configuration.buildValidatorFactory()</methodname>
       call.</para>
 
-      <example>
+      <example revisionflag="changed">
         <title>Example of META-INF/validation.xml file</title>
 
         <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
@@ -3971,7 +4016,8 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
         xmlns="http://jboss.org/xml/ns/javax/validation/configuration"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/configuration validation-configuration-1.0.xsd"&gt;
+            "http://jboss.org/xml/ns/javax/validation/configuration validation-configuration-1.1.xsd"
+        version="1.1"&gt;
     &lt;default-provider&gt;com.acme.ACMEProvider&lt;/default-provider&gt;
     &lt;message-interpolator&gt;com.acme.ACMEAwareMessageInterpolator&lt;/message-interpolator&gt;
 
