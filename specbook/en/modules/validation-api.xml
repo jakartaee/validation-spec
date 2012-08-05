@@ -2677,10 +2677,25 @@ Validator validatorUsingCustomTraversable = factory
       information at <xref
       linkend="bootstrapping-usageandcontainerexpectation"/>).</para>
 
+      <para revisionflag="added">Using <methodname>addMapping()</methodname>,
+      additional constraint mapping XML descriptors can be added to the
+      configuration (see <xref linkend="xml-config"/>). The given input
+      streams should support the <methodname>mark()</methodname> and
+      <methodname>reset()</methodname> methods defined by
+      <classname>java.io.InputStream</classname>. Streams not supporting the
+      <methodname>mark()</methodname> and <methodname>reset()</methodname>
+      methods will be wrapped with an <classname>InputStream</classname>
+      implementation supporting these methods by the Bean Validation provider
+      in order to allow the streams to be read several times.</para>
+
       <para>Clients call
       <methodname>Configuration.buildValidatorFactory()</methodname> to
       retrieve the initialized <classname>ValidatorFactory</classname>
-      instance.</para>
+      instance.<phrase revisionflag="added"> It is legal to invoke
+      <methodname>buildValidatorFactory()</methodname> several times, e.g. in
+      order to retrieval several <classname>ValidatorFactory</classname>
+      instances with a slightly different configuration (see <xref
+      linkend="using-configuration-several-times"/>).</phrase></para>
 
       <example revisionflag="changed">
         <title>Configuration and BootstrapConfiguration interfaces</title>
@@ -3256,6 +3271,30 @@ ValidatorFactory factory = configuration
               .traversableResolver( new JPAAwareTraversableResolver() )
               .buildValidatorFactory();</programlisting>
       </example>
+
+      <para revisionflag="added">The following shows an example of setting up
+      a <classname>Configuration</classname>, retrieving a validator factory
+      from it, subsequently altering the configuration and then retrieving
+      another factory:</para>
+
+      <example id="using-configuration-several-times" revisionflag="added">
+        <title>Using Configuration to create several validator
+        factories</title>
+
+        <programlisting>Configuration&lt;?&gt; configuration = ...
+ValidatorFactory factory1 = configuration
+              .messageInterpolator( new WBMessageInterpolator() )
+              .buildValidatorFactory();
+
+ValidatorFactory factory2 = configuration
+              .traversableResolver( new JPAAwareTraversableResolver() )
+              .buildValidatorFactory();</programlisting>
+      </example>
+
+      <para revisionflag="added">Here, <varname>factory1</varname> is set up
+      using a custom message interpolator, while <varname>factory2</varname>
+      is set up using the same message interpolator and additionally using a
+      custom traversable resolver.</para>
     </section>
 
     <section>
