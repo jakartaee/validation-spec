@@ -1796,8 +1796,6 @@ public interface MessageInterpolator {
       <programlisting>//ValidationMessages.properties
 myapp.creditcard.error=credit card number not valid</programlisting>
 
-      <para/>
-
       <table id="table-messageinterpolation">
         <title>message interpolation</title>
 
@@ -1947,7 +1945,7 @@ Validator validator = factory.getValidator();</programlisting>
   <section id="validationapi-triggeringmethodvalidation" revisionflag="added">
     <title>Triggering method validation</title>
 
-    <para>Bean Validation itself doesn't trigger the evaluation of any
+    <para>Bean Validation itself doesn't trigger the evaluation of
     method-level constraints. That is, just annotating any methods or
     constructors with parameter or return value constraints doesn't
     automatically enforce these constraints, just as annotating any fields or
@@ -1955,27 +1953,68 @@ Validator validator = factory.getValidator();</programlisting>
 
     <para>Instead method-level constraints must be validated by invoking the
     appropriate methods on <classname>javax.validation.Validator</classname>.
-    Typically this won't happen by manually invoking these methods but rather
-    automatically using approaches and techniques such as</para>
+    Typically this won't happen by manually calling these methods but rather
+    automatically upon invocation of constrained methods, using approaches and
+    techniques such as CDI/EJB interceptors, aspect-oriented programming or
+    dynamic proxies.</para>
+
+    <para>The validation of method-level constraints typically comprises the
+    following steps:</para>
 
     <itemizedlist>
       <listitem>
-        <para>CDI/EJB interceptors,</para>
+        <para>Intercept the method call to be validated</para>
       </listitem>
 
       <listitem>
-        <para>aspect-oriented programming or</para>
+        <para>Validate the parameter values provided by the method caller
+        using <methodname>Validator#validateParameters()</methodname> or
+        <methodname>Validator#validateConstructorParameters()</methodname>.</para>
       </listitem>
 
       <listitem>
-        <para>dynamic proxies.</para>
+        <para>If this validation yields a non-empty set of constraint
+        violations, throw a
+        <classname>ConstraintViolationException</classname> wrapping the
+        violations. Otherwise proceed with the actual method
+        invocation.</para>
+      </listitem>
+
+      <listitem>
+        <para>Validate the result returned by the invoked method using
+        <methodname>Validator#validateReturnValue()</methodname> or
+        <methodname>Validator#validateConstructorReturnValue()</methodname>.</para>
+      </listitem>
+
+      <listitem>
+        <para>If this validation yields a non-empty set of constraint
+        violations, throw a
+        <classname>ConstraintViolationException</classname> wrapping the
+        violations. Otherwise return the invocation result to the method
+        caller.</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>By throwing a <classname>ConstraintViolationException</classname> if
+    either of the validation steps fails, it is ensured that the control flow
+    </para>
+
+    <itemizedlist>
+      <listitem>
+        <para>only arrives at the method's body if the caller has satisfied
+        the method's preconditions and </para>
+      </listitem>
+
+      <listitem>
+        <para>only returns to the method caller if the method's postconditions
+        are guaranteed.</para>
       </listitem>
     </itemizedlist>
 
     <para>How integrators enable or disable the validation of method-level
-    constraints using such means is out of scope of this specification. It is
-    expected though, that a common approach will be to use an annotation for
-    this. Thus the Bean Validation API defines the annotation
+    constraints is out of scope of this specification. It is expected though,
+    that a common approach will be to use an annotation for this. Thus the
+    Bean Validation API defines the annotation
     <classname>javax.validation.MethodValidated</classname> which can be used
     by integrators for that purpose.</para>
 
