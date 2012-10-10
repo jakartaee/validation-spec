@@ -1957,12 +1957,12 @@ Validator validator = factory.getValidator();</programlisting>
     <para>Instead method-level constraints must be validated by invoking the
     appropriate methods on <classname>javax.validation.Validator</classname>.
     Typically this won't happen by manually calling these methods but rather
-    automatically upon invocation of constrained methods, using approaches and
-    techniques such as CDI/EJB interceptors, aspect-oriented programming or
-    dynamic proxies.</para>
+    automatically upon invocation of the constrained methods or constructors,
+    using approaches and techniques such as CDI/EJB interceptors,
+    aspect-oriented programming or dynamic proxies.</para>
 
-    <para>The validation of method-level constraints typically comprises the
-    following steps:</para>
+    <para>The validation of method-level / constructor-level constraints
+    comprises the following steps:</para>
 
     <itemizedlist>
       <listitem>
@@ -1999,13 +1999,13 @@ Validator validator = factory.getValidator();</programlisting>
     </itemizedlist>
 
     <para>By throwing a <classname>ConstraintViolationException</classname> if
-    either of the validation steps fails, it is ensured that the control flow
-    </para>
+    either of the validation steps fails, it is ensured that the control
+    flow</para>
 
     <itemizedlist>
       <listitem>
         <para>only arrives at the method's body if the caller has satisfied
-        the method's preconditions and </para>
+        the method's preconditions and</para>
       </listitem>
 
       <listitem>
@@ -2020,6 +2020,131 @@ Validator validator = factory.getValidator();</programlisting>
     Bean Validation API defines the annotation
     <classname>javax.validation.MethodValidated</classname> which can be used
     by integrators for that purpose.</para>
+
+    <para>By default, integrators should intercept and validate all methods
+    hosting either <classname>@Valid</classname> or a Bean Validation
+    constraint annotation whether it be on the method itself or on any of its
+    parameters. The <classname>Default</classname> group should be used for
+    validation out of the box.</para>
+
+    <para>Integrators are encouraged to use Bean Validation's metadata API to
+    find whether or not a method or a constructor should be intercepted. Here
+    is an example of what such usage would be:</para>
+
+    <example>
+      <title>Using metadata API to figure out if method interception is
+      required</title>
+
+      <programlisting>//For methods
+
+// is there any constrained method on this type
+public boolean interceptMethods(Class&lt;?&gt; type) {
+    return validator.getConstraintsForClass( type ).getConstrainedMethods().size() &gt; 0;
+}
+
+// is this method constrained
+public boolean interceptMethod(Class&lt;?&gt; type, Method method) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
+    return methodDescriptor != null;
+}
+
+// should method parameters be validated
+public boolean requiresParametersValidation(Class&lt;?&gt; type, Method method) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
+    if ( methodDescriptor != null ) {
+        boolean validate = false;
+        for (ParameterDescriptor paramDescriptor : methodDescriptor.getParameterDescriptors()) {
+            validate = paramDescriptor.hasConstraints() || paramDescriptor.isCascaded();
+            if (validate) {
+                break;
+            }
+        }
+        return validate;
+    }
+    else {
+        return false;
+    }
+}
+
+// should method return value be validated?
+public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Method method) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
+    if ( methodDescriptor != null ) {
+        ReturnValueDescriptor returnValueDescr = methodDescriptor.getReturnValueDescriptor();
+        return returnValueDescr != null &amp;&amp; ( returnValueDescr.isCascaded() || returnValueDescr.hasConstraints() );
+    }
+    else {
+        return false;
+    }
+}</programlisting>
+    </example>
+
+    <example>
+      <title>Using metadata API to figure out if constructor interception is
+      required</title>
+
+      <programlisting>//For constructors
+
+// is there any constrained constructor on this type
+public &lt;T&gt; boolean interceptConstructors(Class&lt;T&gt; type) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    return bean.getConstrainedConstructors().size() &gt; 0;
+}
+
+// is this constructor constrained
+public &lt;T&gt; boolean interceptConstructor(Class&lt;T&gt; type, Constructor&lt;T&gt; ctor) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor( ctor.getParameterTypes() );
+    return constructorDescriptor != null;
+}
+
+// should constructor parameters be validated
+public &lt;T&gt; boolean requiresParametersValidation(Class&lt;T&gt; type, Constructor&lt;T&gt; ctor) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor( ctor.getParameterTypes() );
+    if ( constructorDescriptor != null ) {
+        boolean validate = false;
+        for (ParameterDescriptor paramDescriptor : constructorDescriptor.getParameterDescriptors()) {
+            validate = paramDescriptor.hasConstraints() || paramDescriptor.isCascaded();
+            if (validate) {
+                break;
+            }
+        }
+        return validate;
+    }
+    else {
+        return false;
+    }
+}
+
+// should constructor return value be validated?
+public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Constructor&lt;T&gt; ctor) {
+    BeanDescriptor bean = validator.getConstraintsForClass( type );
+    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor(
+        ctor.getName(), 
+        ctor.getParameterTypes()
+    );
+    if ( constructorDescriptor != null ) {
+        ReturnValueDescriptor returnValueDescr = constructorDescriptor.getReturnValueDescriptor();
+        return returnValueDescr != null &amp;&amp; ( returnValueDescr.isCascaded() || returnValueDescr.hasConstraints() );
+    }
+    else {
+        return false;
+    }
+}</programlisting>
+    </example>
+
+    <note>
+      <para>Calls to the metadata API is likely only going to be needed during
+      the initialization phase of the interception framework. Results can then
+      be cached.</para>
+    </note>
+
+    <para>Users can alter how method and constructor validation behaves via
+    the use of <classname>@MethodValidated</classname>.</para>
 
     <programlisting>/**
  * Marker for a type or method indicating in which way method-level constraints shall be
@@ -2080,23 +2205,22 @@ public @interface MethodValidated {
     }
 }</programlisting>
 
-    <para>Integrators are encouraged to reuse this annotation instead of
-    creating their own.</para>
-
     <para>Using the <methodname>groups</methodname> attribute the groups to be
-    validated can be specified. If no value is given, implicitely the group
+    validated can be specified. If no value is given, implicitly the group
     <classname>javax.validation.groups.Default</classname> will be validated.
     Using the <methodname>validationMode</methodname> attribute you can
     control whether only parameters, only return values, both or none of these
     shall be validated.</para>
 
     <para>The <classname>@MethodValidated</classname> annotation can be
-    specified on type as well as on method level. It is left to integrators
-    how to handle situations where the annotation is given on a type and a
-    method of the same at the same time. It is highly recommended though, to
-    give method level annotations precedence, effectively allowing a default
-    configuration to be given on the class level which can be overridden on
-    the method level (e.g. to turn off validation for single methods using
+    specified on type as well as on method level.</para>
+
+    <para>It is left to integrators how to handle situations where the
+    annotation is given on a type and a method of the same at the same time.
+    It is highly recommended though, to give method level annotations
+    precedence, effectively allowing a default configuration to be given on
+    the class level which can be overridden on the method level (e.g. to turn
+    off validation for single methods using
     <varname>ValidationMode.NONE</varname>).</para>
 
     <para>It is also left to integrators how to handle situations where the
