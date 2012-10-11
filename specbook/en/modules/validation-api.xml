@@ -2014,22 +2014,16 @@ Validator validator = factory.getValidator();</programlisting>
       </listitem>
     </itemizedlist>
 
-    <para>How integrators enable or disable the validation of method-level
-    constraints is out of scope of this specification. It is expected though,
-    that a common approach will be to use an annotation for this. Thus the
-    Bean Validation API defines the annotation
-    <classname>javax.validation.MethodValidated</classname> which can be used
-    by integrators for that purpose.</para>
-
     <para>By default, integrators should intercept and validate all methods
-    hosting either <classname>@Valid</classname> or a Bean Validation
-    constraint annotation whether it be on the method itself or on any of its
-    parameters. The <classname>Default</classname> group should be used for
-    validation out of the box.</para>
+    hosting either a constraint or cascading constraint violation
+    (<classname>@Valid</classname>) whether it be on the method itself or on
+    any of its parameters. The <classname>Default</classname> group should be
+    used for validation out of the box.</para>
 
     <para>Integrators are encouraged to use Bean Validation's metadata API to
-    find whether or not a method or a constructor should be intercepted. Here
-    is an example of what such usage would be:</para>
+    find whether or not a method or a constructor should be intercepted. This
+    guarantees that XML descriptors as well as future mapping strategies are
+    taken into account. Here is an example of what such usage would be:</para>
 
     <example>
       <title>Using metadata API to figure out if method interception is
@@ -2140,95 +2134,123 @@ public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Method method)
       be cached.</para>
     </note>
 
-    <para>Users can alter how method and constructor validation behaves via
-    the use of <classname>@MethodValidated</classname>.</para>
-
-    <programlisting>/**
- * Marker for a type or method indicating in which way method-level constraints shall be
- * validated upon invocation of the given method or any methods of the given type.
- *
- * @author Gunnar Morling
- */
-@Target({ ElementType.METHOD, ElementType.TYPE })
-@Retention(RetentionPolicy.RUNTIME)
-public @interface MethodValidated {
-
-    /**
-     * Returns the group(s) to validate. Defaults to
-     * {@link Default}.
-     *
-     * @return The group(s) to validate.
-     */
-    Class&lt;?&gt;[] groups() default { };
-
-    /**
-     * Returns the validation mode. Defaults to {@link ValidationMode#ALL}.
-     *
-     * @return The validation mode.
-     */
-    ValidationMode validationMode() default ValidationMode.ALL;
-
-    /**
-     * A mode of method-level validation. Can be used to specify the validation
-     * behavior on a type and method level.
-     *
-     * @author Gunnar Morling
-     */
-    public enum ValidationMode {
-
-        /**
-         * Indicates that method and constructor parameters shall be validated automatically
-         * upon invocation of methods or constructors.
-         */
-        PARAMETERS,
-
-        /**
-         * Indicates that the return value shall be validated automatically
-         * upon invocation of methods or constructors.
-         */
-        RETURN_VALUE,
-
-        /**
-         * Indicates that method and constructor parameters as well as the return value shall be validated automatically
-         * upon invocation of methods or constructors.
-         */
-        ALL,
-
-        /**
-         * Indicates that neither method or constructor parameters nor the return value shall be validated automatically
-         * upon invocation of methods or constructors.
-         */
-        NONE;
-    }
-}</programlisting>
-
-    <para>Using the <methodname>groups</methodname> attribute the groups to be
-    validated can be specified. If no value is given, implicitly the group
-    <classname>javax.validation.groups.Default</classname> will be validated.
-    Using the <methodname>validationMode</methodname> attribute you can
-    control whether only parameters, only return values, both or none of these
-    shall be validated.</para>
-
-    <para>The <classname>@MethodValidated</classname> annotation can be
-    specified on type as well as on method level.</para>
-
-    <para>It is left to integrators how to handle situations where the
-    annotation is given on a type and a method of the same at the same time.
-    It is highly recommended though, to give method level annotations
-    precedence, effectively allowing a default configuration to be given on
-    the class level which can be overridden on the method level (e.g. to turn
-    off validation for single methods using
-    <varname>ValidationMode.NONE</varname>).</para>
-
-    <para>It is also left to integrators how to handle situations where the
-    annotation is given on several types (be it classes or interfaces) within
-    an inheritance hierarchy. It is recommended though that the most specific
-    occurrence should take precedence over occurrences up in the inheritance
-    hierarchy.</para>
+    <note>
+      <para>Only methods or constructors intercepted by the underlying
+      interception technology can be validated.</para>
+    </note>
 
     <para><remark>TODO: Verify/prototype that integration works with EE JSRs
     like CDI, JAX-RS, JSF as well as with alternative technologies (Spring
     Framework, Guice).</remark></para>
+
+    <section>
+      <title>PROPOSAL: customizing method interception</title>
+
+      <para>By default, all constrained methods (that can be intercepted) are
+      validated using the default group. </para>
+
+      <para>You can customize whether or not a method is validated and which
+      group is used via the <classname>MethodValidationActivator</classname>
+      and <classname>MethodValidationGroupSelector</classname> contracts and
+      providing implementations to the Bean Validation bootstrap or via the
+      XML deployment descriptor.</para>
+
+      <example>
+        <title>MethodValidationActivator contract</title>
+
+        <programlisting language="JAVA" role="JAVA">/**
+ * Decides if constraints of a given method should be validated
+ * 
+ * @author Emmanuel Bernard
+ */
+interface MethodValidationActivator {
+    boolean activateMethodValidation(Method method):
+    boolean activateConstructorValidation(Constructor constructor);
+}</programlisting>
+      </example>
+
+      <example>
+        <title>MethodValidationGroupSelector contract</title>
+
+        <programlisting language="JAVA" role="JAVA">/**
+ * Provides the (set of) groups that should be used when validating the
+ * given constrained method.
+ * 
+ * @author Emmanuel Bernard
+ */
+interface MethodValidationGroupSelector {
+    Class&lt;?&gt;[] selectGroupsForMethod(Method method):
+    Class&lt;?&gt;[] selectGroupsForConstructor(Constructor constructor);
+}</programlisting>
+      </example>
+
+      <para>The components <classname>MethodValidationActivator</classname>
+      and <classname>MethodValidationGroupSelector</classname> are accepting
+      injection points in a container environment (CDI in particular).
+      Implementations must be thread-safe.</para>
+
+      <para>Method and constructor validations can be globally disabled via
+      the XML configuration descriptor by using the
+      <literal>disable-method-validation</literal> element. Likewise, you can
+      disable validation for a specific method / constructor or for all
+      methods / constructors of a given bean by using the
+      <literal>disable-method-validation</literal> attribute on the respective
+      elements.</para>
+
+      <remark>TODO: should we change the boolean disable-method-validation
+      with the following enum based method-validation: NONE, PARAMETERS,
+      RETURN_VALUE, ALL. What would be the use case for PARAMETERS /
+      RETURN_VALUE? We could also use the enum but restrict it to NONE and ALL
+      to plan for the future.</remark>
+
+      <para>Here are a few use cases :</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>choose a different group depending on the caller stack: a
+          batch input might want different validation than a user input</para>
+        </listitem>
+
+        <listitem>
+          <para>choose a different group depending on a specific context: if a
+          user is flagged as rogue, enforce more constraints</para>
+        </listitem>
+
+        <listitem>
+          <para>disable validations for a given deployment as it is considered
+          a "safe" environment</para>
+        </listitem>
+
+        <listitem>
+          <para>disable a specific method validation for development purposes
+          either via a custom
+          <classname>MethodValidationGroupSelector</classname> implementation
+          or via the XML deployment descriptor</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Context or caller stack implementations can be implemented in a
+      couple of ways:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>use a thread local variable to carry the groups</para>
+        </listitem>
+
+        <listitem>
+          <para>use a request scoped CDI component to carry the groups: this
+          component being injected in the
+          <classname>MethodValidationGroupSelector</classname>
+          implementation.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Should we provide in the CDI integration a way to customize the
+      group via an annotation? An annotation in the caller stack would set the
+      expected group. This would resurrect the
+      <classname>@MethodValidated</classname> annotation but not on the
+      validated method itself.</para>
+    </section>
   </section>
 
   <section id="bootstrapping">
