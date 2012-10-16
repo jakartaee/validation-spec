@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"../../docbook-support/support/docbook-dtd/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../global.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="integration">
+  <title>Integration</title>
+
+  <para revisionflag="added">In this chapter different integration points of
+  Bean Validation with other technologies are discussed. Generally speaking
+  containers or frameworks controlling the life cycle of objects (such as Java
+  EE, dependency injection frameworks or component frameworks) should:</para>
+
+  <itemizedlist revisionflag="added">
+    <listitem>
+      <para>build and bootstrap the <classname>ValidatorFactory</classname>
+      instance for an application.</para>
+    </listitem>
+
+    <listitem>
+      <para>provide access to the <classname>ValidatorFactory</classname>
+      instance as well as <classname>Validator</classname> instances in their
+      default configuration. This should be done in the paradigm of the
+      container: for example, such instances would be injectable in other
+      objects via a dependency injection framework.</para>
+    </listitem>
+  </itemizedlist>
+
+  <para revisionflag="added">A user is free to explicitly use the bootstrap
+  API to customize the <classname>ValidatorFactory</classname> as
+  needed.</para>
+
+  <section id="integration-javaee" revisionflag="added">
+    <title>Java EE</title>
+
+    <para>Java EE should obey the rules defined above and make the following
+    default instances available under JNDI:</para>
+
+    <para><itemizedlist>
+        <listitem>
+          <para><classname>ValidatorFactory</classname> under
+          <constant>java:comp/ValidatorFactory</constant></para>
+        </listitem>
+
+        <listitem>
+          <para><classname>Validator</classname> under
+          <constant>java:comp/Validator</constant></para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para>Instead of looking the instances up via JNDI, the user can request
+    them to be injected via the <classname>Resource</classname>
+    annotation:<programlisting>@Resource ValidatorFactory validatorFactory;
+@Resource Validator validator;</programlisting></para>
+  </section>
+
+  <section revisionflag="added">
+    <title id="integration-cdi">Context and Dependency Injection (CDI)
+    integration</title>
+
+    <para>There are several integrations points between Bean Validation and
+    CDI. These are discussed in the following sections.</para>
+
+    <section>
+      <title><classname>ValidatorFactory</classname> and
+      <classname>Validator</classname></title>
+
+      <para>Similar to the Java EE integration via
+      <classname>@Resource</classname> (see <xref
+      linkend="integration-javaee"/>) a CDI container needs to allow for
+      injection of the default <classname>ValidatorFactory</classname> and
+      <classname>Validator</classname> via
+      <classname>@Inject</classname>:<programlisting>@Inject ValidatorFactory;
+@Inject Validator;
+</programlisting>These default instances needs to be injectable via the
+      <classname>@Default</classname> qualifier even if there are multiple
+      Bean Validation providers available. </para>
+
+      <para>Every Bean Validation provider provides a CDI Extension in order
+      to make its implementation available for the container. The following
+      rules apply:<itemizedlist>
+          <listitem>
+            <para>At registration, the extension verifies whether there is
+            already a <classname>ValidatorFactory</classname> and
+            <classname>Validator</classname> bean available for injection via
+            the @Default quailifer.<itemizedlist>
+                <listitem>
+                  <para>If not, it is the reponsibilty of the extension to
+                  register these default beans. For this purpose the extension
+                  should first check whether a default
+                  <classname>ValidatorFactory</classname> and
+                  <classname>Validator</classname> are bound in JNDI (see
+                  <xref linkend="integration-javaee"/>). If so these JNDI
+                  bound instances should be made available. If not, the
+                  extension needs to create and register a default
+                  <classname>ValidatorFactory</classname> and
+                  <classname>Validator</classname> bean using the
+                  bootstrapping API (see <xref
+                  linkend="bootstrapping"/>).</para>
+                </listitem>
+
+                <listitem>
+                  <para>If the default <classname>ValidatorFactory</classname>
+                  and <classname>Validator</classname> instances are already
+                  registered no action needs to be taken</para>
+                </listitem>
+              </itemizedlist></para>
+          </listitem>
+
+          <listitem>
+            <para>On top of the default
+            <classname>ValidatorFactory</classname> and
+            <classname>Validator</classname> beans, the Bean Validation
+            provider can register an additional
+            <classname>ValidatorFactory</classname> respective
+            <classname>Validator</classname> bean provided it also provides a
+            custom quailifer, for example <classname>@Hibernate</classname>,
+            to prevent an ambiguous dependency due to multiple beans being
+            eligible for injection to the injection point.<programlisting>@Inject @Hibernate ValidatorFactory;
+@Inject @Hibernate Validator;</programlisting><note>
+                <para>These rules ensure that in any CDI container (Java SE or
+                EE environment) a default injectable
+                <classname>ValidatorFactory</classname> respective
+                <classname>Validator</classname> bean is made available by
+                adding the Bean Validation provider's CDI extension and its
+                dependencies.</para>
+              </note></para>
+          </listitem>
+        </itemizedlist></para>
+    </section>
+
+    <section>
+      <title><classname>ConstraintValidatorFactory</classname>,
+      <classname>MessageInterpolator</classname> and
+      <classname>TraversableResolver</classname></title>
+
+      <para>If the CDI Extension of the Bean Validation provider is creating
+      the <classname>ValidatorFactory</classname> and a custom
+      <classname>ConstraintValidatorFactory</classname>,
+      <classname>MessageInterpolator</classname> or
+      <classname>TraversableResovler</classname> class is defined in the XML
+      deployment descriptor (see <xref linkend="xml-config"/>), the
+      <classname>ValidatorFactory</classname> should be configured with
+      managed instances of the requested classes. Services provided by the
+      container (like dependency injection) should thus be available to this
+      instance.</para>
+
+      <para>If no custom <classname>ConstraintValidatorFactory</classname> is
+      requested by the user, the <classname>ValidatorFactory</classname>
+      should be configured with a custom
+      <classname>ConstraintValidatorFactory</classname> instance that returns
+      managed <classname>ConstraintValidator</classname> instances. The scope
+      of <classname>ConstraintValidator</classname> instances is controlled by
+      Bean Validation as described in <xref
+      linkend="constraintsdefinitionimplementation-constraintfactory"/>, but
+      as managed beans can receive expected services like injection of other
+      objects.</para>
+    </section>
+
+    <section>
+      <title>Method validation</title>
+
+      <para>A Bean Validation provider also provides an CDI interceptor for
+      method validation. This interceptor implenents the steps specified in
+      <xref linkend="validationapi-triggeringmethodvalidation"/>. </para>
+
+      <para>Ordinarily CDI requires that intercepted mehods are annoated with
+      a so called interceptor binding annotation. To make method validation
+      implicit by just adding the Bean Validation constraints to a constructor
+      or method, the interceptor biding annotation needs to be added
+      programmatically to any method requiring validation.
+      <classname>javax.validation.MethodValidated</classname> should be used
+      as binding annotation.<tip>
+          <para> A CDI extension can observe the
+          <classname>ProcessAnnotatedType</classname> event in order to add
+          the interceptor binding annotation.</para>
+        </tip></para>
+    </section>
+  </section>
+
+  <section>
+    <title id="integration-jpa">Java Persistence 2.0 integration</title>
+
+    <para>Integration with Java Persistence is described in the Java
+    Persistence 2 specification (JSR-317). Persistence frameworks are
+    encouraged to mimic the integration work done with Java Persistence (see
+    also <ulink
+    url="https://hibernate.onjira.com/browse/BVAL-318">BVAL-318</ulink>).</para>
+  </section>
+
+  <section>
+    <title id="integration-jsf">Java Server Faces 2.0 integration</title>
+
+    <para>Integration with Java Server Faces is described in the Java Server
+    Faces 2 specification (JSR-314). Presentation frameworks are encouraged to
+    study the integration work done with JSF 2 (see also <ulink
+    url="https://hibernate.onjira.com/browse/BVAL-319">BVAL-319</ulink>).</para>
+  </section>
+</chapter>
