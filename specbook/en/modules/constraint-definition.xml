@@ -504,10 +504,16 @@ public @interface FrenchZipcode {
     <para>The definition of <classname>@ReportAsSingleViolation</classname> is
     as follows.</para>
 
-    <programlisting>/**
- * A constraint annotation hosting this annotation
- * will return the composed annotation error report if any of the composing annotations
- * fail. The error reports of each individual composing constraint is ignored.
+    <programlisting revisionflag="changed">/**
+ * A constraint annotation hosting this annotation will return the
+ * composed annotation error report if any of the composing annotations fail.
+ * The error reports of each individual composing constraint are ignored.
+ *
+ * &lt;p&gt;
+ * Note: Evaluation of composed constraints stops on the first validation
+ * error in case the composing constraint is annotated with
+ * {@code @ReportAsSingleViolation}.
+ * &lt;/p&gt;
  *
  * @author Emmanuel Bernard
  */
@@ -516,18 +522,11 @@ public @interface FrenchZipcode {
 public @interface ReportAsSingleViolation {
 }</programlisting>
 
-    <para>More specifically, if a composed constraint is marked as
-    <classname>@ReportAsSingleViolation</classname>, and if any of its
-    composing constraint reports one or more violations, all reports from
-    composing constraints are ignored and the error report corresponding to
-    the composed constraint is generated.</para>
-
-    <note>
-      <para>If a composing constraint fails and if the composed constraint is
-      marked as <classname>@ReportAsSingleViolation</classname>, the Bean
-      Validation provider is free to not process the other composing
-      constraints for this composed constraint.</para>
-    </note>
+    <para revisionflag="changed">More specifically, if a composed constraint
+    is marked as <classname>@ReportAsSingleViolation</classname>, the
+    evaluation of the composing constraints stops at the first failing
+    constraint and the error report corresponding to the composed constraint
+    is generated and returned. </para>
 
     <para>Composing annotations can define the value of
     <literal>message</literal> and custom attributes (excluding
