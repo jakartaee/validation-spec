@@ -8,10 +8,14 @@
   <title>Constraint declaration and validation process</title>
 
   <para>The Bean Validation specification defines a framework for declaring
-  constraints on JavaBean classes, fields and properties.</para>
+  constraints on JavaBean classes, fields and properties. Constraints are
+  declared on types and evaluated against instances or graphs of
+  instances.</para>
 
-  <para>Constraints are declared on types and evaluated against instances or
-  graphs of instances.</para>
+  <para>Bean Validation also offers a way to declare constructor and
+  method-level constraints which are declared on the method itself and its
+  parameters. We will discuss method-level declaration in detail at <xref
+  linkend="constraintdeclarationvalidationprocess-methodlevelconstraints"/>.</para>
 
   <section id="constraintdeclarationvalidationprocess-requirements">
     <title>Requirements on classes to be validated</title>
@@ -914,7 +918,8 @@ public class Order implements Auditable {
     </section>
   </section>
 
-  <section revisionflag="added">
+  <section id="constraintdeclarationvalidationprocess-methodlevelconstraints"
+           revisionflag="added">
     <title>Method-level constraints</title>
 
     <note>
@@ -922,22 +927,21 @@ public class Order implements Auditable {
       constraints declared on methods as well as constructors.</para>
     </note>
 
-    <para>Method constraints are defined by adding constraint annotations to
-    method respectively constructor parameters (parameter constraints) or
-    directly to methods respectively constructors (return value constraints).
-    As with bean constraints, this can be done using either actual Java
-    annotations or using an XML constraint mapping file (see <xref
+    <para>Method constraints are declared by adding constraint annotations to
+    method - respectively constructor - parameters (parameter constraints) or
+    directly to methods - respectively constructors - (return value
+    constraints). As with bean constraints, this can be done using either
+    actual Java annotations or using an XML constraint mapping file (see <xref
     linkend="xml-mapping-constraintdeclarationinxml-methodleveloverriding"/>).
     Bean Validation providers are free to provide additional means of defining
-    method constraints such as an API-based aproach.</para>
+    method constraints such as an API-based approach.</para>
 
     <section>
       <title>Requirements on methods to be validated</title>
 
-      <para>Methods which shall be annotated with parameter or return value
-      constraints must be non-static. No other restrictions exist from the
-      perspective of this specification, however it is possible that
-      technologies integrating with method validation impose further
+      <para>Constrained methods must be non-static. No other restrictions
+      exist from the perspective of this specification, however it is possible
+      that technologies integrating with method validation impose further
       restrictions to methods to which a validation shall be applied. For
       instance certain integration technologies might require that methods to
       be validated must have <methodname>public</methodname> visibility and/or
@@ -945,10 +949,10 @@ public class Order implements Auditable {
     </section>
 
     <section>
-      <title>Defining parameter constraints</title>
+      <title>Declare parameter constraints</title>
 
-      <para>Parameter constraints are defined by putting constraint
-      annotations to method or constructor parameters.</para>
+      <para>Parameter constraints are declared by putting constraint
+      annotations on method or constructor parameters.</para>
 
       <example>
         <title>Declaring parameter constraints</title>
@@ -1015,7 +1019,7 @@ public class Order implements Auditable {
         following sections), their element type must be
         <varname>ElementType.METHOD</varname> respectively
         <varname>ElementType.CONSTRUCTOR</varname>. All built-in constraints
-        support these element types and it's considered a best practice to do
+        support these element types and it is considered a best practice to do
         the same for custom constraints.</para>
       </tip>
 
@@ -1110,10 +1114,10 @@ public interface ParameterNameProvider {
     </section>
 
     <section>
-      <title>Defining return value constraints</title>
+      <title>Declaring return value constraints</title>
 
-      <para>Return value constraints are defined by putting constraint
-      annotations directly to a method or constructor.</para>
+      <para>Return value constraints are declared by putting constraint
+      annotations directly on a method or constructor.</para>
 
       <example>
         <title>Declaring return value constraints</title>
@@ -1184,10 +1188,12 @@ public interface ParameterNameProvider {
       validation</title>
 
       <para>Similar to normal bean validation, the
-      <classname>@Valid</classname> annotation can be used to declare that a
-      cascaded validation of given method parameters or return values shall be
-      performed by the Bean Validation provider. Generally the same rules as
-      for standard object graph validation (see <xref
+      <classname>@Valid</classname> annotation is used to declare that a
+      cascaded validation of the given method parameters or return values
+      shall be performed by the Bean Validation provider. When marked, the
+      parameter or return value is considered a bean object to validate.
+      Generally the same rules as for standard object graph validation (see
+      <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
       apply, in particular</para>
 
@@ -1280,7 +1286,7 @@ public interface ParameterNameProvider {
       interface inheritance by implementing or extending interfaces) one has
       to obey the <ulink
       url="http://en.wikipedia.org/wiki/Liskov_substitution_principle">Liskov
-      substitution</ulink> principle which mandates that</para>
+      substitution</ulink> principle which mandates that:</para>
 
       <itemizedlist>
         <listitem>
