@@ -48,6 +48,40 @@ public @interface Constraint {
     public Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt;[] validatedBy();
 }</programlisting>
 
+    <para revisionflag="added">An annotation is considered a cross-parameter
+    constraint definition (see section <xref
+    linkend="constraintdeclarationvalidationprocess-crossparameterconstraints"/>)
+    if its retention policy contains <literal>RUNTIME</literal> and if the
+    annotation itself is annotated with
+    <literal>javax.validation.CrossParameterConstraint</literal>.</para>
+
+    <programlisting revisionflag="added">/**
+ * Link between a cross-parameter constraint annotation and its constraint
+ * validation implementation.
+ *
+ * @author Gunnar Morling
+ */
+@Documented
+@Target({ ANNOTATION_TYPE })
+@Retention(RUNTIME)
+public @interface CrossParameterConstraint {
+    /**
+     * Returns the {@link ConstraintValidator} class for the annotated
+     * cross-parameter constraint.
+     *
+     * @return Constraint validator class implementing the constraint
+     */
+    Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt; validatedBy();
+}</programlisting>
+
+    <para revisionflag="added">An annotation must be either a constraint or a
+    cross-parameter constraint, i.e. either the
+    <classname>@Constraint</classname> or the
+    <classname>@CrossParameterConstraint</classname> annotation may be
+    specified on an annotation type. If both annotations are given on an
+    annotation type, a <classname>ConstraintDefinitionException</classname>
+    will be raised by the Bean Validation provider.</para>
+
     <para>Constraint annotations can target any of the following
     <classname>ElementType</classname>s:</para>
 
@@ -57,7 +91,19 @@ public @interface Constraint {
       </listitem>
 
       <listitem>
-        <para><literal>METHOD</literal> for constrained getters</para>
+        <para><literal>METHOD</literal> for constrained getters<phrase
+        revisionflag="added"> and constrained method return
+        values</phrase></para>
+      </listitem>
+
+      <listitem revisionflag="added">
+        <para><classname>CONSTRUCTOR</classname> for constrained constructor
+        return values</para>
+      </listitem>
+
+      <listitem revisionflag="added">
+        <para><classname>PARAMETER</classname> for constrained method and
+        constructor parameters</para>
       </listitem>
 
       <listitem>
@@ -70,12 +116,27 @@ public @interface Constraint {
       </listitem>
     </itemizedlist>
 
+    <para revisionflag="added">Cross-parameter constraint annotations can
+    target any of the following <classname>ElementType</classname>s:</para>
+
+    <itemizedlist revisionflag="added">
+      <listitem>
+        <para><literal>METHOD</literal></para>
+      </listitem>
+
+      <listitem>
+        <para><literal>ANNOTATION_TYPE</literal> for cross-parameter
+        constraints composing other cross-parameter constraints</para>
+      </listitem>
+    </itemizedlist>
+
     <para>While other <classname>ElementType</classname>s are not forbidden,
     the provider does not have to recognize and process constraints placed on
-    such types. Built-in types do support <literal>PARAMETER</literal> and
-    <literal>CONSTRUCTOR</literal> to allow Bean Validation provider specific
-    extensions. It is considered good practice to follow the same approach for
-    custom annotations.</para>
+    such types. <phrase revisionflag="deleted">Built-in types do support
+    <literal>PARAMETER</literal> and <literal>CONSTRUCTOR</literal> to allow
+    Bean Validation provider specific extensions. It is considered good
+    practice to follow the same approach for custom
+    annotations.</phrase></para>
 
     <para>Since a given constraint definition applies to one or more specific
     Java types, the JavaDoc for the constraint annotation should clearly state
@@ -526,7 +587,7 @@ public @interface ReportAsSingleViolation {
     is marked as <classname>@ReportAsSingleViolation</classname>, the
     evaluation of the composing constraints stops at the first failing
     constraint and the error report corresponding to the composed constraint
-    is generated and returned. </para>
+    is generated and returned.</para>
 
     <para>Composing annotations can define the value of
     <literal>message</literal> and custom attributes (excluding
@@ -785,9 +846,12 @@ public @interface OverridesAttribute {
     <para>A constraint validation implementation performs the validation of a
     given constraint annotation for a given type. The implementation classes
     are specified by the <literal>validatedBy</literal> element of the
-    <classname>@Constraint</classname> annotation that decorates the
-    constraint definition. The constraint validation implementation implements
-    the <classname>ConstraintValidator</classname> interface.</para>
+    <classname>@Constraint</classname> <phrase
+    revisionflag="added">respectively
+    <classname>@CrossParameterConstraint</classname></phrase> annotation that
+    decorates the constraint definition. The constraint validation
+    implementation implements the <classname>ConstraintValidator</classname>
+    interface.</para>
 
     <programlisting>/**
  * Defines the logic to validate a given constraint A
@@ -843,7 +907,16 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
 
       <listitem>
         <para>or generic parameters of <classname>T</classname> must be
-        unbounded wildcard types (i.e. <literal>&lt;?&gt;</literal>)</para>
+        unbounded wildcard types (i.e. <literal>&lt;?&gt;</literal>)<phrase
+        revisionflag="added">.</phrase></para>
+      </listitem>
+
+      <listitem revisionflag="added">
+        <para>If <classname>A</classname> is a cross-parameter constraint
+        annotation type, <classname>T</classname> must resolve to
+        <classname>Object[]</classname> in order to have the array of
+        parameter values passed to the <methodname>isValid()</methodname>
+        method.</para>
       </listitem>
     </itemizedlist>
 
