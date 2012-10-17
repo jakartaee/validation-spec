@@ -2147,16 +2147,62 @@ public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Constructor&lt
       interception technology can be validated.</para>
     </note>
 
-    <para>The integration technology should put the validation interceptor as
-    late as possible (if not the latest) in the interception stack. In
-    particular, validation of parameters should be done after the security and
-    transaction start logic. Likewise, return value validation should be done
-    before the transaction stop logic. Putting the validation interceptor as
-    late as possible in the stack ensures this.</para>
+    <para>The integration technology must put the validation interceptor as
+    late as possible (if not last) in the interception stack. In particular,
+    validation of parameters should be done after the security and transaction
+    start logic. Likewise, return value validation should be done before the
+    transaction stop logic. Putting the validation interceptor as late as
+    possible in the stack ensures this.</para>
 
-    <para><remark>TODO: Verify/prototype that integration works with EE JSRs
-    like CDI, JAX-RS, JSF as well as with alternative technologies (Spring
-    Framework, Guice).</remark></para>
+    <note>
+      <title>Why have the validation interceptor after other
+      interceptors?</title>
+
+      <para>There are several reasons for delaying validation compared to
+      other interceptors:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>You don't want to start business code before security has been
+          cleared</para>
+        </listitem>
+
+        <listitem>
+          <para>You might need transaction support in your validations</para>
+        </listitem>
+
+        <listitem>
+          <para>You want transaction to fail if the return value is
+          invalid</para>
+        </listitem>
+
+        <listitem>
+          <para>Generally speaking, it makes more sense to apply technical
+          layers around the more business focused constraints</para>
+        </listitem>
+      </itemizedlist>
+    </note>
+
+    <itemizedlist>
+      <listitem>
+        <para>You don't want to start business code before security has been
+        cleared</para>
+      </listitem>
+
+      <listitem>
+        <para>You might need transaction support in your validations</para>
+      </listitem>
+
+      <listitem>
+        <para>You want transaction to fail if the return value is
+        invalid</para>
+      </listitem>
+
+      <listitem>
+        <para>Generally speaking, it makes more sense to apply technical
+        layers around the more business focused constraints</para>
+      </listitem>
+    </itemizedlist>
 
     <section>
       <title>PROPOSAL: customizing method interception</title>
