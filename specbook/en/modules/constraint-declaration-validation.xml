@@ -1360,7 +1360,7 @@ public interface ParameterNameProvider {
 
       <para>The above rules do not apply when validating constructor
       constraints. Parameter and return value constraints can be applied to
-      any constructor in the type hierachy, however, only the constraints
+      any constructor in the type hierarchy, however, only the constraints
       defined directly on the validated constructor are evaluated. Constraints
       defined on super type constructors are not evaluated, even if the
       constructor in question calls the super type constructor via
@@ -1745,6 +1745,72 @@ assert violations.size() == 1;</programlisting>
       constraints defined against this group. Constraints belonging to the
       group <classname>Later</classname> won't get validated until all
       constraints belonging to <classname>Minimal</classname> pass.</para>
+    </section>
+
+    <section>
+      <title>Method validation</title>
+
+      <para>For a given group to validate, the validation routine applied for
+      method or constructor validation is expected to execute the following
+      constraint validations in no particular order:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>for parameters validation, for all
+          <emphasis>reachable</emphasis> parameters, execute all parameter
+          validations (including the ones expressed on interfaces and
+          superclasses) matching the targeted group unless the given
+          validation constraint has already been processed during this
+          validation routine for a given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          as part of a previous group match.</para>
+        </listitem>
+
+        <listitem>
+          <para>for return value validation, if the return value is
+          <emphasis>reachable</emphasis>, execute all return value validations
+          (including the ones expressed on interfaces and superclasses)
+          matching the targeted group unless the given validation constraint
+          has already been processed during this validation routine for a
+          given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          as part of a previous group match.</para>
+        </listitem>
+
+        <listitem>
+          <para>for parameters validation execute all cross parameter
+          validations (including the ones expressed on interfaces and
+          superclasses) matching the targeted group unless the given
+          validation constraint has already been processed during this
+          validation routine for a given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          as part of a previous group match.</para>
+        </listitem>
+
+        <listitem>
+          <para>for all <emphasis>reachable</emphasis> and
+          <emphasis>cascadable</emphasis> parameters or return values, execute
+          all cascading validations (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          including the ones expressed on interfaces and superclasses (see
+          <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>)</para>
+        </listitem>
+      </itemizedlist>
+
+      <para>Reachable and cascadable parameters and return values are defined
+      in <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine-traversable"/>.</para>
+
+      <para>Note that this implies that a given validation constraint will not
+      be processed more than once per validation.</para>
+
+      <para>Unless ordered by group sequences, groups can be validated in no
+      particular order. This implies that the validation routine can be run
+      for several groups in the same pass.</para>
+
+      <para>The object validation routine is as defined in described in <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine"/>.</para>
     </section>
 
     <section id="constraintdeclarationvalidationprocess-validationroutine-traversable">
