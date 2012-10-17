@@ -74,7 +74,7 @@ public @interface CrossParameterConstraint {
     Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt; validatedBy();
 }</programlisting>
 
-    <para revisionflag="added">An annotation must be either a constraint or a
+    <para revisionflag="added">An annotation may either be a constraint or a
     cross-parameter constraint, i.e. either the
     <classname>@Constraint</classname> or the
     <classname>@CrossParameterConstraint</classname> annotation may be
@@ -313,8 +313,34 @@ public @interface OrderNumber {
       </example>
 
       <para><xref linkend="example-definition-notnull"/> marks a String as a
-      well-formed order number. The constraint Validator is implemented by
+      well-formed order number. The constraint validator is implemented by
       <classname>OrderNumberValidator</classname>.</para>
+
+      <example id="example-definition-crossparameter" revisionflag="added">
+        <title>Simple cross-parameter constraint definition</title>
+
+        <programlisting>package com.acme.constraint;
+
+/**
+ * Cross-parameter constraint ensuring that two date parameters
+ * of a method are in the correct order.
+ */
+@Documented
+@CrossParameterConstraint(validatedBy = DateParametersConsistentValidator.class)
+@Target({ METHOD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+public @interface DateParametersConsistent {
+    String message() default "{com.acme.constraint.DateParameters.message}";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default {};
+}</programlisting>
+      </example>
+
+      <para revisionflag="added"><xref
+      linkend="example-definition-crossparameter"/> shows a cross-parameter
+      constraint which ensures that two date parameters of a method are in the
+      correct order. The constraint validator is implemented by
+      <classname>DateParametersConsistentValidator</classname>.</para>
 
       <example id="example-definition-length">
         <title>Constraint definition with default parameter</title>
@@ -374,6 +400,32 @@ public @interface Acceptable {
       acceptable values expressed as an array: the
       <methodname>value</methodname> property must be specified when the
       constraint is applied.</para>
+
+      <example id="example-definition-illegal" revisionflag="added">
+        <title>Illegal constraint definition</title>
+
+        <programlisting>package com.acme.constraint;
+
+/**
+ * Cross-parameter constraint ensuring that two date parameters
+ * of a method are in the correct order.
+ */
+@Documented
+@Constraint(validatedBy = DateParametersConsistentValidator.class)
+@CrossParameterConstraint(validatedBy = AnotherDateParametersConsistentValidator.class)
+@Target({ METHOD, ANNOTATION_TYPE })
+@Retention(RUNTIME)
+public @interface DateParametersConsistent {
+    String message() default "{com.acme.constraint.DateParameters.message}";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default {};
+}</programlisting>
+      </example>
+
+      <para revisionflag="added"><xref linkend="example-definition-illegal"/>
+      shows an illegal constraint definition; an annotation may either be a
+      constraint annotation or a cross-parameter annotation but not
+      both.</para>
     </section>
   </section>
 
@@ -924,7 +976,8 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
     linkend="example-constraintsdefinitionimplementation-validationimplementation-validdef"/>
     shows some examples of valid definitions.</para>
 
-    <example id="example-constraintsdefinitionimplementation-validationimplementation-validdef">
+    <example id="example-constraintsdefinitionimplementation-validationimplementation-validdef"
+             revisionflag="changed">
       <title>Valid ConstraintValidator definitions</title>
 
       <programlisting>//String is not making use of generics
@@ -934,7 +987,10 @@ public class SizeValidatorForString implements&lt;Size, String&gt; {...}
 public class SizeValidatorForCollection implements&lt;Size, Collection&gt; {...}
 
 //Collection uses generics and unbounded windcard type
-public class SizeValidatorForCollection implements&lt;Size, Collection&lt;?&gt;&gt; {...}</programlisting>
+public class SizeValidatorForCollection implements&lt;Size, Collection&lt;?&gt;&gt; {...}
+
+//Validator for cross-parameter constraint
+public class DateParametersConsistentValidator implements&lt;DateParametersConsistent, Object[]&gt; {...}</programlisting>
     </example>
 
     <para>And some invalid definitions in <xref
@@ -1291,7 +1347,7 @@ context.buildConstraintViolationWithTemplate( "this detail is wrong" )
     raised.</para>
 
     <section id="constraintsdefinitionimplementation-validationimplementation-example">
-      <title>Example</title>
+      <title revisionflag="changed">Examples</title>
 
       <example>
         <title>ConstraintValidator implementation</title>
@@ -1328,7 +1384,40 @@ public class SyntaxValidator implements ConstraintValidator&lt;Syntax, String&gt
 
       <para>This <classname>ConstraintValidator</classname> checks that a text
       is within the accepted syntax. It also demonstrates an interesting best
-      practice: return <literal>true</literal> on a null parameter</para>
+      practice: return <literal>true</literal> on a null parameter.</para>
+
+      <para revisionflag="added">The following listing shows a validator
+      implementing the validation logic for a cross-parameter
+      constraint.</para>
+
+      <example>
+        <title>cross-parameter validator implementation</title>
+
+        <programlisting>/**
+ * Check that two date parameters of a method are in the expected order. Expects the
+ * 2nd and 3rd parameter of the validated method to be of type java.util.Date.
+ */
+public class DateParametersConsistentValidator implements&lt;DateParametersConsistent, Object[]&gt; {
+
+    /**
+     * Configure the constraint validator based on the elements
+     * specified at the time it was defined.
+     * @param constraint the constraint definition
+     */
+    public void initialize(DateParametersConsistent constraint) {
+    }
+
+    /**
+     * Validate a specified value.
+     * returns false if the specified value does not conform to the definition
+     */
+    public boolean isValid(Object[] value, ConstraintValidatorContext context) {
+        if ( value[1] == null || value[2] == null ) return true;
+
+        return ((Date)value[1]).before((Date)value[2]);
+    }
+}</programlisting>
+      </example>
 
       <para>The next example shows how to use
       <classname>ConstraintValidatorContext</classname>.</para>

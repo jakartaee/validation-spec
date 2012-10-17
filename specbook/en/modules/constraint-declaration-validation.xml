@@ -1039,8 +1039,11 @@ public class Order implements Auditable {
 
           <programlisting>public class CalendarService {
 
-    @DateParametersConsistent
-    public void createEvent(String title, Date startDate, Date endDate) {
+    @ConsistentDateParameters
+    public void createEvent(
+        String title,
+        @NotNull Date startDate,
+        @NotNull Date endDate) {
         //...
     }
 }</programlisting>
@@ -1049,7 +1052,10 @@ public class Order implements Auditable {
         <para>Using a custom cross-parameter constraint annotation, it is
         expressed here that the given start date must be before the passed end
         date in order to legally invoke the
-        <methodname>createEvent</methodname> method.</para>
+        <methodname>createEvent()</methodname> method. The example also shows
+        that it is often useful to combine constraints directly placed on
+        individual parameters (<classname>e.g. @NotNull</classname>) and
+        cross-parameter constraints.</para>
 
         <para><tip>
             <para>Cross-parameter constraints as well as return value
@@ -1060,11 +1066,9 @@ public class Order implements Auditable {
             intention.</para>
           </tip></para>
 
-        <para><remark>TODO: Choose approach from <ulink
-        url="http://beanvalidation.org/proposals/BVAL-241/#cross_parameter">http://beanvalidation.org/proposals/BVAL-241/#cross_parameter</ulink>.
-        Based on previous discussions, most likely we'll go for option #3,
-        possibly combined with option #2 to allow for generic cross-parameter
-        constraints.</remark></para>
+        <para><remark>TODO: Decide on whether to include the type-safe
+        approach from <ulink
+        url="http://beanvalidation.org/proposals/BVAL-232/">http://beanvalidation.org/proposals/BVAL-232/</ulink>.</remark></para>
       </section>
 
       <section id="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters">
