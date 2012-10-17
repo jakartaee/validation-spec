@@ -635,6 +635,183 @@ public class Order implements Auditable {
       object state itself is not valid.</para>
     </section>
 
+    <section id="constraintdeclarationvalidationprocess-groupsequence-groupconversion">
+      <title>Group conversion</title>
+
+      <para>When cascading validation, it is possible to use a different group
+      than the one originally requested using the group conversion feature.
+      Group conversions are declared by using the
+      <classname>@ConverGroup</classname> annotation.</para>
+
+      <example>
+        <title>@ConvertGroup annotation</title>
+
+        <programlisting language="JAVA" role="JAVA">package javax.validation;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+/**
+ * Convert group {@code from} to group {@code to} during cascading.
+ *
+ * @author Emmanuel Bernard
+ * @since 1.1
+ */
+@Target({ TYPE, METHOD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface ConvertGroup {
+    Class&lt;?&gt; from();
+    Class&lt;?&gt; to();
+
+    /**
+     * Defines several {@code ConvertGroup} annotations
+     * on the same element
+     */
+    public @interface List {
+        ConvertGroup[] value();
+    }
+}</programlisting>
+      </example>
+
+      <para><classname>@ConvertGroup</classname> and
+      <classname>@ConvertGroup.List</classname> can be used everywhere
+      <classname>@Valid</classname> can be used (associations,
+      method/constructor parameters and return value). If these annotations
+      are used without <classname>@Valid</classname>, a
+      <classname>ConstraintDeclarationException</classname> is raised.</para>
+
+      <para>When an element is annotated with <classname>@Valid</classname>,
+      validation is propagated. Groups are passed as is to the nested elements
+      unless the <classname>@ConvertGroup</classname> annotation is
+      used.</para>
+
+      <para>If the group expected to be passed to the nested element
+      validation is defined as the <literal>from</literal> attribute of a
+      <classname>@ConvertGroup</classname> annotation, the group used to
+      effectively validate the nested element is the corresponding group
+      defined in the <literal>to</literal> attribute.</para>
+
+      <para>Rules are not executed recursively. If a rule is found matching,
+      subsequent rules are no longer evaluated. In particular, if a set of
+      <classname>@ConvertGroup</classname> declaration chains group
+      <literal>A</literal> to <literal>B</literal> and <literal>B</literal> to
+      <literal>C</literal>, the group <literal>A</literal> will be converted
+      to <literal>B</literal> and not to <literal>C</literal>. This both makes
+      rules clearer and let you switch two groups.</para>
+
+      <para>It is not legal to have more than one conversion rule containing
+      the same <literal>from</literal> value. In this case, a
+      <classname>ConstraintDeclarationException</classname> is raised.</para>
+
+      <para>Like regular constraint declarations, the <literal>from</literal>
+      attribute cannot refer to a group sequence. A
+      <classname>ConstraintDeclarationException</classname> is raised in this
+      situation. The <literal>to</literal> attribute can. The group sequence
+      will then be expanded before validating the associated object.</para>
+
+      <note>
+        <para>When validation is done, group sequences are expanded before
+        validating the object and its cascaded objects with the expected
+        groups. Group conversion on an associated object happens on the
+        already expanded groups.</para>
+
+        <para>The group referred to in
+        <methodname>@ConvertGroup.from</methodname> works on expanded groups
+        (ie after the group sequence has been expanded), not necessarily
+        groups passed to the various <methodname>validate</methodname>
+        methods</para>
+
+        <para>The group referred to in @ConvertGroup.to will be expanded
+        before validating the cascaded object just like a call to the various
+        <methodname>validate</methodname> method would have done.</para>
+      </note>
+
+      <note>
+        <para>Like most Bean Validation error cases, an illegal set of rules
+        can be discovered statically (at compile time). For example, an
+        annotation processor could detect such errors.</para>
+      </note>
+
+      <note>
+        <para>Group circularity in a group conversion are not problematic
+        because:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para>only one rule is applied for a given cascade (rules are not
+            applied recursively)</para>
+          </listitem>
+
+          <listitem>
+            <para>validation cascading is stopped when the same instance /
+            property is validated with the same group in a given path
+            (existing rule)</para>
+          </listitem>
+        </itemizedlist>
+      </note>
+
+      <para><remark>TODO: is ConstraintDeclarationException the right
+      exception? Should we create a new one?</remark></para>
+
+      <remark>TODO: think about inheritance, should rules be additive, or
+      should an overridden method clear the supermethod rules?</remark>
+
+      <para>Group conversion is quite useful to facilitate object graph reuse
+      without spreading the validation group definitions across several
+      layers. Let's look at an example</para>
+
+      <section>
+        <title>Group conversion example</title>
+
+        <para>In this example we will reuse the <classname>Address</classname>
+        group split and match it to the <classname>User</classname> group
+        split.</para>
+
+        <example>
+          <title>Example of group conversion</title>
+
+          <programlisting language="JAVA" role="JAVA">public interface Complete extends Default {}
+public interface BasicPostal {}
+public interface FullPostal extends BasicPostal {}
+
+public class Address {
+    @NotNull(group=BasicPostal.class)
+    String street1;
+
+    String street2;
+
+    @ZipCode(group=BasicPostal.class)
+    String zipCode;
+
+    @CodeChecker(group=FullPostal.class)
+    String doorCode;
+}
+
+public class User {
+    @Valid
+    @ConvertGroup.List( {
+        @ConvertGroup(from=Default.class, to=BasicPostal.class),
+        @ConvertGroup(from=Complete.class, to=FullPostal.class)
+    } )
+    Set&lt;Address&gt; getAddresses() { ... }
+}</programlisting>
+        </example>
+
+        <para>When validating an instance of <literal>user</literal> with the
+        <classname>Default</classname> group, the associated addresses are
+        validated with the <classname>BasicPostal</classname> group. When
+        validating an instance of <literal>user</literal> with the
+        <classname>Complete</classname> group, the associated addresses are
+        validated with the <classname>FullPostal</classname> group.</para>
+      </section>
+    </section>
+
     <section id="constraintdeclarationvalidationprocess-groupsequence-formaldefinition">
       <title>Formal group definitions</title>
 
@@ -1533,7 +1710,9 @@ public class SimpleOrderService extends OrderService {
         validations (see <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
         including the ones expressed on interfaces and superclasses (see <xref
-        linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>)</para>
+        linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
+        Note that group conversion can apply (see <xref
+        linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
       </listitem>
     </itemizedlist>
 
@@ -1794,7 +1973,9 @@ assert violations.size() == 1;</programlisting>
           linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
           including the ones expressed on interfaces and superclasses (see
           <xref
-          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>)</para>
+          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
+          Note that group conversion can apply (see <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
         </listitem>
       </itemizedlist>
 
