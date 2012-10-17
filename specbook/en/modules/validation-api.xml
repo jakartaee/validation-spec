@@ -26,7 +26,7 @@
       <title>Validator interface</title>
 
       <programlisting>/**
- * Validate bean instances. Implementations of this interface must be thread-safe.
+ * Validates bean instances. Implementations of this interface must be thread-safe.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -34,62 +34,63 @@
  */
 public interface Validator {
     /**
-     * Validates all constraints on &lt;code&gt;object&lt;/code&gt;.
+     * Validates all constraints on {@code object}.
      *
      * @param object object to validate
-     * @param groups group or list of groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
      *
-     * @return constraint violations or an empty Set if none
+     * @return constraint violations or an empty set if none
      *
-     * @throws IllegalArgumentException if object is null
-     *                                  or if null is passed to the varargs groups
+     * @throws IllegalArgumentException if object is {@code null}
+     * or if {@code null} is passed to the varargs groups
      * @throws ValidationException if a non recoverable error happens
-     *                                  during the validation process
+     * during the validation process
      */
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validate(T object, Class&lt;?&gt;... groups);
 
     /**
-     * Validates all constraints placed on the property of &lt;code&gt;object&lt;/code&gt;
-     * named &lt;code&gt;propertyName&lt;/code&gt;.
+     * Validates all constraints placed on the property of {@code object}
+     * named {@code propertyName}.
      *
      * @param object object to validate
-     * @param propertyName property to validate (ie field and getter constraints)
-     * @param groups group or list of groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
+     * @param propertyName property to validate (i.e. field and getter constraints)
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
      *
-     * @return constraint violations or an empty Set if none
+     * @return constraint violations or an empty set if none
      *
-     * @throws IllegalArgumentException if &lt;code&gt;object&lt;/code&gt; is null,
-     *            if &lt;code&gt;propertyName&lt;/code&gt; null, empty or not a valid object property
-     *            or if null is passed to the varargs groups
-     * @throws ValidationException      if a non recoverable error happens
-     *                                  during the validation process
+     * @throws IllegalArgumentException if {@code object} is {@code null},
+     * if {@code propertyName} is {@code null}, empty or not a valid object property
+     * or if {@code null} is passed to the varargs groups
+     * @throws ValidationException if a non recoverable error happens
+     * during the validation process
      */
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateProperty(T object,
                                                      String propertyName,
                                                      Class&lt;?&gt;... groups);
 
     /**
-     * Validates all constraints placed on the property named &lt;code&gt;propertyName&lt;/code&gt;
-     * of the class &lt;code&gt;beanType&lt;/code&gt; would the property value be &lt;code&gt;value&lt;/code&gt;
-     * &lt;p/&gt;
-     * &lt;code&gt;ConstraintViolation&lt;/code&gt; objects return null for
+     * Validates all constraints placed on the property named {@code propertyName}
+     * of the class {@code beanType} would the property value be {@code value}.
+     * &lt;p&gt;
+     * {@code ConstraintViolation} objects return {@code null} for
      * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}
+     * &lt;/p&gt;
      *
      * @param beanType the bean type
      * @param propertyName property to validate
      * @param value property value to validate
-     * @param groups group or list of groups targeted for validation
-     *               (default to {@link javax.validation.groups.Default})
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
      *
-     * @return constraint violations or an empty Set if none
+     * @return constraint violations or an empty set if none
      *
-     * @throws IllegalArgumentException if &lt;code&gt;beanType&lt;/code&gt; is null,
-     *            if &lt;code&gt;propertyName&lt;/code&gt; null, empty or not a valid object property
-     *            or if null is passed to the varargs groups
-     * @throws ValidationException      if a non recoverable error happens
-     *                                  during the validation process
+     * @throws IllegalArgumentException if {@code beanType} is {@code null},
+     * if {@code propertyName} is {@code null}, empty or not a valid object property
+     * or if {@code null} is passed to the varargs groups
+     * @throws ValidationException if a non recoverable error happens
+     * during the validation process
      */
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateValue(Class&lt;T&gt; beanType,
                                                   String propertyName,
@@ -97,99 +98,26 @@ public interface Validator {
                                                   Class&lt;?&gt;... groups);
 
     /**
-     * Validates all constraints placed on the parameters of the given method.
-     *
-     * @param &lt;T&gt; The type hosting the method to validate.
-     * @param object The object on which the method to validate was invoked.
-     * @param method The method for which the parameter constraints shall be validated.
-     * @param parameterValues The values provided by the caller for the given method's
-     * parameters.
-     * @param groups group or list of groups targeted for validation (default to
-     * {@link javax.validation.groups.Default})
-     *
-     * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, if no error occurs, but never null.
-     *
-     * @throws ValidationException if a non recoverable error happens during the
-     * validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
-
-    /**
-     * Validates all return value constraints of the given method.
-     *
-     * @param &lt;T&gt; The type hosting the method to validate.
-     * @param object The object on which the method to validate was invoked.
-     * @param method The method for which the return value constraints shall be validated.
-     * @param returnValue The value returned by the given method.
-     * @param groups group or list of groups targeted for validation (default to
-     * {@link javax.validation.groups.Default})
-     *
-     * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, if no error occurs, but never null.
-     *
-     * @throws ValidationException if a non recoverable error happens during the
-     * validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
-
-    /**
-     * Validates all constraints placed on the parameters of the given constructor.
-     *
-     * @param &lt;T&gt; The type hosting the constructor to validate.
-     * @param constructor The constructor for which the parameter constraints shall be validated.
-     * @param parameterValues The values provided by the caller for the given constructor's
-     * parameters.
-     * @param groups group or list of groups targeted for validation (default to
-     * {@link javax.validation.groups.Default})
-     *
-     * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, if no error occurs, but never null.
-     *
-     * @throws ValidationException if a non recoverable error happens during the
-     * validation process
-     */
-
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(Constructor&lt;T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
-
-    /**
-     * Validates all return value constraints of the given constructor.
-     *
-     * @param &lt;T&gt; The type hosting the constructor to validate.
-     * @param constructor The constructor for which the return value constraints shall be validated.
-     * @param createdObject The object instantiated by the given method.
-     * @param groups group or list of groups targeted for validation (default to
-     * {@link javax.validation.groups.Default})
-     *
-     * @return A set with the constraint violations caused by this validation.
-     *         Will be empty, if no error occurs, but never null.
-     *
-     * @throws ValidationException if a non recoverable error happens during the
-     * validation process
-     */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
-
-    /**
      * Return the descriptor object describing bean constraints.
      * The returned object (and associated objects including
-     * &lt;code&gt;ConstraintDescriptor&lt;code&gt;s) are immutable.
+     * {@code ConstraintDescriptor}s) are immutable.
      *
      * @param clazz class or interface type evaluated
      *
      * @return the bean descriptor for the specified class.
      *
-     * @throws IllegalArgumentException if clazz is null
+     * @throws IllegalArgumentException if clazz is {@code null}
      * @throws ValidationException if a non recoverable error happens
-     *                             during the metadata discovery or if some
-     *                             constraints are invalid.
+     * during the metadata discovery or if some
+     * constraints are invalid.
      */
     BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 
     /**
      * Return an instance of the specified type allowing access to
-     * provider-specific APIs.  If the Bean Validation provider
+     * provider-specific APIs. If the Bean Validation provider
      * implementation does not support the specified class,
-     * &lt;code&gt;ValidationException&lt;/code&gt; is thrown.
+     * {@code ValidationException} is thrown.
      *
      * @param type the class of the object to be returned.
      *
@@ -197,17 +125,42 @@ public interface Validator {
      *
      * @throws ValidationException if the provider does not support the call.
      */
-    public &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+    &lt;T&gt; T unwrap(Class&lt;T&gt; type);
+
+    /**
+     * Returns a delegate for validating parameters and return values of methods
+     * respectively constructors.
+     *
+     * @return A delegate for method validation.
+     *
+     * @since 1.1
+     */
+    MethodValidator forMethods();
 }</programlisting>
     </example>
 
-    <para><methodname>getConstraintsForClass</methodname> is described in
-    <xref linkend="constraintmetadata"/>.</para>
+    <para revisionflag="added">The methods
+    <methodname>validate()</methodname>,
+    <methodname>validateProperty()</methodname> and
+    <methodname>validateValue()</methodname> are used for the validation of
+    Java beans respectively single bean properties. See the next section for
+    more details.</para>
 
-    <para><methodname>unwrap</methodname> is provided as a way to access
-    objects of a given type specific to a Bean Validation provider typically
-    as a complement to the <classname>Validator</classname> contract. Using
-    this method makes your code non portable.</para>
+    <para revisionflag="added"><methodname>forMethods()</methodname> provides
+    access to a delegate for the validation of method and constructor
+    parameters respectively return values. The individual methods for method
+    validation are described in <xref
+    linkend="validationapi-validatorapi-methodlevelvalidationmethods"/>.</para>
+
+    <para
+    revisionflag="changed"><methodname>getConstraintsForClass()</methodname>
+    returns constraint-related metadata for given types and is described in
+    detail in <xref linkend="constraintmetadata"/>.</para>
+
+    <para revisionflag="changed"><methodname>unwrap()</methodname> is provided
+    as a way to access objects of a given type specific to a Bean Validation
+    provider typically as a complement to the <classname>Validator</classname>
+    contract. Using this method makes your code non portable.</para>
 
     <example>
       <title>Using unwrap to access a provider specific contract</title>
@@ -357,14 +310,105 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
       </section>
     </section>
 
-    <section revisionflag="added">
-      <title
-      id="validationapi-validatorapi-methodlevelvalidationmethods">Method-level
-      validation methods</title>
+    <section id="validationapi-validatorapi-methodlevelvalidationmethods"
+             revisionflag="added">
+      <title>Method-level validation methods</title>
 
-      <remark>TODO: Emmanuel suggested to introduce an indirection for these
-      methods, such as onMethod(), onConstructor(). Consider pro's and con's
-      of both approaches.</remark>
+      <para>The methods for the validation of parameters and return values of
+      methods respectively constructors can be found on the interface
+      <classname>javax.validation.MethodValidator</classname>.</para>
+
+      <example>
+        <title>MethodValidator interface</title>
+
+        <programlisting>/**
+ * Validates parameters and return values of methods respectively constructors.
+ * Implementations of this interface must be thread-safe.
+ *
+ * @author Gunnar Morling
+ * @since 1.1
+ */
+public interface MethodValidator {
+
+    /**
+     * Validates all constraints placed on the parameters of the given method.
+     *
+     * @param &lt;T&gt; The type hosting the method to validate.
+     * @param object The object on which the method to validate was invoked.
+     * @param method The method for which the parameter constraints shall be validated.
+     * @param parameterValues The values provided by the caller for the given method's
+     * parameters.
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
+     *
+     * @return A set with the constraint violations caused by this validation.
+     *         Will be empty, if no error occurs, but never {@code null}.
+     *
+     * @throws ValidationException if a non recoverable error happens during the
+     * validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(
+        T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
+
+    /**
+     * Validates all return value constraints of the given method.
+     *
+     * @param &lt;T&gt; The type hosting the method to validate.
+     * @param object The object on which the method to validate was invoked.
+     * @param method The method for which the return value constraints shall be validated.
+     * @param returnValue The value returned by the given method.
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
+     *
+     * @return A set with the constraint violations caused by this validation.
+     *         Will be empty, if no error occurs, but never {@code null}.
+     *
+     * @throws ValidationException if a non recoverable error happens during the
+     * validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(
+        T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
+
+    /**
+     * Validates all constraints placed on the parameters of the given constructor.
+     *
+     * @param &lt;T&gt; The type hosting the constructor to validate.
+     * @param constructor The constructor for which the parameter constraints shall be
+     * validated.
+     * @param parameterValues The values provided by the caller for the given constructor's
+     * parameters.
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
+     *
+     * @return A set with the constraint violations caused by this validation.
+     *         Will be empty, if no error occurs, but never {@code null}.
+     *
+     * @throws ValidationException if a non recoverable error happens during the
+     * validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(
+        Constructor&lt;T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
+
+    /**
+     * Validates all return value constraints of the given constructor.
+     *
+     * @param &lt;T&gt; The type hosting the constructor to validate.
+     * @param constructor The constructor for which the return value constraints shall be
+     * validated.
+     * @param createdObject The object instantiated by the given method.
+     * @param groups The group or list of groups targeted for validation (defaults to
+     * {@link Default}).
+     *
+     * @return A set with the constraint violations caused by this validation.
+     *         Will be empty, if no error occurs, but never {@code null}.
+     *
+     * @throws ValidationException if a non recoverable error happens during the
+     * validation process
+     */
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(
+        Constructor&lt;T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
+}</programlisting>
+      </example>
 
       <para><methodname>&lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt;
       validateParameters(T object, Method method, Object[] parameterValues,
@@ -447,14 +491,17 @@ item2.setName(null);
 Constructor&lt;OrderService&gt; constructor = ... ; //get constructor object
 Method&lt;OrderService&gt; placeOrder = ... ; //get method object
 
-OrderService orderService = new OrderService(new DefaultCreditCardProcessor());</programlisting>
+OrderService orderService = new OrderService(new DefaultCreditCardProcessor());
+
+MethodValidator methodValidator = Validation
+    .buildDefaultValidatorFactory().getValidator().forMethods();</programlisting>
 
         <para>The following method parameter validation will return one
         <classname>ConstraintViolation</classname> object as the customer code
         is null:</para>
 
         <programlisting>//orderService.placeOrder(null, item1, 1);
-validator.validateParameters(
+methodValidator.validateParameters(
     orderService, placeOrder, new Object[] { null, item1, 1 }).size() == 1</programlisting>
 
         <para>The following method parameter validation will return one
@@ -464,7 +511,7 @@ validator.validateParameters(
         name is null):</para>
 
         <programlisting>//orderService.placeOrder("CUST-123", item2, 1);
-validator.validateParameters(
+methodValidator.validateParameters(
     orderService, placeOrder, new Object[] { "CUST-123", item2, 1 }).size() == 1</programlisting>
 
         <para>The following constructor parameter validation will return one
@@ -472,14 +519,14 @@ validator.validateParameters(
         for the <varname>creditCardProcessor</varname> parameter:</para>
 
         <programlisting>//new OrderService(null);
-validator.validateConstructorParameters(constructor, new Object[] { null }).size() == 1</programlisting>
+methodValidator.validateConstructorParameters(constructor, new Object[] { null }).size() == 1</programlisting>
 
         <para>Assuming the <methodname>placeOrder()</methodname> method
         returned <varname>null</varname>, the following return value
         validation will return one
         <classname>ConstraintViolation</classname>:</para>
 
-        <programlisting>validator.validateReturnValue(orderService, placeOrder, null).size() == 1</programlisting>
+        <programlisting>methodValidator.validateReturnValue(orderService, placeOrder, null).size() == 1</programlisting>
 
         <para>Assuming the constructor of <classname>OrderService</classname>
         failed to store the given credit card processor into the
@@ -489,7 +536,7 @@ validator.validateConstructorParameters(constructor, new Object[] { null }).size
         <classname>@NotNull</classname> constraint of the
         <classname>OrderService</classname> class would be violated:</para>
 
-        <programlisting>validator.validateConstructorReturnValue(constructor, orderService).size() == 1</programlisting>
+        <programlisting>methodValidator.validateConstructorReturnValue(constructor, orderService).size() == 1</programlisting>
 
         <para><remark>Do we need more examples?</remark></para>
       </section>
@@ -1606,8 +1653,6 @@ assert false == nodeIter.hasNext();</programlisting>
         </listitem>
       </itemizedlist>
 
-      <para/>
-
       <example>
         <title>Message using parameters</title>
 
@@ -1950,9 +1995,6 @@ Validator validator = factory.getValidator();</programlisting>
   <section id="validationapi-triggeringmethodvalidation" revisionflag="added">
     <title>Triggering method validation</title>
 
-    <para><remark>TODO: Adapt references to methods on j.v.Validator in case
-    we decide to extract a delegate for method validation.</remark></para>
-
     <para>Bean Validation itself doesn't trigger the evaluation of
     method-level constraints. That is, just annotating any methods or
     constructors with parameter or return value constraints doesn't
@@ -1960,11 +2002,12 @@ Validator validator = factory.getValidator();</programlisting>
     properties with bean constraints doesn't enforce these either.</para>
 
     <para>Instead method-level constraints must be validated by invoking the
-    appropriate methods on <classname>javax.validation.Validator</classname>.
-    Typically this won't happen by manually calling these methods but rather
-    automatically upon invocation of the constrained methods or constructors,
-    using approaches and techniques such as CDI/EJB interceptors,
-    aspect-oriented programming or dynamic proxies.</para>
+    appropriate methods on
+    <classname>javax.validation.MethodValidator</classname>. Typically this
+    won't happen by manually calling these methods but rather automatically
+    upon invocation of the constrained methods or constructors, using
+    approaches and techniques such as CDI/EJB interceptors, aspect-oriented
+    programming or dynamic proxies.</para>
 
     <para>The validation of method-level / constructor-level constraints
     comprises the following steps:</para>
@@ -1976,8 +2019,8 @@ Validator validator = factory.getValidator();</programlisting>
 
       <listitem>
         <para>Validate the parameter values provided by the method caller
-        using <methodname>Validator#validateParameters()</methodname> or
-        <methodname>Validator#validateConstructorParameters()</methodname>.</para>
+        using <methodname>MethodValidator#validateParameters()</methodname> or
+        <methodname>MethodValidator#validateConstructorParameters()</methodname>.</para>
       </listitem>
 
       <listitem>
@@ -1990,8 +2033,8 @@ Validator validator = factory.getValidator();</programlisting>
 
       <listitem>
         <para>Validate the result returned by the invoked method using
-        <methodname>Validator#validateReturnValue()</methodname> or
-        <methodname>Validator#validateConstructorReturnValue()</methodname>.</para>
+        <methodname>MethodValidator#validateReturnValue()</methodname> or
+        <methodname>MethodValidator#validateConstructorReturnValue()</methodname>.</para>
       </listitem>
 
       <listitem>
@@ -2044,14 +2087,16 @@ public boolean interceptMethods(Class&lt;?&gt; type) {
 // is this method constrained
 public boolean interceptMethod(Class&lt;?&gt; type, Method method) {
     BeanDescriptor bean = validator.getConstraintsForClass( type );
-    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
+    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod(
+        method.getName(), method.getParameterTypes() );
     return methodDescriptor != null;
 }
 
 // should method parameters be validated
 public boolean requiresParametersValidation(Class&lt;?&gt; type, Method method) {
     BeanDescriptor bean = validator.getConstraintsForClass( type );
-    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
+    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod(
+        method.getName(), method.getParameterTypes() );
     if ( methodDescriptor != null ) {
         return methodDescriptor.areParametersConstrained();
     }
@@ -2063,7 +2108,8 @@ public boolean requiresParametersValidation(Class&lt;?&gt; type, Method method) 
 // should method return value be validated?
 public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Method method) {
     BeanDescriptor bean = validator.getConstraintsForClass( type );
-    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
+    MethodDescriptor methodDescriptor = bean.getConstraintsForMethod(
+        method.getName(), method.getParameterTypes() );
     if ( methodDescriptor != null ) {
         return methodDescriptor.isReturnValueConstrained();
     }
@@ -2088,14 +2134,16 @@ public &lt;T&gt; boolean interceptConstructors(Class&lt;T&gt; type) {
 // is this constructor constrained
 public &lt;T&gt; boolean interceptConstructor(Class&lt;T&gt; type, Constructor&lt;T&gt; ctor) {
     BeanDescriptor bean = validator.getConstraintsForClass( type );
-    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor( ctor.getParameterTypes() );
+    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor(
+        ctor.getParameterTypes() );
     return constructorDescriptor != null;
 }
 
 // should constructor parameters be validated
 public &lt;T&gt; boolean requiresParametersValidation(Class&lt;T&gt; type, Constructor&lt;T&gt; ctor) {
     BeanDescriptor bean = validator.getConstraintsForClass( type );
-    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor( ctor.getParameterTypes() );
+    ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor(
+        ctor.getParameterTypes() );
     if ( constructorDescriptor != null ) {
         return constructorDescriptor.areParametersConstrained();
     }
