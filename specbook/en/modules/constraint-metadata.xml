@@ -607,6 +607,8 @@ public interface PropertyDescriptor extends ElementDescriptor {
  * Describes a validated method.
  *
  * @author Gunnar Morling
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @since 1.1
  */
 public interface MethodDescriptor extends ElementDescriptor {
 
@@ -636,6 +638,27 @@ public interface MethodDescriptor extends ElementDescriptor {
      *         if this method has no return value.
      */
     ReturnValueDescriptor getReturnValueDescriptor();
+    
+    /**
+     * Returns true if method parameters are constrained either:
+     * &lt;ul&gt;
+     * &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
+     * &lt;li&gt;because of a cascade on at least one of the parameters (via {@code @Valid})&lt;/li&gt;
+     * &lt;li&gt;because of at least a cross-parameter constraint&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Also returns false if there is no parameter.
+     */
+    boolean isConstrainedOnParameters();
+
+    /**
+     * Returns true if the method return value is constrained either:
+     * &lt;ul&gt;
+     * &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
+     * &lt;li&gt;because validation is cascaded on the return value (via {@code @Valid})&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Also returns false if there is no return value.
+     */
+    boolean isConstrainedOnReturnValue();
 }</programlisting>
 
     <para><methodname>getName()</methodname> returns the name of the
@@ -649,6 +672,14 @@ public interface MethodDescriptor extends ElementDescriptor {
     <para><methodname>getReturnValueDescriptor()</methodname> returns a
     descriptor for the method's return value or <varname>null</varname> if the
     method has no return value.</para>
+
+    <para><classname>isConstrainedOnParameters()</classname> returns true if
+    any of the parameters is constrained or cascaded. Returns false if there
+    is no parameter.</para>
+
+    <para><classname>isConstrainedOnReturnValue()</classname> returns true if
+    the return value is constrained or cascaded. Returns false if there is no
+    return value.</para>
 
     <para><remark>TODO: Should we have something like
     <methodname>hasParameterConstraints()</methodname> allowing quickly to
@@ -688,6 +719,8 @@ public interface MethodDescriptor extends ElementDescriptor {
  * Describes a validated constructor.
  *
  * @author Gunnar Morling
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @since 1.1
  */
 public interface ConstructorDescriptor extends ElementDescriptor {
 
@@ -708,6 +741,27 @@ public interface ConstructorDescriptor extends ElementDescriptor {
      * @return A descriptor for this constructor's return value.
      */
     ReturnValueDescriptor getReturnValueDescriptor();
+    
+    /**
+     * Returns true if method parameters are constrained either:
+     * &lt;ul&gt;
+     * &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
+     * &lt;li&gt;because of a cascade on at least one of the parameters (via {@code @Valid})&lt;/li&gt;
+     * &lt;li&gt;because of at least a cross-parameter constraint&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Also returns false if there is no parameter.
+     */
+    boolean isConstrainedOnParameters();
+
+    /**
+     * Returns true if the method return value is constrained either:
+     * &lt;ul&gt;
+     * &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
+     * &lt;li&gt;because validation is cascaded on the return value (via {@code @Valid})&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Also returns false if there is no return value.
+     */
+    boolean isConstrainedOnReturnValue();
 }</programlisting>
 
     <para><methodname>getParameterDescriptors</methodname>() returns a list of
@@ -717,6 +771,14 @@ public interface ConstructorDescriptor extends ElementDescriptor {
 
     <para><methodname>getReturnValueDescriptor()</methodname> returns a
     descriptor for the constructor's return value.</para>
+
+    <para><classname>isConstrainedOnParameters()</classname> returns true if
+    any of the parameters is constrained or cascaded. Returns false if there
+    is no parameter.</para>
+
+    <para><classname>isConstrainedOnReturnValue()</classname> returns true if
+    the return value is constrained or cascaded. Returns false if there is no
+    return value.</para>
 
     <para><remark>TODO: Should we have something like
     <methodname>hasParameterConstraints()</methodname> allowing quickly to

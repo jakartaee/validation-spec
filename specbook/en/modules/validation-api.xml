@@ -2053,14 +2053,7 @@ public boolean requiresParametersValidation(Class&lt;?&gt; type, Method method) 
     BeanDescriptor bean = validator.getConstraintsForClass( type );
     MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
     if ( methodDescriptor != null ) {
-        boolean validate = false;
-        for (ParameterDescriptor paramDescriptor : methodDescriptor.getParameterDescriptors()) {
-            validate = paramDescriptor.hasConstraints() || paramDescriptor.isCascaded();
-            if (validate) {
-                break;
-            }
-        }
-        return validate;
+        return methodDescriptor.isConstrainedOnParameters();
     }
     else {
         return false;
@@ -2072,8 +2065,7 @@ public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Method method)
     BeanDescriptor bean = validator.getConstraintsForClass( type );
     MethodDescriptor methodDescriptor = bean.getConstraintsForMethod( method.getName(), method.getParameterTypes() );
     if ( methodDescriptor != null ) {
-        ReturnValueDescriptor returnValueDescr = methodDescriptor.getReturnValueDescriptor();
-        return returnValueDescr != null &amp;&amp; ( returnValueDescr.isCascaded() || returnValueDescr.hasConstraints() );
+        return methodDescriptor.isConstrainedOnReturnValue();
     }
     else {
         return false;
@@ -2105,14 +2097,7 @@ public &lt;T&gt; boolean requiresParametersValidation(Class&lt;T&gt; type, Const
     BeanDescriptor bean = validator.getConstraintsForClass( type );
     ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor( ctor.getParameterTypes() );
     if ( constructorDescriptor != null ) {
-        boolean validate = false;
-        for (ParameterDescriptor paramDescriptor : constructorDescriptor.getParameterDescriptors()) {
-            validate = paramDescriptor.hasConstraints() || paramDescriptor.isCascaded();
-            if (validate) {
-                break;
-            }
-        }
-        return validate;
+        return constructorDescriptor.isConstrainedOnParameters();
     }
     else {
         return false;
@@ -2127,8 +2112,7 @@ public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Constructor&lt
         ctor.getParameterTypes()
     );
     if ( constructorDescriptor != null ) {
-        ReturnValueDescriptor returnValueDescr = constructorDescriptor.getReturnValueDescriptor();
-        return returnValueDescr != null &amp;&amp; ( returnValueDescr.isCascaded() || returnValueDescr.hasConstraints() );
+        return constructorDescriptor.isConstrainedOnReturnValue();
     }
     else {
         return false;
