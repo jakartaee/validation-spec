@@ -8,9 +8,10 @@
   <title>Integration</title>
 
   <para revisionflag="added">In this chapter integration points of Bean
-  Validation with other technologies are discussed. Generally speaking
-  containers or frameworks controlling the life cycle of objects (such as Java
-  EE, dependency injection frameworks or component frameworks) should:</para>
+  Validation with other technologies are discussed. Generally speaking,
+  containers and frameworks controlling the life cycle of objects (such as
+  Java EE, dependency injection frameworks or component frameworks)
+  should:</para>
 
   <itemizedlist revisionflag="added">
     <listitem>
@@ -23,14 +24,7 @@
       instance as well as <classname>Validator</classname> instances in their
       default configuration using the paradigm of the container: for example,
       such instances would be injectable in other objects via a dependency
-      injection framework. The default <classname>ValidatorFactory</classname>
-      in this context is the factory returned by
-      <classname>Validation.buildDefaultValidatorFactory </classname>(see also
-      <xref linkend="boostrapping-validation"/>). A default
-      <classname>Validator</classname> instance is a
-      <classname>Validator</classname> instance retrieved via
-      <methodname>getValidator</methodname> from the default
-      <classname>ValidatorFactory</classname>.</para>
+      injection framework. </para>
     </listitem>
 
     <listitem>
@@ -57,18 +51,33 @@
     </listitem>
   </itemizedlist>
 
+  <para><important>
+      <para>In this context the default
+      <classname>ValidatorFactory</classname> is the factory returned by
+      <classname>Validation.buildDefaultValidatorFactory</classname> (see also
+      <xref linkend="boostrapping-validation"/>). A default
+      <classname>Validator</classname> instance is a
+      <classname>Validator</classname> instance retrieved via
+      <methodname>getValidator</methodname> from the default
+      <classname>ValidatorFactory</classname>.</para>
+    </important></para>
+
   <para revisionflag="added">A user is free to explicitly use the bootstrap
   API to customize the <classname>ValidatorFactory</classname> as
   needed.</para>
 
+  <para revisionflag="added">Method interception frameworks (such as AOP
+  framework or CDI interceptors) should also enable interception of
+  constrained method following the steps defined in <xref
+  linkend="validationapi-triggeringmethodvalidation"/>. Method validation
+  should be implicit for any method or constructor annotated with
+  constraints.</para>
+
   <section id="integration-javaee" revisionflag="added">
     <title>Java EE</title>
 
-    <para>Java EE should obey the rules defined above and make the following
-    default instances available under JNDI (see <xref
-    linkend="id-bootstrap-validationprovider"/> for more information on how
-    the default instances instances are bootstrapped using the
-    <classname>ValidationProvider</classname> SPI ):</para>
+    <para>Java EE should obey the rules defined above and make the the
+    following instances available under JNDI:</para>
 
     <para><itemizedlist>
         <listitem>
@@ -122,23 +131,18 @@
                   <para>If there are no default
                   <classname>ValidatorFactory</classname> and
                   <classname>Validator</classname> beans, it is the
-                  reponsibilty of the extension to register them. For this
-                  purpose the extension should first check whether a default
-                  <classname>ValidatorFactory</classname> and
-                  <classname>Validator</classname> are bound in JNDI (see
-                  <xref linkend="integration-javaee"/>). If so these JNDI
-                  bound instances should be made available. If not, the
-                  extension needs to create and register a default
-                  <classname>ValidatorFactory</classname> and
+                  reponsibilty of the extension to register them. The
+                  extension creates and registers a default
+                  <classname>ValidatorFactory</classname> respective
                   <classname>Validator</classname> bean using the
-                  bootstrapping API (see <xref
-                  linkend="bootstrapping"/>).</para>
+                  bootstrapping API as discussed in the introduction of this
+                  chapter.</para>
                 </listitem>
 
                 <listitem>
                   <para>If the default <classname>ValidatorFactory</classname>
                   and <classname>Validator</classname> instances are already
-                  registered no action needs to be taken</para>
+                  registered no action needs to be taken.</para>
                 </listitem>
               </itemizedlist></para>
           </listitem>
@@ -196,7 +200,7 @@
             <classname>Instance.postConstruct()</classname> before returning
             <classname>Instance.get()</classname> when
             <classname>ConstraintValidatorFactory.getInstance()</classname> is
-            called</para>
+            called.</para>
           </listitem>
 
           <listitem>
@@ -206,7 +210,7 @@
             call (see also <xref
             linkend="constraintsdefinitionimplementation-constraintfactory"/>
             for more information about the life cycle of a
-            <classname>ConstraintValidator</classname>)</para>
+            <classname>ConstraintValidator</classname>).</para>
           </listitem>
         </itemizedlist></para>
     </section>
@@ -260,6 +264,6 @@
     <title id="integration-jsf">JAX-RS 2 integration</title>
 
     <para>See <ulink
-    url="https://hibernate.onjira.com/browse/BVAL-323">BVAL-323</ulink></para>
+    url="https://hibernate.onjira.com/browse/BVAL-323">BVAL-323</ulink>.</para>
   </section>
 </chapter>
