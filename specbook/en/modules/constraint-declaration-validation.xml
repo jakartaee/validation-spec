@@ -635,7 +635,8 @@ public class Order implements Auditable {
       object state itself is not valid.</para>
     </section>
 
-    <section id="constraintdeclarationvalidationprocess-groupsequence-groupconversion">
+    <section id="constraintdeclarationvalidationprocess-groupsequence-groupconversion"
+             revisionflag="added">
       <title>Group conversion</title>
 
       <para>When cascading validation, it is possible to use a different group
@@ -727,8 +728,9 @@ public @interface ConvertGroup {
         groups passed to the various <methodname>validate</methodname>
         methods</para>
 
-        <para>The group referred to in @ConvertGroup.to will be expanded
-        before validating the cascaded object just like a call to the various
+        <para>The group referred to in
+        <methodname>@ConvertGroup.to</methodname> will be expanded before
+        validating the cascaded object just like a call to the various
         <methodname>validate</methodname> method would have done.</para>
       </note>
 
@@ -764,7 +766,7 @@ public @interface ConvertGroup {
 
       <para>Group conversion is quite useful to facilitate object graph reuse
       without spreading the validation group definitions across several
-      layers. Let's look at an example</para>
+      layers. Let's look at an example.</para>
 
       <section>
         <title>Group conversion example</title>
@@ -1193,27 +1195,61 @@ public class User {
         <para>In order to use constraint annotations for method or constructor
         parameters, their element type must be
         <varname>ElementType.PARAMETER</varname>. In order to use constraint
-        annotations for the return values of methods or constructors (see
-        following sections), their element type must be
-        <varname>ElementType.METHOD</varname> respectively
+        annotations for cross-parameter validation or on the return values of
+        methods or constructors (see the following sections), their element
+        type must be <varname>ElementType.METHOD</varname> respectively
         <varname>ElementType.CONSTRUCTOR</varname>. All built-in constraints
         support these element types and it is considered a best practice to do
         the same for custom constraints.</para>
       </tip>
 
-      <section>
+      <section id="constraintdeclarationvalidationprocess-crossparameterconstraints">
         <title>Cross-parameter constraints</title>
 
         <para>Cross-parameter constraints allow to express constraints based
         on the value of several method parameters, similar to class-level
-        constraints which are based on several properties of a given
-        class.</para>
+        constraints which are based on several properties of a given class.
+        Cross-parameter constraints are declared by putting cross-parameter
+        constraint annotations on methods or constructors as shown in the
+        following example.</para>
 
-        <para><remark>TODO: Choose approach from <ulink
-        url="http://beanvalidation.org/proposals/BVAL-241/#cross_parameter">http://beanvalidation.org/proposals/BVAL-241/#cross_parameter</ulink>.
-        Based on previous discussions, most likely we'll go for option #3,
-        possibly combined with option #2 to allow for generic cross-parameter
-        constraints.</remark></para>
+        <example>
+          <title>Declaring cross-parameter constraints</title>
+
+          <programlisting language="JAVA">public class CalendarService {
+
+    @ConsistentDateParameters
+    public void createEvent(
+        String title,
+        @NotNull Date startDate,
+        @NotNull Date endDate) {
+        //...
+    }
+}</programlisting>
+        </example>
+
+        <para>The cross-parameter constraint annotation expresses here that
+        the given start date must be before the passed end date in order to
+        legally invoke the <methodname>createEvent()</methodname> method. The
+        example also shows that it is often useful to combine constraints
+        directly placed on individual parameters (<classname>e.g.
+        @NotNull</classname>) and cross-parameter constraints.</para>
+
+        <para><tip>
+            <para>Cross-parameter constraints as well as return value
+            constraints are declared directly on a method or a constructor. To
+            make it obivious for a reader that an annotation refers to the
+            parameters of a method or constructor and not its return value, it
+            is recommended to chose a name which clearly expresses this
+            intention.</para>
+          </tip></para>
+
+        <para>Cross parameters constraints are validated at the same time as
+        parameter constraints.</para>
+
+        <para><remark>TODO: Decide on whether to include the type-safe
+        approach from <ulink
+        url="http://beanvalidation.org/proposals/BVAL-232/">http://beanvalidation.org/proposals/BVAL-232/</ulink>.</remark></para>
       </section>
 
       <section id="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters">
@@ -1228,7 +1264,7 @@ public class User {
         <classname>javax.validation.ParameterNameProvider</classname> API to
         which the retrieval of parameter names is delegated:</para>
 
-        <programlisting>/**
+        <programlisting language="JAVA" role="JAVA">/**
  * &lt;p&gt;
  * Provides names for method and constructor parameters.
  * &lt;/p&gt;
@@ -1300,7 +1336,7 @@ public interface ParameterNameProvider {
       <example>
         <title>Declaring return value constraints</title>
 
-        <programlisting>public class OrderService {
+        <programlisting language="JAVA" role="JAVA">public class OrderService {
 
     private CreditCardProcessor creditCardProcessor;
 
@@ -1397,7 +1433,7 @@ public interface ParameterNameProvider {
         <title>Marking parameters and return values for cascaded
         validation</title>
 
-        <programlisting>public class OrderService {
+        <programlisting language="JAVA" role="JAVA">public class OrderService {
 
     @NotNull @Valid
     private CreditCardProcessor creditCardProcessor;
@@ -1554,7 +1590,7 @@ public interface ParameterNameProvider {
           <title>Illegally declared parameter constraints on interface
           implementation</title>
 
-          <programlisting>public interface OrderService {
+          <programlisting language="JAVA" role="JAVA">public interface OrderService {
 
     void placeOrder(String customerCode, Item item, int quantity);
 
@@ -1580,7 +1616,7 @@ public class SimpleOrderService implements OrderService {
             <title>Illegally declared parameter constraints on sub
             class</title>
 
-            <programlisting>public class OrderService {
+            <programlisting language="JAVA" role="JAVA">public class OrderService {
 
     void placeOrder(String customerCode, Item item, int quantity) { ... }
 
@@ -1606,7 +1642,7 @@ public class SimpleOrderService extends OrderService {
             <title>Illegally declared parameter constraints on parallel
             types</title>
 
-            <programlisting>public interface OrderService {
+            <programlisting language="JAVA" role="JAVA">public interface OrderService {
 
     void placeOrder(String customerCode, Item item, int quantity);
 
@@ -1643,7 +1679,7 @@ public class SimpleOrderService implements OrderService, OrderPlacementService {
             <title>Correctly declared return value constraints on sub
             class</title>
 
-            <programlisting>public class OrderService {
+            <programlisting language="JAVA" role="JAVA">public class OrderService {
 
     Order placeOrder(String customerCode, Item item, int quantity) { ... }
 
@@ -1711,8 +1747,9 @@ public class SimpleOrderService extends OrderService {
         linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
         including the ones expressed on interfaces and superclasses (see <xref
         linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
-        Note that group conversion can apply (see <xref
-        linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
+        <phrase revisionflag="added">Note that group conversion can apply (see
+        <xref
+        linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</phrase></para>
       </listitem>
     </itemizedlist>
 
