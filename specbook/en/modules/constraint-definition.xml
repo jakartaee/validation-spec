@@ -27,7 +27,7 @@
     <programlisting>/**
  * Link between a constraint annotation and its constraint validation implementations.
  * &lt;p/&gt;
- * A given constraint annotation should be annotated by a &lt;code&gt;@Constraint&lt;/code&gt;
+ * A given constraint annotation should be annotated by a {@code @Constraint}
  * annotation which refers to its list of constraint validation implementations.
  *
  * @author Emmanuel Bernard
@@ -39,13 +39,13 @@
 @Retention(RUNTIME)
 public @interface Constraint {
     /**
-     * &lt;code&gt;ConstraintValidator&lt;/code&gt; classes must reference distinct target types.
-     * If two &lt;code&gt;ConstraintValidator&lt;/code&gt; refer to the same type,
+     * {@code ConstraintValidator} classes must reference distinct target types.
+     * If two {@code ConstraintValidator}s refer to the same type,
      * an exception will occur.
      *
      * @return array of ConstraintValidator classes implementing the constraint
      */
-    public Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt;[] validatedBy();
+    Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt;[] validatedBy();
 }</programlisting>
 
     <para revisionflag="added">An annotation is considered a cross-parameter
@@ -65,9 +65,10 @@ public @interface Constraint {
 @Target({ ANNOTATION_TYPE })
 @Retention(RUNTIME)
 public @interface CrossParameterConstraint {
-    /**
+   /**
      * Returns the {@link ConstraintValidator} class for the annotated
-     * cross-parameter constraint.
+     * cross-parameter constraint. The validator's type parameter {@code T} must
+     * resolve to {@code Object[]}.
      *
      * @return Constraint validator class implementing the constraint
      */
@@ -1426,8 +1427,8 @@ public class DateParametersConsistentValidator implements&lt;DateParametersConsi
      * returns false if the specified value does not conform to the definition
      */
     public boolean isValid(Object[] value, ConstraintValidatorContext context) {
-        if ( value.length != 2 ) {
-            throws new IllegalStateException("Unexpected method signature");
+        if ( value.length != 3 ) {
+            throw new IllegalStateException( "Unexpected method signature" );
         }
         // one or both limits are unbounded =&gt; always consistent
         if ( value[1] == null || value[2] == null ) return true;
