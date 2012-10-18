@@ -152,6 +152,9 @@ public interface Validator {
     validation are described in <xref
     linkend="validationapi-validatorapi-methodlevelvalidationmethods"/>.</para>
 
+    <remark revisionflag="added">TODO: Do we find another term than
+    "delegate"?</remark>
+
     <para
     revisionflag="changed"><methodname>getConstraintsForClass()</methodname>
     returns constraint-related metadata for given types and is described in
@@ -773,11 +776,14 @@ public interface ConstraintViolation&lt;T&gt; {
     <para>The <methodname>getRootBean</methodname> method returns the root
     object being validated that led to the failing constraint (i.e. the object
     the client code passes to the <methodname>Validator.validate</methodname>
-    method.</para>
+    method).</para>
 
     <para>The <methodname>getInvalidValue</methodname> method returns the
-    value (field, property or validated object) being passed to
-    <methodname>isValid</methodname>.</para>
+    value (field, property<phrase revisionflag="added">, method parameter
+    respectively return value</phrase> or validated object) being passed to
+    <methodname>isValid</methodname>. <phrase revisionflag="added">In case the
+    violated constraint is a cross-parameter constraint, an array with the
+    method invocation's arguments is returned.</phrase></para>
 
     <para><methodname>getConstraintDescriptor</methodname> provides access to
     the failing constraint metadata (see <xref
@@ -975,6 +981,12 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
 
           <listitem>
             <para>the property path is considered complete</para>
+          </listitem>
+
+          <listitem>
+            <remark>TODO: Decide what to return for cross-parameter
+            constraints. Maybe we could have a
+            <classname>CrossParameterDescriptor</classname>/<varname>Kind.CROSS_PARAMETER</varname>?</remark>
           </listitem>
         </itemizedlist>
       </listitem>
@@ -1309,7 +1321,8 @@ public class Library {
             </row>
           </tbody>
         </tgroup>
-      </table></para>
+      </table><remark>TODO: Add paths for cross-parameter
+    constraints.</remark></para>
 
     <note>
       <para>Bean Validation implementations should ensure that a
@@ -1490,7 +1503,8 @@ assert false == nodeIter.hasNext();</programlisting>
     <section revisionflag="added">
       <title>Examples for method-level constraint violations</title>
 
-      <remark>TODO: Do we need more examples here?</remark>
+      <remark>TODO: Add examples for cross-parameter constraints. Do we need
+      any more examples here?</remark>
 
       <para>The following examples assume the constraint, class and object
       definitions given in the previous section. Additionally the following
