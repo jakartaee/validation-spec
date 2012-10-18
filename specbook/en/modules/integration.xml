@@ -35,7 +35,10 @@
     <title>Java EE</title>
 
     <para>Java EE should obey the rules defined above and make the following
-    default instances available under JNDI:</para>
+    default instances available under JNDI (see <xref
+    linkend="id-bootstrap-validationprovider"/> for more information on how
+    the default instances instances are bootstrapped using the
+    <classname>ValidationProvider</classname> SPI ):</para>
 
     <para><itemizedlist>
         <listitem>
@@ -75,7 +78,7 @@
 @Inject Validator;
 </programlisting>These default instances needs to be injectable via the
       <classname>@Default</classname> qualifier even if there are multiple
-      Bean Validation providers available. </para>
+      Bean Validation providers available.</para>
 
       <para>Every Bean Validation provider provides a CDI Extension in order
       to make its implementation available for the container. The following
@@ -84,11 +87,13 @@
             <para>At registration, the extension verifies whether there is
             already a <classname>ValidatorFactory</classname> and
             <classname>Validator</classname> bean available for injection via
-            the @Default quailifer.<itemizedlist>
+            the <classname>@Default</classname> quailifer.<itemizedlist>
                 <listitem>
-                  <para>If not, it is the reponsibilty of the extension to
-                  register these default beans. For this purpose the extension
-                  should first check whether a default
+                  <para>If there no default
+                  <classname>ValidatorFactory</classname> and
+                  <classname>Validator</classname> beans, it is the
+                  reponsibilty of the extension to register them. For this
+                  purpose the extension should first check whether a default
                   <classname>ValidatorFactory</classname> and
                   <classname>Validator</classname> are bound in JNDI (see
                   <xref linkend="integration-javaee"/>). If so these JNDI
@@ -115,10 +120,10 @@
             provider can register an additional
             <classname>ValidatorFactory</classname> respective
             <classname>Validator</classname> bean provided it also provides a
-            custom quailifer, for example <classname>@Hibernate</classname>,
-            to prevent an ambiguous dependency due to multiple beans being
-            eligible for injection to the injection point.<programlisting>@Inject @Hibernate ValidatorFactory;
-@Inject @Hibernate Validator;</programlisting><note>
+            custom qualifier, for example <classname>@ACME</classname>, to
+            prevent an ambiguous dependency due to multiple beans being
+            eligible for injection to the injection point.<programlisting>@Inject @ACME ValidatorFactory;
+@Inject @ACME Validator;</programlisting><note>
                 <para>These rules ensure that in any CDI container (Java SE or
                 EE environment) a default injectable
                 <classname>ValidatorFactory</classname> respective
@@ -150,20 +155,38 @@
       requested by the user, the <classname>ValidatorFactory</classname>
       should be configured with a custom
       <classname>ConstraintValidatorFactory</classname> instance that returns
-      managed <classname>ConstraintValidator</classname> instances. The scope
-      of <classname>ConstraintValidator</classname> instances is controlled by
-      Bean Validation as described in <xref
-      linkend="constraintsdefinitionimplementation-constraintfactory"/>, but
-      as managed beans can receive expected services like injection of other
-      objects.</para>
+      managed <classname>ConstraintValidator</classname> instances. The
+      factory<itemizedlist>
+          <listitem>
+            <para>creates non-contextual <classname>Instance</classname>
+            objects for each <classname>ConstraintValidator</classname>
+            instance required and calls
+            <classname>Instance.produce()</classname>,
+            <classname>Instance.inject()</classname>,
+            <classname>Instance.postConstruct()</classname> before returning
+            <classname>Instance.get()</classname> when
+            <classname>ConstraintValidatorFactory.getInstance()</classname> is
+            called</para>
+          </listitem>
+
+          <listitem>
+            <para>calls <classname>Instance.preDestroy()</classname> and
+            <classname>Instance.dispose()</classname> upon
+            <classname>ConstraintValidatorFactory.releaseInstance</classname>
+            call (see also <xref
+            linkend="constraintsdefinitionimplementation-constraintfactory"/>
+            for more information about the life cycle of a
+            <classname>ConstraintValidator</classname>)</para>
+          </listitem>
+        </itemizedlist></para>
     </section>
 
     <section>
       <title>Method validation</title>
 
       <para>A Bean Validation provider also provides an CDI interceptor for
-      method validation. This interceptor implenents the steps specified in
-      <xref linkend="validationapi-triggeringmethodvalidation"/>. </para>
+      method validation. This interceptor implements the steps specified in
+      <xref linkend="validationapi-triggeringmethodvalidation"/>.</para>
 
       <para>Ordinarily CDI requires that intercepted mehods are annoated with
       a so called interceptor binding annotation. To make method validation
@@ -171,15 +194,20 @@
       or method, the interceptor biding annotation needs to be added
       programmatically to any method requiring validation.
       <classname>javax.validation.MethodValidated</classname> should be used
-      as binding annotation.<tip>
-          <para> A CDI extension can observe the
+      as binding annotation.<note>
+          <para>It is recommended to only add the interceptor for constrained
+          methods. <xref linkend="validationapi-triggeringmethodvalidation"/>
+          gives examples how the metadata API can be used to determine whether
+          a method is constrained.</para>
+        </note><tip>
+          <para>A CDI extension can observe the
           <classname>ProcessAnnotatedType</classname> event in order to add
           the interceptor binding annotation.</para>
         </tip></para>
     </section>
   </section>
 
-  <section>
+  <section revisionflag="added">
     <title id="integration-jpa">Java Persistence 2.0 integration</title>
 
     <para>Integration with Java Persistence is described in the Java
@@ -189,12 +217,18 @@
     url="https://hibernate.onjira.com/browse/BVAL-318">BVAL-318</ulink>).</para>
   </section>
 
-  <section>
+  <section revisionflag="added">
     <title id="integration-jsf">Java Server Faces 2.0 integration</title>
 
     <para>Integration with Java Server Faces is described in the Java Server
     Faces 2 specification (JSR-314). Presentation frameworks are encouraged to
     study the integration work done with JSF 2 (see also <ulink
     url="https://hibernate.onjira.com/browse/BVAL-319">BVAL-319</ulink>).</para>
+  </section>
+
+  <section revisionflag="added">
+    <title id="integration-jsf">JAX-RS 2 integration</title>
+
+    <para>TODO</para>
   </section>
 </chapter>
