@@ -315,7 +315,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
     <section id="validationapi-validatorapi-methodlevelvalidationmethods"
              revisionflag="added">
-      <title>Method-level validation methods</title>
+      <title>Methods for validating method and constructor constraints</title>
 
       <para>The methods for the validation of parameters and return values of
       methods respectively constructors can be found on the interface
@@ -552,8 +552,8 @@ methodValidator.validateConstructorParameters(constructor, new Object[] { null }
       constraints applied during validation. Groups targeted are passed as
       parameters to the <methodname>validate</methodname>,
       <methodname>validateProperty</methodname> and
-      <methodname>validateValue</methodname> methods as well as the
-      method-level validation methods (see <xref
+      <methodname>validateValue</methodname> methods as well as the methods to
+      validate method/constructor constraints (see <xref
       linkend="validationapi-validatorapi-methodlevelvalidationmethods"/>).
       All constraints belonging to the targeted group are applied during the
       <xref
@@ -956,7 +956,7 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
       </listitem>
 
       <listitem revisionflag="added">
-        <para>For a method-level constraint (parameter or return value
+        <para>For a method/constructor constraint (parameter or return value
         constraint on a method or constructor):</para>
 
         <itemizedlist>
@@ -1066,7 +1066,7 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
     <note revisionflag="added">
       <para><classname>ConstraintViolation</classname>s occurred during
       standard bean validation can be distinguished from violations occurred
-      during method-level validation by analyzing the
+      during method/constructor validation by analyzing the
       <classname>Kind</classname> of the
       <classname>ElementDescriptor</classname> of the first node in the
       violation's property path. In case of method-validation, that
@@ -1231,12 +1231,13 @@ public class Library {
     </table>
 
     <para revisionflag="added">Assuming the constructor and methods of the
-    <classname>Library</classname> class are subject to method-level
+    <classname>Library</classname> class are subject to method constraint
     validation, the following property paths would exist for the different
     constraints:</para>
 
     <para><table id="table-method-level-propertypath" revisionflag="added">
-        <title>method-level property path examples</title>
+        <title>Property path examples for constrained methods or
+        constructors</title>
 
         <tgroup cols="2">
           <thead>
@@ -1506,7 +1507,7 @@ assert false == nodeIter.hasNext();</programlisting>
     </section>
 
     <section revisionflag="added">
-      <title>Examples for method-level constraint violations</title>
+      <title>Examples for method/constructor constraint violations</title>
 
       <remark>TODO: Add examples for cross-parameter constraints. Do we need
       any more examples here?</remark>
@@ -1526,7 +1527,7 @@ Library library = new Library();
 author.setLastName("Doe");</programlisting>
 
       <para>Assuming the following invocation of
-      <methodname>addBook()</methodname> is subject to method-level
+      <methodname>addBook()</methodname> is subject to method constraint
       validation:</para>
 
       <programlisting>library.addBook(null);</programlisting>
@@ -1557,7 +1558,7 @@ assert Kind.PARAMETER.equals( node.getElementDescriptor().getKind() );
 assert false == nodeIter.hasNext();</programlisting>
 
       <para>Assuming the following invocation of
-      <methodname>addBook()</methodname> is subject to method-level
+      <methodname>addBook()</methodname> is subject to method constraint
       validation:</para>
 
       <programlisting>library.addBook(book);</programlisting>
@@ -1593,7 +1594,7 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <para>Assuming the following invocation of
       <methodname>getMostPopularBookPerAuthor()</methodname> is subject to
-      method-level validation and returns a <classname>Map</classname>
+      method constraint validation and returns a <classname>Map</classname>
       containing one entry with key <varname>author</varname> and value
       <varname>book</varname>:</para>
 
@@ -2017,13 +2018,13 @@ Validator validator = factory.getValidator();</programlisting>
   <section id="validationapi-triggeringmethodvalidation" revisionflag="added">
     <title>Triggering method validation</title>
 
-    <para>Bean Validation itself doesn't trigger the evaluation of
-    method-level constraints. That is, just annotating any methods or
-    constructors with parameter or return value constraints doesn't
-    automatically enforce these constraints, just as annotating any fields or
-    properties with bean constraints doesn't enforce these either.</para>
+    <para>Bean Validation itself doesn't trigger the evaluation of method
+    constraints. That is, just annotating any methods or constructors with
+    parameter or return value constraints doesn't automatically enforce these
+    constraints, just as annotating any fields or properties with bean
+    constraints doesn't enforce these either.</para>
 
-    <para>Instead method-level constraints must be validated by invoking the
+    <para>Instead method constraints must be validated by invoking the
     appropriate methods on
     <classname>javax.validation.MethodValidator</classname>. Typically this
     won't happen by manually calling these methods but rather automatically
@@ -2031,8 +2032,8 @@ Validator validator = factory.getValidator();</programlisting>
     approaches and techniques such as CDI/EJB interceptors, aspect-oriented
     programming or dynamic proxies.</para>
 
-    <para>The validation of method-level / constructor-level constraints
-    comprises the following steps:</para>
+    <para>The validation of method / constructor constraints comprises the
+    following steps:</para>
 
     <itemizedlist>
       <listitem>
