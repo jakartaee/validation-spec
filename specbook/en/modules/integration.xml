@@ -4,11 +4,11 @@
 <!ENTITY % BOOK_ENTITIES SYSTEM "../global.ent">
 %BOOK_ENTITIES;
 ]>
-<chapter id="integration">
+<chapter id="integration" revisionflag="added">
   <title>Integration</title>
 
-  <para revisionflag="added">In this chapter integration points of Bean
-  Validation with other technologies are discussed. Generally speaking,
+  <para revisionflag="added">In this chapter integration points between Bean
+  Validation and other technologies are discussed. Generally speaking,
   containers and frameworks controlling the life cycle of objects (such as
   Java EE, dependency injection frameworks or component frameworks)
   should:</para>
@@ -52,12 +52,12 @@
   </itemizedlist>
 
   <para><important>
-      <para>In this context the default
-      <classname>ValidatorFactory</classname> is the factory returned by
+      <para>In this context a default <classname>ValidatorFactory</classname>
+      is a factory configure like the factory returned by
       <classname>Validation.buildDefaultValidatorFactory</classname> (see also
-      <xref linkend="boostrapping-validation"/>). A default
-      <classname>Validator</classname> instance is a
-      <classname>Validator</classname> instance retrieved via
+      <xref linkend="boostrapping-validation"/>) except for the enhancements
+      described above. A default <classname>Validator</classname> instance is
+      a <classname>Validator</classname> instance retrieved via
       <methodname>getValidator</methodname> from the default
       <classname>ValidatorFactory</classname>.</para>
     </important></para>
@@ -66,9 +66,9 @@
   API to customize the <classname>ValidatorFactory</classname> as
   needed.</para>
 
-  <para revisionflag="added">Method interception frameworks (such as AOP
-  frameworks or CDI interceptors) should also enable interception of
-  constrained method following the steps defined in <xref
+  <para revisionflag="added">Method interception frameworks (such as AOP or
+  interceptor frameworks) should also enable interception of constrained
+  method following the steps defined in <xref
   linkend="validationapi-triggeringmethodvalidation"/>. Method validation
   should be implicit for any method or constructor annotated with
   constraints.</para>
@@ -110,12 +110,12 @@
 
       <para>Similar to the Java EE integration via
       <classname>@Resource</classname> (see <xref
-      linkend="integration-javaee"/>) a CDI container needs to allow for
+      linkend="integration-javaee"/>), a CDI container must allow the
       injection of the default <classname>ValidatorFactory</classname> and
       <classname>Validator</classname> via
       <classname>@Inject</classname>:<programlisting>@Inject ValidatorFactory;
 @Inject Validator;
-</programlisting>These default instances needs to be injectable via the
+</programlisting>These default instances must be injectable via the
       <classname>@Default</classname> qualifier even if there are multiple
       Bean Validation providers available.</para>
 
@@ -138,7 +138,7 @@
                   <para>If there are no default
                   <classname>ValidatorFactory</classname> and
                   <classname>Validator</classname> beans, it is the
-                  reponsibilty of the extension to register them. The
+                  responsibility of the extension to register them. The
                   extension creates and registers a default
                   <classname>ValidatorFactory</classname> respective
                   <classname>Validator</classname> bean using the
@@ -159,16 +159,18 @@
             <classname>ValidatorFactory</classname> and
             <classname>Validator</classname> beans, the Bean Validation
             provider can register an additional
-            <classname>ValidatorFactory</classname> respective
-            <classname>Validator</classname> bean provided it also provides a
-            custom qualifier, for example <classname>@ACME</classname>, to
-            prevent an ambiguous dependency due to multiple beans being
-            eligible for injection to the injection point.<programlisting>@Inject @ACME ValidatorFactory;
+            <classname>ValidatorFactory</classname> and its respective
+            <classname>Validator</classname> bean provided they are registered
+            with a custom qualifier, for example <classname>@ACME</classname>,
+            to prevent an ambiguous dependency due to multiple beans being
+            eligible for injection to the injection point. Using the product
+            name or brand for the qualifier is considered good
+            practice.<programlisting>@Inject @ACME ValidatorFactory;
 @Inject @ACME Validator;</programlisting><note>
                 <para>These rules ensure that in any CDI container (Java SE or
-                EE environment) a default injectable
-                <classname>ValidatorFactory</classname> respective
-                <classname>Validator</classname> bean is made available by
+                EE environment), a default injectable
+                <classname>ValidatorFactory</classname> and
+                <classname>Validator</classname> bean are made available by
                 adding the Bean Validation provider's CDI extension and its
                 dependencies.</para>
               </note></para>
@@ -202,8 +204,9 @@
             <para>creates non-contextual
             <classname>ConstraintValidator</classname> instances for each
             <methodname>ConstraintValidatorFactory.getInstance</methodname>
-            call. To inject dependencies into the ConstraintValidator
-            instance, the CDI InjectionTarget API should be used. Before
+            call. To inject dependencies into the
+            <classname>ConstraintValidator</classname> instance, the CDI
+            <classname>InjectionTarget</classname> API should be used. Before
             returning the instance the following calls should be made
             <classname>InjectionTarget.produce()</classname>,
             <classname>InjectionTarget.inject()</classname> and
@@ -229,17 +232,17 @@
       method validation. This interceptor implements the steps specified in
       <xref linkend="validationapi-triggeringmethodvalidation"/>.</para>
 
-      <para>Ordinarily CDI requires that intercepted mehods are annoated with
-      a so called interceptor binding annotation. To make method validation
-      implicit by just adding the Bean Validation constraints to a constructor
-      or method, the interceptor biding annotation needs to be added
-      programmatically to any method requiring validation.
+      <para>Ordinarily CDI requires that intercepted methods are annotated
+      with a so called interceptor binding annotation. To make method
+      validation implicit by just adding the Bean Validation constraints to a
+      constructor or method, the interceptor biding annotation needs to be
+      added programmatically to any method requiring validation.
       <classname>javax.validation.spi.MethodValidated</classname> is to be
-      used as binding annotation.<note>
+      used as binding annotation. All this is transparent to the user.<note>
           <para>It is recommended to only add the interceptor for constrained
           methods. <xref linkend="validationapi-triggeringmethodvalidation"/>
           gives examples how the metadata API can be used to determine whether
-          a method is constrained.</para>
+          or not a method is constrained.</para>
         </note><tip>
           <para>A CDI extension can observe the
           <classname>ProcessAnnotatedType</classname> event in order to add
