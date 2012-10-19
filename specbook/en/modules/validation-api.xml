@@ -3875,7 +3875,7 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
       </section>
     </section>
 
-    <section>
+    <section id="boostrapping-validation">
       <title>Validation</title>
 
       <para>The <classname>Validation</classname> class is the entry point
@@ -4293,11 +4293,11 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
     </section>
 
     <section id="bootstrapping-usageandcontainerexpectation">
-      <title>Usage and container requirements</title>
+      <title>Bootstrapping considerations</title>
 
-      <para>The Bean Validation bootstrap API can be used directly by the
-      application, through the use of a container or by frameworks in need for
-      validation. In all cases, the following rules apply:</para>
+      <para>The Bean Validation bootstrap API can be used directly by any
+      application or made available through a container or other framework. In
+      all cases, the following rules apply:</para>
 
       <itemizedlist>
         <listitem>
@@ -4307,170 +4307,16 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
 
         <listitem>
           <para revisionflag="added"><classname>ValidatorFactory</classname>
-          should be closed after it is no longer needed (eg when the unit is
+          should be closed when it is no longer needed (eg when the unit is
           undeployed or the server stopped).</para>
         </listitem>
 
         <listitem>
-          <para><classname>Validator</classname> is thread-safe too and should
-          be considered a lightweight object.
-          <classname>ValidatorFactory</classname> would typically implement
-          appropriate <classname>Validator</classname> instance caching
-          strategies if needed.</para>
+          <para><classname>Validator</classname> is a thread-safe and
+          lightweight object which can be cached by the
+          <classname>ValidatorFactory</classname> instance.</para>
         </listitem>
       </itemizedlist>
-
-      <para revisionflag="added">Containers controlling the life cycle of
-      objects such as Java EE, dependency injection frameworks, component
-      frameworks should:</para>
-
-      <itemizedlist revisionflag="added">
-        <listitem>
-          <para>build and bootstrap the
-          <classname>ValidatorFactory</classname> instance for an
-          application</para>
-        </listitem>
-
-        <listitem>
-          <para>provide access to the <classname>ValidatorFactory</classname>
-          instance as well as <classname>Validator</classname> instances in
-          their default configuration. This should be done in the paradigm of
-          the container: for example, such instances would be injectable in
-          other objects via a dependency injection framework.</para>
-        </listitem>
-
-        <listitem>
-          <para>if no custom <classname>ConstraintValidatorFactory</classname>
-          is requested by the user, configure
-          <classname>ValidatorFactory</classname> with a custom
-          <classname>ConstraintValidatorFactory</classname> instance that
-          returns managed <classname>ConstraintValidator</classname>
-          instances. The scope of <classname>ConstraintValidator</classname>
-          instances is still fully controlled by Bean Validation provider as
-          described in <xref
-          linkend="constraintsdefinitionimplementation-constraintfactory"/>
-          but as managed beans can receive expected services like injection of
-          other objects.</para>
-        </listitem>
-
-        <listitem>
-          <para>if a <classname>ConstraintValidatorFactory</classname>,
-          <classname>MessageInterpolator</classname> or
-          <classname>TraversableResovler</classname> class name is defined in
-          the XML deployment descriptor, configure
-          <classname>ValidatorFactory</classname> with a managed instance of
-          the requested class. Services provided by the container (like
-          dependency injection) should thus be available to this
-          instance.</para>
-        </listitem>
-      </itemizedlist>
-
-      <para revisionflag="added">A user is free to explicitly use the
-      bootstrap API to customize the <classname>ValidatorFactory</classname>
-      as needed.</para>
-
-      <note revisionflag="added">
-        <para>Containers are not forced to follow these rules but each non
-        compliance should be carefully weighted and customers should be
-        warned. With great power comes great responsibility.</para>
-      </note>
-
-      <important revisionflag="added">
-        <title>Questions to the readers and expert group</title>
-
-        <para>Should we ask containers to provide a way to customize the
-        <classname>ValidatorFactory</classname> creation process for example
-        by allowing a user to redefine the
-        <classname>MessageInterpolator</classname> (and use a managed object).
-        In CDI that would be a (qualified?) provider.</para>
-
-        <para>Likewise, should we allow for the injection of the Bean
-        Validation default implementations for
-        <classname>MessageInterpolator</classname>,
-        <classname>TraversableResolver</classname> and
-        <classname>ConstraintValidatorFactory</classname>? Should we propose
-        qualifiers?</para>
-      </important>
-
-      <section revisionflag="added">
-        <title>Java EE and Context and Dependency Injection</title>
-
-        <para>Java EE should obey the rules defined above and enable Context
-        and Dependency Injection (CDI) support to
-        <classname>ValidatorFactory</classname> instances. In
-        particular:</para>
-
-        <itemizedlist>
-          <listitem>
-            <para>Let <classname>Validator</classname> and
-            <classname>ValidatorFactory</classname> object be
-            injectable.</para>
-          </listitem>
-
-          <listitem>
-            <para>Use a default
-            <classname>ConstraintValidatorFactory</classname> implementation
-            that returns CDI managed
-            <classname>ConstraintValidator</classname> objects. The scope of
-            these instances is dependent as the Bean Validation provider is
-            responsible for them.</para>
-          </listitem>
-
-          <listitem>
-            <para>Provide CDI managed instances of
-            <classname>ConstraintValidatorFactory</classname>,
-            <classname>MessageInterpolator</classname> and
-            <classname>TraversableResovler</classname> if customized classes
-            are requested in the XML deployment descriptor.</para>
-          </listitem>
-        </itemizedlist>
-
-        <para>The <classname>ConstraintValidatorFactory</classname> supporting
-        CDI managed <classname>ConstraintValidator</classname> objects
-        should:</para>
-
-        <itemizedlist>
-          <listitem>
-            <para>create a non-contextual <classname>Instance</classname>
-            object for each <classname>ConstraintValidator</classname>
-            instance required and call
-            <methodname>Instance.produce()</methodname>,
-            <methodname>Instance.inject()</methodname>,
-            <methodname>Instance.postConstruct()</methodname> before returning
-            <methodname>Instance.get()</methodname> when
-            <methodname>ConstraintValidatorFactory.getInstance()</methodname>
-            is called.</para>
-          </listitem>
-
-          <listitem>
-            <para>call <methodname>Instance.preDestroy()</methodname> and
-            <methodname>Instance.dispose()</methodname> upon
-            <methodname>ConstraintValidatorFactory.releaseInstance</methodname>
-            call</para>
-          </listitem>
-        </itemizedlist>
-
-        <important>
-          <para>Make sure EE can properly start
-          <classname>ValidatorFactory</classname> and CDI. Pete proposes that
-          the <classname>ValidatorFactory</classname> instance sent by the EE
-          container is in essence a lazy instance that is built upon first
-          request or after CDI has been properly booted.</para>
-
-          <para>Questions about being able to customize the factory creating
-          process are valid here too.</para>
-
-          <para>Question: should we venture in standardizing support for this
-          in vanilla CDI (SE mode)?</para>
-
-          <para>Question: is the description on how to implement
-          <classname>ConstraintValidatorFactory</classname> too specific and
-          should be left out of the spec? I tried to describe what is
-          explained in <ulink
-          url="http://seamframework.org/Documentation/HowDoIDoNoncontextualInjectionForAThirdpartyFramework">http://seamframework.org/Documentation/HowDoIDoNoncontextualInjectionForAThirdpartyFramework</ulink>
-          in loose terms.</para>
-        </important>
-      </section>
     </section>
   </section>
 </chapter>
