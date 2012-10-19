@@ -43,7 +43,7 @@ public @interface Constraint {
      * If two {@code ConstraintValidator}s refer to the same type,
      * an exception will occur.
      *
-     * @return array of ConstraintValidator classes implementing the constraint
+     * @return array of (@code ConstraintValidator} classes implementing the constraint
      */
     Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt;[] validatedBy();
 }</programlisting>
@@ -80,8 +80,8 @@ public @interface CrossParameterConstraint {
     cross-parameter constraint (marked with
     <classname>@CrossParameterConstraint</classname>). If both annotations are
     given on an annotation type, a
-    <classname>ConstraintDefinitionException</classname> will be raised by the
-    Bean Validation provider.</para>
+    <classname>ConstraintDefinitionException</classname> is raised by the Bean
+    Validation provider.</para>
 
     <remark revisionflag="added">TODO: Alternatively to distinguishing generic
     and cross-parameter constraint annotation types by different meta
@@ -589,10 +589,15 @@ public @interface FrenchZipcode {
     <methodname>payload</methodname> definition on a composing annotation is
     ignored.</para>
 
-    <para>The property type upon which composed constraint is placed must be
-    compatible with all constraints (composing and composed). A constraint
-    designer should ensure that such a type exists and list in the JavaDoc all
-    the compatible types.</para>
+    <para>The <phrase revisionflag="deleted">property</phrase> type upon which
+    composed constraint is placed must be compatible with all constraints
+    (composing and composed). A constraint designer should ensure that such a
+    type exists and list in the JavaDoc all the compatible types.</para>
+
+    <para>Both composed and composing constraints should share the same
+    constraint type. Either all of generic constraints
+    (<classname>@Constraint</classname>) or all of cross parameter constraints
+    (<classname>@CrossParameterConstraint</classname>).</para>
 
     <para>It is possible to ensure that composing annotations do not raise
     individual error reports. In this scenario, if one or more composing
@@ -889,9 +894,35 @@ public @interface OverridesAttribute {
       </listitem>
     </itemizedlist>
 
-    <para>If the composition is invalid (infinitely recursive composition,
-    wrong attribute overriding, a single attribute mapped to more than one
-    source attribute etc), a
+    <para>If the composition is invalid</para>
+
+    <itemizedlist>
+      <listitem>
+        <para>infinitely recursive composition</para>
+      </listitem>
+
+      <listitem>
+        <para>wrong attribute overriding</para>
+      </listitem>
+
+      <listitem>
+        <para>a single attribute mapped to more than one source
+        attribute</para>
+      </listitem>
+
+      <listitem>
+        <para revisionflag="added">A composing and composed constraint marked
+        as different constraint types (i.e., generic with
+        <classname>@Constraint</classname> and cross-parameter with
+        <classname>@CrossParameterConstraint</classname>)</para>
+      </listitem>
+
+      <listitem>
+        <para>etc</para>
+      </listitem>
+    </itemizedlist>
+
+    <para>a single attribute mapped to more than one source attribute etc), a
     <classname>ConstraintDefinitionException</classname> is raised either at
     validation time or when the metadata is requested.</para>
 

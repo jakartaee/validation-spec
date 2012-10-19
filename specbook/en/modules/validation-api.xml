@@ -704,7 +704,7 @@ public class Address {
     <classname>ConstraintViolation</classname> is returned for an object
     validation.</para>
 
-    <programlisting>/**
+    <programlisting revisionflag="changed">/**
  * Describe a constraint violation. This object exposes the constraint
  * violation context as well as the message describing the violation.
  *
@@ -749,6 +749,10 @@ public interface ConstraintViolation&lt;T&gt; {
     Path getPropertyPath();
 
     /**
+     * Returns the value failing to pass the constraint.
+     * For cross-parameter constraints, an {@code Object[]} representing
+     * the method invocation arguments is returned.
+     *
      * @return the value failing to pass the constraint.
      */
     Object getInvalidValue();
@@ -779,11 +783,12 @@ public interface ConstraintViolation&lt;T&gt; {
     method).</para>
 
     <para>The <methodname>getInvalidValue</methodname> method returns the
-    value (field, property<phrase revisionflag="added">, method parameter
-    respectively return value</phrase> or validated object) being passed to
-    <methodname>isValid</methodname>. <phrase revisionflag="added">In case the
-    violated constraint is a cross-parameter constraint, an array with the
-    method invocation's arguments is returned.</phrase></para>
+    value (field, property<phrase revisionflag="added">, method/constructor
+    parameter, method/constructor return value</phrase> or validated object)
+    being passed to <methodname>isValid</methodname>. <phrase
+    revisionflag="added">For a cross-parameter constraint, an
+    <code>Object[]</code> representing the method/constructor invocation
+    arguments is returned.</phrase></para>
 
     <para><methodname>getConstraintDescriptor</methodname> provides access to
     the failing constraint metadata (see <xref
