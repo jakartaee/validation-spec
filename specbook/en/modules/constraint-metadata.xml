@@ -589,22 +589,158 @@ public interface PropertyDescriptor extends ElementDescriptor {
   </section>
 
   <section revisionflag="added">
-    <title>MethodDescriptor</title>
+    <title>ExecutableDescriptor, MethodDescriptor and
+    ConstructorDescriptor</title>
 
-    <para>The <classname>MethodDescriptor</classname> interface describes a
-    constrained method of a Java type.</para>
+    <para>The <classname>ExecutableDescriptor</classname> interface describes
+    a constrained method respectively constructor of a Java type.</para>
 
-    <para><classname>MethodDescriptor</classname> lives in the
+    <para><classname>ExecutableDescriptor</classname> lives in the
     <classname>javax.validation.metadata</classname> package.</para>
-
-    <para>This interface is returned by
-    <methodname>BeanDescriptor#getConstraintsForMethod(String,
-    Class&lt;?&gt;...)</methodname> and
-    <methodname>BeanDescriptor#getConstrainedMethods()</methodname>.</para>
 
     <programlisting>package javax.validation.metadata;
 
-import java.util.List;
+/**
+ * Provides common functionality of {@link MethodDescriptor} and
+ * {@link ConstructorDescriptor}.
+ *
+ * @author Gunnar Morling
+ *
+ * @since 1.1
+ */
+public interface ExecutableDescriptor extends ElementDescriptor {
+
+    /**
+     * Returns the method name in case this descriptor represents a method or
+     * the non-qualified name of the declaring class in case this descriptor
+     * represents a constructor.
+     *
+     * @return The name of the executable represented by this descriptor.
+     */
+    String getName();
+
+    /**
+     * &lt;p&gt;
+     * Returns a list with descriptors for this executable's parameters. The
+     * size of this list corresponds to the number of this executable's
+     * parameters.
+     * &lt;/p&gt;
+     *
+     * @return A list with descriptors for this executable's parameters. An
+     *         empty list will be returned if this executable has no parameters,
+     *         but never {@code null}.
+     */
+    List&lt;ParameterDescriptor&gt; getParameterDescriptors();
+
+    /**
+     * Returns a descriptor for this executable's return value.
+     *
+     * @return A descriptor for this executable's return value or {@code null}
+     *         if this executable has no return value.
+     */
+    ReturnValueDescriptor getReturnValueDescriptor();
+
+    /**
+     * Returns {@code true} if the executable parameters are constrained either:
+     * &lt;ul&gt;
+     * &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
+     * &lt;li&gt;because of a cascade on at least one of the parameters (via
+     * {@code @Valid})&lt;/li&gt;
+     * &lt;li&gt;because of at least one cross-parameter constraint&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Also returns {@code false} if there is no parameter.
+     *
+     * @return {@code true} if the executable parameters are constrained
+     */
+    boolean areParametersConstrained();
+
+    /**
+     * Returns {@code true} if the executable return value is constrained
+     * either:
+     * &lt;ul&gt;
+     * &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
+     * &lt;li&gt;because validation is cascaded on the return value (via
+     * {@code @Valid})&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Also returns {@code false} if there is no return value.
+     *
+     * @return {@code true} if the executable return value is constrained
+     */
+    boolean isReturnValueConstrained();
+
+    /**
+     * Whether this executable has any cross-parameter constraints.
+     *
+     * @return {@code true} if this executable has at least one cross-parameter
+     *         constraint, {@code false} otherwise.
+     */
+    @Override
+    boolean hasConstraints();
+
+    /**
+     * Return all constraint descriptors for all cross-parameter constraints of
+     * this executable or an empty {@code Set} if none are present. In
+     * particular, constraints on individual parameters and return value
+     * constraints are not returned.
+     *
+     * @return {@code Set} of cross-parameter constraint descriptors for this
+     *         element
+     */
+    @Override
+    Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
+
+    /**
+     * Find cross-parameter constraints and potentially restricts them to
+     * certain criteria. Neither constraints on individual parameters nor return
+     * value constraints are taken into account.
+     *
+     * @return Constraint finder object.
+     */
+    @Override
+    ConstraintFinder findConstraints();
+}</programlisting>
+
+    <para><methodname>getName()</methodname> returns the name of the
+    represented method (e.g. "placeOrder") respectively the non-qualified name
+    of the declaring class of the represented constructor (e.g.
+    "OrderService").</para>
+
+    <para><methodname>getParameterDescriptors()</methodname> returns a list of
+    <classname>ParameterDescriptor</classname>s representing the method's or
+    constructor's parameters in their natural order. An empty list will be
+    returned in case the method or constructor has no parameters.</para>
+
+    <para><methodname>getReturnValueDescriptor()</methodname> returns a
+    descriptor for the method's or constructor's return value or
+    <varname>null</varname> if it has no return value.</para>
+
+    <para><classname>isConstrainedOnParameters()</classname> returns true if
+    any of the parameters is constrained or cascaded or if the represented
+    executable has at least one cross-parameter constraint. Returns false if
+    there is no parameter.</para>
+
+    <para><classname>isConstrainedOnReturnValue()</classname> returns true if
+    the return value is constrained or cascaded. Returns false if there is no
+    return value.</para>
+
+    <para>The methods <methodname>hasConstraints()</methodname>,
+    <methodname>getConstraintDescriptors()</methodname> and
+    <methodname>findConstraints()</methodname> defined on
+    <classname>ElementDescriptor</classname> are redefined to take
+    cross-parameter constraints into account only. Constraint descriptors for
+    individual parameters can be obtained from the corresponding
+    <classname>ParameterMetaData</classname> object, while constraint
+    descriptors for the return value can be obtained from
+    <classname>ReturnValueDescriptor</classname>.</para>
+
+    <para>The interfaces <classname>MethodDescriptor</classname> and
+    <classname>ConstructorDescriptor</classname> are derived from
+    <classname>ExecutableDescriptor</classname> and allow to distinguish
+    between descriptors representing methods and descriptors representing
+    constructors. Both interfaces live in the
+    <classname>javax.validation.metadata</classname> package.</para>
+
+    <programlisting>package javax.validation.metadata;
 
 /**
  * Describes a validated method.
@@ -613,111 +749,10 @@ import java.util.List;
  * @author Emmanuel Bernard
  * @since 1.1
  */
-public interface MethodDescriptor extends ElementDescriptor {
-
-    /**
-     * Returns the name of the method represented by this descriptor.
-     *
-     * @return The name of the method represented by this descriptor.
-     */
-    String getName();
-
-    /**
-     * &lt;p&gt;
-     * Returns a list with descriptors for this method's parameters. The size of
-     * this list corresponds to the number of this method's parameters.
-     * &lt;/p&gt;
-     *
-     * @return A list with descriptors for this method's parameters. An empty
-     *         list will be returned if this method has no parameters, but never
-     *         {@code null}.
-     */
-    List&lt;ParameterDescriptor&gt; getParameterDescriptors();
-
-    /**
-     * Returns a descriptor for this method's return value.
-     *
-     * @return A descriptor for this method's return value or {@code null}
-     *         if this method has no return value.
-     */
-    ReturnValueDescriptor getReturnValueDescriptor();
-
-    /**
-     * Returns {@code true} if the method parameters are constrained either:
-     * &lt;ul&gt;
-     * &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
-     * &lt;li&gt;because of a cascade on at least one of the parameters (via {@code @Valid})&lt;/li&gt;
-     * &lt;li&gt;because of at least one cross-parameter constraint&lt;/li&gt;
-     * &lt;/ul&gt;
-     * Also returns {@code false} if there is no parameter.
-     *
-     * @return true if the method parameters are constrained
-     */
-    boolean areParametersConstrained();
-
-    /**
-     * Returns {@code true} if the method return value is constrained either:
-     * &lt;ul&gt;
-     * &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
-     * &lt;li&gt;because validation is cascaded on the return value (via {@code @Valid})&lt;/li&gt;
-     * &lt;/ul&gt;
-     * Also returns {@code false} if there is no return value.
-     *
-     * @return true if the method return value is constrained
-     */
-    boolean isReturnValueConstrained();
+public interface MethodDescriptor extends ExecutableDescriptor {
 }</programlisting>
 
-    <para><methodname>getName()</methodname> returns the name of the
-    represented method.</para>
-
-    <para><methodname>getParameterDescriptors</methodname>() returns a list of
-    <classname>ParameterDescriptor</classname>s representing the method's
-    parameters in their natural order. An empty list will be returned in case
-    the method has no parameters.</para>
-
-    <para><methodname>getReturnValueDescriptor()</methodname> returns a
-    descriptor for the method's return value or <varname>null</varname> if the
-    method has no return value.</para>
-
-    <para><classname>isConstrainedOnParameters()</classname> returns true if
-    any of the parameters is constrained or cascaded. Returns false if there
-    is no parameter.</para>
-
-    <para><classname>isConstrainedOnReturnValue()</classname> returns true if
-    the return value is constrained or cascaded. Returns false if there is no
-    return value.</para>
-
-    <remark>TODO: Consider overriding ElementDescriptor.hasConstraints() to
-    make it return true if at least one a parameter or the return value host a
-    constraint</remark>
-
-    <para><remark>TODO: Should
-    <methodname>getReturnValueDescriptor()</methodname> return null for void
-    methods or a void
-    <classname>ReturnValueDescriptor</classname>?</remark></para>
-
-    <para><remark>TODO: Investigate how cross-parameter constraints fit into
-    the picture.</remark></para>
-  </section>
-
-  <section revisionflag="added">
-    <title>ConstructorDescriptor</title>
-
-    <para>The <classname>ConstructorDescriptor</classname> interface describes
-    a constrained constructor of a Java type.</para>
-
-    <para><classname>ConstructorDescriptor</classname> lives in the
-    <classname>javax.validation.metadata</classname> package.</para>
-
-    <para>This interface is returned by
-    <methodname>BeanDescriptor#getConstraintsForConstructor(String,
-    Class&lt;?&gt;...)</methodname> and
-    <methodname>BeanDescriptor#getConstrainedConstructors()</methodname>.</para>
-
     <programlisting>package javax.validation.metadata;
-
-import java.util.List;
 
 /**
  * Describes a validated constructor.
@@ -726,72 +761,18 @@ import java.util.List;
  * @author Emmanuel Bernard
  * @since 1.1
  */
-public interface ConstructorDescriptor extends ElementDescriptor {
+public interface ConstructorDescriptor extends ExecutableDescriptor {
+}
+</programlisting>
 
-    /**
-     * &lt;p&gt;
-     * Returns a list with descriptors for this constructor parameters. The size
-     * of this list corresponds to the number of this constructor parameters.
-     * &lt;/p&gt;
-     *
-     * @return A list with descriptors for this constructor's parameters. An
-     *         empty list will be returned if this constructor has no
-     *         parameters, but never {@code null}.
-     */
-    List&lt;ParameterDescriptor&gt; getParameterDescriptors();
-
-    /**
-     * Returns a descriptor for this constructor's return value.
-     *
-     * @return A descriptor for this constructor's return value.
-     */
-    ReturnValueDescriptor getReturnValueDescriptor();
-
-    /**
-     * Returns {@code true} if the constructor parameters are constrained either:
-     * &lt;ul&gt;
-     * &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
-     * &lt;li&gt;because of a cascade on at least one of the parameters (via {@code @Valid})&lt;/li&gt;
-     * &lt;li&gt;because of at least one cross-parameter constraint&lt;/li&gt;
-     * &lt;/ul&gt;
-     * Also returns {@code false} if there is no parameter.
-     *
-     * @return true if the constructor parameters are constrained
-     */
-    boolean areParametersConstrained();
-
-    /**
-     * Returns {@code true} if the constructor return value is constrained either:
-     * &lt;ul&gt;
-     * &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
-     * &lt;li&gt;because validation is cascaded on the return value (via {@code @Valid})&lt;/li&gt;
-     * &lt;/ul&gt;
-     * Also returns {@code false} if there is no return value.
-     *
-     * @return true if the constructor return value is constrained
-     */
-    boolean isReturnValueConstrained();
-}</programlisting>
-
-    <para><methodname>getParameterDescriptors</methodname>() returns a list of
-    <classname>ParameterDescriptor</classname>s representing the constructor's
-    parameters in their natural order. An empty list will be returned in case
-    the constructor has no parameters.</para>
-
-    <para><methodname>getReturnValueDescriptor()</methodname> returns a
-    descriptor for the constructor's return value.</para>
-
-    <para><classname>isConstrainedOnParameters()</classname> returns true if
-    any of the parameters is constrained or cascaded. Returns false if there
-    is no parameter.</para>
-
-    <para><classname>isConstrainedOnReturnValue()</classname> returns true if
-    the return value is constrained or cascaded. Returns false if there is no
-    return value.</para>
-
-    <para><remark>TODO: Should we have something like
-    <methodname>hasParameterConstraints()</methodname> allowing quickly to
-    check whether parameter validation is required or not?</remark></para>
+    <para><classname>MethodDescriptor</classname> objects are returned by
+    <methodname>BeanDescriptor#getConstraintsForMethod(String,
+    Class&lt;?&gt;...)</methodname> and
+    <methodname>BeanDescriptor#getConstrainedMethods()</methodname>, while
+    <classname>ConstructorDescriptor</classname> objects are returned by
+    <methodname>BeanDescriptor#getConstraintsForConstructor(String,
+    Class&lt;?&gt;...)</methodname> and
+    <methodname>BeanDescriptor#getConstrainedConstructors()</methodname>.</para>
   </section>
 
   <section revisionflag="added">
