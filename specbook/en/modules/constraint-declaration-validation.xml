@@ -755,8 +755,26 @@ public @interface ConvertGroup {
       <para><remark>TODO: is ConstraintDeclarationException the right
       exception? Should we create a new one?</remark></para>
 
-      <remark>TODO: think about inheritance, should rules be additive, or
-      should an overridden method clear the supermethod rules?</remark>
+      <para>When specifying <classname>@ConvertGroup</classname> and/or
+      <classname>@ConvertGroup.List</classname> at the return value of a
+      method (be it an arbitrary method or a getter method representing a bean
+      property) defined in an interface or a superclass and again on another
+      method implementing or overriding the supertype method, the effect is
+      cumulative. That is, the behavior is the same as if all conversion rules
+      would be given on the implementing/overriding method using
+      <classname>@ConvertGroup.List</classname>. In particular, a
+      <classname>ConstraintDeclarationException</classname> will be raised in
+      case there are several conversion rules with the same
+      <literal>from</literal> value.</para>
+
+      <para>It is not legal to specify <classname>@ConvertGroup</classname> or
+      <classname>@ConvertGroup.List</classname> on a parameter of a method
+      defined in an interface or a superclass and again on the same parameter
+      of a method implementing or overriding the supertype method due to the
+      rules defined in <xref
+      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>.
+      A <classname>ConstraintDeclarationException</classname> will be raised
+      in this case.</para>
 
       <para>Group conversion is quite useful to facilitate object graph reuse
       without spreading the validation group definitions across several
@@ -1488,7 +1506,7 @@ public interface ParameterNameProvider {
       validation does not trigger the actual validation.</para>
     </section>
 
-    <section>
+    <section id="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance">
       <title>Method constraints in inheritance hierarchies</title>
 
       <para>When defining method constraints within inheritance hierarchies
