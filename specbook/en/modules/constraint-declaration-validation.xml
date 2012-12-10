@@ -122,7 +122,28 @@
 
       <para>In addition to supporting instance validation, validation of
       graphs of object is also supported. The result of a graph validation is
-      returned as a unified set of constraint violations.</para>
+      returned as a unified set of constraint violations. <phrase
+      revisionflag="added"><classname>@Valid</classname> is used to express
+      validation traversal of an association.</phrase><example
+          revisionflag="added">
+          <title><classname>@Valid</classname> annotation</title>
+
+          <programlisting language="JAVA" role="JAVA">/**
+ * Mark a property, method parameter or method return type for validation cascading.
+ *
+ * Constraints defined on the object and its properties are be validated when the
+ * property, method parameter or method return type is validated.
+ *
+ * This behavior is applied recursively.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface Valid {
+}</programlisting>
+        </example></para>
 
       <para>Consider the situation where bean <classname>X</classname>
       contains a field of type <classname>Y</classname>. By annotating field
@@ -650,6 +671,9 @@ public class Order implements Auditable {
 
         <programlisting language="JAVA" role="JAVA">/**
  * Convert group {@code from} to group {@code to} during cascading.
+ * 
+ * Can be used everywhere {@link Valid} is used and must be on an element
+ * annotated with {@link Valid}.
  *
  * @author Emmanuel Bernard
  * @since 1.1
@@ -755,23 +779,20 @@ public @interface ConvertGroup {
       <para><remark>TODO: is ConstraintDeclarationException the right
       exception? Should we create a new one?</remark></para>
 
-      <para>When specifying <classname>@ConvertGroup</classname> and/or
-      <classname>@ConvertGroup.List</classname> at the return value of a
-      method (be it an arbitrary method or a getter method representing a bean
-      property) defined in an interface or a superclass and again on another
-      method implementing or overriding the supertype method, the effect is
-      cumulative. That is, the behavior is the same as if all conversion rules
-      would be given on the implementing/overriding method using
-      <classname>@ConvertGroup.List</classname>. In particular, a
-      <classname>ConstraintDeclarationException</classname> will be raised in
-      case there are several conversion rules with the same
-      <literal>from</literal> value.</para>
+      <para><classname>@ConvertGroup</classname> and
+      <classname>@ConvertGroup.List</classname> can be placed on fields,
+      getters and method return types of methods either implementing an
+      interface or overriding a super class method. If several sets of rules
+      are defined at different levels of the class hierarchy for a given
+      method, their effect is cumulative. In particular, a
+      <classname>ConstraintDeclarationException</classname> is raised if
+      several conversion rules with the same <literal>from</literal> value are
+      present.</para>
 
       <para>It is not legal to specify <classname>@ConvertGroup</classname> or
-      <classname>@ConvertGroup.List</classname> on a parameter of a method
-      defined in an interface or a superclass and again on the same parameter
-      of a method implementing or overriding the supertype method due to the
-      rules defined in <xref
+      <classname>@ConvertGroup.List</classname> on parameters of methods
+      either implementing an interface or overriding a super class method due
+      to the rules defined in <xref
       linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>.
       A <classname>ConstraintDeclarationException</classname> will be raised
       in this case.</para>
@@ -1529,9 +1550,9 @@ public interface ParameterNameProvider {
       </itemizedlist>
 
       <tip>
-        <para>Very informally speaking, the Liskov substituation principle
-        says that where a given type T is used, it should be possible to
-        replace T with a sub-type S of T ("Behavioral subtyping"). If S
+        <para>Very informally speaking, the Liskov substitution principle says
+        that where a given type T is used, it should be possible to replace T
+        with a sub-type S of T ("Behavioral subtyping"). If S
         overrides/implements a method from T and S would strengthen the
         method's preconditions (e.g. by adding parameter constraints) this
         principle would be violated as client code working correctly against T
