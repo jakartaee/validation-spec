@@ -780,22 +780,26 @@ public @interface ConvertGroup {
       exception? Should we create a new one?</remark></para>
 
       <para><classname>@ConvertGroup</classname> and
-      <classname>@ConvertGroup.List</classname> can be placed on fields,
-      getters and method return types of methods either implementing an
-      interface or overriding a super class method. If several sets of rules
-      are defined at different levels of the class hierarchy for a given
-      method, their effect is cumulative. In particular, a
-      <classname>ConstraintDeclarationException</classname> is raised if
-      several conversion rules with the same <literal>from</literal> value are
-      present.</para>
+      <classname>@ConvertGroup.List</classname> can only be placed where
+      <classname>@Valid</classname> is present to ensure proper respect of the
+      Liskov substitution principle: if rules were to be defined on an
+      overriding method of a method marked as cascading validation, the rules
+      could end up altering the list of constraints validated by the super
+      type and thus violating the Liskov substitution principle.</para>
 
-      <para>It is not legal to specify <classname>@ConvertGroup</classname> or
-      <classname>@ConvertGroup.List</classname> on parameters of methods
-      either implementing an interface or overriding a super class method due
-      to the rules defined in <xref
-      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>.
-      A <classname>ConstraintDeclarationException</classname> will be raised
-      in this case.</para>
+      <para>Likewise, if a sub type overrides/implements a method originally
+      defined in several parallel types of the hierarchy (e.g. two interfaces
+      not extending each other, or a class and an interface not implemented by
+      said class) and if that method's return value has been marked for
+      cascading validation in one of the parallel types, no group conversion
+      rule may be declared for that method's return value in the parallel
+      types of the hierarchy. This again is to avoid an unexpected altering of
+      the post conditions to be guaranteed to the caller.</para>
+
+      <para>If any of these rules is violated, a
+      <classname>ConstraintDeclarationException</classname> is raised by
+      default as defined in <xref
+      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>.</para>
 
       <para>Group conversion is quite useful to facilitate object graph reuse
       without spreading the validation group definitions across several
@@ -1593,6 +1597,14 @@ public interface ParameterNameProvider {
           are declared in the hierarchy (since this only poses possibly a
           strengthening but no weakening of the method's postconditions
           guaranteed to the caller).</para>
+        </listitem>
+
+        <listitem>
+          <para>One must not mark a method return value for cascaded
+          validation more than once in a class hierarchy. In other words, sub
+          types (be it sub classes/interfaces or interface implementations)
+          cannot mark the return value for cascaded validation if the return
+          value has already been marked on a super type or interface.</para>
         </listitem>
       </itemizedlist>
 
