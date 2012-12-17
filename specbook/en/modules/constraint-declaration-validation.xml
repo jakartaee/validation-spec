@@ -103,8 +103,9 @@
       by the JavaBeans <classname>Introspector</classname> class) for
       constrained properties when constrained properties are used. In this
       case, for every constraint property of type <classname>T</classname>,
-      there is a getter method,
-      <methodname>get&lt;Property-name&gt;</methodname>. For
+      there is a getter method named
+      <methodname>get&lt;Property-name&gt;</methodname>. <phrase
+      revisionflag="added">The method must have no parameters.</phrase> For
       <code>boolean</code> properties,
       <methodname>is&lt;Property-name&gt;</methodname> is an alternative name
       for the getter method. Specifically, if <methodname>getX</methodname> is
@@ -122,7 +123,28 @@
 
       <para>In addition to supporting instance validation, validation of
       graphs of object is also supported. The result of a graph validation is
-      returned as a unified set of constraint violations.</para>
+      returned as a unified set of constraint violations. <phrase
+      revisionflag="added"><classname>@Valid</classname> is used to express
+      validation traversal of an association.</phrase><example
+          revisionflag="added">
+          <title><classname>@Valid</classname> annotation</title>
+
+          <programlisting language="JAVA" role="JAVA">/**
+ * Mark a property, method parameter or method return type for validation cascading.
+ *
+ * Constraints defined on the object and its properties are be validated when the
+ * property, method parameter or method return type is validated.
+ *
+ * This behavior is applied recursively.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface Valid {
+}</programlisting>
+        </example></para>
 
       <para>Consider the situation where bean <classname>X</classname>
       contains a field of type <classname>Y</classname>. By annotating field
@@ -650,6 +672,9 @@ public class Order implements Auditable {
 
         <programlisting language="JAVA" role="JAVA">/**
  * Convert group {@code from} to group {@code to} during cascading.
+ * 
+ * Can be used everywhere {@link Valid} is used and must be on an element
+ * annotated with {@link Valid}.
  *
  * @author Emmanuel Bernard
  * @since 1.1
@@ -755,8 +780,27 @@ public @interface ConvertGroup {
       <para><remark>TODO: is ConstraintDeclarationException the right
       exception? Should we create a new one?</remark></para>
 
-      <remark>TODO: think about inheritance, should rules be additive, or
-      should an overridden method clear the supermethod rules?</remark>
+      <para><classname>@ConvertGroup</classname> and
+      <classname>@ConvertGroup.List</classname> can only be placed where
+      <classname>@Valid</classname> is present to ensure proper respect of the
+      Liskov substitution principle: if rules were to be defined on an
+      overriding method of a method marked as cascading validation, the rules
+      could end up altering the list of constraints validated by the super
+      type and thus violating the Liskov substitution principle.</para>
+
+      <para>Likewise, if a sub type overrides/implements a method originally
+      defined in several parallel types of the hierarchy (e.g. two interfaces
+      not extending each other, or a class and an interface not implemented by
+      said class) and if that method return value has been marked for
+      cascading validation in one of the parallel types, no group conversion
+      rule may be declared for that method's return value in the parallel
+      types of the hierarchy. This again is to avoid an unexpected altering of
+      the post conditions to be fulfilled by the caller.</para>
+
+      <para>If any of these rules is violated, a
+      <classname>ConstraintDeclarationException</classname> is raised by
+      default as defined in <xref
+      linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>.</para>
 
       <para>Group conversion is quite useful to facilitate object graph reuse
       without spreading the validation group definitions across several
@@ -1488,7 +1532,7 @@ public interface ParameterNameProvider {
       validation does not trigger the actual validation.</para>
     </section>
 
-    <section>
+    <section id="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance">
       <title>Method constraints in inheritance hierarchies</title>
 
       <para>When defining method constraints within inheritance hierarchies
@@ -1511,9 +1555,9 @@ public interface ParameterNameProvider {
       </itemizedlist>
 
       <tip>
-        <para>Very informally speaking, the Liskov substituation principle
-        says that where a given type T is used, it should be possible to
-        replace T with a sub-type S of T ("Behavioral subtyping"). If S
+        <para>Very informally speaking, the Liskov substitution principle says
+        that where a given type T is used, it should be possible to replace T
+        with a sub-type S of T ("Behavioral subtyping"). If S
         overrides/implements a method from T and S would strengthen the
         method's preconditions (e.g. by adding parameter constraints) this
         principle would be violated as client code working correctly against T
@@ -1532,8 +1576,8 @@ public interface ParameterNameProvider {
           <para>In sub types (be it sub classes/interfaces or interface
           implementations) no parameter constraints must be declared on
           overridden or implemented methods, nor may parameters be marked for
-          cascaded validation (since this would pose a strengthening of
-          preconditions to be fulfilled by the caller).</para>
+          cascaded validation. This would pose a strengthening of
+          preconditions to be fulfilled by the caller.</para>
         </listitem>
 
         <listitem>
@@ -1541,8 +1585,9 @@ public interface ParameterNameProvider {
           in several parallel types of the hierarchy (e.g. two interfaces not
           extending each other, or a class and an interface not implemented by
           said class) no parameter constraints may be declared for that method
-          at all. This again is to avoid an unexpected strengthening of
-          preconditions to be fulfilled by the caller.</para>
+          at all nor parameters be marked for cascaded validation. This again
+          is to avoid an unexpected strengthening of preconditions to be
+          fulfilled by the caller.</para>
         </listitem>
 
         <listitem>
@@ -1551,9 +1596,18 @@ public interface ParameterNameProvider {
           overridden or implemented methods and the return value may be marked
           for cascaded validation. Upon validation, all return value
           constraints of the method in question are validated, wherever they
-          are declared in the hierarchy (since this only poses possibly a
+          are declared in the hierarchy; This only poses possibly a
           strengthening but no weakening of the method's postconditions
-          guaranteed to the caller).</para>
+          guaranteed to the caller.</para>
+        </listitem>
+
+        <listitem>
+          <para>One must not mark for cascaded validation a given method
+          return value more than once in a class hierarchy. In other words,
+          sub types (be it sub classes/interfaces or interface
+          implementations) cannot mark the return value for cascaded
+          validation if the return value has already been marked on a super
+          type or interface.</para>
         </listitem>
       </itemizedlist>
 
@@ -1568,12 +1622,10 @@ public interface ParameterNameProvider {
       providers.</para>
 
       <para>The above rules do not apply when validating constructor
-      constraints. Parameter and return value constraints can be applied to
-      any constructor in the type hierarchy, however, only the constraints
-      defined directly on the validated constructor are evaluated. Constraints
-      defined on super type constructors are not evaluated, even if the
-      constructor in question calls the super type constructor via
-      <methodname>super()</methodname>.</para>
+      constraints as constructors do not override one another. Parameter and
+      return value constraints can be applied to any constructor in the type
+      hierarchy, but only the constraints defined directly on the validated
+      constructor are evaluated.</para>
 
       <section>
         <title>Examples</title>
