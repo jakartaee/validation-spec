@@ -63,11 +63,15 @@ public interface Validator {
 }</programlisting>
     </example>
 
-    <para role="tckTestable"><methodname>getConstraintsForClass</methodname>
-    returns a <classname>BeanDescriptor</classname> object describing the bean
-    level constraints (see <xref
+    <para><phrase
+    role="tckTestable"><methodname>getConstraintsForClass</methodname> returns
+    a <classname>BeanDescriptor</classname> object describing the bean level
+    constraints (see <xref
     linkend="constraintdeclarationvalidationprocess-requirements-object"/>)
-    and providing access to the property level constraints metadata.</para>
+    and providing access to the property level constraints
+    metadata.</phrase><phrase revisionflag="added" role="tckTestable">An
+    <classname>IllegalArgumentException</classname> is raised if the
+    <varname>clazz</varname> parameter is null.</phrase></para>
 
     <para><phrase role="tckTestable">If a constraint definition or declaration
     hosted by the requested class (or any of it's superclasses and interfaces
@@ -507,14 +511,16 @@ public interface BeanDescriptor extends ElementDescriptor {
     method constraints, or add a dedicated method for that (see <ulink
     url="http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html">http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html</ulink>)</remark></para>
 
-    <para
+    <para><phrase
     role="tckTestable"><methodname>getConstraintsForProperty</methodname>
     returns a <classname>PropertyDescriptor</classname> object describing the
     property level constraints (See <xref
     linkend="constraintdeclarationvalidationprocess-requirements-property"/>).
     The property is uniquely identified by its name as per the JavaBeans
     convention: field level and getter level constraints of the given name are
-    all returned.</para>
+    all returned.</phrase><phrase revisionflag="added" role="tckTestable">An
+    <classname>IllegalArgumentException</classname> is raised if the
+    <varname>propertyName</varname> parameter is null.</phrase></para>
 
     <para><methodname>getConstrainedProperties</methodname> returns the
     <classname>PropertyDescriptor</classname>s of the bean properties having
@@ -985,8 +991,22 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
     returned.</phrase> <phrase role="tckTestable">The groups of a composing
     constraint are the groups of the composed constraint.</phrase></para>
 
-    <para role="tckTestable"><literal>getPayload</literal> returns the
-    payloads associated to the constraint or an empty set if none.</para>
+    <para><phrase role="tckTestable"><literal>getPayload</literal> returns the
+    payloads associated to the constraint or an empty set if none.</phrase>
+    <phrase revisionflag="added" role="tckTestable">The payload from the main
+    constraint annotation is inherited by the composing annotations.</phrase>
+    <phrase revisionflag="added" role="tckTestable">Any payload definition on
+    a composing annotation is ignored.</phrase></para>
+
+    <para revisionflag="added"
+    role="tckTestable"><methodname>isReportAsSingleViolation</methodname>
+    returns true if the constraint is annotated with
+    <classname>@ReportAsSingleViolation</classname>.</para>
+
+    <para revisionflag="added"
+    role="tckTestable"><methodname>getComposingConstraints</methodname> return
+    a set of composing <classname>ConstraintDescriptor</classname>s where each
+    descriptor describes a composing constraint.</para>
 
     <para><methodname>getConstraintValidatorClasses</methodname> returns the
     <classname>ConstraintValidator</classname> classes associated with the
