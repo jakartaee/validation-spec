@@ -24,12 +24,12 @@
   ~ DocBook elements (paras, phrases etc.). The following values for the "role" attribute are
   ~ supported:
   ~
-  ~ * tckTestable: Adds a testable assertion with the marked statement to the audit file
-  ~ * tckNotTestable: Adds a not testable assertion with the marked statement to the audit file
-  ~ * tckIgnore: Ignores the marked statement when given with another marked statement (e.g. to
+  ~ * tck-testable: Adds a testable assertion with the marked statement to the audit file
+  ~ * tck-not-testable: Adds a not testable assertion with the marked statement to the audit file
+  ~ * tck-ignore: Ignores the marked statement when given with another marked statement (e.g. to
   ~   exclude explanatory phrases)
-  ~ * tckNeedsUpdate: Adds the note "Needs update" to the concerned statement (can be given
-  ~   together with tck(Not)Testable)
+  ~ * tck-needs-update: Adds the note "Needs update" to the concerned statement (can be given
+  ~   together with tck(-not)-testable)
   ~
   ~ Implementation note:
   ~
@@ -111,7 +111,7 @@
         <xsl:value-of select="ancestor::*//*[@id=$id]/@sectionNum" />
     </xsl:template>
 
-    <xsl:template match="*[@role = 'tckIgnore']" mode="prepare"/>
+    <xsl:template match="*[@role = 'tck-ignore']" mode="prepare"/>
 
     <xsl:template match="@*|node()" mode="prepare">
         <xsl:copy>
@@ -186,7 +186,7 @@
             <xsl:attribute name="id">
                 <xsl:number count="*[starts-with(@role, 'tck')]" from="section | chapter" level="any" format="a" />
             </xsl:attribute>
-            <xsl:if test="contains(@role, 'tckNotTestable')">
+            <xsl:if test="contains(@role, 'tck-not-testable')">
                 <xsl:attribute name="testable">false</xsl:attribute>
             </xsl:if>
 
@@ -202,7 +202,7 @@
                 </xsl:choose>
             </text>
 
-            <xsl:if test="contains(@role, 'tckNeedsUpdate')">
+            <xsl:if test="contains(@role, 'tck-needs-update')">
                 <note>Needs update</note>
             </xsl:if>
         </assertion>
