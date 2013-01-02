@@ -26,56 +26,55 @@
 
     <itemizedlist>
       <listitem>
-        <para>Properties to be validated must follow the method signature
-        conventions for JavaBeans read properties, as defined by the JavaBeans
-        specification.</para>
+        <para role="tck-testable">Properties to be validated must follow the
+        method signature conventions for JavaBeans read properties, as defined
+        by the JavaBeans specification.</para>
       </listitem>
 
       <listitem>
-        <para>Static fields and static methods are excluded from
-        validation.</para>
+        <para role="tck-not-testable">Static fields and static methods are
+        excluded from validation.</para>
       </listitem>
 
       <listitem>
-        <para>Constraints can be applied to interfaces and
+        <para role="tck-testable">Constraints can be applied to interfaces and
         superclasses.</para>
       </listitem>
     </itemizedlist>
 
-    <para>The target of an annotation definition can be a field, property, or
-    type, provided that:</para>
+    <para role="tck-testable">The target of an annotation definition can be a
+    field, property, or type, provided that: <itemizedlist>
+        <listitem>
+          <para>the constraint definition supports the specified target
+          (<classname>java.lang.annotation.Target</classname>)</para>
+        </listitem>
 
-    <itemizedlist>
-      <listitem>
-        <para>the constraint definition supports the specified target
-        (<classname>java.lang.annotation.Target</classname>)</para>
-      </listitem>
-
-      <listitem>
-        <para>the one of the <classname>ConstraintValidator</classname>s
-        declared on the constraint supports the declared type of the target
-        (see <xref linkend="typevalidatorresolution"/>).</para>
-      </listitem>
-    </itemizedlist>
+        <listitem>
+          <para>one of the <classname>ConstraintValidator</classname>s
+          declared on the constraint supports the declared type of the target
+          (see <xref linkend="typevalidatorresolution"/>).</para>
+        </listitem>
+      </itemizedlist></para>
 
     <section id="constraintdeclarationvalidationprocess-requirements-object">
       <title>Object validation</title>
 
-      <para>Constraint declarations can be applied to a class or an interface.
-      Applying a constraint to a class or interface expresses a validation
-      over the state of the class or the class implementing the
-      interface.</para>
+      <para><phrase role="tck-testable">Constraint declarations can be applied
+      to a class or an interface.</phrase> Applying a constraint to a class or
+      interface expresses a validation over the state of the class or the
+      class implementing the interface.</para>
     </section>
 
     <section id="constraintdeclarationvalidationprocess-requirements-property">
       <title>Field and property validation</title>
 
-      <para>Constraint declarations can be applied on both fields and
-      properties for the same object type. The same constraint should however
-      not be duplicated between a field and its associated property (the
-      constraint validation would be applied twice). It is recommended for
-      objects holding constraint declarations to adhere to a single state
-      access strategy (either annotated fields or properties).</para>
+      <para><phrase role="tck-testable">Constraint declarations can be applied
+      on both fields and properties for the same object type.</phrase> <phrase
+      role="tck-testable">The same constraint should however not be duplicated
+      between a field and its associated property (the constraint validation
+      would be applied twice).</phrase> It is recommended for objects holding
+      constraint declarations to adhere to a single state access strategy
+      (either annotated fields or properties).</para>
 
       <note>
         <title>Java Persistence and Bean Validation</title>
@@ -87,13 +86,13 @@
         Java Persistence annotations.</para>
       </note>
 
-      <para>When a field is annotated with a constraint declaration, field
-      access strategy is used to access the state validated by such
-      constraint.</para>
+      <para role="tck-testable">When a field is annotated with a constraint
+      declaration, field access strategy is used to access the state validated
+      by such constraint.</para>
 
-      <para>When a property is annotated with a constraint declaration,
-      property access strategy is used to access the state validated by such
-      constraint.</para>
+      <para role="tck-testable">When a property is annotated with a constraint
+      declaration, property access strategy is used to access the state
+      validated by such constraint.</para>
 
       <para>When using field access strategy, the bean validation provider
       accesses the instance variable directly. When using the property access
@@ -113,8 +112,9 @@
       string, the name of the persistent property is defined by the result of
       <code>java.beans.Introspector.decapitalize(X)</code>.</para>
 
-      <para>The fields or methods visibility are not constrained.<phrase
-      revisionflag="deleted"> Constraints on non getter methods are not
+      <para><phrase role="tck-testable">The fields or methods visibility are
+      not constrained.</phrase><phrase revisionflag="deleted"
+      role="tck-not-testable"> Constraints on non getter methods are not
       supported.</phrase></para>
     </section>
 
@@ -146,58 +146,66 @@ public @interface Valid {
 }</programlisting>
         </example></para>
 
-      <para>Consider the situation where bean <classname>X</classname>
-      contains a field of type <classname>Y</classname>. By annotating field
-      <classname>Y</classname> with the <classname>@Valid</classname>
-      annotation, the Validator will validate <classname>Y</classname> (and
-      its properties) when <classname>X</classname> is validated. The exact
-      type <classname>Z</classname> of the value contained in the field
-      declared of type <classname>Y</classname> (subclass, implementation) is
-      determined at runtime. The constraint definitions of
-      <classname>Z</classname> are used. This ensures proper polymorphic
-      behavior for associations marked <classname>@Valid</classname>.</para>
+      <para><phrase role="tck-testable">Consider the situation where bean
+      <classname>X</classname> contains a field of type
+      <classname>Y</classname>. By annotating field <classname>Y</classname>
+      with the <classname>@Valid</classname> annotation, the Validator will
+      validate <classname>Y</classname> (and its properties) when
+      <classname>X</classname> is validated.</phrase> <phrase
+      role="tck-testable">The exact type <classname>Z</classname> of the value
+      contained in the field declared of type <classname>Y</classname>
+      (subclass, implementation) is determined at runtime. The constraint
+      definitions of <classname>Z</classname> are used.</phrase> This ensures
+      proper polymorphic behavior for associations marked
+      <classname>@Valid</classname>.</para>
 
       <para>Collection-valued, array-valued and generally
       <classname>Iterable</classname> fields and properties may also be
       decorated with the <classname>@Valid</classname> annotation. This causes
-      the contents of the iterator to be validated. Any object implementing
-      <classname>java.lang.Iterable</classname> is supported. This includes
-      specifically:</para>
+      the contents of the iterator to be validated. <phrase
+      role="tck-testable">Any object implementing
+      <classname>java.lang.Iterable</classname> is supported.</phrase> This
+      includes specifically:</para>
 
       <itemizedlist>
         <listitem>
-          <para>arrays of objects</para>
+          <para role="tck-testable">arrays of objects</para>
         </listitem>
 
         <listitem>
-          <para><classname>java.util.Collection</classname></para>
+          <para
+          role="tck-testable"><classname>java.util.Collection</classname></para>
         </listitem>
 
         <listitem>
-          <para><classname>java.util.Set</classname></para>
+          <para
+          role="tck-testable"><classname>java.util.Set</classname></para>
         </listitem>
 
         <listitem>
-          <para><classname>java.util.List</classname></para>
+          <para
+          role="tck-testable"><classname>java.util.List</classname></para>
         </listitem>
 
         <listitem>
-          <para><classname>java.util.Map</classname> (special treatment see
-          below)</para>
+          <para><phrase
+          role="tck-testable"><classname>java.util.Map</classname></phrase>
+          (special treatment see below)</para>
         </listitem>
       </itemizedlist>
 
-      <para>Each object provided by the iterator is validated. For
-      <classname>Map</classname>, the value of each
+      <para>Each object provided by the iterator is validated. <phrase
+      role="tck-testable">For <classname>Map</classname>, the value of each
       <classname>Map.Entry</classname> is validated (the key is not
-      validated).</para>
+      validated).</phrase></para>
 
-      <para>Like regular references, its type is determined at runtime and the
-      constraint definitions for this particular type are used.</para>
+      <para role="tck-testable">Like regular references, its type is
+      determined at runtime and the constraint definitions for this particular
+      type are used.</para>
 
-      <para>The <classname>@Valid</classname> annotation is applied
-      recursively. A conforming implementation avoids infinite loops according
-      to the rules described in <xref
+      <para><phrase role="tck-testable">The <classname>@Valid</classname>
+      annotation is applied recursively.</phrase> A conforming implementation
+      avoids infinite loops according to the rules described in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>.</para>
     </section>
   </section>
@@ -222,9 +230,10 @@ public @interface Valid {
   <section id="constraintdeclarationvalidationprocess-inheritance">
     <title>Inheritance (interface and superclass)</title>
 
-    <para>A constraint declaration can be placed on an interface. For a given
-    class, constraint declarations held on superclasses as well as interfaces
-    are evaluated by the Bean Validation provider. Rules are formally
+    <para><phrase role="tck-testable">A constraint declaration can be placed
+    on an interface.</phrase> <phrase role="tck-testable">For a given class,
+    constraint declarations held on superclasses as well as interfaces are
+    evaluated by the Bean Validation provider.</phrase> Rules are formally
     described in <xref
     linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>.</para>
 
@@ -240,11 +249,11 @@ public @interface Valid {
     <para>A group defines a subset of constraints. Instead of validating all
     constraints for a given object graph, only a subset is validated. This
     subset is defined by the the group or groups targeted. Each constraint
-    declaration defines the list of groups it belongs to. If no group is
-    explicitly declared, a constraint belongs to the
-    <classname>Default</classname> group.</para>
+    declaration defines the list of groups it belongs to. <phrase
+    role="tck-testable">If no group is explicitly declared, a constraint
+    belongs to the <classname>Default</classname> group.</phrase></para>
 
-    <para>Groups are represented by interfaces.</para>
+    <para role="tck-testable">Groups are represented by interfaces.</para>
 
     <example>
       <title>Definition of groups</title>
@@ -261,7 +270,8 @@ public interface BuyInOneClick {
 }</programlisting>
     </example>
 
-    <para>A constraint can belong to one or more groups.</para>
+    <para role="tck-testable">A constraint can belong to one or more
+    groups.</para>
 
     <example id="example-assigngrouptoconstraints">
       <title>Assign groups to constraints</title>
@@ -281,9 +291,10 @@ public class User {
 }</programlisting>
     </example>
 
-    <para>During the validation call, one or more groups are validated. All
-    the constraints belonging to this set of group is evaluated on the object
-    graph. In <xref linkend="example-assigngrouptoconstraints"/>,
+    <para><phrase role="tck-testable">During the validation call, one or more
+    groups are validated. All the constraints belonging to this set of group
+    is evaluated on the object graph.</phrase> In <xref
+    linkend="example-assigngrouptoconstraints"/>,
     <classname>@NotNull</classname> is checked on
     <literal>defaultCreditCard</literal> when either the
     <classname>Billable</classname> or <classname>BuyInOneClick</classname>
@@ -315,8 +326,9 @@ public interface Default {
       <title>Group inheritance</title>
 
       <para>In some situations, a group is a superset of one or more groups.
-      This can be described by Bean Validation. A group may inherit one or
-      more groups by using interface inheritance.</para>
+      This can be described by Bean Validation. <phrase role="tck-testable">A
+      group may inherit one or more groups by using interface
+      inheritance.</phrase></para>
 
       <example>
         <title>Groups can inherit other groups</title>
@@ -327,10 +339,11 @@ public interface Default {
 public interface BuyInOneClick extends Default, Billable {}</programlisting>
       </example>
 
-      <para>For a given interface <classname>Z</classname>, constraints marked
-      as belonging to the group <classname>Z</classname> (i.e. where the
-      annotation element <methodname>groups</methodname> contains the
-      interface <classname>Z</classname>) or any of the super interfaces of
+      <para role="tck-testable">For a given interface
+      <classname>Z</classname>, constraints marked as belonging to the group
+      <classname>Z</classname> (i.e. where the annotation element
+      <methodname>groups</methodname> contains the interface
+      <classname>Z</classname>) or any of the super interfaces of
       <classname>Z</classname> (inherited groups) are considered part of the
       group <classname>Z</classname>.</para>
 
@@ -377,11 +390,12 @@ public class User {
     <section id="constraintdeclarationvalidationprocess-groupsequence-groupsequence">
       <title>Group sequence</title>
 
-      <para>By default, constraints are evaluated in no particular order
-      regardless of which groups they belong to. It is however useful in some
-      situations to control the order of constraints evaluation. There are
-      often scenarios where a preliminary set of constraints should be
-      evaluated prior to other constraints. Here are two examples:</para>
+      <para><phrase role="tck-not-testable">By default, constraints are
+      evaluated in no particular order regardless of which groups they belong
+      to.</phrase> It is however useful in some situations to control the
+      order of constraints evaluation. There are often scenarios where a
+      preliminary set of constraints should be evaluated prior to other
+      constraints. Here are two examples:</para>
 
       <itemizedlist>
         <listitem>
@@ -396,50 +410,53 @@ public class User {
       </itemizedlist>
 
       <para>To implement such ordering, a group can be defined as a sequence
-      of other groups. Each group in a group sequence must be processed
-      sequentially in the order defined by
+      of other groups. <phrase role="tck-testable">Each group in a group
+      sequence must be processed sequentially in the order defined by
       <methodname>@GroupSequence.value</methodname> when the group defined as
-      a sequence is requested. Note that a group member of a sequence can
-      itself be composed of several groups via inheritance or sequence
-      definition. In this case, each composed group must respect the sequence
-      order as well.</para>
+      a sequence is requested.</phrase> <phrase role="tck-testable">Note that
+      a group member of a sequence can itself be composed of several groups
+      via inheritance or sequence definition. In this case, each composed
+      group must respect the sequence order as well.</phrase></para>
 
       <!--TODO add example-->
 
       <para>Processing a group is defined in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine"/> ;
-      if one of the groups processed in the sequence generates one or more
-      constraint violations, the groups following in the sequence must not be
-      processed. This ensures that a set of constraint is evaluated only if
-      another set of constraint is valid.</para>
+      <phrase role="tck-testable">if one of the groups processed in the
+      sequence generates one or more constraint violations, the groups
+      following in the sequence must not be processed.</phrase> This ensures
+      that a set of constraint is evaluated only if another set of constraint
+      is valid.</para>
 
-      <para>Groups defining a sequence and groups composing a sequence must
-      not be involved in a cyclic dependency:</para>
-
+      <para role="tck-testable">Groups defining a sequence and groups
+      composing a sequence must not be involved in a cyclic dependency:
       <itemizedlist>
-        <listitem>
-          <para>either directly or indirectly</para>
-        </listitem>
+          <listitem>
+            <para>either directly or indirectly</para>
+          </listitem>
 
-        <listitem>
-          <para>either through cascaded sequence definitions or group
-          inheritance</para>
-        </listitem>
-      </itemizedlist>
+          <listitem>
+            <para>either through cascaded sequence definitions or group
+            inheritance</para>
+          </listitem>
+        </itemizedlist></para>
 
-      <para>If a group containing such a circularity is evaluated, a
-      <classname>GroupDefinitionException</classname> is raised.</para>
+      <para role="tck-testable">If a group containing such a circularity is
+      evaluated, a <classname>GroupDefinitionException</classname> is
+      raised.</para>
 
-      <para>Groups defining a sequence should not directly inherit other
-      groups. In other words, the interface hosting the group sequence should
-      not have any super interface.</para>
+      <para role="tck-not-testable">Groups defining a sequence should not
+      directly inherit other groups. In other words, the interface hosting the
+      group sequence should not have any super interface.</para>
 
-      <para>Groups defining a sequence should not be used directly in
-      constraint declarations. In other words, the interface hosting the group
-      sequence should not be used in a constraint declaration.</para>
+      <para><phrase role="tck-not-testable">Groups defining a sequence should
+      not be used directly in constraint declarations.</phrase> In other
+      words, the interface hosting the group sequence should not be used in a
+      constraint declaration.</para>
 
-      <para>To define a group as a sequence, the interface must be annotated
-      with the <classname>@GroupSequence</classname> annotation.</para>
+      <para role="tck-testable">To define a group as a sequence, the interface
+      must be annotated with the <classname>@GroupSequence</classname>
+      annotation.</para>
 
       <programlisting>/**
  * Define a group sequence
@@ -498,9 +515,10 @@ public class Address {
       evaluated.</para>
 
       <note>
-        <para>A given constraint can belong to two or more groups ordered by a
-        sequence. In this case, the constraint is evaluated as part of the
-        first group and ignored in the subsequent group(s). See <xref
+        <para><phrase role="tck-testable">A given constraint can belong to two
+        or more groups ordered by a sequence. In this case, the constraint is
+        evaluated as part of the first group and ignored in the subsequent
+        group(s).</phrase> See <xref
         linkend="constraintdeclarationvalidationprocess-validationroutine"/>
         for more information.</para>
       </note>
@@ -517,11 +535,11 @@ public class Address {
       complete validation, a user must use the <classname>Complete</classname>
       group. This breaks some of the encapsulation you could expect. You can
       work around this by redefining what the <classname>Default</classname>
-      group means for a given class. To redefine
+      group means for a given class. <phrase role="tck-testable">To redefine
       <classname>Default</classname> for a class, place a
-      <classname>@GroupSequence</classname> annotation on the class ; this
+      <classname>@GroupSequence</classname> annotation on the class; this
       sequence expresses the sequence of groups that does substitute
-      <classname>Default</classname> for this class.</para>
+      <classname>Default</classname> for this class.</phrase></para>
 
       <example id="example-overridedefaultgroup">
         <title>Redefining Default group for Address</title>
@@ -558,21 +576,22 @@ public class Address {
 
       <para>Since sequences cannot have circular dependencies, using
       <classname>Default</classname> in the declaration of a sequence is not
-      an option. Constraints hosted on a class <classname>A</classname> and
-      belonging to the <classname>Default</classname> group (by default or
-      explicitly) implicitly belong to the group
-      <classname>A</classname>.</para>
+      an option. <phrase role="tck-not-testable">Constraints hosted on a class
+      <classname>A</classname> and belonging to the
+      <classname>Default</classname> group (by default or explicitly)
+      implicitly belong to the group <classname>A</classname>.</phrase></para>
 
-      <para>A sequence defined on a class <classname>A</classname> (i.e.
-      redefining the <classname>Default</classname> groups for the class) must
-      contain the group <classname>A</classname>. In other words, the default
+      <para><phrase role="tck-testable">A sequence defined on a class
+      <classname>A</classname> (i.e. redefining the
+      <classname>Default</classname> groups for the class) must contain the
+      group <classname>A</classname>.</phrase> In other words, the default
       constraints hosted on a class must be part of the sequence definition.
-      If a <classname>@GroupSequence</classname> redefining the
-      <classname>Default</classname> group for a class
+      <phrase role="tck-testable">If a <classname>@GroupSequence</classname>
+      redefining the <classname>Default</classname> group for a class
       <classname>A</classname> does not contain the group
       <classname>A</classname>, a
       <classname>GroupDefinitionException</classname> is raised when the class
-      is validated or when its metadata is requested.</para>
+      is validated or when its metadata is requested.</phrase></para>
     </section>
 
     <section id="constraintdeclarationvalidationprocess-groupsequence-implicitgrouping">
@@ -580,11 +599,12 @@ public class Address {
 
       <para>It is possible to implicitly group several constraints in the same
       group without explicitly listing such a group in the constraint
-      declaration. Every constraint hosted on an interface
-      <classname>Z</classname> and part of the <classname>Default</classname>
-      group (implicitly or explicitly) belongs to the group
-      <classname>Z</classname>. This is useful to validate the partial state
-      of an object based on a role represented by an interface.</para>
+      declaration. <phrase role="tck-testable">Every constraint hosted on an
+      interface <classname>Z</classname> and part of the
+      <classname>Default</classname> group (implicitly or explicitly) belongs
+      to the group <classname>Z</classname>.</phrase> This is useful to
+      validate the partial state of an object based on a role represented by
+      an interface.</para>
 
       <example>
         <title>Example of interface / group hosting constraints</title>
@@ -917,14 +937,15 @@ public class User {
           </orderedlist>
         </listitem>
 
-        <listitem>
+        <listitem role="tck-testable">
           <para>If <classname>X</classname> has no
           <classname>@GroupSequence</classname> annotation, the group
           <classname>Default</classname> contains the following
           constraints:</para>
 
-          <para><emphasis>this rule defines which constraints are evaluated
-          when validating <classname>Default</classname> on
+          <para role="tck-ignore"><emphasis>this rule defines which
+          constraints are evaluated when validating
+          <classname>Default</classname> on
           <classname>X</classname>.</emphasis></para>
 
           <orderedlist>
@@ -939,7 +960,7 @@ public class User {
               <classname>Default</classname> of
               <classname>Y</classname></para>
 
-              <para><emphasis>this rule is necessary in case
+              <para role="tck-ignore"><emphasis>this rule is necessary in case
               <classname>Y</classname> redefines the group
               <classname>Default</classname></emphasis></para>
             </listitem>
@@ -947,7 +968,7 @@ public class User {
         </listitem>
 
         <listitem>
-          <para>If <classname>X</classname> does have a
+          <para role="tck-testable">If <classname>X</classname> does have a
           <classname>@GroupSequence</classname> annotation, the group
           <classname>Default</classname> contains every constraint belonging
           to every group declared by the <classname>@GroupSequence</classname>
@@ -1753,9 +1774,9 @@ public class SimpleOrderService extends OrderService {
   <section id="constraintdeclarationvalidationprocess-validationroutine">
     <title>Validation routine</title>
 
-    <para>For a given group, the validation routine applied on a given bean
-    instance is expected to execute the following constraint validations in no
-    particular order:</para>
+    <para role="tck-not-testable">For a given group, the validation routine
+    applied on a given bean instance is expected to execute the following
+    constraint validations in no particular order:</para>
 
     <itemizedlist>
       <listitem>
@@ -1804,12 +1825,13 @@ public class SimpleOrderService extends OrderService {
     associations are defined in <xref
     linkend="constraintdeclarationvalidationprocess-validationroutine-traversable"/>.</para>
 
-    <para>Note that this implies that a given validation constraint will not
-    be processed more than once per validation.</para>
+    <para role="tck-testable">Note that this implies that a given validation
+    constraint will not be processed more than once per validation.</para>
 
-    <para>Unless ordered by group sequences, groups can be validated in no
-    particular order. This implies that the validation routine can be run for
-    several groups in the same pass.</para>
+    <para><phrase role="tck-not-testable">Unless ordered by group sequences,
+    groups can be validated in no particular order.</phrase> This implies that
+    the validation routine can be run for several groups in the same
+    pass.</para>
 
     <para>The object validation routine is described as such. For each
     constraint declaration:</para>
@@ -1846,24 +1868,26 @@ public class SimpleOrderService extends OrderService {
     <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
       <title>Object graph validation</title>
 
-      <para>The <classname>@Valid</classname> annotation on a given
-      association (i.e. object reference or collection, array,
-      <classname>Iterable</classname> of objects), dictates the Bean Validator
-      implementation to apply recursively the Bean Validation routine on (each
-      of) the associated object(s). This mechanism is recursive: an associated
-      object can itself contain cascaded references.</para>
+      <para><phrase role="tck-testable">The <classname>@Valid</classname>
+      annotation on a given association (i.e. object reference or collection,
+      array, <classname>Iterable</classname> of objects), dictates the Bean
+      Validator implementation to apply recursively the Bean Validation
+      routine on (each of) the associated object(s).</phrase> <phrase
+      role="tck-testable">This mechanism is recursive: an associated object
+      can itself contain cascaded references.</phrase></para>
 
-      <para>Null references are ignored.</para>
+      <para role="tck-testable">Null references are ignored.</para>
 
-      <para>To prevent infinite loops, the Bean Validation implementation must
-      ignore the cascading operation if the associated object instance has
-      already been validated in the current navigation path (starting from the
-      root object). See <xref linkend="example-oglimit"/> for an example. A
-      navigation path is defined as a set of <classname>@Valid</classname>
-      associations starting from the root object instance and reaching the
-      associated instance. A given navigation path cannot contain the same
-      instance multiple times (the complete validated object graph can
-      though). See <xref linkend="example-oglimit"/> for an example.</para>
+      <para><phrase role="tck-testable">To prevent infinite loops, the Bean
+      Validation implementation must ignore the cascading operation if the
+      associated object instance has already been validated in the current
+      navigation path (starting from the root object).</phrase> See <xref
+      linkend="example-oglimit"/> for an example. A navigation path is defined
+      as a set of <classname>@Valid</classname> associations starting from the
+      root object instance and reaching the associated instance. A given
+      navigation path cannot contain the same instance multiple times (the
+      complete validated object graph can though). See <xref
+      linkend="example-oglimit"/> for an example.</para>
 
       <note>
         <para>This object graph navigation can lead to multiple validations of
@@ -1920,13 +1944,13 @@ Order -(billingAddress)-&gt; Address2 -(inhabitant)-&gt; User -(addresses)-&gt; 
       the path to reach the object from the root validated object (See <xref
       linkend="validationapi-constraintviolation"/>).</para>
 
-      <para><classname>@Valid</classname> is an orthogonal concept to the
-      notion of group. If two groups are in sequence, the first group must
-      pass for all associated objects before the second group is evaluated.
-      Note however that the <classname>Default</classname> group sequence
-      overriding is local to the class it is defined on and is not propagated
-      to the associated objects. The following example illustrates
-      this:</para>
+      <para><phrase role="tck-testable"><classname>@Valid</classname> is an
+      orthogonal concept to the notion of group. If two groups are in
+      sequence, the first group must pass for all associated objects before
+      the second group is evaluated.</phrase> Note however that the
+      <classname>Default</classname> group sequence overriding is local to the
+      class it is defined on and is not propagated to the associated objects.
+      The following example illustrates this:</para>
 
       <para><example>
           <title>Class Driver with redefined default group</title>
@@ -2169,20 +2193,22 @@ public interface TraversableResolver {
                          ElementType elementType);
 }</programlisting>
 
-      <para><methodname>isReachable</methodname> is called for every property
-      about to be accessed either for validation or for cascading. A property
-      is <emphasis>reachable</emphasis> if this method returns true.</para>
+      <para><phrase role="tck-testable"><methodname>isReachable</methodname>
+      is called for every property about to be accessed either for validation
+      or for cascading.</phrase> A property is <emphasis>reachable</emphasis>
+      if this method returns true.</para>
 
-      <para><methodname>isCascadable</methodname> is called for every property
-      about to be cascaded (i.e. marked as <classname>@Valid</classname>). A
-      property is <emphasis>cascadable</emphasis> if it is reachable and if
-      the <methodname>isCascadable</methodname> method returns true.</para>
+      <para><phrase role="tck-testable"><methodname>isCascadable</methodname>
+      is called for every property about to be cascaded (i.e. marked as
+      <classname>@Valid</classname>).</phrase> A property is
+      <emphasis>cascadable</emphasis> if it is reachable and if the
+      <methodname>isCascadable</methodname> method returns true.</para>
 
       <note>
-        <para><methodname>isCascadable</methodname> for a given property is
-        only called if <methodname>isReachable</methodname> returns true. In
-        other words, <methodname>isReachable</methodname> is always called
-        before <methodname>isCascadable</methodname> for a given
+        <para role="tck-testable"><methodname>isCascadable</methodname> for a
+        given property is only called if <methodname>isReachable</methodname>
+        returns true. In other words, <methodname>isReachable</methodname> is
+        always called before <methodname>isCascadable</methodname> for a given
         property.</para>
       </note>
 
@@ -2215,13 +2241,13 @@ public interface TraversableResolver {
       is placed on. It can be either <literal>FIELD</literal> or
       <literal>METHOD</literal>. Any other value is not expected.</para>
 
-      <para>The Bean Validation provider must not access the state of a
-      property, nor validate its constraints if the property is not
-      traversable. A property is traversable if
+      <para role="tck-testable">The Bean Validation provider must not access
+      the state of a property, nor validate its constraints if the property is
+      not traversable. A property is traversable if
       <classname>TraversableResolver</classname> returns true for this
       property.</para>
 
-      <para>If an exception occurs when the
+      <para role="tck-testable">If an exception occurs when the
       <classname>TraversableResolver</classname> is called, the exception is
       wrapped into a <classname>ValidationException</classname>.</para>
 
@@ -2425,20 +2451,23 @@ public class Address {
 
       <itemizedlist>
         <listitem>
-          <para>if Java Persistence is available in the runtime environment, a
-          property is considered reachable if Java Persistence considers the
-          property as loaded. A typical implementation will use
+          <para><phrase role="tck-not-testable">if Java Persistence is
+          available in the runtime environment, a property is considered
+          reachable if Java Persistence considers the property as
+          loaded.</phrase> A typical implementation will use
           <code>Persistence.getPersistenceUtil().isLoaded(Object,
           String)</code> to implement such contract.</para>
         </listitem>
 
         <listitem>
-          <para>if Java Persistence is not available in the runtime
-          environment, all properties are considered reachable.</para>
+          <para role="tck-not-testable">if Java Persistence is not available
+          in the runtime environment, all properties are considered
+          reachable.</para>
         </listitem>
 
         <listitem>
-          <para>all properties are considered cascadable.</para>
+          <para role="tck-not-testable">all properties are considered
+          cascadable.</para>
         </listitem>
       </itemizedlist>
 
@@ -2457,22 +2486,26 @@ public class Address {
       constraint evaluation, a single
       <classname>ConstraintValidator</classname> is considered.</para>
 
-      <para>If the constraint declaration is hosted on a class or an
-      interface, the targeted type is the class or the interface. If the
-      constraint is hosted on a class attribute, the type of the attribute is
-      the targeted type. If the constraint is hosted on a getter, the return
-      type of the getter is the targeted type. In other words, the resolution
-      algorithm considers the type as defined in the method signature and not
-      the runtime type of the value.</para>
+      <para><phrase role="tck-testable">If the constraint declaration is
+      hosted on a class or an interface, the targeted type is the class or the
+      interface.</phrase> <phrase role="tck-testable">If the constraint is
+      hosted on a class attribute, the type of the attribute is the targeted
+      type.</phrase> <phrase role="tck-testable">If the constraint is hosted
+      on a getter, the return type of the getter is the targeted
+      type.</phrase> In other words, the resolution algorithm considers the
+      type as defined in the method signature and not the runtime type of the
+      value.</para>
 
       <para>The rules written below describe formally the following statement:
-      the <classname>ConstraintValidator</classname> chosen to validate a
-      declared type <classname>T</classname> is the one where the type
-      supported by the <classname>ConstraintValidator</classname> is a
-      supertype of <classname>T</classname> and where there is no other
+      <phrase role="tck-testable">the
+      <classname>ConstraintValidator</classname> chosen to validate a declared
+      type <classname>T</classname> is the one where the type supported by the
+      <classname>ConstraintValidator</classname> is a supertype of
+      <classname>T</classname> and where there is no other
       <classname>ConstraintValidator</classname> whose supported type is a
       supertype of <classname>T</classname> and not a supertype of the chosen
-      <classname>ConstraintValidator</classname> supported type.</para>
+      <classname>ConstraintValidator</classname> supported
+      type.</phrase></para>
 
       <para>When validating a constraint A placed on a target declaring the
       type <classname>T</classname>, the following resolution rules
@@ -2498,10 +2531,11 @@ public class Address {
         </listitem>
 
         <listitem>
-          <para>If no <classname>ConstraintValidator</classname> compliant
-          with <classname>T</classname> is found amongst the
+          <para role="tck-testable">If no
+          <classname>ConstraintValidator</classname> compliant with
+          <classname>T</classname> is found amongst the
           <classname>ConstraintValidator</classname>s listed by the constraint
-          <classname>A</classname>, a
+          <classname>A</classname>, an
           <classname>UnexpectedTypeException</classname> is raised.</para>
         </listitem>
 
@@ -2531,8 +2565,8 @@ public class Address {
         </listitem>
 
         <listitem>
-          <para>If more than one maximally specific
-          <classname>ConstraintValidator</classname> is found, a
+          <para role="tck-testable">If more than one maximally specific
+          <classname>ConstraintValidator</classname> is found, an
           <classname>UnexpectedTypeException</classname> is raised.</para>
         </listitem>
       </itemizedlist>
