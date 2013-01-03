@@ -113,9 +113,8 @@
       <code>java.beans.Introspector.decapitalize(X)</code>.</para>
 
       <para><phrase role="tck-testable">The fields or methods visibility are
-      not constrained.</phrase><phrase revisionflag="deleted"
-      role="tck-not-testable"> Constraints on non getter methods are not
-      supported.</phrase></para>
+      not constrained.</phrase><phrase revisionflag="deleted"> Constraints on
+      non getter methods are not supported.</phrase></para>
     </section>
 
     <section>
@@ -719,7 +718,7 @@ public @interface ConvertGroup {
 }</programlisting>
       </example>
 
-      <para><classname>@ConvertGroup</classname> and
+      <para role="tck-testable"><classname>@ConvertGroup</classname> and
       <classname>@ConvertGroup.List</classname> can be used everywhere
       <classname>@Valid</classname> can be used (associations,
       method/constructor parameters and return value). If these annotations
@@ -731,29 +730,33 @@ public @interface ConvertGroup {
       unless the <classname>@ConvertGroup</classname> annotation is
       used.</para>
 
-      <para>If the group expected to be passed to the nested element
-      validation is defined as the <literal>from</literal> attribute of a
-      <classname>@ConvertGroup</classname> annotation, the group used to
-      effectively validate the nested element is the corresponding group
-      defined in the <literal>to</literal> attribute.</para>
+      <para role="tck-testable">If the group expected to be passed to the
+      nested element validation is defined as the <literal>from</literal>
+      attribute of a <classname>@ConvertGroup</classname> annotation, the
+      group used to effectively validate the nested element is the
+      corresponding group defined in the <literal>to</literal>
+      attribute.</para>
 
-      <para>Rules are not executed recursively. If a rule is found matching,
-      subsequent rules are no longer evaluated. In particular, if a set of
+      <para><phrase role="tck-testable">Rules are not executed
+      recursively.</phrase> If a rule is found matching, subsequent rules are
+      no longer evaluated. In particular, if a set of
       <classname>@ConvertGroup</classname> declaration chains group
       <literal>A</literal> to <literal>B</literal> and <literal>B</literal> to
       <literal>C</literal>, the group <literal>A</literal> will be converted
       to <literal>B</literal> and not to <literal>C</literal>. This both makes
       rules clearer and let you switch two groups.</para>
 
-      <para>It is not legal to have more than one conversion rule containing
-      the same <literal>from</literal> value. In this case, a
-      <classname>ConstraintDeclarationException</classname> is raised.</para>
+      <para role="tck-testable">It is not legal to have more than one
+      conversion rule containing the same <literal>from</literal> value. In
+      this case, a <classname>ConstraintDeclarationException</classname> is
+      raised.</para>
 
-      <para>Like regular constraint declarations, the <literal>from</literal>
-      attribute cannot refer to a group sequence. A
-      <classname>ConstraintDeclarationException</classname> is raised in this
-      situation. The <literal>to</literal> attribute can. The group sequence
-      will then be expanded before validating the associated object.</para>
+      <para><phrase role="tck-testable">Like regular constraint declarations,
+      the <literal>from</literal> attribute cannot refer to a group sequence.
+      A <classname>ConstraintDeclarationException</classname> is raised in
+      this situation.</phrase> <phrase role="tck-testable">The
+      <literal>to</literal> attribute can. The group sequence will then be
+      expanded before validating the associated object.</phrase></para>
 
       <note>
         <para>When validation is done, group sequences are expanded before
@@ -800,24 +803,25 @@ public @interface ConvertGroup {
       <para><remark>TODO: is ConstraintDeclarationException the right
       exception? Should we create a new one?</remark></para>
 
-      <para><classname>@ConvertGroup</classname> and
-      <classname>@ConvertGroup.List</classname> can only be placed where
+      <para><phrase role="tck-testable"><classname>@ConvertGroup</classname>
+      and <classname>@ConvertGroup.List</classname> can only be placed where
       <classname>@Valid</classname> is present to ensure proper respect of the
-      Liskov substitution principle: if rules were to be defined on an
-      overriding method of a method marked as cascading validation, the rules
-      could end up altering the list of constraints validated by the super
-      type and thus violating the Liskov substitution principle.</para>
+      Liskov substitution principle:</phrase> if rules were to be defined on
+      an overriding method of a method marked as cascading validation, the
+      rules could end up altering the list of constraints validated by the
+      super type and thus violating the Liskov substitution principle.</para>
 
-      <para>Likewise, if a sub type overrides/implements a method originally
-      defined in several parallel types of the hierarchy (e.g. two interfaces
-      not extending each other, or a class and an interface not implemented by
-      said class) and if that method's return value has been marked for
-      cascading validation in one of the parallel types, no group conversion
-      rule may be declared for that method's return value in the parallel
-      types of the hierarchy. This again is to avoid an unexpected altering of
-      the post conditions to be guaranteed to the caller.</para>
+      <para><phrase role="tck-testable">Likewise, if a sub type
+      overrides/implements a method originally defined in several parallel
+      types of the hierarchy (e.g. two interfaces not extending each other, or
+      a class and an interface not implemented by said class) and if that
+      method's return value has been marked for cascading validation in one of
+      the parallel types, no group conversion rule may be declared for that
+      method's return value in the parallel types of the hierarchy.</phrase>
+      This again is to avoid an unexpected altering of the post conditions to
+      be guaranteed to the caller.</para>
 
-      <para>If any of these rules is violated, a
+      <para role="tck-testable">If any of these rules is violated, a
       <classname>ConstraintDeclarationException</classname> is raised by
       default as defined in <xref
       linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>.</para>
@@ -1180,20 +1184,21 @@ public class User {
     <section>
       <title>Requirements on methods to be validated</title>
 
-      <para>Constrained methods must be non-static. No other restrictions
-      exist from the perspective of this specification, however it is possible
-      that technologies integrating with method validation impose further
-      restrictions to methods to which a validation shall be applied. For
-      instance certain integration technologies might require that methods to
-      be validated must have <methodname>public</methodname> visibility and/or
-      must not be final.</para>
+      <para><phrase role="tck-testable">Constrained methods must be
+      non-static.</phrase> No other restrictions exist from the perspective of
+      this specification, however it is possible that technologies integrating
+      with method validation impose further restrictions to methods to which a
+      validation shall be applied. For instance certain integration
+      technologies might require that methods to be validated must have
+      <methodname>public</methodname> visibility and/or must not be
+      final.</para>
     </section>
 
     <section>
       <title>Declare parameter constraints</title>
 
-      <para>Parameter constraints are declared by putting constraint
-      annotations on method or constructor parameters.</para>
+      <para role="tck-testable">Parameter constraints are declared by putting
+      constraint annotations on method or constructor parameters.</para>
 
       <example>
         <title>Declaring parameter constraints</title>
@@ -1270,9 +1275,9 @@ public class User {
         <para>Cross-parameter constraints allow to express constraints based
         on the value of several method parameters, similar to class-level
         constraints which are based on several properties of a given class.
-        Cross-parameter constraints are declared by putting cross-parameter
-        constraint annotations on methods or constructors as shown in the
-        following example.</para>
+        <phrase role="tck-testable">Cross-parameter constraints are declared
+        by putting cross-parameter constraint annotations on methods or
+        constructors</phrase> as shown in the following example.</para>
 
         <example>
           <title>Declaring cross-parameter constraints</title>
@@ -1305,8 +1310,8 @@ public class User {
             intention.</para>
           </tip></para>
 
-        <para>Cross parameters constraints are validated at the same time as
-        parameter constraints.</para>
+        <para role="tck-testable">Cross parameters constraints are validated
+        at the same time as parameter constraints.</para>
 
         <para><remark>TODO: Decide on whether to include the type-safe
         approach from <ulink
@@ -1365,9 +1370,9 @@ public interface ParameterNameProvider {
     String[] getParameterNames(Method method);
 }</programlisting>
 
-        <para>A conforming Bean Validation implementation provides a default
-        <classname>ParameterNameProvider</classname> implementation which
-        returns parameter names in the form
+        <para role="tck-testable">A conforming Bean Validation implementation
+        provides a default <classname>ParameterNameProvider</classname>
+        implementation which returns parameter names in the form
         <varname>arg</varname><emphasis>PARAMETER_INDEX</emphasis>, where
         <emphasis>PARAMETER_INDEX</emphasis> starts at 0 for the first
         parameter, e.g. <varname>arg0</varname>, <varname>arg1</varname>
@@ -1381,18 +1386,19 @@ public interface ParameterNameProvider {
         linkend="bootstrapping"/>) or the XML configuration (see <xref
         linkend="xml-config"/>).</para>
 
-        <para>If an exception occurs during invocation of the
-        <methodname>getParameterNames()</methodname> methods, this exception
-        is wrapped into a <classname>ValidationException</classname> by the
-        Bean Validation engine.</para>
+        <para role="tck-testable">If an exception occurs during invocation of
+        the <methodname>getParameterNames()</methodname> methods, this
+        exception is wrapped into a <classname>ValidationException</classname>
+        by the Bean Validation engine.</para>
       </section>
     </section>
 
     <section>
       <title>Declaring return value constraints</title>
 
-      <para>Return value constraints are declared by putting constraint
-      annotations directly on a method or constructor.</para>
+      <para role="tck-testable">Return value constraints are declared by
+      putting constraint annotations directly on a method or
+      constructor.</para>
 
       <example>
         <title>Declaring return value constraints</title>
@@ -1462,26 +1468,27 @@ public interface ParameterNameProvider {
       <title>Marking parameters and return values for cascaded
       validation</title>
 
-      <para>Similar to normal bean validation, the
+      <para><phrase role="tck-testable">Similar to normal bean validation, the
       <classname>@Valid</classname> annotation is used to declare that a
       cascaded validation of the given method parameters or return values
       shall be performed by the Bean Validation provider. When marked, the
-      parameter or return value is considered a bean object to validate.
-      Generally the same rules as for standard object graph validation (see
-      <xref
+      parameter or return value is considered a bean object to
+      validate.</phrase> Generally the same rules as for standard object graph
+      validation (see <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
       apply, in particular</para>
 
       <itemizedlist>
         <listitem>
-          <para>null arguments and null return values are ignored</para>
+          <para role="tck-testable">null arguments and null return values are
+          ignored</para>
         </listitem>
 
         <listitem>
-          <para>The validation is recursive; that is, if validated parameter
-          or return value objects have references marked with
-          <classname>@Valid</classname> themselves, these references will also
-          be validated</para>
+          <para role="tck-testable">The validation is recursive; that is, if
+          validated parameter or return value objects have references marked
+          with <classname>@Valid</classname> themselves, these references will
+          also be validated</para>
         </listitem>
 
         <listitem>
@@ -1594,40 +1601,41 @@ public interface ParameterNameProvider {
 
       <itemizedlist>
         <listitem>
-          <para>In sub types (be it sub classes/interfaces or interface
-          implementations) no parameter constraints must be declared on
-          overridden or implemented methods, nor may parameters be marked for
-          cascaded validation. This would pose a strengthening of
+          <para role="tck-testable">In sub types (be it sub classes/interfaces
+          or interface implementations) no parameter constraints must be
+          declared on overridden or implemented methods, nor may parameters be
+          marked for cascaded validation. This would pose a strengthening of
           preconditions to be fulfilled by the caller.</para>
         </listitem>
 
         <listitem>
-          <para>If a sub type overrides/implements a method originally defined
-          in several parallel types of the hierarchy (e.g. two interfaces not
-          extending each other, or a class and an interface not implemented by
-          said class) no parameter constraints may be declared for that method
-          at all nor parameters be marked for cascaded validation. This again
-          is to avoid an unexpected strengthening of preconditions to be
-          fulfilled by the caller.</para>
+          <para role="tck-testable">If a sub type overrides/implements a
+          method originally defined in several parallel types of the hierarchy
+          (e.g. two interfaces not extending each other, or a class and an
+          interface not implemented by said class) no parameter constraints
+          may be declared for that method at all nor parameters be marked for
+          cascaded validation. This again is to avoid an unexpected
+          strengthening of preconditions to be fulfilled by the caller.</para>
         </listitem>
 
         <listitem>
-          <para>In sub types (be it sub classes/interfaces or interface
-          implementations) return value constraints may be declared on
-          overridden or implemented methods and the return value may be marked
-          for cascaded validation. Upon validation, all return value
-          constraints of the method in question are validated, wherever they
-          are declared in the hierarchy; This only poses possibly a
+          <para role="tck-testable">In sub types (be it sub classes/interfaces
+          or interface implementations) return value constraints may be
+          declared on overridden or implemented methods and the return value
+          may be marked for cascaded validation. Upon validation, all return
+          value constraints of the method in question are validated, wherever
+          they are declared in the hierarchy; This only poses possibly a
           strengthening but no weakening of the method's postconditions
           guaranteed to the caller.</para>
         </listitem>
 
         <listitem>
-          <para>One must not mark a method return value for cascaded
-          validation more than once in a class hierarchy. In other words, sub
-          types (be it sub classes/interfaces or interface implementations)
-          cannot mark the return value for cascaded validation if the return
-          value has already been marked on a super type or interface.</para>
+          <para role="tck-testable">One must not mark a method return value
+          for cascaded validation more than once in a class hierarchy. In
+          other words, sub types (be it sub classes/interfaces or interface
+          implementations) cannot mark the return value for cascaded
+          validation if the return value has already been marked on a super
+          type or interface.</para>
         </listitem>
       </itemizedlist>
 
@@ -1641,11 +1649,11 @@ public interface ParameterNameProvider {
       on such alternative behavior may not be portable between Bean Validation
       providers.</para>
 
-      <para>The above rules do not apply when validating constructor
-      constraints as constructors do not override one another. Parameter and
-      return value constraints can be applied to any constructor in the type
-      hierarchy, but only the constraints defined directly on the validated
-      constructor are evaluated.</para>
+      <para role="tck-testable">The above rules do not apply when validating
+      constructor constraints as constructors do not override one another.
+      Parameter and return value constraints can be applied to any constructor
+      in the type hierarchy, but only the constraints defined directly on the
+      validated constructor are evaluated.</para>
 
       <section>
         <title>Examples</title>
@@ -2037,9 +2045,10 @@ assert violations.size() == 1;</programlisting>
     <section revisionflag="added">
       <title>Method validation</title>
 
-      <para>For a given group, the validation routine applied to validate
-      parameters of a method or constructor is expected to execute the
-      following constraint validations in no particular order:</para>
+      <para role="tck-testable">For a given group, the validation routine
+      applied to validate parameters of a method or constructor is expected to
+      execute the following constraint validations in no particular
+      order:</para>
 
       <itemizedlist>
         <listitem>
@@ -2075,9 +2084,10 @@ assert violations.size() == 1;</programlisting>
         </listitem>
       </itemizedlist>
 
-      <para>For a given group, the validation routine applied to validate the
-      return value of a method or constructor is expected to execute the
-      following constraint validations in no particular order:</para>
+      <para role="tck-testable">For a given group, the validation routine
+      applied to validate the return value of a method or constructor is
+      expected to execute the following constraint validations in no
+      particular order:</para>
 
       <itemizedlist>
         <listitem>
@@ -2107,12 +2117,13 @@ assert violations.size() == 1;</programlisting>
       in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-traversable"/>.</para>
 
-      <para>Note that this implies that a given validation constraint will not
-      be processed more than once per validation.</para>
+      <para role="tck-testable">Note that this implies that a given validation
+      constraint will not be processed more than once per validation.</para>
 
-      <para>Unless ordered by group sequences, groups can be validated in no
-      particular order. This implies that the validation routine can be run
-      for several groups in the same pass.</para>
+      <para><phrase role="tck-testable">Unless ordered by group sequences,
+      groups can be validated in no particular order.</phrase> This implies
+      that the validation routine can be run for several groups in the same
+      pass.</para>
 
       <para>The object validation routine is as defined in described in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine"/>.</para>
