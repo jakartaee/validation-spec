@@ -63,17 +63,21 @@ public interface Validator {
 }</programlisting>
     </example>
 
-    <para><methodname>getConstraintsForClass</methodname> returns a
-    <classname>BeanDescriptor</classname> object describing the bean level
-    constraints (see <xref
+    <para><phrase
+    role="tck-testable"><methodname>getConstraintsForClass</methodname>
+    returns a <classname>BeanDescriptor</classname> object describing the bean
+    level constraints (see <xref
     linkend="constraintdeclarationvalidationprocess-requirements-object"/>)
-    and providing access to the property level constraints metadata.</para>
+    and providing access to the property level constraints metadata.
+    </phrase><phrase revisionflag="added" role="tck-testable">An
+    <classname>IllegalArgumentException</classname> is raised if the
+    <varname>clazz</varname> parameter is null.</phrase></para>
 
-    <para>If a constraint definition or declaration hosted by the requested
-    class (or any of it's superclasses and interfaces according to the
-    constraint propagation rules) is invalid, a
-    <classname>ValidationException</classname> is raised. This can be a
-    subclass of <classname>ValidationException</classname> like
+    <para><phrase role="tck-testable">If a constraint definition or
+    declaration hosted by the requested class (or any of it's superclasses and
+    interfaces according to the constraint propagation rules) is invalid, a
+    <classname>ValidationException</classname> is raised.</phrase> This can be
+    a subclass of <classname>ValidationException</classname> like
     <classname>ConstraintDefinitionException</classname>,
     <classname>ConstraintDeclarationException</classname>,
     <classname>UnexpectedTypeException</classname>.</para>
@@ -283,26 +287,29 @@ public enum Scope {
     HIERARCHY
 }</programlisting>
 
-    <para><methodname>getElementClass</methodname> returns either the object
-    type for a class, or the returned type for a property.</para>
+    <para role="tck-testable"><methodname>getElementClass</methodname> returns
+    either the object type for a class, or the returned type for a
+    property.</para>
 
-    <para><classname>getConstraintDescriptors</classname> returns all the
-    <classname>ConstraintDescriptor</classname>s (see <xref
+    <para role="tck-testable"><classname>getConstraintDescriptors</classname>
+    returns all the <classname>ConstraintDescriptor</classname>s (see <xref
     linkend="constraintmetadata-constraintdescriptor"/>) hosted on the given
     element in the class hierarchy, each
     <classname>ConstraintDescriptor</classname> describing one of the
     constraints declared on the given element.</para>
 
-    <para><methodname>hasConstraints</methodname> returns true if the given
-    element (class, field or property) in the class hierarchy holds at least
-    one constraint declaration.</para>
+    <para role="tck-testable"><methodname>hasConstraints</methodname> returns
+    true if the given element (class, field or property) in the class
+    hierarchy holds at least one constraint declaration.</para>
 
-    <para revisionflag="added"><methodname>getKind</methodname> returns the
-    concrete type of the given element.</para>
+    <para revisionflag="added"
+    role="tck-testable"><methodname>getKind</methodname> returns the concrete
+    type of the given element.</para>
 
-    <para revisionflag="added">The method <methodname>as</methodname> returns
-    the given element casted down to one of the specific descriptor types,
-    e.g. <classname>BeanDescriptor</classname>,
+    <para revisionflag="added" role="tck-testable">The method
+    <methodname>as</methodname> returns the given element casted down to one
+    of the specific descriptor types, e.g.
+    <classname>BeanDescriptor</classname>,
     <classname>PropertyDescriptor</classname> etc.</para>
 
     <para>If you need to query the metadata API in a more fine grained way for
@@ -346,23 +353,24 @@ constraints = pd.getConstraintDescriptors();
 assert 2 == constraints.size();      </programlisting>
     </example>
 
-    <para><classname>unorderedAndMatchingGroups</classname> restricts to the
-    <classname>ConstraintDescriptor</classname>s (see <xref
+    <para
+    role="tck-testable"><classname>unorderedAndMatchingGroups</classname>
+    restricts to the <classname>ConstraintDescriptor</classname>s (see <xref
     linkend="constraintmetadata-constraintdescriptor"/>) matching the set of
     groups passed as parameters and present on the element. Order is not
     respected but group inheritance and inheritance via sequence (including
     the <classname>Default</classname> group overriding at the class level)
     are honored.</para>
 
-    <para><methodname>declaredOn</methodname> lets you restrict the list of
-    element types constraints are hosted on. This is particularly useful to
-    retrieve constraints only hosted on fields
+    <para><phrase role="tck-testable"><methodname>declaredOn</methodname> lets
+    you restrict the list of element types constraints are hosted on.</phrase>
+    This is particularly useful to retrieve constraints only hosted on fields
     (<classname>ElementType.FIELD</classname>) or only hosted on getters
     (<classname>ElementType.METHOD</classname>).</para>
 
-    <para><methodname>lookingAt</methodname> lets you restrict which
-    constraints are considered. Either constraints belonging to the element
-    but hosted on the class represented by
+    <para role="tck-testable"><methodname>lookingAt</methodname> lets you
+    restrict which constraints are considered. Either constraints belonging to
+    the element but hosted on the class represented by
     <classname>BeanDescritptor</classname>
     (<classname>Scope.LOCAL_ELEMENT</classname>), or constraints belonging to
     the element but hosted anywhere in the class hierarchy
@@ -494,47 +502,53 @@ public interface BeanDescriptor extends ElementDescriptor {
 }</programlisting>
     </example>
 
-    <para><methodname>isBeanConstrained</methodname> returns true if the given
-    class (and superclasses and interfaces) hosts at least one validation
-    declaration (either constraint or <classname>@Valid</classname>
-    annotation). If the method returns false, the Bean Validation engine can
-    safely ignore the bean as it will not be impacted by validation.</para>
+    <para><phrase
+    role="tck-testable"><methodname>isBeanConstrained</methodname> returns
+    true if the given class (and superclasses and interfaces) hosts at least
+    one validation declaration (either constraint or
+    <classname>@Valid</classname> annotation).</phrase> If the method returns
+    false, the Bean Validation engine can safely ignore the bean as it will
+    not be impacted by validation.</para>
 
     <para revisionflag="added"><remark>TODO: Specify behavior with respect to
     method constraints, or add a dedicated method for that (see <ulink
     url="http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html">http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html</ulink>)</remark></para>
 
-    <para><methodname>getConstraintsForProperty</methodname> returns a
-    <classname>PropertyDescriptor</classname> object describing the property
-    level constraints (See <xref
+    <para><phrase
+    role="tck-testable"><methodname>getConstraintsForProperty</methodname>
+    returns a <classname>PropertyDescriptor</classname> object describing the
+    property level constraints (See <xref
     linkend="constraintdeclarationvalidationprocess-requirements-property"/>).
     The property is uniquely identified by its name as per the JavaBeans
     convention: field level and getter level constraints of the given name are
-    all returned.</para>
+    all returned.</phrase><phrase revisionflag="added" role="tck-testable">An
+    <classname>IllegalArgumentException</classname> is raised if the
+    <varname>propertyName</varname> parameter is null.</phrase></para>
 
     <para><methodname>getConstrainedProperties</methodname> returns the
     <classname>PropertyDescriptor</classname>s of the bean properties having
     at least one constraint or being cascaded (<classname>@Valid</classname>
     annotation).</para>
 
-    <para
-    revisionflag="added"><methodname>getConstraintsForMethod</methodname>
+    <para revisionflag="added"
+    role="tck-testable"><methodname>getConstraintsForMethod</methodname>
     returns a <classname>MethodDescriptor</classname> object describing the
     method constraints of the given method. The method is uniquely identified
     by its name and the types of its parameters.</para>
 
-    <para revisionflag="added"><methodname>getConstrainedMethods</methodname>
-    returns the <classname>MethodDescriptor</classname>s of the methods having
-    at least one constraint or cascaded parameter or return value.</para>
+    <para revisionflag="added"
+    role="tck-testable"><methodname>getConstrainedMethods</methodname> returns
+    the <classname>MethodDescriptor</classname>s of the methods having at
+    least one constraint or cascaded parameter or return value.</para>
 
-    <para
-    revisionflag="added"><methodname>getConstraintsForConstructor</methodname>
+    <para revisionflag="added"
+    role="tck-testable"><methodname>getConstraintsForConstructor</methodname>
     returns a <classname>ConstructorDescriptor</classname> ojbect describing
     the method constraints of the given constructor. The constructor is
     uniquely identified by its name and the types of its parameters.</para>
 
-    <para
-    revisionflag="added"><methodname>getConstrainedConstructors</methodname>
+    <para revisionflag="added"
+    role="tck-testable"><methodname>getConstrainedConstructors</methodname>
     returns the <classname>ConstructorDescriptor</classname>s of the
     constructors having at least one constraint or cascaded parameter or
     return value.</para>
@@ -579,12 +593,12 @@ public interface PropertyDescriptor extends ElementDescriptor {
     String getPropertyName();
 }</programlisting>
 
-    <para>The <methodname>isCascaded</methodname> method returns
-    <literal>true</literal> if the property is marked with
+    <para role="tck-testable">The <methodname>isCascaded</methodname> method
+    returns <literal>true</literal> if the property is marked with
     <classname>@Valid</classname>.</para>
 
-    <para><methodname>getPropertyName</methodname> returns the property name
-    as described in <xref
+    <para role="tck-testable"><methodname>getPropertyName</methodname> returns
+    the property name as described in <xref
     linkend="validationapi-constraintviolation"/>.</para>
   </section>
 
@@ -700,30 +714,36 @@ public interface ExecutableDescriptor extends ElementDescriptor {
     ConstraintFinder findConstraints();
 }</programlisting>
 
-    <para><methodname>getName()</methodname> returns the name of the
-    represented method (e.g. "placeOrder") respectively the non-qualified name
-    of the declaring class of the represented constructor (e.g.
-    "OrderService").</para>
+    <para role="tck-testable"><methodname>getName()</methodname> returns the
+    name of the represented method (e.g. "placeOrder") respectively the
+    non-qualified name of the declaring class of the represented constructor
+    (e.g. "OrderService").</para>
 
-    <para><methodname>getParameterDescriptors()</methodname> returns a list of
-    <classname>ParameterDescriptor</classname>s representing the method's or
-    constructor's parameters in their natural order. An empty list will be
-    returned in case the method or constructor has no parameters.</para>
+    <para
+    role="tck-testable"><methodname>getParameterDescriptors()</methodname>
+    returns a list of <classname>ParameterDescriptor</classname>s representing
+    the method's or constructor's parameters in their natural order. An empty
+    list will be returned in case the method or constructor has no
+    parameters.</para>
 
-    <para><methodname>getReturnValueDescriptor()</methodname> returns a
-    descriptor for the method's or constructor's return value or
+    <para
+    role="tck-testable"><methodname>getReturnValueDescriptor()</methodname>
+    returns a descriptor for the method's or constructor's return value or
     <varname>null</varname> if it has no return value.</para>
 
-    <para><classname>isConstrainedOnParameters()</classname> returns true if
-    any of the parameters is constrained or cascaded or if the represented
-    executable has at least one cross-parameter constraint. Returns false if
-    there is no parameter.</para>
+    <para
+    role="tck-testable"><classname>isConstrainedOnParameters()</classname>
+    returns true if any of the parameters is constrained or cascaded or if the
+    represented executable has at least one cross-parameter constraint.
+    Returns false if there is no parameter.</para>
 
-    <para><classname>isConstrainedOnReturnValue()</classname> returns true if
-    the return value is constrained or cascaded. Returns false if there is no
-    return value.</para>
+    <para
+    role="tck-testable"><classname>isConstrainedOnReturnValue()</classname>
+    returns true if the return value is constrained or cascaded. Returns false
+    if there is no return value.</para>
 
-    <para>The methods <methodname>hasConstraints()</methodname>,
+    <para role="tck-testable">The methods
+    <methodname>hasConstraints()</methodname>,
     <methodname>getConstraintDescriptors()</methodname> and
     <methodname>findConstraints()</methodname> defined on
     <classname>ElementDescriptor</classname> are redefined to take
@@ -824,16 +844,16 @@ public interface ParameterDescriptor extends ElementDescriptor {
     boolean isCascaded();
 }</programlisting>
 
-    <para><methodname>getIndex()</methodname> returns the index of the
-    represented parameter within the parameter array of the method or
-    constructor holding it.</para>
+    <para role="tck-testable"><methodname>getIndex()</methodname> returns the
+    index of the represented parameter within the parameter array of the
+    method or constructor holding it.</para>
 
-    <para><methodname>getName()</methodname> returns the name of the
-    represented parameter.</para>
+    <para role="tck-testable"><methodname>getName()</methodname> returns the
+    name of the represented parameter.</para>
 
-    <para><methodname>isCascaded()</methodname> returns true, if the
-    represented parameter is marked for cascaded validation, false
-    otherwise.</para>
+    <para role="tck-testable"><methodname>isCascaded()</methodname> returns
+    true, if the represented parameter is marked for cascaded validation,
+    false otherwise.</para>
   </section>
 
   <section revisionflag="added">
@@ -868,9 +888,9 @@ public interface ReturnValueDescriptor extends ElementDescriptor {
     boolean isCascaded();
 }</programlisting>
 
-    <para><methodname>isCascaded()</methodname> returns true, if the
-    represented return value is marked for cascaded validation, false
-    otherwise.</para>
+    <para role="tck-testable"><methodname>isCascaded()</methodname> returns
+    true, if the represented return value is marked for cascaded validation,
+    false otherwise.</para>
   </section>
 
   <section id="constraintmetadata-constraintdescriptor">
@@ -955,30 +975,48 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 
     <para><methodname>getAnnotation</methodname> returns the annotation
     instance (or an annotation instance representing the given constraint
-    declaration). If <classname>ConstraintDescriptor</classname> represents a
-    composing annotation (see <xref
-    linkend="constraintsdefinitionimplementation-constraintcomposition"/>),
-    the returned annotation must reflect parameter overriding. In other words,
-    the annotation parameter values are the overridden values.</para>
-
-    <para><methodname>getAttributes</methodname> returns a map containing the
-    annotation attribute names as a key, and the annotation attribute values
-    as a value (this API is anticipated to be simpler to use by tools than
-    reflection over the annotation instance). If
+    declaration). <phrase role="tck-testable">If
     <classname>ConstraintDescriptor</classname> represents a composing
     annotation (see <xref
     linkend="constraintsdefinitionimplementation-constraintcomposition"/>),
-    the returned <classname>Map</classname> must reflects attribute
-    overriding.</para>
+    the returned annotation must reflect parameter overriding.</phrase> In
+    other words, the annotation parameter values are the overridden
+    values.</para>
 
-    <para><methodname>getGroups</methodname> returns the groups the constraint
-    is supposed to be applied upon. If no group is set on the constraint
-    declaration, the <classname>Default</classname> group is returned. The
-    groups of a composing constraint are the groups of the composed
-    constraint.</para>
+    <para><phrase role="tck-testable"><methodname>getAttributes</methodname>
+    returns a map containing the annotation attribute names as a key, and the
+    annotation attribute values as a value</phrase> (this API is anticipated
+    to be simpler to use by tools than reflection over the annotation
+    instance). <phrase role="tck-testable">If
+    <classname>ConstraintDescriptor</classname> represents a composing
+    annotation (see <xref
+    linkend="constraintsdefinitionimplementation-constraintcomposition"/>),
+    the returned <classname>Map</classname> must reflect attribute
+    overriding.</phrase></para>
 
-    <para><literal>getPayload</literal> returns the payloads associated to the
-    constraint or an empty set if none.</para>
+    <para><phrase role="tck-testable"><methodname>getGroups</methodname>
+    returns the groups the constraint is supposed to be applied upon.</phrase>
+    <phrase role="tck-testable">If no group is set on the constraint
+    declaration, the <classname>Default</classname> group is
+    returned.</phrase> <phrase role="tck-testable">The groups of a composing
+    constraint are the groups of the composed constraint.</phrase></para>
+
+    <para><phrase role="tck-testable"><literal>getPayload</literal> returns
+    the payloads associated to the constraint or an empty set if
+    none.</phrase> <phrase revisionflag="added" role="tck-testable">The
+    payload from the main constraint annotation is inherited by the composing
+    annotations.</phrase> <phrase revisionflag="added" role="tck-testable">Any
+    payload definition on a composing annotation is ignored.</phrase></para>
+
+    <para revisionflag="added"
+    role="tck-testable"><methodname>isReportAsSingleViolation</methodname>
+    returns true if the constraint is annotated with
+    <classname>@ReportAsSingleViolation</classname>.</para>
+
+    <para revisionflag="added"
+    role="tck-testable"><methodname>getComposingConstraints</methodname>
+    return a set of composing <classname>ConstraintDescriptor</classname>s
+    where each descriptor describes a composing constraint.</para>
 
     <para><methodname>getConstraintValidatorClasses</methodname> returns the
     <classname>ConstraintValidator</classname> classes associated with the
