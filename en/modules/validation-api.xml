@@ -132,11 +132,11 @@ public interface Validator {
      * Returns a delegate for validating parameters and return values of methods
      * respectively constructors.
      *
-     * @return A delegate for method validation.
+     * @return A delegate for method and constructor validation.
      *
      * @since 1.1
      */
-    MethodValidator forMethods();
+    ExecutableValidator forExecutables();
 }</programlisting>
     </example>
 
@@ -147,10 +147,10 @@ public interface Validator {
     Java beans respectively single bean properties. See the next section for
     more details.</para>
 
-    <para revisionflag="added"><methodname>forMethods()</methodname> provides
-    access to a delegate for the validation of method and constructor
+    <para revisionflag="added"><methodname>forExecutables()</methodname>
+    provides access to a delegate for the validation of method and constructor
     parameters respectively return values. The individual methods for method
-    validation are described in <xref
+    and constructor validation are described in <xref
     linkend="validationapi-validatorapi-methodlevelvalidationmethods"/>.</para>
 
     <remark revisionflag="added">TODO: Do we find another term than
@@ -347,10 +347,10 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
       <para>The methods for the validation of parameters and return values of
       methods respectively constructors can be found on the interface
-      <classname>javax.validation.MethodValidator</classname>.</para>
+      <classname>javax.validation.ExecutableValidator</classname>.</para>
 
       <example>
-        <title>MethodValidator interface</title>
+        <title>ExecutableValidator interface</title>
 
         <programlisting>/**
  * Validates parameters and return values of methods respectively constructors.
@@ -359,7 +359,7 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
  * @author Gunnar Morling
  * @since 1.1
  */
-public interface MethodValidator {
+public interface ExecutableValidator {
 
     /**
      * Validates all constraints placed on the parameters of the given method.
@@ -530,7 +530,7 @@ Method placeOrder = ... ; //get method object
 
 OrderService orderService = new OrderService(new DefaultCreditCardProcessor());
 
-MethodValidator methodValidator = Validation
+ExecutableValidator executableValidator = Validation
     .buildDefaultValidatorFactory().getValidator().forMethods();</programlisting>
 
         <para>The following method parameter validation will return one
@@ -538,7 +538,7 @@ MethodValidator methodValidator = Validation
         is null:</para>
 
         <programlisting>//orderService.placeOrder(null, item1, 1);
-methodValidator.validateParameters(
+executableValidator.validateParameters(
     orderService, placeOrder, new Object[] { null, item1, 1 }).size() == 1</programlisting>
 
         <para>The following method parameter validation will return one
@@ -548,7 +548,7 @@ methodValidator.validateParameters(
         name is null):</para>
 
         <programlisting>//orderService.placeOrder("CUST-123", item2, 1);
-methodValidator.validateParameters(
+executableValidator.validateParameters(
     orderService, placeOrder, new Object[] { "CUST-123", item2, 1 }).size() == 1</programlisting>
 
         <para>The following constructor parameter validation will return one
@@ -556,14 +556,14 @@ methodValidator.validateParameters(
         for the <varname>creditCardProcessor</varname> parameter:</para>
 
         <programlisting>//new OrderService(null);
-methodValidator.validateConstructorParameters(constructor, new Object[] { null }).size() == 1</programlisting>
+executableValidator.validateConstructorParameters(constructor, new Object[] { null }).size() == 1</programlisting>
 
         <para>Assuming the <methodname>placeOrder()</methodname> method
         returned <varname>null</varname>, the following return value
         validation will return one
         <classname>ConstraintViolation</classname>:</para>
 
-        <programlisting>methodValidator.validateReturnValue(orderService, placeOrder, null).size() == 1</programlisting>
+        <programlisting>executableValidator.validateReturnValue(orderService, placeOrder, null).size() == 1</programlisting>
 
         <para>Assuming the constructor of <classname>OrderService</classname>
         failed to store the given credit card processor into the
@@ -573,7 +573,7 @@ methodValidator.validateConstructorParameters(constructor, new Object[] { null }
         <classname>@NotNull</classname> constraint of the
         <classname>OrderService</classname> class would be violated:</para>
 
-        <programlisting>methodValidator.validateConstructorReturnValue(constructor, orderService).size() == 1</programlisting>
+        <programlisting>executableValidator.validateConstructorReturnValue(constructor, orderService).size() == 1</programlisting>
 
         <para><remark>Do we need more examples?</remark></para>
       </section>
@@ -1577,7 +1577,7 @@ author.setLastName("Doe");</programlisting>
 
       <para>Then one <classname>ConstraintViolation</classname> object would
       be returned by
-      <methodname>MethodValidator#validateParameters()</methodname> which
+      <methodname>ExecutableValidator#validateParameters()</methodname> which
       satisfies the following assertions:</para>
 
       <programlisting>//assuming an english locale, the interpolated message is returned
@@ -1608,7 +1608,7 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <para>Then one <classname>ConstraintViolation</classname> object would
       be returned by
-      <methodname>MethodValidator#validateParameters()</methodname> which
+      <methodname>ExecutableValidator#validateParameters()</methodname> which
       satisfies the following assertions:</para>
 
       <programlisting>//assuming an english locale, the interpolated message is returned
@@ -1645,7 +1645,7 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <para>Then one <classname>ConstraintViolation</classname> object would
       be returned by
-      <methodname>MethodValidator#validateReturnValue()</methodname> which
+      <methodname>ExecutableValidator#validateReturnValue()</methodname> which
       satisfies the following assertions:</para>
 
       <programlisting>//assuming an english locale, the interpolated message is returned
@@ -2079,11 +2079,11 @@ Validator validator = factory.getValidator();</programlisting>
 
     <para>Instead method constraints must be validated by invoking the
     appropriate methods on
-    <classname>javax.validation.MethodValidator</classname>. Typically this
-    won't happen by manually calling these methods but rather automatically
-    upon invocation of the constrained methods or constructors, using
-    approaches and techniques such as CDI/EJB interceptors, aspect-oriented
-    programming or dynamic proxies.</para>
+    <classname>javax.validation.ExecutableValidator</classname>. Typically
+    this won't happen by manually calling these methods but rather
+    automatically upon invocation of the constrained methods or constructors,
+    using approaches and techniques such as CDI/EJB interceptors,
+    aspect-oriented programming or dynamic proxies.</para>
 
     <para>The validation of method / constructor constraints comprises the
     following steps:</para>
@@ -2095,8 +2095,9 @@ Validator validator = factory.getValidator();</programlisting>
 
       <listitem>
         <para>Validate the parameter values provided by the method caller
-        using <methodname>MethodValidator#validateParameters()</methodname> or
-        <methodname>MethodValidator#validateConstructorParameters()</methodname>.</para>
+        using
+        <methodname>ExecutableValidator#validateParameters()</methodname> or
+        <methodname>ExecutableValidator#validateConstructorParameters()</methodname>.</para>
       </listitem>
 
       <listitem>
@@ -2109,8 +2110,8 @@ Validator validator = factory.getValidator();</programlisting>
 
       <listitem>
         <para>Validate the result returned by the invoked method using
-        <methodname>MethodValidator#validateReturnValue()</methodname> or
-        <methodname>MethodValidator#validateConstructorReturnValue()</methodname>.</para>
+        <methodname>ExecutableValidator#validateReturnValue()</methodname> or
+        <methodname>ExecutableValidator#validateConstructorReturnValue()</methodname>.</para>
       </listitem>
 
       <listitem>
