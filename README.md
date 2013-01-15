@@ -6,25 +6,21 @@ go to <http://beanvalidation.org>.
 
 ## Building docs
 
-You need to have Apache Ant installed on your system and available in your classpath.
+You need to have Apache Ant installed on your system and available on your classpath. The build
+file _build.xml_ is located in this directory and all commands are relative to this directory.
 
-1. Run Ant commands from this directory
-1. Running `ant` with no parameters will execute the default target which builds both PDF and HTML output in the `build/` directory.
-1. Running `ant clean` will clean up output HTML and PDF files.
-
-### Gotchas
-
-1. Make sure your version control client does not trim empty directories.
+* Running `ant all.doc` builds both PDF and HTML output in the _build/_ directory. `all.doc` is
+also the default target.
+* Running `ant clean` will clean up output HTML and PDF files.
 
 ## Tagging phrases for the TCK
 
 The [Bean Validation TCK](https://github.com/beanvalidation/beanvalidation-tck) is a suite of unit
-tests for validating the compliance of Bean Validation implementations with this specification.
+tests for validating the compliance of Bean Validation implementations with the specification.
 
-The tests of the TCK are based on assertions which represent sentences and phrases from the
-specification. Which parts of the specification text are to be used as assertion for the TCK is
-controlled by tagging text elements (`<para>`, `phrase` etc.). Tagging happens by setting the
-`role` attribute (available in all DocBook elements) to one of the following values:
+The tests of the TCK are based on assertions representing sentences and phrases in this
+specification. The `role` attribute is used to mark those text elements (`<para>`, `phrase` etc.)
+of the specification which shall lead to an assertion in the TCK. The following values are allowed:
 
 * `tck-testable`: The tagged element shall be represented by a testable assertion in the TCK
 * `tck-not-testable`: The tagged element shall be represented by a non-testable assertion in the
@@ -44,8 +40,8 @@ The generation is executed by running `ant createTckAuditFile`. This is required
 elements have been added, updated, removed or changed their position within all tagged elements of
 a section.
 
-The generated file (`build/tck-audit.xml`) should be formatted with a line width of 100 characters
-and must be checked into the
+The generated file _build/tck-audit.xml_ should be formatted with a line width of 100 characters
+(allowing for easier comparisons between versions) and must be checked into the
 [TCK project](https://github.com/beanvalidation/beanvalidation-tck/blob/master/tests/src/main/resources/tck-audit.xml).
 If an update changed the section numbers of existing assertions, the corresponding tests need to be
 adapted as well since they reference the section numbers in the `@SpecAssertion` annotation.
