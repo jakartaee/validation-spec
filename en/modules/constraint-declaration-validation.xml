@@ -13,22 +13,25 @@
   instances or graphs of instances.</para>
 
   <para revisionflag="added">Bean Validation also offers a way to declare
-  constructor and method constraints. Parameters and return values are the
-  constrained elements. We will discuss method constraints declaration in
-  detail at <xref
+  constructor and method constraints where parameters and return values are
+  the constrained elements. We will discuss method constraints declaration in
+  detail in <xref
   linkend="constraintdeclarationvalidationprocess-methodlevelconstraints"/>.</para>
 
   <section id="constraintdeclarationvalidationprocess-requirements">
     <title>Requirements on classes to be validated</title>
 
-    <para>Objects that are to be validated must fulfill the following
-    requirements:</para>
+    <para>Objects hosting constraints and expecting to be validated by Bean
+    Validation providers must fulfill the following requirements:</para>
 
     <itemizedlist>
       <listitem>
         <para role="tck-testable">Properties to be validated must follow the
         method signature conventions for JavaBeans read properties, as defined
-        by the JavaBeans specification.</para>
+        by the <ulink
+        url="http://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/">JavaBeans
+        specification</ulink>. These properties are commonly referred as
+        getters.</para>
       </listitem>
 
       <listitem>
@@ -41,6 +44,25 @@
         superclasses.</para>
       </listitem>
     </itemizedlist>
+
+    <note role="tck-testable">
+      <title>What is a getter?</title>
+
+      <para>The JavaBeans specification specifies that a getter is a method
+      whose</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>name starts with <literal>get</literal> and has a return type
+          but no parameter</para>
+        </listitem>
+
+        <listitem>
+          <para>name starts with <literal>is</literal>, has no parameter and
+          is returning <classname>Boolean</classname></para>
+        </listitem>
+      </itemizedlist>
+    </note>
 
     <para role="tck-testable">The target of an annotation definition can be a
     field, property, or type, provided that: <itemizedlist>
@@ -1170,16 +1192,17 @@ public class User {
       constraints declared on methods as well as constructors.</para>
     </note>
 
-    <para>Method constraints are declared by adding constraint annotations to
-    method - respectively constructor - parameters (parameter constraints) or
-    directly to methods - respectively constructors - (return value
-    constraints). As with bean constraints, this can be done using either
+    <para>Method constraints are declared by adding constraint annotations
+    directly to methods or constructors and/or their parameters. In the former
+    case, return values are constrained, in the latter parameter values are
+    constrained. As with bean constraints, this can be done using either
     actual Java annotations or using an XML constraint mapping file (see <xref
     linkend="xml-mapping-constraintdeclarationinxml-methodleveloverriding"/>).
     Bean Validation providers are free to provide additional means of defining
     method constraints such as an API-based approach.</para>
 
-    <para>Getters are not considered constrained methods.</para>
+    <para>Getters are not considered constrained methods by default (see <xref
+    linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-getters"/>).</para>
 
     <section>
       <title>Requirements on methods to be validated</title>
@@ -1775,6 +1798,306 @@ public class SimpleOrderService extends OrderService {
         <methodname>placeOrder()</methodname> method as constituted by the
         super class <classname>OrderService</classname> but don't weaken
         them.</para>
+      </section>
+    </section>
+
+    <section id="constraintdeclarationvalidationprocess-methodlevelconstraints-getters">
+      <title>Enabling / disabling method validation and getters</title>
+
+      <note>
+        <title>Chapter subject to move to the integration chapter</title>
+
+        <para>Discussions are being held to move this chapter and the
+        configuration logic for method validation to the integration chapter
+        to make it a part of the integration technology. Likewise the global
+        setting option is not developed here as it will be subject to change
+        depending on that.</para>
+
+        <para>In other more fundamental words, the configuration logic for
+        method validation might move from being core to Bean Validation to
+        being specific to each integration technology but with some
+        recommendations.</para>
+      </note>
+
+      <para role="tck-testable">By default, method validation is applied to
+      all constrained methods or constructors provided the integration
+      technology can intercept the call. Getters (as defined in <xref
+      linkend="constraintdeclarationvalidationprocess-requirements"/>) are not
+      considered constrained methods by default.</para>
+
+      <para>Bean Validation offers a way to customize whether or not a
+      constructor, method or getter is validated when executed. This is
+      achieved:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para>via the <classname>@ValidateExecutable</classname> annotation
+          (see <xref linkend="example-validateexecutable"/>)</para>
+        </listitem>
+
+        <listitem>
+          <para>via a global executable validation setting configurable both
+          in XML and programmatically -TBD.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para role="tck-testable">If no global setting is set, the default is to
+      not consider getters as constrained methods and not validate
+      them.</para>
+
+      <para>More formally, a given executable (constructor or method) is
+      validated upon execution:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para role="tck-testable">if it is annotated with
+          <classname>@ValidateExecutable</classname> and the
+          <methodname>type</methodname> attribute contains the executable
+          type. If the <methodname>type</methodname> attribute does not
+          contain the executable type, the executable is not validated.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable">otherwise if the type (class, interface)
+          on which the executable is defined is annotated with
+          <classname>@ValidateExecutable</classname> and the
+          <methodname>type</methodname> attribute contains the executable
+          type. If the <methodname>type</methodname> attribute does not
+          contain the executable type, the executable is not validated.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable">otherwise if the global executable
+          validation setting contains the executable type. If the global
+          setting does not contain the executable type, the executable is not
+          validated.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable">The rules above do not apply to methods
+          overriding a superclass method or implementing an interface method.
+          In this case, the method inherits the behavior of the method it
+          overrides / implements.</para>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <para>The last rule is present are here to enforce the Liskov
+        substitution principle (more info at <xref
+        linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>).
+        In addition providers may implement alternative, potentially more
+        liberal, approaches for handling configuration in inheritance
+        hierarchies. Possible means for activating such alternative behavior
+        include provider-specific configuration properties or annotations.
+        Note that client code relying on such alternative behavior may not be
+        portable between Bean Validation providers.</para>
+      </note>
+
+      <para>The following executable types are available:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para><literal>NONE</literal>: parameters and return values are not
+          validated upon execution. This option is equivalent to an empty list
+          of executable types and is present to improve readability. A list
+          containing <literal>NONE</literal> and other types of executables is
+          equivalent to a list containing the types of executables without
+          <literal>NONE</literal>.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable"><literal>CONSTRUCTORS</literal>:
+          parameters and return values are validated provided the executable
+          is a constructor.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable"><literal>NON_GETTER_METHODS</literal>:
+          parameters and return values are validated provided the executable
+          is a method but not a getter.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable"><literal>GETTER_METHODS</literal>:
+          parameters and return values are validated provided the executable
+          is a getter method.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable"><literal>ALL</literal>: parameters and
+          return values are validated for all methods (getters, non getters
+          and constructors). This option is equivalent to a list of all
+          executable types and is present to improve readability. A list
+          containing <literal>ALL</literal> and other types of executables is
+          equivalent to a list containing <literal>ALL</literal>.</para>
+        </listitem>
+      </itemizedlist>
+
+      <note>
+        <title>Question</title>
+
+        <para>Should we remove <literal>GETTER_METHODS</literal> ? I don't see
+        a use case but it offers completeness to the list.</para>
+
+        <para>Should we rename <literal>NON_GETTER_METHODS</literal> to
+        <literal>NON_GETTERS</literal>? The problem I see is that non-getters
+        encompasses constructors.</para>
+      </note>
+
+      <example id="example-validateexecutable" lang="JAVA" role="JAVA">
+        <title>@ValidateExecutable annotation</title>
+
+        <programlisting>/**
+ * Expresses which executable should have its parameters and return value validated upon
+ * execution.
+ * 
+ * The settings for a given executable (method, constructor) is resolved as followed.
+ * A given executable (method or constructor) is validated upon execution:
+ * &lt;ul&gt;
+ *     &lt;li&gt;if it is annotated with {@code @ValidateExecutable} and the {@code type} attribute
+ *     contains the executable type. If the {@code type} attribute does not contain the
+ *     executable type, the executable is not validated.&lt;/li&gt;
+ *     &lt;li&gt;otherwise if,
+ *     the type (class, interface) on which the executable is defined
+ *     is annotated with {@code @ValidateExecutable} and the {@code type} attribute
+ *     contains the executable type. If the {@code type} attribute does not contain the
+ *     executable type, the executable is not validated.&lt;/li&gt;
+ *     &lt;li&gt;otherwise if the global executable validation setting contains the executable
+ *     type. If the global setting does not contain the executable type, the executable
+ *     is not validated.&lt;/li&gt;
+ *     &lt;li&gt;The rules above do not apply to methods overriding a superclass method or
+ *     implementing an interface method. In this case, the method inherits the behavior
+ *     of the method it overrides / implements&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * These rules do not apply to methods overriding a superclass method or implementing
+ * an interface method. In this case, the method inherits the behavior of the method it
+ * overrides / implements.
+ *
+ * @since 1.1
+ * @author Emmanuel Bernard
+ */
+@Target({ CONSTRUCTOR, METHOD, TYPE, PACKAGE })
+@Retention(RUNTIME)
+public @interface ValidateExecutable {
+    /**
+     * List of executable types to be validated when called
+     */
+    ExecutableType[] type();
+}
+
+/**
+ * Defines the types of executables targeted by an operation.
+ *
+ * @since 1.1
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ */
+public enum ExecutableType {
+    /**
+     * None of the executables.
+     * Note that this option is equivalent to an empty list of executable types
+     * and is present to improve readability. If {@code NONE} and other types of executables
+     * are present in a list, {@code NONE} is ignored.
+     */
+    NONE,
+
+    /**
+     * All constructors
+     */
+    CONSTRUCTORS,
+
+    /**
+     * All methods except the ones following the getter pattern. A getter according ot the
+     * JavaBeans specification is a method whose:
+     * &lt;ul&gt;
+     *     &lt;li&gt;name starts with get, has a return type but no parameter&lt;/li&gt;
+     *     &lt;li&gt;name starts with is, has a return type and is returning {@code Boolean}.&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    NON_GETTER_METHODS,
+
+    /**
+    /**
+     * All methods following the getter pattern. A getter according ot the
+     * JavaBeans specification is a method whose:
+     * &lt;ul&gt;
+     *     &lt;li&gt;name starts with get, has a return type but no parameter&lt;/li&gt;
+     *     &lt;li&gt;name starts with is, has a return type and is returning {@code Boolean}.&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    GETTER_METHODS,
+
+    /**
+     * All executables (constructors and methods).
+     */
+    ALL
+}</programlisting>
+      </example>
+
+      <section>
+        <title>Examples</title>
+
+        <para>The following example shows some of the way you can refine
+        executable validation with
+        <classname>@ValidateExecutable</classname>.</para>
+
+        <example>
+          <title>Method validation configurations</title>
+
+          <programlisting language="JAVA" role="JAVA">public class OrderService {
+
+    boolean isValidCustomer(@NotNull String customerCode) { ... }
+
+    @ValidateExecutable(type=GETTER_METHODS)
+    @Min(0)
+    Integer getBacklog() { ... }
+
+    @ValidateExecutable(type=NONE)
+    Order placeOrder(@NotNull String customerCode, @Valid Item item, int quantity) { ... }
+
+}
+
+@ValidateExecutable(type={GETTER_METHODS, NON_GETTER_METHODS})
+public class SimpleOrderService extends OrderService {
+
+    public SimpleOrderService(@NotNull ServiceProvider provider) { ... }
+
+    @Overrides
+    Order placeOrder(@NotNull String customerCode, @Valid Item item, int quantity) { ... }
+
+}
+
+public class ComplexOrderService extends SimpleOrderService {
+    public ComplexOrderService(@NotNull ServiceProvider provider) { ... }
+}</programlisting>
+        </example>
+
+        <para>All constructors and non-getter methods of
+        <classname>OrderService</classname> are validated upon execution as
+        this is the default settings. <methodname>isValidCustomer</methodname>
+        is validated as this method is not a getter (it has a parameter).
+        <methodname>getBacklog</methodname> is a getter but is validated
+        thanks to <classname>@ValidateExecutable</classname> containing
+        <literal>GETTER_METHODS</literal>. <methodname>placeOrder</methodname>
+        is not validated as <classname>@ValidateExecutable</classname> is set
+        to <literal>NONE</literal>.</para>
+
+        <para>All getter and non-getter methods of
+        <classname>SimpleOrderService</classname> are validated upon execution
+        by default due to the presence of
+        <classname>@ValidateExecutable</classname> on the class. The
+        <classname>SimpleOrderService</classname> constructor is thus not
+        validated. <classname>SimpleOrderService.placeOrder</classname> is not
+        validated either because it overrides
+        <classname>OrderService.placeOrder</classname> and thus inherits its
+        settings.</para>
+
+        <para>All constructors and non-getter methods of
+        <classname>ComplexOrderService</classname> are validated upon
+        execution as this is the default settings - the type level settings of
+        <classname>SimpleOrderService</classname> are not inherited. This
+        means that the <classname>ComplexOrderService</classname> constructor
+        is validated.</para>
       </section>
     </section>
   </section>
