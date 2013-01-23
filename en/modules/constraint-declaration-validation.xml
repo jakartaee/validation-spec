@@ -2034,7 +2034,67 @@ public enum ExecutableType {
       <section>
         <title>Examples</title>
 
-        <para>TODO</para>
+        <para>The following example shows some of the way you can refine
+        executable validation with
+        <classname>@ValidateExecutable</classname>.</para>
+
+        <example>
+          <title>Method validation configurations</title>
+
+          <programlisting language="JAVA" role="JAVA">public class OrderService {
+
+    boolean isValidCustomer(@NotNull String customerCode) { ... }
+
+    @ValidateExecutable(type=GETTER_METHODS)
+    @Min(0)
+    Integer getBacklog() { ... }
+
+    @ValidateExecutable(type=NONE)
+    Order placeOrder(@NotNull String customerCode, @Valid Item item, int quantity) { ... }
+
+}
+
+@ValidateExecutable(type={GETTER_METHODS, NON_GETTER_METHODS})
+public class SimpleOrderService extends OrderService {
+
+    public SimpleOrderService(@NotNull ServiceProvider provider) { ... }
+
+    @Overrides
+    Order placeOrder(@NotNull String customerCode, @Valid Item item, int quantity) { ... }
+
+}
+
+public class ComplexOrderService extends SimpleOrderService {
+    public ComplexOrderService(@NotNull ServiceProvider provider) { ... }
+}</programlisting>
+        </example>
+
+        <para>All constructors and non-getter methods of
+        <classname>OrderService</classname> are validated upon execution as
+        this is the default settings. <methodname>isValidCustomer</methodname>
+        is validated as this method is not a getter (it has a parameter).
+        <methodname>getBacklog</methodname> is a getter but is validated
+        thanks to <classname>@ValidateExecutable</classname> containing
+        <literal>GETTER_METHODS</literal>. <methodname>placeOrder</methodname>
+        is not validated as <classname>@ValidateExecutable</classname> is set
+        to <literal>NONE</literal>.</para>
+
+        <para>All getter and non-getter methods of
+        <classname>SimpleOrderService</classname> are validated upon execution
+        by default due to the presence of
+        <classname>@ValidateExecutable</classname> on the class. The
+        <classname>SimpleOrderService</classname> constructor is thus not
+        validated. <classname>SimpleOrderService.placeOrder</classname> is not
+        validated either because it overrides
+        <classname>OrderService.placeOrder</classname> and thus inherits its
+        settings.</para>
+
+        <para>All constructors and non-getter methods of
+        <classname>ComplexOrderService</classname> are validated upon
+        execution as this is the default settings - the type level settings of
+        <classname>SimpleOrderService</classname> are not inherited. This
+        means that the <classname>ComplexOrderService</classname> constructor
+        is validated.</para>
       </section>
     </section>
   </section>
