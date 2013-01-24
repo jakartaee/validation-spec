@@ -76,19 +76,17 @@ public @interface CrossParameterConstraint {
     Class&lt;? extends ConstraintValidator&lt;?, ?&gt;&gt; validatedBy();
 }</programlisting>
 
-    <para revisionflag="added" role="tck-testable">A Bean Validation
-    constraint is either a generic constraint (marked with
+    <para revisionflag="added">A Bean Validation constraint is most of the
+    time either a generic constraint (marked with
     <classname>@Constraint</classname>) or a cross-parameter constraint
-    (marked with <classname>@CrossParameterConstraint</classname>). If both
-    annotations are given on an annotation type, a
-    <classname>ConstraintDefinitionException</classname> is raised by the Bean
-    Validation provider.</para>
+    (marked with <classname>@CrossParameterConstraint</classname>). In rare
+    situations, a constraint can be both.</para>
 
-    <remark revisionflag="added">TODO: Alternatively to distinguishing generic
-    and cross-parameter constraint annotation types by different meta
-    annotations, we could also add a method such as
-    <methodname>type()</methodname> to <classname>@Constraint</classname>
-    which allows to determine a constraint's type.</remark>
+    <remark revisionflag="added">TODO: An alternative to @Constraint /
+    @CrossParameterConstraint is to annotate the ConstraintValidator with a
+    @Validates annotation. @Validates({ANNOTATED_ELEMENT, CROSS_PARAMETER}), A
+    ConstraintValidator will by default validate the annotated element but can
+    be marked as validating cross parameters or both.</remark>
 
     <para revisionflag="added">A generic constraint is used when validating a
     bean, a field, a getter, a method/constructor return value or a
@@ -136,10 +134,18 @@ public @interface CrossParameterConstraint {
         </listitem>
 
         <listitem>
+          <para><literal>CONSTRUCTOR</literal></para>
+        </listitem>
+
+        <listitem>
           <para><literal>ANNOTATION_TYPE</literal> for cross-parameter
           constraints composing other cross-parameter constraints</para>
         </listitem>
       </itemizedlist></para>
+
+    <para revisionflag="added" role="tck-testable">A constraint annotation
+    that is both can target the union of the generic and cross-parameter
+    constraint annotations targets.</para>
 
     <para>While other <classname>ElementType</classname>s are not forbidden,
     the provider does not have to recognize and process constraints placed on
@@ -160,6 +166,9 @@ public @interface CrossParameterConstraint {
     <classname>ConstraintValidator</classname> list leads to
     ambiguities.</para>
 
+    <para revisionflag="added">Likewise, the JavaDoc should clearly state if
+    the constraint is a generic and / or a cross-parameter constraint.</para>
+
     <para><phrase role="tck-testable">If a constraint definition is not valid,
     a <classname>ConstraintDefinitionException</classname> is raised either at
     validation time or when the metadata is requested.</phrase> Invalid
@@ -175,10 +184,12 @@ public @interface CrossParameterConstraint {
       attributes that are specified at the time the constraint is applied to a
       JavaBean.</phrase> The properties are mapped as annotation elements. The
       annotation element names <literal>message</literal>,
-      <literal>groups</literal> and <literal>payload</literal> are considered
-      reserved names; <phrase role="tck-testable">annotation elements starting
-      with <literal>valid</literal> are not allowed</phrase>; a constraint may
-      use any other element name for its attributes.</para>
+      <literal>groups</literal>, <literal
+      revisionflag="added">validationAppliesTo</literal> and
+      <literal>payload</literal> are considered reserved names; <phrase
+      role="tck-testable">annotation elements starting with
+      <literal>valid</literal> are not allowed</phrase>; a constraint may use
+      any other element name for its attributes.</para>
 
       <section id="constraintsdefinitionimplementation-constraintdefinition-parameters-message">
         <title>message</title>
@@ -297,6 +308,107 @@ public class Address {
         linkend="constraintmetadata-constraintdescriptor"/>).</para>
       </section>
 
+      <section id="constraintsdefinitionimplementation-constraintdefinition-validationappliesto"
+               revisionflag="added">
+        <title>validationAppliesTo</title>
+
+        <para><literal>validationAppliesTo</literal> is used at constraint
+        declaration time to clarify what the constraint targets (ie. the
+        annotated element, the method return value or the method
+        parameters).</para>
+
+        <para><phrase revision="tck-testable">The element
+        <literal>validationAppliesTo</literal> must only be present for
+        constraints that are both generic and cross-parameter, it is mandatory
+        in this situation. A
+        <classname>ConstraintDefinitionException</classname> is raised if
+        these rules are violated.</phrase></para>
+
+        <example>
+          <title>validationAppliesTo and ConstraintTarget</title>
+
+          <programlisting>    ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;</programlisting>
+
+          <programlisting>/**
+ * Defines the constraint target
+ *
+ * @since 1.1
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ */
+public enum ConstraintTarget {
+    /**
+     * Discover the type when no ambiguity is present
+     * &lt;ul&gt;
+     *     &lt;li&gt;if neither on a method nor a constructor, it implies the annotated element (type, field etc).&lt;/li&gt;
+     *     &lt;li&gt;if on a method or constructor with no parameter, it implies {@code RETURN_VALUE}&lt;/li&gt;
+     *     &lt;li&gt;if on a method with no return value ({@code void}), it implies {@code PARAMETERS}&lt;/li&gt;
+     * &lt;/ul&gt;
+     * Otherwise, {@code IMPLICIT} is not accepted and either {@code RETURN_VALUE} or
+     * {@code PARAMETERS} is required. This is the case for constructors with parameters
+     * and methods with parameters and return value.
+     */
+    IMPLICIT,
+
+    /**
+     * Constraint applies to the return value of a method or a constructor.
+     */
+    RETURN_VALUE,
+
+    /**
+     * Constraint applies to the parameters of a method or a constructor
+     */
+    PARAMETERS
+}</programlisting>
+        </example>
+
+        <para><phrase role="tck-testable">If a
+        <classname>ConstraintTarget</classname> is used in an illegal
+        situation, a <classname>ConstraintDeclarationException</classname> is
+        raised either at validation time or when the metadata is
+        requested.</phrase> Examples of illegal situations are:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para role="tck-testable">using <literal>IMPLICIT</literal> in a
+            situation that cannot be inferred (see the JavaDoc for the
+            detailed rules),</para>
+          </listitem>
+
+          <listitem role="tck-testable">
+            <para>using <literal>PARAMETERS</literal> on a constructor or
+            method that has no parameter,</para>
+          </listitem>
+
+          <listitem role="tck-testable">
+            <para>using <literal>RETURN_VALUE</literal> on a method with no
+            return value,</para>
+          </listitem>
+
+          <listitem role="tck-testable">
+            <para>using <literal>PARAMETERS</literal> or
+            <literal>RETURN_VALUE</literal> on a type - class or interface -
+            or on a field.</para>
+          </listitem>
+        </itemizedlist>
+
+        <note>
+          <title>Question</title>
+
+          <para>An alternative model would be to have
+          <classname>ConstraintTarget</classname> support
+          <literal>IMPLICIT</literal>, <literal>ANNOTATED_ELEMENT</literal>
+          and <literal>PARAMETERS</literal>. In this model,
+          <literal>ANNOTATED_ELEMENT</literal> can be used in all "natural
+          places" like types and fields and is synonym to
+          <literal>RETURN_VALUE</literal> for methods and constructors.</para>
+        </note>
+
+        <para>Constraint users are encouraged to set the explicit
+        <classname>ConstraintTarget</classname> target when using a constraint
+        supporting both on a method or constructor as it would improve
+        readability.</para>
+      </section>
+
       <section>
         <title>Constraint specific parameter</title>
 
@@ -345,7 +457,7 @@ public @interface OrderNumber {
  */
 @Documented
 @CrossParameterConstraint(validatedBy = DateParametersConsistentValidator.class)
-@Target({ METHOD, ANNOTATION_TYPE })
+@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 public @interface DateParametersConsistent {
     String message() default "{com.acme.constraint.DateParametersConsistent.message}";
@@ -359,6 +471,41 @@ public @interface DateParametersConsistent {
       constraint which ensures that two date parameters of a method are in the
       correct order. The constraint validator is implemented by
       <classname>DateParametersConsistentValidator</classname>.</para>
+
+      <example id="example-definition-genericandcrossparameter"
+               revisionflag="added">
+        <title>Constraint that is both generic and cross parameter</title>
+
+        <programlisting>package com.acme.constraint;
+
+/**
+ * EL expression to be validated.
+ * This constraint accepts any type and can validate both the
+ * annotated type or apply restrictions across parameters.
+ */
+@Documented
+@Constraint(validatedBy=ELAssertValidator.class)
+@CrossParameterConstraint(validatedBy=ELAssertValidator.class)
+@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE, FIELD })
+@Retention(RUNTIME)
+public @interface ELAssert {
+    String message() default "{com.acme.constraint.DateParametersConsistent.message}";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default {};
+    ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
+
+    String expression;
+}</programlisting>
+
+        <programlisting>@ELAssert(expression="param[1]==param[2]", validationAppliesTo=ConstraintType.PARAMETERS)
+public User createUser(String email, String password, String repreatPassword) { ... }</programlisting>
+      </example>
+
+      <para revisionflag="added"><xref
+      linkend="example-definition-genericandcrossparameter"/> shows a
+      constraint that can be applied both on the annotated element and across
+      parameters of a method or a constructor. Note in this case the presence
+      of <methodname>validationAppliesTo</methodname>.</para>
 
       <example id="example-definition-length">
         <title>Constraint definition with default parameter</title>
@@ -431,7 +578,7 @@ public @interface Acceptable {
 @Documented
 @Constraint(validatedBy = DateParametersConsistentValidator.class)
 @CrossParameterConstraint(validatedBy = AnotherDateParametersConsistentValidator.class)
-@Target({ METHOD, ANNOTATION_TYPE })
+@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 public @interface DateParametersConsistent {
     String message() default "{com.acme.constraint.DateParametersConsistent.message}";
@@ -592,10 +739,16 @@ public @interface FrenchZipcode {
     report.</phrase> <phrase role="tck-testable">Groups from the main
     constraint annotation are inherited by the composing annotations.</phrase>
     <phrase role="tck-testable">Any <methodname>groups</methodname> definition
-    on a composing annotation is ignored.</phrase> Likewise, payload from the
-    main constraint annotation is inherited by the composing annotations.
-    <phrase role="tck-testable">Any <methodname>payload</methodname>
-    definition on a composing annotation is ignored.</phrase></para>
+    on a composing annotation is ignored. </phrase><phrase
+    role="tck-testable">Payload from the main constraint annotation is
+    inherited by the composing annotations.</phrase> <phrase
+    role="tck-testable">Any <methodname>payload</methodname> definition on a
+    composing annotation is ignored. </phrase><phrase revisionflag="added"
+    role="tck-testable">the constraint target from the main constraint
+    annotation is inherited by the composing annotations.</phrase><phrase
+    revisionflag="added" role="tck-testable"> Any
+    <methodname>validationAppliesTo</methodname> definition on a composing
+    annotation is ignored.</phrase></para>
 
     <para><phrase role="tck-testable">The <phrase
     revisionflag="deleted">property</phrase> type upon which composed
@@ -604,9 +757,9 @@ public @interface FrenchZipcode {
     type exists and list in the JavaDoc all the compatible types.</para>
 
     <para revisionflag="added">Both composed and composing constraints should
-    share the same constraint type. Either all of generic constraints
-    (<classname>@Constraint</classname>) or all of cross parameter constraints
-    (<classname>@CrossParameterConstraint</classname>).</para>
+    share the same constraint type. In particular, it is not legal to mix a
+    pure generic <classname>@Constraint</classname> and a pure cross-parameter
+    <classname>@CrossParameterConstraint</classname>.</para>
 
     <para>It is possible to ensure that composing annotations do not raise
     individual error reports. In this scenario, if one or more composing
