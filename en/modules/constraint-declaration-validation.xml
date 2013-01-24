@@ -1821,9 +1821,9 @@ public class SimpleOrderService extends OrderService {
 
       <para role="tck-testable">By default, method validation is applied to
       all constrained methods or constructors provided the integration
-      technology can intercept the call. Getters (as defined in <xref
-      linkend="constraintdeclarationvalidationprocess-requirements"/>) are not
-      considered constrained methods by default.</para>
+      technology can intercept the call. By default, Getters (as defined in
+      <xref linkend="constraintdeclarationvalidationprocess-requirements"/>)
+      are not considered constrained methods.</para>
 
       <para>Bean Validation offers a way to customize whether or not a
       constructor, method or getter is validated when executed. This is
@@ -1840,10 +1840,6 @@ public class SimpleOrderService extends OrderService {
           in XML and programmatically -TBD.</para>
         </listitem>
       </itemizedlist>
-
-      <para role="tck-testable">If no global setting is set, the default is to
-      not consider getters as constrained methods and not validate
-      them.</para>
 
       <para>More formally, a given executable (constructor or method) is
       validated upon execution:</para>
@@ -1882,8 +1878,8 @@ public class SimpleOrderService extends OrderService {
       </itemizedlist>
 
       <note>
-        <para>The last rule is present are here to enforce the Liskov
-        substitution principle (more info at <xref
+        <para>The last rule is present to enforce the Liskov substitution
+        principle (more info at <xref
         linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance"/>).
         In addition providers may implement alternative, potentially more
         liberal, approaches for handling configuration in inheritance
@@ -1925,11 +1921,11 @@ public class SimpleOrderService extends OrderService {
 
         <listitem>
           <para role="tck-testable"><literal>ALL</literal>: parameters and
-          return values are validated for all methods (getters, non getters
-          and constructors). This option is equivalent to a list of all
-          executable types and is present to improve readability. A list
+          return values are validated for all executables (getters, non
+          getters and constructors). This option is equivalent to a list of
+          all executable types and is present to improve readability. A list
           containing <literal>ALL</literal> and other types of executables is
-          equivalent to a list containing <literal>ALL</literal>.</para>
+          equivalent to a list containing only <literal>ALL</literal>.</para>
         </listitem>
       </itemizedlist>
 
@@ -1948,11 +1944,11 @@ public class SimpleOrderService extends OrderService {
         <title>@ValidateExecutable annotation</title>
 
         <programlisting>/**
- * Expresses which executable should have its parameters and return value validated upon
- * execution.
+ * Expresses which executable (method or constructor) should have its parameters
+ * and return value validated upon execution.
  * 
- * The settings for a given executable (method, constructor) is resolved as followed.
- * A given executable (method or constructor) is validated upon execution:
+ * The settings for a given executable is resolved as followed.
+ * A given executable is validated upon execution:
  * &lt;ul&gt;
  *     &lt;li&gt;if it is annotated with {@code @ValidateExecutable} and the {@code type} attribute
  *     contains the executable type. If the {@code type} attribute does not contain the
@@ -1969,10 +1965,6 @@ public class SimpleOrderService extends OrderService {
  *     implementing an interface method. In this case, the method inherits the behavior
  *     of the method it overrides / implements&lt;/li&gt;
  * &lt;/ul&gt;
- *
- * These rules do not apply to methods overriding a superclass method or implementing
- * an interface method. In this case, the method inherits the behavior of the method it
- * overrides / implements.
  *
  * @since 1.1
  * @author Emmanuel Bernard
@@ -2063,7 +2055,7 @@ public class SimpleOrderService extends OrderService {
     public SimpleOrderService(@NotNull ServiceProvider provider) { ... }
 
     @Overrides
-    Order placeOrder(@NotNull String customerCode, @Valid Item item, int quantity) { ... }
+    Order placeOrder(String customerCode, Item item, int quantity) { ... }
 
 }
 
@@ -2074,7 +2066,7 @@ public class ComplexOrderService extends SimpleOrderService {
 
         <para>All constructors and non-getter methods of
         <classname>OrderService</classname> are validated upon execution as
-        this is the default settings. <methodname>isValidCustomer</methodname>
+        this is the default setting. <methodname>isValidCustomer</methodname>
         is validated as this method is not a getter (it has a parameter).
         <methodname>getBacklog</methodname> is a getter but is validated
         thanks to <classname>@ValidateExecutable</classname> containing
