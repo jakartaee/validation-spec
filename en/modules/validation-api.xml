@@ -1692,29 +1692,44 @@ assert false == nodeIter.hasNext();</programlisting>
   <section id="validationapi-message">
     <title>Message interpolation</title>
 
-    <para>A message interpolator is responsible for transforming the message
-    string from the constraint into a human readable error message.</para>
+    <para>A message interpolator is responsible for transforming the so called
+    message descriptor specified via the message attribute of the constraint
+    into a fully expanded, human-readable error message.</para>
 
-    <section id="default-messageresolver">
+    <section id="default-messageresolver" revisionflag="changed">
       <title>Default message interpolation</title>
 
-      <para><phrase role="tck-testable">A conforming implementation includes a
-      default message interpolator.</phrase> This message interpolator shall
-      use the algorithm defined here to interpolate message descriptors into
-      human-readable messages.</para>
+      <para><phrase role="tck-testable">Every conforming Bean Validation
+      implementation includes a default message interpolator which has to
+      comply with </phrase>the algorithm defined here to interpolate message
+      descriptors. As precondition for message interpolation the following
+      applies:</para>
 
-      <para><phrase role="tck-testable">Each constraint defines a message
-      descriptor via its <methodname>message</methodname> property.</phrase>
-      <phrase role="tck-testable">Every constraint definition shall define a
-      default message descriptor for that constraint.</phrase> <phrase
-      role="tck-testable">Messages can be overridden at declaration time in
-      constraints by setting the <methodname>message</methodname> property on
-      the constraint.</phrase></para>
+      <itemizedlist>
+        <listitem>
+          <phrase role="tck-testable">Each constraint defines a message
+          descriptor via its <methodname>message</methodname>
+          property.</phrase>
+        </listitem>
+
+        <listitem>
+          <phrase role="tck-testable">Every constraint definition shall define
+          a default message descriptor for that constraint.</phrase>
+        </listitem>
+
+        <listitem>
+          <phrase role="tck-testable">Messages can be overridden at constraint
+          declaration time by setting the <methodname>message</methodname>
+          property on the constraint.</phrase>
+        </listitem>
+      </itemizedlist>
 
       <para><phrase role="tck-testable">The message descriptor is a string
-      literal and may contain one or more message parameters. Message
-      parameters are string literals enclosed in braces.</phrase> The
-      following character escaping apply:</para>
+      literal and may contain one or more message parameters or expressions.
+      Message parameters and expressions are string literals enclosed in
+      <constant>{}</constant> or <constant>${}</constant>
+      respectively.</phrase> The following character escaping rules
+      apply:</para>
 
       <itemizedlist>
         <listitem>
@@ -1734,12 +1749,28 @@ assert false == nodeIter.hasNext();</programlisting>
           literal <literal>\</literal> instead of being considered as the
           escaping character</para>
         </listitem>
+
+        <listitem>
+          <para role="tck-testable"><code>\$</code> is considered as the
+          literal <literal>$</literal> instead of being considered as the
+          beginning of a message expression</para>
+        </listitem>
       </itemizedlist>
+
+      <para>Below are two examples using message parameters and expressions.
+      The second is evaluated using Expression Language as defined in <xref
+      linkend="message-expressions"/>.</para>
 
       <example>
         <title>Message using parameters</title>
 
         <programlisting>Value must be between {min} and {max}</programlisting>
+      </example>
+
+      <example>
+        <title>Message using expressions</title>
+
+        <programlisting>Must be greater than ${inclusive == true ? 'or equal to ' : ''}{value}</programlisting>
       </example>
 
       <section id="default-resolution-algorithm">
@@ -1756,9 +1787,10 @@ assert false == nodeIter.hasNext();</programlisting>
             <literal>ValidationMessages</literal></phrase> (often materialized
             as the property file
             <filename>/ValidationMessages.properties</filename> and its locale
-            variations) using the defined locale (see below). If a property is
-            found, the message parameter is replaced with the property value
-            in the message string. <phrase role="tck-testable">Step 1 is
+            variations) using the defined locale (see <xref
+            linkend="message-interpolation-default-locale"/>). If a property
+            is found, the message parameter is replaced with the property
+            value in the message string. <phrase role="tck-testable">Step 1 is
             applied recursively until no replacement is performed</phrase>
             (i.e. a message parameter value can itself contain a message
             parameter).</para>
@@ -1769,9 +1801,10 @@ assert false == nodeIter.hasNext();</programlisting>
             from the message string and used as keys to search the Bean
             Validation provider's built-in
             <classname>ResourceBundle</classname> using the defined locale
-            (see below). If a property is found, the message parameter is
-            replaced with the property value in the message string.</phrase>
-            <phrase role="tck-not-testable">Contrary to step 1, step 2 is not
+            (see <xref linkend="message-interpolation-default-locale"/>). If a
+            property is found, the message parameter is replaced with the
+            property value in the message string.</phrase> <phrase
+            role="tck-not-testable">Contrary to step 1, step 2 is not
             processed recursively.</phrase></para>
           </listitem>
 
@@ -1785,31 +1818,95 @@ assert false == nodeIter.hasNext();</programlisting>
             <para role="tck-testable">Message parameters are extracted from
             the message string. Those matching the name of an attribute of the
             constraint are replaced by the value of that attribute in the
-            constraint declaration.</para>
+            constraint declaration. Parameter interpolation has precedence
+            over message expressions. For example for the message descriptor
+            <constant>${value}</constant>, trying to evaluate
+            <constant>{value}</constant> as message parameter has precedence
+            over evaluating <constant>${value} </constant>as message
+            expression.</para>
+          </listitem>
+
+          <listitem>
+            <para role="tck-testable">Message expressions are extracted from
+            the message string and evaluated using Expression Language. See
+            also <xref linkend="message-expressions"/>.</para>
           </listitem>
         </orderedlist>
 
-        <para>The defined locale is as followed:</para>
+        <note>
+          <para>The proposed algorithm ensures that custom resource bundle
+          always have priority over built-in resource bundle at all level of
+          the recursive resolution. It also ensures that constraint
+          declarations attributes values are not interpolated further.</para>
+        </note>
 
-        <itemizedlist>
-          <listitem>
-            <para role="tck-testable">if the locale is passed to the
-            interpolator method i<methodname>nterpolate(String, Context,
-            Locale)</methodname>, this <classname>Locale</classname> instance
-            is used.</para>
-          </listitem>
+        <note>
+          <para>The precedence of message parameter over expression
+          interpolation ensures backwards compatibility to Bean Validation
+          1.0.</para>
+        </note>
+      </section>
 
-          <listitem>
-            <para role="tck-testable">otherwise, the default
-            <classname>Locale</classname> as provided by
-            <methodname>Locale.getDefault()</methodname> is used.</para>
-          </listitem>
-        </itemizedlist>
+      <section id="message-interpolation-default-locale">
+        <title>Locale for default message interpolation</title>
 
-        <para>The proposed algorithm ensures that custom resource bundle
-        always have priority over built-in resource bundle at all level of the
-        recursive resolution. It also ensures that constraint declarations
-        attributes values are not interpolated further.</para>
+        <para>The locale to be used for message interpolation is defined as
+        following:<itemizedlist>
+            <listitem>
+              <para role="tck-testable">if the locale is passed explicitly to
+              the interpolator method via <methodname>interpolate(String,
+              Context, Locale)</methodname>, this provided instance is
+              used.</para>
+            </listitem>
+
+            <listitem>
+              <para role="tck-testable">otherwise, the default
+              <classname>Locale</classname> as provided by
+              <methodname>Locale.getDefault()</methodname> is used.</para>
+            </listitem>
+          </itemizedlist></para>
+      </section>
+
+      <section>
+        <title id="message-expressions">Message expressions using Expression
+        Language (EL)</title>
+
+        <para><phrase role="tck-testable">The default message interpolation
+        allows the use of Expression Language (EL) as defined as </phrase>in
+        JSR 341. <phrase role="tck-testable">Expressions to be evaluated by EL
+        need to be enclosed in <constant>${}</constant> within the message
+        descriptor</phrase>. The following properties and beans have to be
+        made available in the EL context:</para>
+
+        <para><itemizedlist>
+            <listitem>
+              <para role="tck-testable">the attribute values of the constraint
+              declaration mapped to their attribute name</para>
+            </listitem>
+
+            <listitem>
+              <para role="tck-testable">the validated value mapped under the
+              name <constant>validatedValue</constant>.</para>
+            </listitem>
+
+            <listitem>
+              <para role="tck-testable">a bean mapped to the name
+              <constant>formatter</constant> exposing the vararg method
+              <methodname>format(String format, Object... args)</methodname>.
+              This method must behave like
+              <methodname>java.util.Formatter#format(String format, Object...
+              args)</methodname>. The locale used for formatting is defined by
+              <xref linkend="message-interpolation-default-locale"/>. The
+              <constant>formatter</constant> bean allows to format property
+              values, for example in the case of the validated value being
+              98.12345678, <constant>${formatter.format("%1$2f",
+              validatedValue}</constant> would format it to 98.12 (two digits
+              after the decimal point, where the use of '.' vs ',' would be
+              locale specific).</para>
+            </listitem>
+          </itemizedlist>If an exception occurs during message interpolation,
+        e.g. due invalid expressions or references to an unknown property, the
+        message expression stays unchanged.</para>
       </section>
     </section>
 
