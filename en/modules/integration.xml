@@ -8,84 +8,108 @@
   <title>Integration</title>
 
   <para revisionflag="added">In this chapter, integration points between Bean
-  Validation and other technologies are discussed. Generally speaking,
-  containers and frameworks controlling the life cycle of objects (such as
-  Java EE, dependency injection frameworks or component frameworks)
-  should:</para>
+  Validation and other technologies are discussed. We first address the
+  integration in generic terms applying to all integrations and we then detail
+  how integration with various Java EE specifications is handled more
+  specifically.</para>
 
-  <itemizedlist revisionflag="added">
-    <listitem>
-      <para>build and bootstrap the <classname>ValidatorFactory</classname>
-      instance for an application.</para>
-    </listitem>
+  <section id="integration-general">
+    <title>General requirements</title>
 
-    <listitem>
-      <para>provide access to the <classname>ValidatorFactory</classname>
-      instance as well as <classname>Validator</classname> instances in their
-      default configuration using the paradigm of the container: for example,
-      such instances would be injectable in other objects via a dependency
-      injection framework.</para>
-    </listitem>
+    <para>This section covers general requirements that should be followed by
+    any container and interception technology integrating Bean
+    Validation.</para>
 
-    <listitem>
-      <para>configure <classname>ValidatorFactory</classname> with a custom
-      <classname>ConstraintValidatorFactory</classname> instance that returns
-      managed <classname>ConstraintValidator</classname> instances, unless a
-      custom <classname>ConstraintValidatorFactory</classname> is requested by
-      the user. The scope of <classname>ConstraintValidator</classname>
-      instances is still fully controlled by the Bean Validation provider as
-      described in <xref
-      linkend="constraintsdefinitionimplementation-constraintfactory"/>, but
-      as managed beans they can receive expected services like injection of
-      other objects.</para>
-    </listitem>
+    <section>
+      <title>Objects lifecycle</title>
 
-    <listitem>
-      <para>configure <classname>ValidatorFactory</classname> with managed
-      instances of <classname>ConstraintValidatorFactory</classname>,
-      <classname>MessageInterpolator</classname>,
-      <classname>ParameterNameProvider</classname> and
-      <classname>TraversableResolver</classname>, if such instances are
-      defined in the XML deployment descriptor. Services provided by the
-      container (like dependency injection) should thus be available to these
-      instances.</para>
-    </listitem>
+      <para revisionflag="added">Generally speaking, containers and frameworks
+      controlling the life cycle of objects (such as Java EE, dependency
+      injection frameworks or component frameworks) should:</para>
 
-    <listitem>
-      <para>invoke <methodname>ValidatorFactory.close()</methodname> when the
-      <classname>ValidatorFactory</classname> instance is no longer
-      needed.</para>
-    </listitem>
+      <itemizedlist revisionflag="added">
+        <listitem>
+          <para>build and bootstrap the
+          <classname>ValidatorFactory</classname> instance for an
+          application.</para>
+        </listitem>
 
-    <listitem>
-      <para>dispose of managed instances provided to the Bean Validation
-      bootstrap process after
-      <methodname>ValidatorFactory.close()</methodname> has been
-      invoked.</para>
-    </listitem>
-  </itemizedlist>
+        <listitem>
+          <para>provide access to the <classname>ValidatorFactory</classname>
+          instance as well as <classname>Validator</classname> instances in
+          their default configuration using the paradigm of the container: for
+          example, such instances would be injectable in other objects via a
+          dependency injection framework.</para>
+        </listitem>
 
-  <para><important>
-      <para>In this context, a default <classname>ValidatorFactory</classname>
-      is a factory configured like the factory returned by
-      <classname>Validation.buildDefaultValidatorFactory</classname> (see also
-      <xref linkend="boostrapping-validation"/>) except for the enhancements
-      described above. A default <classname>Validator</classname> instance is
-      a <classname>Validator</classname> instance retrieved via
-      <methodname>getValidator</methodname> from the default
-      <classname>ValidatorFactory</classname>.</para>
-    </important></para>
+        <listitem>
+          <para>configure <classname>ValidatorFactory</classname> with a
+          custom <classname>ConstraintValidatorFactory</classname> instance
+          that returns managed <classname>ConstraintValidator</classname>
+          instances, unless a custom
+          <classname>ConstraintValidatorFactory</classname> is requested by
+          the user. The scope of <classname>ConstraintValidator</classname>
+          instances is still fully controlled by the Bean Validation provider
+          as described in <xref
+          linkend="constraintsdefinitionimplementation-constraintfactory"/>,
+          but as managed beans they can receive expected services like
+          injection of other objects.</para>
+        </listitem>
 
-  <para revisionflag="added">A user is free to explicitly use the bootstrap
-  API to customize the <classname>ValidatorFactory</classname> as
-  needed.</para>
+        <listitem>
+          <para>configure <classname>ValidatorFactory</classname> with managed
+          instances of <classname>ConstraintValidatorFactory</classname>,
+          <classname>MessageInterpolator</classname>,
+          <classname>ParameterNameProvider</classname> and
+          <classname>TraversableResolver</classname>, if such instances are
+          defined in the XML deployment descriptor. Services provided by the
+          container (like dependency injection) should thus be available to
+          these instances.</para>
+        </listitem>
 
-  <para revisionflag="added">Method interception frameworks (such as AOP or
-  interceptor frameworks) should also enable interception of constrained
-  methods following the steps defined in <xref
-  linkend="validationapi-triggeringmethodvalidation"/>. Method validation
-  should be implicit for any method or constructor annotated with
-  constraints.</para>
+        <listitem>
+          <para>invoke <methodname>ValidatorFactory.close()</methodname> when
+          the <classname>ValidatorFactory</classname> instance is no longer
+          needed.</para>
+        </listitem>
+
+        <listitem>
+          <para>dispose of managed instances provided to the Bean Validation
+          bootstrap process after
+          <methodname>ValidatorFactory.close()</methodname> has been
+          invoked.</para>
+        </listitem>
+      </itemizedlist>
+
+      <important>
+        <para>In this context, a default
+        <classname>ValidatorFactory</classname> is a factory configured like
+        the factory returned by
+        <classname>Validation.buildDefaultValidatorFactory</classname> (see
+        also <xref linkend="boostrapping-validation"/>) except for the
+        enhancements described above. A default
+        <classname>Validator</classname> instance is a
+        <classname>Validator</classname> instance retrieved via
+        <methodname>getValidator</methodname> from the default
+        <classname>ValidatorFactory</classname>.</para>
+      </important>
+
+      <para revisionflag="added">A user is free to explicitly use the
+      bootstrap API to customize the <classname>ValidatorFactory</classname>
+      as needed.</para>
+    </section>
+
+    <section id="integration-general-executable">
+      <title>Method and constructor validation</title>
+
+      <para revisionflag="added">Method interception frameworks (such as AOP
+      or interceptor frameworks) should also enable interception of
+      constrained methods following the steps defined in <xref
+      linkend="validationapi-triggeringmethodvalidation"/>. Method validation
+      should be implicit for any method or constructor annotated with
+      constraints.</para>
+    </section>
+  </section>
 
   <section id="integration-javaee" revisionflag="added">
     <title>Java EE</title>
