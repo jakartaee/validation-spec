@@ -3126,6 +3126,13 @@ Validator validatorUsingCustomTraversable = factory
       information at <xref
       linkend="bootstrapping-usageandcontainerexpectation"/>).</para>
 
+      <note>
+        <para><methodname>BootstrapConfiguration.getValidatedExecutableTypes()</methodname>
+        is not used by the Bean Validation engine but exposed here for
+        interception technologies - see <xref
+        linkend="integration-general-executable"/>.</para>
+      </note>
+
       <para revisionflag="added"><phrase role="tck-testable">Using
       <methodname>addMapping()</methodname>, additional constraint mapping XML
       descriptors can be added to the configuration</phrase> (see <xref
@@ -3372,6 +3379,7 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * @return Returns an instance of {@code BootstrapConfiguration}. This method returns never {@code null}. If there
      *         is no &lt;i&gt;META-INF/validation.xml&lt;/i&gt; the different getters of the returned instance will return {@code null} respective
      *         the empty set or map.
+     * @since 1.1
      */
     BootstrapConfiguration getBootstrapConfiguration();
 
@@ -3393,6 +3401,8 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
  * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
  * @author Gunnar Morling
  * @author Hardy Ferentschik
+ *
+ * @since 1.1
  */
 public interface BootstrapConfiguration {
     /**
@@ -3401,7 +3411,7 @@ public interface BootstrapConfiguration {
      *
      * @return validation provider class name
      */
-    public String getDefaultProviderClassName();
+    String getDefaultProviderClassName();
 
     /**
      * Class name of the {@code ConstraintValidatorFactory} implementation
@@ -3409,7 +3419,7 @@ public interface BootstrapConfiguration {
      *
      * @return constraint validator factory class name
      */
-    public String getConstraintValidatorFactoryClassName();
+    String getConstraintValidatorFactoryClassName();
 
     /**
      * Class name of the {@code MessageInterpolator} implementation
@@ -3417,7 +3427,7 @@ public interface BootstrapConfiguration {
      *
      * @return message interpolator class name or {@code null}
      */
-    public String getMessageInterpolatorClassName();
+    String getMessageInterpolatorClassName();
 
     /**
      * Class name of the {@code TraversableResolver} implementation
@@ -3425,7 +3435,7 @@ public interface BootstrapConfiguration {
      *
      * @return traversable resolver class name or {@code null}
      */
-    public String getTraversableResolverClassName();
+    String getTraversableResolverClassName();
 
     /**
      * Class name of the {@code ParameterNameProvider} implementation
@@ -3433,7 +3443,7 @@ public interface BootstrapConfiguration {
      *
      * @return parameter name provider class name or {@code null}
      */
-    public String getParameterNameProviderClassName();
+    String getParameterNameProviderClassName();
 
     /**
      * Returns a set of resource paths pointing to XML constraint mapping files.
@@ -3441,7 +3451,18 @@ public interface BootstrapConfiguration {
      *
      * @return set of constraint mapping resource paths
      */
-    public Set&lt;String&gt; getConstraintMappingResourcePaths();
+    Set&lt;String&gt; getConstraintMappingResourcePaths();
+
+    /**
+     * Return the set of executable types that should be considered
+     * unless explicitly overridden via {@code javax.validation.ValidateExecutable}
+     *
+     * Return a set containing {@code CONSTRUCTORS} and {@code NON_GETTER_METHODS}
+     * if unspecified in the configuration.
+     *
+     * @return set of validated executable types
+     */
+    Set&lt;ExecutableType&gt; getValidatedExecutableTypes();
 
     /**
      * Returns properties as a map of string based key/value pairs.
@@ -3449,7 +3470,7 @@ public interface BootstrapConfiguration {
      *
      * @return the properties map
      */
-    public Map&lt;String, String&gt; getProperties();
+    Map&lt;String, String&gt; getProperties();
 }
 </programlisting>
       </example>
