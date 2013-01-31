@@ -111,13 +111,13 @@
 
       <para role="tck-testable">By default, method validation is applied to
       all constrained methods or constructors provided the integration
-      technology can intercept the call. By default, Getters (as defined in
+      technology can intercept the call. By default, getters (as defined in
       <xref linkend="constraintdeclarationvalidationprocess-requirements"/>)
       are not considered constrained methods.</para>
 
-      <para>Bean Validation offers a way to customize whether or not a
-      constructor, method or getter is validated when executed. This is
-      achieved:</para>
+      <para>Bean Validation - via the interception technology - offers a way
+      to customize whether or not a constructor, method or getter is validated
+      when executed. This is achieved:</para>
 
       <itemizedlist>
         <listitem>
@@ -126,10 +126,21 @@
         </listitem>
 
         <listitem>
-          <para>via a global executable validation setting configurable both
-          in XML and programmatically -TBD.</para>
+          <para>via a global configuration defined in
+          <filename>validation.xml</filename>:
+          <literal>validated-executables</literal>. See <xref
+          linkend="xml-config"/> for more details.</para>
         </listitem>
       </itemizedlist>
+
+      <note>
+        <para>Integration layers can read the list of validated executable
+        types defined in the global configuration via the
+        <classname>Configuration</classname> object:
+        <code>configuration.getBootstrapConfiguration().getValidatedExecutableTypes()</code>.
+        This list is extracted from
+        <filename>validation.xml</filename>.</para>
+      </note>
 
       <para>More formally, a given executable (constructor or method) is
       validated upon execution:</para>
@@ -153,8 +164,8 @@
         </listitem>
 
         <listitem>
-          <para role="tck-testable">otherwise if the global executable
-          validation setting contains the executable type. If the global
+          <para role="tck-testable">otherwise if the global configuration of
+          validated executables contains the executable type. If the global
           setting does not contain the executable type, the executable is not
           validated.</para>
         </listitem>
@@ -218,17 +229,6 @@
           equivalent to a list containing only <literal>ALL</literal>.</para>
         </listitem>
       </itemizedlist>
-
-      <note>
-        <title>Question</title>
-
-        <para>Should we remove <literal>GETTER_METHODS</literal> ? I don't see
-        a use case but it offers completeness to the list.</para>
-
-        <para>Should we rename <literal>NON_GETTER_METHODS</literal> to
-        <literal>NON_GETTERS</literal>? The problem I see is that non-getters
-        encompasses constructors.</para>
-      </note>
 
       <example id="example-validateexecutable" lang="JAVA" role="JAVA">
         <title>@ValidateExecutable annotation</title>
@@ -315,6 +315,15 @@ public enum ExecutableType {
     ALL
 }</programlisting>
       </example>
+
+      <note>
+        <para>The proper selection of the validated executable is the
+        responsibility of the integration between the interception technology
+        and Bean Validation. Bean Validation engines ignore the
+        <literal>validated-executables</literal> and
+        <classname>@ValidatedExecutable</classname> when validating
+        executables and when providing metadata.</para>
+      </note>
 
       <section>
         <title>Examples</title>
