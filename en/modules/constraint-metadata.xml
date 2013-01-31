@@ -570,6 +570,101 @@ public interface BeanDescriptor extends ElementDescriptor {
     return value.</para>
   </section>
 
+  <section revisionflag="added">
+    <title>CascadableDescriptor</title>
+
+    <para>The <classname>CascadableDescriptor</classname> interface describes
+    a cascadable element, i.e. an element which can be marked with
+    <classname>@Valid</classname> in order to perform a cascaded validation of
+    the element as described in <xref
+    linkend="constraintdeclarationvalidationprocess-requirements-graphvalidation"/>.
+    </para>
+
+    <programlisting>package javax.validation.metadata;
+
+/**
+ * Represents a cascadable element.
+ *
+ * @author Gunnar Morling
+ * @since 1.1
+ */
+public interface CascadableDescriptor {
+
+    /**
+     * Whether a cascaded validation of this element shall be performed or
+     * not.
+     *
+     * @return {@code true}, if this element shall be validated
+     *         recursively, {@code false} otherwise.
+     */
+    boolean isCascaded();
+
+    /**
+     * Returns the group conversions configured for this element.
+     *
+     * @return A set containing this element's group conversions. An empty set
+     *         may be returned if no conversions are configured but never
+     *         {@code null}.
+     */
+    Set&lt;GroupConversionDescriptor&gt; getGroupConversions();
+}</programlisting>
+
+    <para role="tck-testable">The <methodname>isCascaded</methodname> method
+    returns <literal>true</literal> if the element is marked with
+    <classname>@Valid</classname>.</para>
+
+    <para role="tck-testable"><phrase role="tck-testable">The method
+    <methodname>getGroupConversions</methodname> returns a set with the group
+    conversions declared for the cascadable element.</phrase> <phrase
+    role="tck-testable">An empty set will be returned if no group conversions
+    are configured.</phrase></para>
+  </section>
+
+  <section revisionflag="added">
+    <title>GroupConversionDescriptor</title>
+
+    <para>The <classname>GroupConversionDescriptor</classname> interface
+    describes a group conversion rule configured for a cascadable element as
+    described in <xref
+    linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>.
+    It is returned by
+    <methodname>CascadableDescriptor.getGroupConversions</methodname>.</para>
+
+    <programlisting>package javax.validation.metadata;
+
+/**
+ * A group conversion rule to be applied during cascaded validation. Two group
+ * conversion descriptors are considered equal if they have the same source and
+ * target group.
+ *
+ * @author Gunnar Morling
+ * @see ConvertGroup
+ * @since 1.1
+ */
+public interface GroupConversionDescriptor {
+
+    /**
+     * Returns the source group of this conversion rule.
+     *
+     * @return The source group of this conversion rule.
+     */
+    Class&lt;?&gt; getFrom();
+
+    /**
+     * Returns the target group of this conversion rule.
+     *
+     * @return The target group of this conversion rule.
+     */
+    Class&lt;?&gt; getTo();
+}</programlisting>
+
+    <para role="tck-testable">The <methodname>getFrom</methodname> method
+    returns the source of a group conversion rule.</para>
+
+    <para role="tck-testable">The <methodname>getTo</methodname> method
+    returns the target of a group conversion rule.</para>
+  </section>
+
   <section>
     <title>PropertyDescriptor</title>
 
@@ -582,7 +677,7 @@ public interface BeanDescriptor extends ElementDescriptor {
     Constraints declared on the attribute and the getter of the same name
     according to the Java Bean rules are returned by this descriptor.</para>
 
-    <programlisting>package javax.validation.metadata;
+    <programlisting revisionflag="changed">package javax.validation.metadata;
 
 /**
  * Describes a Java Bean property hosting validation constraints.
@@ -592,22 +687,18 @@ public interface BeanDescriptor extends ElementDescriptor {
  *
  * @author Emmanuel Bernard
  */
-public interface PropertyDescriptor extends ElementDescriptor {
-    /**
-     * Is the property marked by the &lt;code&gt;@Valid&lt;/code&gt; annotation.
-     * @return &lt;code&gt;true&lt;/code&gt; if the annotation is present, &lt;code&gt;false&lt;/code&gt; otherwise.
-     */
-    boolean isCascaded();
+public interface PropertyDescriptor extends ElementDescriptor, CascadableDescriptor {
 
     /**
-     * Name of the property acording to the Java Bean specification.
+     * Name of the property according to the Java Bean specification.
+     *
      * @return property name.
      */
     String getPropertyName();
 }</programlisting>
 
-    <para role="tck-testable">The <methodname>isCascaded</methodname> method
-    returns <literal>true</literal> if the property is marked with
+    <para revisionflag="deleted">The <methodname>isCascaded</methodname>
+    method returns <literal>true</literal> if the property is marked with
     <classname>@Valid</classname>.</para>
 
     <para role="tck-testable"><methodname>getPropertyName</methodname> returns
@@ -789,8 +880,7 @@ public interface MethodDescriptor extends ExecutableDescriptor {
  * @since 1.1
  */
 public interface ConstructorDescriptor extends ExecutableDescriptor {
-}
-</programlisting>
+}</programlisting>
 
     <para><classname>MethodDescriptor</classname> objects are returned by
     <methodname>BeanDescriptor#getConstraintsForMethod(String,
@@ -824,9 +914,9 @@ public interface ConstructorDescriptor extends ExecutableDescriptor {
  * Describes a validated method or constructor parameter.
  *
  * @author Gunnar Morling
- *
+ * @since 1.1
  */
-public interface ParameterDescriptor extends ElementDescriptor {
+public interface ParameterDescriptor extends ElementDescriptor, CascadableDescriptor {
 
     /**
      * Returns this parameter's index within the parameter array of the method
@@ -843,15 +933,6 @@ public interface ParameterDescriptor extends ElementDescriptor {
      * @return This parameter's name.
      */
     String getName();
-
-    /**
-     * Whether a cascaded validation of this parameter shall be performed or
-     * not.
-     *
-     * @return &lt;code&gt;true&lt;/code&gt;, if this parameter shall be validated
-     *         recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
-     */
-    boolean isCascaded();
 }</programlisting>
 
     <para role="tck-testable"><methodname>getIndex()</methodname> returns the
@@ -860,10 +941,6 @@ public interface ParameterDescriptor extends ElementDescriptor {
 
     <para role="tck-testable"><methodname>getName()</methodname> returns the
     name of the represented parameter.</para>
-
-    <para role="tck-testable"><methodname>isCascaded()</methodname> returns
-    true, if the represented parameter is marked for cascaded validation,
-    false otherwise.</para>
   </section>
 
   <section revisionflag="added">
@@ -882,22 +959,10 @@ public interface ParameterDescriptor extends ElementDescriptor {
  * Describes a validated return value of a method or constructor.
  *
  * @author Gunnar Morling
+ * @since 1.1
  */
-public interface ReturnValueDescriptor extends ElementDescriptor {
-
-    /**
-     * Whether a cascaded validation for this return value shall be performed or
-     * not.
-     *
-     * @return &lt;code&gt;true&lt;/code&gt;, if this return value shall be validated
-     *         recursively, &lt;code&gt;false&lt;/code&gt; otherwise.
-     */
-    boolean isCascaded();
+public interface ReturnValueDescriptor extends ElementDescriptor, CascadableDescriptor {
 }</programlisting>
-
-    <para role="tck-testable"><methodname>isCascaded()</methodname> returns
-    true, if the represented return value is marked for cascaded validation,
-    false otherwise.</para>
   </section>
 
   <section id="constraintmetadata-constraintdescriptor">
