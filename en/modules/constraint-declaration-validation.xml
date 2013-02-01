@@ -856,7 +856,7 @@ public @interface ConvertGroup {
       layers. Let's look at an example.</para>
 
       <section>
-        <title>Group conversion example</title>
+        <title>Group conversion examples</title>
 
         <para>In this example we will reuse the <classname>Address</classname>
         group split and match it to the <classname>User</classname> group
@@ -898,6 +898,49 @@ public class User {
         validating an instance of <classname>User</classname> with the
         <classname>Complete</classname> group, the associated addresses are
         validated with the <classname>FullPostal</classname> group.</para>
+
+        <para>The following example shows an illegal declaration of a group
+        conversion rule on a method's return value:</para>
+
+        <para><example>
+            <title>Example of an illegal group conversion</title>
+
+            <programlisting language="JAVA" role="JAVA">public interface BasicPostal {}
+
+public class Order { ... }
+
+public interface RetailOrderService {
+
+    @Valid
+    Order placeOrder(String itemNo, int quantity);
+}
+
+public interface B2BOrderService {
+
+    @Valid
+    @ConvertGroup(from=Default.class, to=BasicPostal.class)
+    Order placeOrder(String itemNo, int quantity);
+}
+
+public class OrderService implements RetailOrderService, B2BOrderService {
+
+    @Override
+    public Order placeOrder(String itemNo, int quantity) {
+        ...
+    }
+}</programlisting>
+          </example>Here the class <classname>OrderService</classname>
+        implements the two unrelated interfaces
+        <classname>RetailOrderService</classname> and
+        <classname>B2BOrderService</classname>, which both define a method
+        <methodname>placeOrder()</methodname>, marking the return value as
+        cascaded.</para>
+
+        <para>The group conversion declared in
+        <classname>B2BOrderService</classname> is illegal as per the rules
+        defined in the previous section, since the set of applied validation
+        groups might be altered unexpectedly for a client of the
+        <classname>RetailOrderService</classname> interface.</para>
       </section>
     </section>
 
