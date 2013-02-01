@@ -416,50 +416,59 @@ assert 2 == constraints.size();      </programlisting>
  */
 public interface BeanDescriptor extends ElementDescriptor {
     /**
-     * Returns &lt;code&gt;true&lt;/code&gt; if the bean involves validation:
+     * Returns {@code true} if the bean involves validation:
      * &lt;ul&gt;
      * &lt;li&gt; a constraint is hosted on the bean itself &lt;/li&gt;
      * &lt;li&gt; a constraint is hosted on one of the bean properties&lt;/li&gt;
-     * &lt;li&gt; or a bean property is marked for cascade (&lt;code&gt;@Valid&lt;/code&gt;)&lt;/li&gt;
+     * &lt;li&gt; a bean property is marked for cascaded validation ({@code @Valid})&lt;/li&gt;
+     * &lt;li&gt; a constraint is hosted on the return value or a method parameter of one of the bean's methods&lt;/li&gt;
+     * &lt;li&gt; or the return value or a method parameter of one of the bean's methods is marked for cascaded validation ({@code @Valid})&lt;/li&gt;
      * &lt;/ul&gt;
      *
-     * @return &lt;code&gt;true&lt;/code&gt; if the bean involves validation, &lt;code&gt;false&lt;/code&gt; otherwise.
+     * @return {@code true} if the bean involves validation, {@code false} otherwise.
      */
     boolean isBeanConstrained();
 
     /**
      * Return the property descriptor for a given property.
-     * Return &lt;code&gt;null&lt;/code&gt; if the property does not exist or has no
+     * Return {@code null} if the property does not exist or has no
      * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
+     * Properties of super types are considered.
      * &lt;p/&gt;
      *
      * @param propertyName property evaluated
      *
      * @return the property descriptor for a given property.
      *
-     * @throws IllegalArgumentException if propertyName is null
+     * @throws IllegalArgumentException if propertyName is {@code null}
      */
     PropertyDescriptor getConstraintsForProperty(String propertyName);
 
     /**
-     * Returns a set of property descriptors having at least one constraint defined 
-     * or marked as cascaded (&lt;code&gt;@Valid&lt;c/ode&gt;). If not property matches, 
+     * Returns a set of property descriptors having at least one constraint defined
+     * or marked as cascaded ({@code @Valid}). If not property matches,
      * an empty set is returned.
+     * Properties of super types are considered.
+     *
+     * @return Returns the set of {@code PropertyDescriptor}s for the constraint properties. If there are no
+     *         constraint properties the empty set is returned
      */
     Set&lt;PropertyDescriptor&gt; getConstrainedProperties();
 
-   /**
+    /**
      * Returns a method descriptor for the given method. Returns {@code null} if
      * no method with the given name and parameter types exists or the specified
      * method neither has parameter or return value constraints nor a parameter
      * or return value marked for cascaded validation.
+     * Methods of super types are considered.
      *
      * @param methodName The name of the method.
      * @param parameterTypes The parameter types of the method.
      *
      * @return A method descriptor for the given method.
      *
-     * @throws IllegalArgumentException if methodName is null
+     * @throws IllegalArgumentException if methodName is {@code null}
+     * @since 1.1
      */
     MethodDescriptor getConstraintsForMethod(String methodName, Class&lt;?&gt;... parameterTypes);
 
@@ -468,10 +477,13 @@ public interface BeanDescriptor extends ElementDescriptor {
      * represented by this descriptor. Constrained are all those methods which
      * have at least one parameter or return value constraint or at least one
      * parameter or return value marked for cascaded validation.
+     * Methods of super types are considered.
      *
      * @return A set with descriptors for the constrained methods of this type.
      *         Will be empty if this type has no constrained methods but never
      *         {@code null}.
+     *
+     * @since 1.1
      */
     Set&lt;MethodDescriptor&gt; getConstrainedMethods();
 
@@ -481,10 +493,13 @@ public interface BeanDescriptor extends ElementDescriptor {
      * the specified constructor neither has parameter or return value
      * constraints nor a parameter or return value marked for cascaded
      * validation.
+     * Constructor of super types are considered.
      *
      * @param parameterTypes The parameter types of the constructor.
      *
      * @return A constructor descriptor for the given constructor.
+     *
+     * @since 1.1
      */
     ConstructorDescriptor getConstraintsForConstructor(Class&lt;?&gt;... parameterTypes);
 
@@ -497,6 +512,8 @@ public interface BeanDescriptor extends ElementDescriptor {
      * @return A set with descriptors for the constrained constructor of this
      *         type. Will be empty if this type has no constrained constructor
      *         but never {@code null}.
+     *
+     * @since 1.1
      */
     Set&lt;ConstructorDescriptor&gt; getConstrainedConstructors();
 }</programlisting>
