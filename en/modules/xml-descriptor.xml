@@ -168,7 +168,7 @@
 
         <para>Field level annotations are described via the
         <literal>field</literal> element. The <literal>name</literal>
-        attribute correspond to the name of the field considered. <phrase
+        attribute corresponds to the name of the field considered. <phrase
         role="tck-testable">If <literal>ignore-annotations</literal> is
         declared, Bean Validation must honor the explicit value for this
         element.</phrase> <phrase role="tck-testable">If not declared, the
@@ -178,7 +178,8 @@
         <para><phrase role="tck-testable">When
         <literal>ignore-annotations</literal> is true, field-level Bean
         Validation annotations on the targeted field are ignored (including
-        the <classname>@Valid</classname>).</phrase> When
+        <classname>@Valid</classname><phrase revisionflag="added"> and
+        <classname>@ConvertGroup</classname></phrase>).</phrase> When
         <literal>ignore-annotations</literal> is false:</para>
 
         <itemizedlist>
@@ -194,6 +195,17 @@
             role="tck-testable">Note that the only way to disable cascading on
             a field marked as <classname>@Valid</classname> is to use
             <code>ignore-annotations=true</code>.</phrase></para>
+          </listitem>
+
+          <listitem revisionflag="added" role="tck-testable">
+            <para><phrase role="tck-testable">Group conversions declared in
+            XML and via the <classname>@ConvertGroup</classname> annotation
+            are added and form the list of applied conversions.</phrase> Note
+            that the rules for the declaration of group conversions as
+            outlined in <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>
+            apply, in particular it is not legal to declare several
+            conversions for the same source group.</para>
           </listitem>
         </itemizedlist>
 
@@ -230,7 +242,7 @@
 
         <para>Property-level annotations are described via the
         <literal>getter</literal> element. <phrase role="tck-testable">The
-        <literal>name</literal> attribute correspond to the name of the
+        <literal>name</literal> attribute corresponds to the name of the
         property considered as defined in <xref
         linkend="constraintdeclarationvalidationprocess-requirements-property"/>
         (for example a getter <code>String getAge()</code> would have
@@ -244,7 +256,8 @@
         <para><phrase role="tck-testable">When
         <literal>ignore-annotations</literal> is true, property-level Bean
         Validation annotations on the targeted property are ignored (including
-        the <classname>@Valid</classname>).</phrase> When
+        <classname>@Valid</classname> <phrase revisionflag="added">and
+        <classname>@ConvertGroup</classname></phrase>).</phrase> When
         <literal>ignore-annotations</literal> is false:</para>
 
         <itemizedlist>
@@ -260,6 +273,17 @@
             role="tck-testable">Note that the only way to disable cascading on
             a property marked as <classname>@Valid</classname> is to use
             <code>ignore-annotations=true</code>.</phrase></para>
+          </listitem>
+
+          <listitem revisionflag="added" role="tck-testable">
+            <para><phrase role="tck-testable">Group conversions declared in
+            XML and via the <classname>@ConvertGroup</classname> annotation
+            are added and form the list of applied conversions.</phrase> Note
+            that the rules for the declaration of group conversions as
+            outlined in <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>
+            apply, in particular it is not legal to declare several
+            conversions for the same source group.</para>
           </listitem>
         </itemizedlist>
 
@@ -291,18 +315,259 @@
         </example>
       </section>
 
+      <section id="xml-mapping-constraintdeclarationinxml-constructorleveloverriding"
+               revisionflag="added">
+        <title>Constructor-level overriding</title>
+
+        <para>Constructor-level annotations are described via the
+        <code>constructor</code> element.</para>
+
+        <para role="tck-testable">To identify the constructor to be
+        configured, zero or more parameter elements are used, matching the
+        number of parameters of the configured constructor. If the default
+        constructor shall be configured, no parameter element is to be used.
+        The parameter types are specified using their fully qualified name; If
+        the <code>default-package</code> element is configured for the mapping
+        file, any unqualified class names will be resolved using the given
+        default package. Primitive types (<classname>int</classname>,
+        <classname>long</classname> etc.) are referenced by specifying the
+        corresponding keyword of the Java language.</para>
+
+        <para><note>
+            <para>All the parameters of the configured constructor must be
+            specified in order to identify the targeted constructor, also if
+            single parameters shall not be configured.</para>
+          </note></para>
+
+        <para role="tck-testable">If no constructor with the specified
+        parameter types exist in the given bean a
+        <classname>ValidationException</classname> is raised.</para>
+
+        <para role="tck-testable">The optional <code>return-value</code>
+        element is used to configure a constructor's return value if
+        required.</para>
+
+        <para><phrase role="tck-testable">Whether a parameter or the
+        constructor return value shall be subject to cascaded validation as
+        well as the applying constraints and group conversions are configured
+        by adding the <code>valid</code>, <code>constraint</code> and
+        <code>convert-group</code> elements to the <code>parameter</code> and
+        <code>return-value</code> elements respectively.</phrase> <phrase
+        role="tck-testable">Cross-parameter constraints are configured by
+        adding <code>cross-parameter-constraint</code> elements to the
+        <code>constructor</code> element.</phrase></para>
+
+        <para role="tck-testable">If <code>ignore-annotations</code> is
+        declared on the parameter or return value level, Bean Validation must
+        honor the explicit value for this element. Otherwise, if
+        <code>ignore-annotations</code> is declared for the
+        <code>constructor</code> element, Bean Validation must honor this
+        value. Otherwise, the default value declared in the encapsulating
+        <code>bean</code> element is considered.</para>
+
+        <para><phrase role="tck-testable">When
+        <literal>ignore-annotations</literal> is true, Bean Validation
+        annotations on the targeted constructor or parameter are ignored
+        (including <classname>@Valid</classname> <phrase
+        revisionflag="added">and
+        <classname>@ConvertGroup</classname></phrase>).</phrase> When
+        <literal>ignore-annotations</literal> is false:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para role="tck-testable">Constraints declared in XML and
+            constraints declared in annotations are added and form the list of
+            declared parameter, cross-parameter or return value constraints
+            respectively.</para>
+          </listitem>
+
+          <listitem>
+            <para><phrase role="tck-testable"><classname>@Valid</classname> is
+            considered unless the <literal>valid</literal> element is
+            explicitly used.</phrase> <phrase role="tck-testable">Note that
+            the only way to disable cascading on a constructor parameter or
+            return value marked as <classname>@Valid</classname> is to use
+            <code>ignore-annotations=true</code>.</phrase></para>
+          </listitem>
+
+          <listitem revisionflag="added" role="tck-testable">
+            <para><phrase role="tck-testable">Group conversions declared in
+            XML and via the <classname>@ConvertGroup</classname> annotation
+            are added and form the list of applied conversions.</phrase> Note
+            that the rules for the declaration of group conversions as
+            outlined in <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>
+            apply, in particular it is not legal to declare several
+            conversions for the same source group.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para><example>
+            <title>Constructor-level declaration</title>
+
+            <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;constraint-mappings
+        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
+        version="1.1"&gt;
+    &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
+    &lt;bean class="Customer" ignore-annotations="false"&gt;
+        &lt;constructor ignore-annotations="true"&gt;
+            &lt;parameter type="java.lang.String"&gt;
+                [...]
+            &lt;/parameter&gt;
+            &lt;parameter type="int"&gt;
+                &lt;valid/&gt;
+                [...]
+            &lt;/parameter&gt;
+            &lt;parameter type="long" ignore-annotations="false"/&gt;
+            &lt;return-value&gt;
+                &lt;valid/&gt;
+                [...]
+            &lt;/return-value&gt;
+            [...]
+        &lt;/constructor&gt;
+
+    &lt;/bean&gt;
+&lt;/constraint-mappings&gt;</programlisting>
+          </example></para>
+      </section>
+
       <section id="xml-mapping-constraintdeclarationinxml-methodleveloverriding"
                revisionflag="added">
         <title>Method-level overriding</title>
 
-        <para><remark>TODO</remark></para>
+        <para>Method-level annotations are described via the
+        <code>method</code> element.</para>
+
+        <para role="tck-testable">To identify the method to be configured, its
+        name and zero or more parameter elements are specified, matching the
+        number of parameters of the configured method. The parameter types are
+        specified using their fully qualified name; If the
+        <code>default-package</code> element is configured for the mapping
+        file, any unqualified class names will be resolved using the given
+        default package. Primitive types (<classname>int</classname>,
+        <classname>long</classname> etc.) are referenced by specifying the
+        corresponding keyword of the Java language.</para>
+
+        <para><note>
+            <para>All the parameters of the configured method must be
+            specified in order to identify the targeted method, also if single
+            parameters shall not be configured.</para>
+          </note><note role="tck-testable">
+            <para>A given getter method representing a JavaBeans property may
+            either be configured using the <code>getter</code> or the
+            <code>method</code> element, but not both. If a
+            <code>getter</code> element and a <code>method</code> element
+            referring to the same method are detected by the Bean Validation
+            provider, a <classname>ValidationException</classname> is
+            raised.</para>
+          </note></para>
+
+        <para role="tck-testable">If no method with the specified name and
+        parameter types exist in the given bean a
+        <classname>ValidationException</classname> is raised.</para>
+
+        <para role="tck-testable">The optional <code>return-value</code>
+        element is used to configure a method's return value if
+        required.</para>
+
+        <para><phrase role="tck-testable">Whether a parameter or the return
+        value shall be subject to cascaded validation as well as the applying
+        constraints and group conversions are configured by adding the
+        <code>valid</code>, <code>constraint</code> and
+        <code>convert-group</code> elements to the <code>parameter</code> and
+        <code>return-value</code> elements respectively.</phrase> <phrase
+        role="tck-testable">Cross-parameter constraints are configured by
+        adding <code>cross-parameter-constraint</code> elements to the
+        <code>method</code> element.</phrase></para>
+
+        <para role="tck-testable">If <code>ignore-annotations</code> is
+        declared on the parameter or return value level, Bean Validation must
+        honor the explicit value for this element. Otherwise, if
+        <code>ignore-annotations</code> is declared for the
+        <code>method</code> element, Bean Validation must honor this value.
+        Otherwise, the default value declared in the encapsulating
+        <code>bean</code> element is considered.</para>
+
+        <para><phrase role="tck-testable">When
+        <literal>ignore-annotations</literal> is true, Bean Validation
+        annotations on the targeted method or parameter are ignored (including
+        <classname>@Valid</classname> <phrase revisionflag="added">and
+        <classname>@ConvertGroup</classname></phrase>).</phrase> When
+        <literal>ignore-annotations</literal> is false:</para>
+
+        <itemizedlist>
+          <listitem>
+            <para role="tck-testable">Constraints declared in XML and
+            constraints declared in annotations are added and form the list of
+            declared parameter, cross-parameter or return value constraints
+            respectively.</para>
+          </listitem>
+
+          <listitem>
+            <para><phrase role="tck-testable"><classname>@Valid</classname> is
+            considered unless the <literal>valid</literal> element is
+            explicitly used.</phrase> <phrase role="tck-testable">Note that
+            the only way to disable cascading on a method parameter or return
+            value marked as <classname>@Valid</classname> is to use
+            <code>ignore-annotations=true</code>.</phrase></para>
+          </listitem>
+
+          <listitem revisionflag="added" role="tck-testable">
+            <para><phrase role="tck-testable">Group conversions declared in
+            XML and via the <classname>@ConvertGroup</classname> annotation
+            are added and form the list of applied conversions.</phrase> Note
+            that the rules for the declaration of group conversions as
+            outlined in <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>
+            apply, in particular it is not legal to declare several
+            conversions for the same source group.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para><example>
+            <title>Method-level declaration</title>
+
+            <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;constraint-mappings
+        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
+        version="1.1"&gt;
+    &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
+    &lt;bean class="Customer" ignore-annotations="false"&gt;
+        &lt;method name="update" ignore-annotations="true"&gt;
+            &lt;parameter type="java.lang.String"&gt;
+                [...]
+            &lt;/parameter&gt;
+            &lt;parameter type="int"&gt;
+                &lt;valid/&gt;
+                [...]
+            &lt;/parameter&gt;
+            &lt;parameter type="long" ignore-annotations="false"/&gt;
+            &lt;return-value&gt;
+                &lt;valid/&gt;
+                [...]
+            &lt;/return-value&gt;
+            [...]
+        &lt;/method&gt;
+
+    &lt;/bean&gt;
+&lt;/constraint-mappings&gt;</programlisting>
+          </example></para>
       </section>
 
       <section>
         <title>Constraint declaration</title>
 
-        <para>A new constraint declaration is represented by the
-        <literal>constraint</literal> element. The
+        <para><phrase revisionflag="changed">New constraint declarations are
+        represented by the <literal>constraint</literal> element for generic
+        constraints and the <code>cross-parameter-constraint</code> element
+        for cross-parameter constraints.</phrase> The
         <literal>annotation</literal> attribute is the class name of the
         annotation representing the constraint. Message, groups and payload
         are defined respectively by the <literal>message</literal>,
@@ -424,6 +689,105 @@
 
 
         &lt;/getter&gt;
+
+        &lt;constructor ignore-annotations="true"&gt;
+            &lt;parameter type="java.lang.String"&gt;
+
+                &lt;!-- @DiscreteSize(value={ 0, 20 } ) --&gt;
+                &lt;constraint annotation="com.acme.app.constraint.DiscreteSize"&gt;
+                    &lt;element name="value"&gt;
+                        &lt;value&gt;0&lt;/value&gt;
+                        &lt;value&gt;20&lt;/value&gt;
+                    &lt;/element&gt;
+                &lt;/constraint&gt;
+            &lt;/parameter&gt;
+        &lt;/constructor&gt;
+
+        &lt;method name="update" ignore-annotations="true"&gt;
+            &lt;parameter type="java.lang.String"&gt;
+
+                &lt;!-- @DiscreteSize(value={ 0, 20 } ) --&gt;
+                &lt;constraint annotation="com.acme.app.constraint.DiscreteSize"&gt;
+                    &lt;element name="value"&gt;
+                        &lt;value&gt;0&lt;/value&gt;
+                        &lt;value&gt;20&lt;/value&gt;
+                    &lt;/element&gt;
+                &lt;/constraint&gt;
+            &lt;/parameter&gt;
+
+            &lt;return-value&gt;
+
+                &lt;!-- @ValidCustomer --&gt;
+                &lt;constraint annotation="com.acme.app.constraint.ValidCustomer"/&gt;
+            &lt;/return-value&gt;
+        &lt;/method&gt;
+
+        &lt;method name="resetPassword" ignore-annotations="false"&gt;
+            &lt;parameter type="java.lang.String"/&gt;
+            &lt;parameter type="java.lang.String"/&gt;
+
+            &lt;!-- @ValidResetPasswordParameters --&gt;
+            &lt;cross-parameter-constraint annotation="com.acme.app.constraint.ValidResetPasswordParameters"/&gt;
+        &lt;/method&gt;
+    &lt;/bean&gt;
+&lt;/constraint-mappings&gt;</programlisting>
+        </example>
+      </section>
+
+      <section revisionflag="added">
+        <title>Declaration of group conversions</title>
+
+        <para role="tck-testable">Group conversion rules are declared by
+        specifying one ore more <code>convert-group</code> elements within the
+        <code>field</code>, <code>getter</code>, <code>parameter</code> and
+        <code>return-value</code> elements.</para>
+
+        <para role="tck-testable">Source and target group of a conversion rule
+        are given by specifying there fully-qualified names within the
+        <code>from</code> and <code>to</code> attribute respectively. If the
+        <code>default-package</code> element is configured for the mapping
+        file, any unqualified class names will be resolved using the given
+        default package.</para>
+
+        <example>
+          <title>Declaration of group conversions</title>
+
+          <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;constraint-mappings
+        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
+        version="1.1"&gt;
+    &lt;default-package&gt;com.acme.app.domain&lt;/default-package&gt;
+    &lt;bean class="Customer" ignore-annotations="false"&gt;
+
+        &lt;field name="firstName"&gt;
+            &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
+            &lt;convert-group from="com.acme.CustomerComplex" to="com.acme.CustomerComplex"/&gt;
+        &lt;/field&gt;
+
+        &lt;getter name="orders"&gt;
+            &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
+        &lt;/getter&gt;
+
+        &lt;constructor&gt;
+            &lt;parameter type="java.lang.String"&gt;
+                &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
+            &lt;/parameter&gt;
+            &lt;return-value&gt;
+                &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
+            &lt;/return-value&gt;
+        &lt;/constructor&gt;
+
+        &lt;method name="update"&gt;
+            &lt;parameter type="java.lang.String"&gt;
+                &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
+            &lt;/parameter&gt;
+            &lt;return-value&gt;
+                &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
+            &lt;/return-value&gt;
+        &lt;/constructor&gt;
     &lt;/bean&gt;
 &lt;/constraint-mappings&gt;</programlisting>
         </example>
@@ -605,7 +969,7 @@
         &lt;/xs:documentation&gt;
     &lt;/xs:annotation&gt;
 
-    &lt;xs:element name="constraint-mappings" type="map:constraint-mappingsType" /&gt;
+    &lt;xs:element name="constraint-mappings" type="map:constraint-mappingsType"/&gt;
 
     &lt;xs:complexType name="payloadType"&gt;
         &lt;xs:sequence&gt;
@@ -622,25 +986,27 @@
             &lt;xs:element type="xs:string" name="value" maxOccurs="unbounded" minOccurs="0"/&gt;
         &lt;/xs:sequence&gt;
     &lt;/xs:complexType&gt;
+    &lt;xs:complexType name="groupConversionType"&gt;
+        &lt;xs:attribute type="xs:string" name="from" use="required"/&gt;
+        &lt;xs:attribute type="xs:string" name="to" use="required"/&gt;
+    &lt;/xs:complexType&gt;
     &lt;xs:complexType name="constraint-mappingsType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="default-package" minOccurs="0"/&gt;
             &lt;xs:element type="map:beanType"
                         name="bean"
                         maxOccurs="unbounded"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
             &lt;xs:element type="map:constraint-definitionType"
                         name="constraint-definition"
                         maxOccurs="unbounded"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute name="version" type="map:versionType" fixed="1.1" use="required"/&gt;
     &lt;/xs:complexType&gt;
     &lt;xs:simpleType name="versionType"&gt;
         &lt;xs:restriction base="xs:token"&gt;
-            &lt;xs:pattern value="[0-9]+(\.[0-9]+)*" /&gt;
+            &lt;xs:pattern value="[0-9]+(\.[0-9]+)*"/&gt;
         &lt;/xs:restriction&gt;
     &lt;/xs:simpleType&gt;
     &lt;xs:complexType name="validated-byType"&gt;
@@ -654,17 +1020,14 @@
             &lt;xs:element type="xs:string" name="message" minOccurs="0"/&gt;
             &lt;xs:element type="map:groupsType"
                         name="groups"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
             &lt;xs:element type="map:payloadType"
                         name="payload"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;            
+                        minOccurs="0"/&gt;
             &lt;xs:element type="map:elementType"
                         name="element"
                         maxOccurs="unbounded"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="annotation" use="required"/&gt;
     &lt;/xs:complexType&gt;
@@ -674,22 +1037,19 @@
             &lt;xs:element type="map:annotationType"
                         name="annotation"
                         maxOccurs="unbounded"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="name" use="required"/&gt;
     &lt;/xs:complexType&gt;
     &lt;xs:complexType name="classType"&gt;
         &lt;xs:sequence&gt;
-            &lt;xs:element type="map:groupSequenceType" 
-                        name="group-sequence" 
-                        minOccurs="0" 
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+            &lt;xs:element type="map:groupSequenceType"
+                        name="group-sequence"
+                        minOccurs="0"/&gt;
             &lt;xs:element type="map:constraintType"
                         name="constraint"
                         maxOccurs="unbounded"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
     &lt;/xs:complexType&gt;
@@ -697,19 +1057,24 @@
         &lt;xs:sequence&gt;
             &lt;xs:element type="map:classType"
                         name="class"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"&gt;
+                        minOccurs="0"&gt;
             &lt;/xs:element&gt;
             &lt;xs:element type="map:fieldType"
                         name="field"
                         minOccurs="0"
-                        maxOccurs="unbounded"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        maxOccurs="unbounded"/&gt;
             &lt;xs:element type="map:getterType"
                         name="getter"
                         minOccurs="0"
-                        maxOccurs="unbounded"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:constructorType"
+                        name="constructor"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:methodType"
+                        name="method"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="class" use="required"/&gt;
         &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
@@ -719,8 +1084,7 @@
             &lt;xs:element type="map:elementType"
                         name="element"
                         maxOccurs="unbounded"
-                        minOccurs="0"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        minOccurs="0"/&gt;
         &lt;/xs:sequence&gt;
     &lt;/xs:complexType&gt;
     &lt;xs:complexType name="getterType"&gt;
@@ -729,17 +1093,83 @@
             &lt;xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
-                        maxOccurs="unbounded"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:groupConversionType"
+                        name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="name" use="required"/&gt;
+        &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
+    &lt;/xs:complexType&gt;
+    &lt;xs:complexType name="methodType"&gt;
+        &lt;xs:sequence&gt;
+            &lt;xs:element type="map:parameterType"
+                        name="parameter"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:returnValueType"
+                        name="return-value"
+                        minOccurs="0"
+                        maxOccurs="1"/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="cross-parameter-constraint"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute type="xs:string" name="name" use="required"/&gt;
+        &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
+    &lt;/xs:complexType&gt;
+    &lt;xs:complexType name="constructorType"&gt;
+        &lt;xs:sequence&gt;
+            &lt;xs:element type="map:parameterType"
+                        name="parameter"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:returnValueType"
+                        name="return-value"
+                        minOccurs="0"
+                        maxOccurs="1"/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="cross-parameter-constraint"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
+    &lt;/xs:complexType&gt;
+    &lt;xs:complexType name="parameterType"&gt;
+        &lt;xs:sequence&gt;
+            &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:groupConversionType"
+                        name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute type="xs:string" name="type" use="required"/&gt;
+        &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
+    &lt;/xs:complexType&gt;
+    &lt;xs:complexType name="returnValueType"&gt;
+        &lt;xs:sequence&gt;
+            &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:groupConversionType"
+                        name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+        &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
     &lt;/xs:complexType&gt;
     &lt;xs:complexType name="constraint-definitionType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="map:validated-byType"
-                        name="validated-by"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        name="validated-by"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="annotation" use="required"/&gt;
     &lt;/xs:complexType&gt;
@@ -749,8 +1179,11 @@
             &lt;xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
-                        maxOccurs="unbounded"
-                        xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"/&gt;
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:groupConversionType"
+                        name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="name" use="required"/&gt;
         &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
