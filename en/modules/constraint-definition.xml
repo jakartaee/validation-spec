@@ -1320,24 +1320,49 @@ public interface ConstraintValidatorContext {
      * Here are a few usage examples:
      * &lt;pre&gt;
      * {@code
-     * // create new violation report with the default path the constraint is located on
-     * context.buildConstraintViolationWithTemplate( "way too long" )
-     *             .addConstraintViolation();
+     * //assuming the following domain model
+     * public class User {
+     *     public Map&lt;String,Address&gt; getAddresses() { ... }
+     * }
      *
-     * // create new violation report in the "street" subnode of the default path
-     * //the constraint is located on
-     * context.buildConstraintViolationWithTemplate( "way too long" )
-     *              .addNode( "street" )
-     *              .addConstraintViolation();
+     * public Address {
+     *     public String getStreet() { ... }
+     *     public Country getCountry() { ... }
+     * }
      *
-     * //create new violation report in the "addresses["home"].country.name" subnode
-     * //of the default path the constraint is located on
+     * public Country {
+     *     public String getName() { ... }
+     * }
+     *
+     * //From a property-level constraint on User.addresses
+     * //Build a constraint violation on the default path - ie the "addresses" property
      * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
-     *              .addNode( "addresses" )
-     *              .addNode( "country" )
-     *                  .inIterable().atKey( "home" )
-     *              .addNode( "name" )
-     *              .addConstraintViolation();
+     *             .addConstraintViolation();
+     * 
+     * //From a class level constraint on Address
+     * //Build a constraint violation on the default path + "street"
+     * //ie the street property of Address
+     * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
+     *             .addNode( "street" )
+     *             .addConstraintViolation();
+     * 
+     * //From a property-level constraint on  User.addresses
+     * //Build a constraint violation on the default path + the bean stored
+     * //under the "home" key in the map
+     * context.buildConstraintViolationWithTemplate( "Incorrect home address" )
+     *             .addNode( null )
+     *                 .inIterable().atKey( "home" )
+     *             .addConstraintViolation();
+     * 
+     * //From a class level constraint on User
+     * //Build a constraint violation on the default path + addresses["home"].country.name
+     * //ie property "country.name" on the object stored under "home" in the map
+     * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
+     *             .addNode( "addresses" )
+     *             .addNode( "country" )
+     *                 .inIterable().atKey( "home" )
+     *             .addNode( "name" )
+     *             .addConstraintViolation();
      * }
      * &lt;/pre&gt;
      *
@@ -1384,7 +1409,7 @@ public interface ConstraintValidatorContext {
          * @param name property name
          * @return a builder representing node {@code name}
          */
-        NodeBuilderDefinedContext addNode(String name);
+        &lt;T extends NodeBuilderDefinedContext &amp; NodeBuilderCustomizableContext&gt; T addNode(String name);
 
         /**
          * Add the new {@code ConstraintViolation} to be generated if the
@@ -1548,20 +1573,48 @@ public interface ConstraintValidatorContext {
     linkend="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder"/>
     shows a few examples.</para>
 
-    <example id="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder">
+    <example id="example-constraintsdefinitionimplementation-validationimplementation-errorbuilder"
+             revisionflag="changed">
       <title>Using the fluent API to build custom constraint
       violations</title>
 
-      <programlisting>//default path
+      <programlisting>//assuming the following domain model
+public class User {
+    public Map&lt;String,Address&gt; getAddresses() { ... }
+}
+
+public Address {
+    public String getStreet() { ... }
+    public Country getCountry() { ... }
+}
+
+public Country {
+   public String getName() { ... }
+}
+
+//From a property-level constraint on User.addresses
+//Build a constraint violation on the default path - ie the "addresses" property
 context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addConstraintViolation();
 
-//default path + "street"
+//From a class level constraint on Address
+//Build a constraint violation on the default path + "street"
+//ie the street property of Address
 context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addNode( "street" )
             .addConstraintViolation();
 
-//default path + "addresses["home"].country.name"
+//From a property-level constraint on  User.addresses
+//Build a constraint violation on the default path + the bean stored
+//under the "home" key in the map
+context.buildConstraintViolationWithTemplate( "Incorrect home address" )
+            .addNode( null )
+                .inIterable().atKey( "home" )
+            .addConstraintViolation();
+
+//From a class level constraint on User
+//Build a constraint violation on the default path + addresses["home"].country.name
+//ie property "country.name" on the object stored under "home" in the map
 context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addNode( "addresses" )
             .addNode( "country" )
