@@ -114,7 +114,7 @@ public interface ElementDescriptor {
      * The kind of an {@link ElementDescriptor}.
      *
      * @author Gunnar Morling
-     *
+     * @since 1.1
      */
     public enum Kind {
 
@@ -146,12 +146,12 @@ public interface ElementDescriptor {
         /**
          * The return value of a method or constructor.
          */
-        RETURN_VALUE;
+        RETURN_VALUE
     }
 
     /**
      * @return Return {@code true} if at least one constraint declaration is present
-     * for this element in the class hierarchy, {@code false} otherwise.
+     *         for this element in the class hierarchy, {@code false} otherwise.
      */
     boolean hasConstraints();
 
@@ -162,9 +162,9 @@ public interface ElementDescriptor {
 
     /**
      * Return all constraint descriptors for this element in the class hierarchy
-     * or an empty &lt;code&gt;Set&lt;/code&gt; if none are present.
+     * or an empty {@code Set} if none are present.
      *
-     * @return &lt;code&gt;Set&lt;/code&gt; of constraint descriptors for this element
+     * @return {@code Set} of constraint descriptors for this element
      */
     Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
 
@@ -177,7 +177,10 @@ public interface ElementDescriptor {
 
     /**
      * Returns the kind of this descriptor.
+     *
      * @return The kind of this descriptor.
+     *
+     * @since 1.1
      */
     Kind getKind();
 
@@ -185,17 +188,15 @@ public interface ElementDescriptor {
      * Narrows the type of this descriptor down to the given type. The type
      * should be checked before by calling {@link ElementDescriptor#getKind()}.
      *
-     * @param &lt;T&gt;
-     *            The type to narrow down to.
-     * @param descriptorType
-     *            Class object representing the descriptor type to narrow down
-     *            to.
+     * @param &lt;T&gt; The type to narrow down to.
+     * @param descriptorType Class object representing the descriptor type to narrow down
+     * to.
      *
      * @return This descriptor narrowed down to the given type.
      *
-     * @throws ClassCastException
-     *             If this descriptor is not assignable to the type
-     *             &lt;code&gt;T&lt;/code&gt;.
+     * @throws ClassCastException If this descriptor is not assignable to the type
+     * {@code T}.
+     * @since 1.1
      */
     &lt;T extends ElementDescriptor&gt; T as(Class&lt;T&gt; descriptorType);
 
@@ -203,8 +204,8 @@ public interface ElementDescriptor {
      * Declare restrictions on retrieved constraints.
      * Restrictions are cumulative.
      *
-     * A &lt;code&gt;ConstraintFinder&lt;/code&gt; is not thread-safe. The set of matching
-     * &lt;code&gt;ConstraintDescriptor&lt;/code&gt; is.
+     * A {@code ConstraintFinder} is not thread-safe. The set of matching
+     * {@code ConstraintDescriptor} is.
      */
     interface ConstraintFinder {
         /**
@@ -225,40 +226,42 @@ public interface ElementDescriptor {
         /**
          * Restrict to the constraints matching the provided scope for this element.
          *
-         * Defaults to &lt;code&gt;Scope.HIERARCHY&lt;/code&gt;
+         * Defaults to {@code Scope.HIERARCHY}
          *
          * @param scope expected scope
-         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         *
+         * @return {@code this} following the chaining method pattern
          */
         ConstraintFinder lookingAt(Scope scope);
 
         /**
-         * Restrict to the constraints hosted on the listed &lt;code&gt;types&lt;/code&gt;
+         * Restrict to the constraints hosted on the listed {@code types}
          * for a given element.
          *
          * Default to all possible types of the element.
          *
-         * Typically used to restrict to fields (&lt;code&gt;FIELD&lt;/code&gt;)
-         * or getters (&lt;code&gt;METHOD&lt;/code&gt;)
+         * Typically used to restrict to fields ({@code FIELD})
+         * or getters ({@code METHOD})
          *
          * @param types targeted types
-         * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+         *
+         * @return {@code this} following the chaining method pattern
          */
         ConstraintFinder declaredOn(ElementType... types);
 
         /**
          * Retrieve the constraint descriptors following the defined
          * restrictions and hosted on the element described by
-         * &lt;code&gt;ElementDescriptor&lt;/code&gt;
+         * {@code ElementDescriptor}
          *
          * @return matching constraint descriptors
          */
         Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
 
         /**
-         * Returns &lt;code&gt;true&lt;/code&gt; if at least one constraint declaration
+         * Returns {@code true} if at least one constraint declaration
          * matching the restrictions is present on the element,
-         * &lt;code&gt;false&lt;/code&gt; otherwise.
+         * {@code false} otherwise.
          *
          * @return is there any constraint
          */
@@ -289,9 +292,27 @@ public enum Scope {
     HIERARCHY
 }</programlisting>
 
-    <para role="tck-testable"><methodname>getElementClass</methodname> returns
-    either the object type for a class, or the returned type for a
-    property.</para>
+    <para revisionflag="changed"
+    role="tck-testable"><methodname>getElementClass</methodname>
+    returns<itemizedlist>
+        <listitem>
+          <para>the object type when invoked on
+          <classname>BeanDescriptor</classname>,</para>
+        </listitem>
+
+        <listitem>
+          <para>the type of a property or parameter when invoked on
+          <classname>PropertyDescriptor</classname> or
+          <classname>ParameterDescriptor</classname> respectively,</para>
+        </listitem>
+
+        <listitem>
+          <para>the return type when invoked on
+          <classname>ConstructorDescriptor</classname>,
+          <classname>MethodDescriptor</classname> or
+          <classname>ReturnValueDescriptor</classname>.</para>
+        </listitem>
+      </itemizedlist></para>
 
     <para role="tck-testable"><classname>getConstraintDescriptors</classname>
     returns all the <classname>ConstraintDescriptor</classname>s (see <xref
@@ -301,8 +322,8 @@ public enum Scope {
     constraints declared on the given element.</para>
 
     <para role="tck-testable"><methodname>hasConstraints</methodname> returns
-    true if the given element (class, field or property) in the class
-    hierarchy holds at least one constraint declaration.</para>
+    true if the given element in the class hierarchy holds at least one
+    constraint declaration.</para>
 
     <para revisionflag="added"
     role="tck-testable"><methodname>getKind</methodname> returns the concrete
@@ -319,6 +340,29 @@ public enum Scope {
     on getters or by restricting to a given set of groups, you can use the
     <classname>ConstraintFinder</classname> fluent API by calling
     <methodname>findConstraints</methodname>.</para>
+
+    <para
+    role="tck-testable"><classname>unorderedAndMatchingGroups</classname>
+    restricts to the <classname>ConstraintDescriptor</classname>s (see <xref
+    linkend="constraintmetadata-constraintdescriptor"/>) matching the set of
+    groups passed as parameters and present on the element. Order is not
+    respected but group inheritance and inheritance via sequence (including
+    the <classname>Default</classname> group overriding at the class level)
+    are honored.</para>
+
+    <para><phrase role="tck-testable"><methodname>declaredOn</methodname> lets
+    you restrict the list of element types constraints are hosted on.</phrase>
+    This is particularly useful to retrieve <phrase
+    revisionflag="added">property</phrase> constraints only hosted on fields
+    (<classname>ElementType.FIELD</classname>) or only hosted on getters
+    (<classname>ElementType.METHOD</classname>).</para>
+
+    <para role="tck-testable"><methodname>lookingAt</methodname> lets you
+    restrict which constraints are considered. Either constraints belonging to
+    the element but hosted on the class represented by the given descriptor
+    (<classname>Scope.LOCAL_ELEMENT</classname>), or constraints belonging to
+    the element but hosted anywhere in the class hierarchy
+    (<classname>Scope.HIERARCHY</classname>).</para>
 
     <para>Here is an example restricting the list of constraints on getters,
     matching the default group and declared physically on the
@@ -346,40 +390,82 @@ Set&lt;ConstraintDescriptor&lt;?&gt;&gt; constraints =
         .declaredOn(ElementType.METHOD)
         .unorderedAndMatchingGroups(Default.class)
         .lookingAt(Scope.LOCAL_ELEMENT)
-            .getConstraintDescriptors();
+        .getConstraintDescriptors();
 
 assert 1 == constraints.size();
 
 constraints = pd.getConstraintDescriptors();
-//equivalent to pd.findConstraints()..getConstraintDescriptors();
-assert 2 == constraints.size();      </programlisting>
+//equivalent to pd.findConstraints().getConstraintDescriptors();
+assert 2 == constraints.size();</programlisting>
     </example>
 
-    <para
-    role="tck-testable"><classname>unorderedAndMatchingGroups</classname>
-    restricts to the <classname>ConstraintDescriptor</classname>s (see <xref
-    linkend="constraintmetadata-constraintdescriptor"/>) matching the set of
-    groups passed as parameters and present on the element. Order is not
-    respected but group inheritance and inheritance via sequence (including
-    the <classname>Default</classname> group overriding at the class level)
-    are honored.</para>
+    <para revisionflag="added">The following example shows how the fluent API
+    is used to retrieve parameter, cross-parameter and return value
+    constraints, taking into account locally declared constraints as well as
+    constraints declared in the inheritance hierarchy. </para>
 
-    <para><phrase role="tck-testable"><methodname>declaredOn</methodname> lets
-    you restrict the list of element types constraints are hosted on.</phrase>
-    This is particularly useful to retrieve constraints only hosted on fields
-    (<classname>ElementType.FIELD</classname>) or only hosted on getters
-    (<classname>ElementType.METHOD</classname>).</para>
+    <example revisionflag="added">
+      <title>Using the fluent API to select method and constructor
+      constraints</title>
 
-    <para role="tck-testable"><methodname>lookingAt</methodname> lets you
-    restrict which constraints are considered. Either constraints belonging to
-    the element but hosted on the class represented by
-    <classname>BeanDescritptor</classname>
-    (<classname>Scope.LOCAL_ELEMENT</classname>), or constraints belonging to
-    the element but hosted anywhere in the class hierarchy
-    (<classname>Scope.HIERARCHY</classname>).</para>
+      <programlisting>public class User {
 
-    <para revisionflag="added"><remark>TODO: add examples for method level
-    constraint filtering and see if the API fits.</remark></para>
+    public User(@Size(max=50) String name) { ... }
+
+    @PasswordParametersMatch
+    @NotNull
+    public String resetPassword(
+        @NotNull @Size(min=8) String password,
+        @NotNull @Size(min=8) String confirmation) { ... }
+}
+
+public class Customer extends User {
+
+    public Customer(@NotNull String name) { ... }
+
+    @Size(min=8)
+    public String resetPassword(String password, String confirmation) { ... }
+}
+
+MethodDescriptor methodDescriptor = validator
+    .getConstraintsForClass( Customer.class )
+    .getConstraintsForMethod( "resetPassword", String.class, String.class );
+
+//one cross-parameter constraint
+assert 1 == methodDescriptor.getConstraintDescriptors().size();
+
+//one local return value constraint
+assert 1 == methodDescriptor.getReturnValueDescriptor()
+    .findConstraints()
+    .lookingAt( Scope.LOCAL_ELEMENT )
+    .getConstraintDescriptors()
+    .size();
+
+//two return value constraints in the complete hierarchy
+assert 2 == methodDescriptor.getReturnValueDescriptor()
+    .findConstraints()
+    .lookingAt( Scope.HIERARCHY )
+    .getConstraintDescriptors()
+    .size();
+
+//two parameter constraints, defined on overridden method
+assert 2 == methodDescriptor.getParameterDescriptors()
+    .get( 0 )
+    .getConstraintDescriptors()
+    .size();
+
+ConstructorDescriptor constructorDescriptor = validator
+    .getConstraintsForClass( Customer.class )
+    .getConstraintsForConstructor( String.class );
+
+//one parameter constraint; constraints from super constructor don't apply
+assert 1 == constructorDescriptor.getParameterDescriptors()
+    .get( 0 )
+    .findConstraints()
+    .lookingAt( Scope.HIERARCHY )
+    .getConstraintDescriptors()
+    .size();</programlisting>
+    </example>
 
     <para revisionflag="added"><remark>TODO: Consider renaming
     <classname>ElementDescriptor$Kind</classname> to
