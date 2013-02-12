@@ -863,10 +863,10 @@ public interface ConstraintViolation&lt;T&gt; {
       <programlisting>/**
  * Represents the navigation path from an object to another
  * in an object graph.
- * Each path element is represented by a &lt;code&gt;Node&lt;/code&gt;.
+ * Each path element is represented by a {@code Node}.
  *
  * The path corresponds to the succession of nodes
- * in the order they are returned by the &lt;code&gt;Iterator&lt;/code&gt;
+ * in the order they are returned by the {@code Iterator}.
  *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
@@ -878,31 +878,31 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
      */
     interface Node {
         /**
-         * Name of the property, constructor, method or parameter which the node
-         * represents or null if representing an entity on the leaf node or the
-         * return value of a constructor or method (in particular the node in a
-         * &lt;code&gt;Path&lt;/code&gt; representing the root object has its name null).
-         * 
-         * @return Name of the property, constructor, method or parameter which
-         *         the node represents
+         * Returns the name of the element which the node represents. The name
+         * will be {@code null}, if it represents an entity on the leaf node. In
+         * particular the node representing the root object has {@code null} as
+         * name. The name of a method or constructor return value is the literal
+         * {@code &lt;return value&gt;}.
+         *
+         * @return Name of the element which the node represents.
          */
         String getName();
 
         /**
-         * @return true if the node represents an object contained in an Iterable
-         * or in a Map.
+         * @return {@code true} if the node represents an object contained in an
+         *         {@code Iterable} or in a Map, {@code false} otherwise.
          */
         boolean isInIterable();
 
         /**
-         * @return The index the node is placed in if contained
-         * in an array or List. Null otherwise.
+         * @return The index the node is placed in if contained in an array or
+         *         {@code List}. {@code null} otherwise.
          */
         Integer getIndex();
 
         /**
-         * @return The key the node is placed in if contained
-         * in a Map. Null otherwise.
+         * @return The key the node is placed in if contained in a {@code Map}.
+         *         {@code null} otherwise.
          */
         Object getKey();
 
@@ -912,14 +912,64 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
          * determined using {@link ElementDescriptor#getKind()}.
          *
          * @return An element descriptor for this node.
+         *
+         * @since 1.1
          */
         ElementDescriptor getElementDescriptor();
     }
 }</programlisting>
     </example>
 
-    <para><classname>Path</classname> is made of <classname>Node</classname>s
-    and is built according to the following rules:</para>
+    <para revisionflag="added"><classname>Path</classname> is an iterable of
+    <classname>Node</classname> objects. <classname>Node</classname> offers
+    the following methods:</para>
+
+    <para><itemizedlist revisionflag="added">
+        <listitem>
+          <para><methodname>getName()</methodname> returns the name of the
+          element represented by a node, e.g. a property, method or parameter
+          name. The literal <literal>&lt;return value&gt;</literal> will be
+          returned if a node represents the return value of a method or
+          constructor. For leaf nodes representing an entity,
+          <literal>null</literal> will be returned.</para>
+        </listitem>
+
+        <listitem>
+          <para><methodname>isInIterable()</methodname> returns
+          <literal>true</literal> if the node represents an object contained
+          in an <classname>Iterable</classname> or in a
+          <classname>Map</classname>, <literal>false</literal>
+          otherwise.</para>
+        </listitem>
+
+        <listitem>
+          <para><methodname>getIndex()</methodname> returns the index of the
+          node if it is contained in an array or <classname>List</classname>.
+          Returns <literal>null</literal> otherwise.</para>
+        </listitem>
+
+        <listitem>
+          <para><methodname>getKey()</methodname> returns the key of the node
+          if it is contained in a <classname>Map</classname>. Returns
+          <literal>null</literal> otherwise.</para>
+        </listitem>
+
+        <listitem>
+          <para><methodname>getElementDescriptor()</methodname> returns an
+          element descriptor (see <xref
+          linkend="constraintmetadata-elementdescriptor"/>), hosting
+          constraint-related metadata for the element represented by a node.
+          In particular the type of a node can be determined via
+          <methodname>getElementDescriptor().getKind()</methodname>. By
+          narrowing down a node's descriptor to a specific subtype using the
+          method <methodname>ElementDescriptor#as()</methodname>,
+          type-specific information can be retrieved, e.g. the parameter index
+          in case a node represents a method parameter.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para revisionflag="changed"><classname>Path</classname> objects are built
+    according to the following rules:</para>
 
     <itemizedlist>
       <listitem revisionflag="added">
@@ -1027,8 +1077,8 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             the node equals the validated method or constructor, the
             <classname>Kind</classname> of the node's
             <classname>ElementDescriptor</classname> is
-            <varname>Kind.METHOD</varname> respectively
-            <varname>Kind.CONSTRUCTOR</varname>.</para>
+            <varname>Kind.METHOD</varname> or
+            <varname>Kind.CONSTRUCTOR</varname>, respectively.</para>
           </listitem>
 
           <listitem>
@@ -1039,10 +1089,11 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             determined by the current parameter name provider (see <xref
             linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>).
             In the return value case, the <literal>name</literal> of the node
-            is null. The <classname>Kind</classname> of the node's
+            has the constant value <literal>&lt;return value&gt;</literal>.
+            The <classname>Kind</classname> of the node's
             <classname>ElementDescriptor</classname> is
-            <varname>Kind.PARAMETER</varname> respectively
-            <varname>Kind.RETURN_VALUE</varname>.</para>
+            <varname>Kind.PARAMETER</varname> or
+            <varname>Kind.RETURN_VALUE</varname>, respectively.</para>
           </listitem>
 
           <listitem>
@@ -1070,8 +1121,8 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             the node equals the concerned method or constructor, the
             <classname>Kind</classname> of the node's
             <classname>ElementDescriptor</classname> is
-            <varname>Kind.METHOD</varname> respectively
-            <varname>Kind.CONSTRUCTOR</varname>.</para>
+            <varname>Kind.METHOD</varname> or
+            <varname>Kind.CONSTRUCTOR</varname>, respectively.</para>
           </listitem>
 
           <listitem>
@@ -1080,11 +1131,12 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             traversed parameter or return value. In the parameter case, the
             <literal>name</literal> of the node equals the parameter name as
             determined by the current parameter name provider. In the return
-            value case, the <literal>name</literal> of the node is null. The
+            value case, the <literal>name</literal> of the node has the
+            constant value <literal>&lt;return value&gt;</literal>. The
             <classname>Kind</classname> of the node's
             <classname>ElementDescriptor</classname> is
-            <varname>Kind.PARAMETER</varname> respectively
-            <varname>Kind.RETURN_VALUE</varname>.</para>
+            <varname>Kind.PARAMETER</varname> or
+            <varname>Kind.RETURN_VALUE</varname>, respectively.</para>
           </listitem>
 
           <listitem>
@@ -1098,8 +1150,8 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
             <para role="tck-testable">if the parameter/return value is a
             <classname>Map</classname>, the following
             <classname>Node</classname> object added (representing a given map
-            entry) contains the key value
-            in<methodname>getKey</methodname>.</para>
+            entry) contains the key value in
+            <methodname>getKey</methodname>.</para>
           </listitem>
 
           <listitem>
@@ -1123,7 +1175,7 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
     <note>
       <para>From <methodname>rootBean</methodname> and
       <methodname>propertyPath</methodname>, it is possible to rebuild the
-      context of the failure</para>
+      context of the failure.</para>
     </note>
 
     <note revisionflag="added">
@@ -1369,8 +1421,8 @@ public class Library {
 
               <entry><para>Node(name=getLocation, inIterable=false,
               index=null, key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=null,
-              inIterable=false, index=null, key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=&lt;return
+              value&gt;, inIterable=false, index=null, key=null,
               elementDescriptor=ReturnValueDescriptor())</para></entry>
             </row>
 
@@ -1382,8 +1434,8 @@ public class Library {
 
               <entry><para>Node(name=getMostPopularBookPerAuthor,
               inIterable=false, index=null, key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=null,
-              inIterable=false, index=null, key=null,
+              elementDescriptor=MethodDescriptor())</para><para>Node(name=&lt;return
+              value&gt;, inIterable=false, index=null, key=null,
               elementDescriptor=ReturnValueDescriptor())</para><para>Node(name=title,inIterable=true,
               index=null, key=Author(firstName=John, lastName=Doe),
               elementDescriptor=PropertyDescriptor())</para></entry>
@@ -1621,7 +1673,7 @@ assert Kind.PARAMETER.equals( node.getElementDescriptor().getKind() );
 assert false == nodeIter.hasNext();</programlisting>
 
       <para>Assuming the following invocation of
-      <methodname>addBook()</methodname> is subject to method constraint
+      <methodname>addBook()</methodname> is subject to method parameter
       validation:</para>
 
       <programlisting>library.addBook(book);</programlisting>
@@ -1657,7 +1709,7 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <para>Assuming the following invocation of
       <methodname>getMostPopularBookPerAuthor()</methodname> is subject to
-      method constraint validation and returns a <classname>Map</classname>
+      method return value validation and returns a <classname>Map</classname>
       containing one entry with key <varname>author</varname> and value
       <varname>book</varname>:</para>
 
@@ -1682,7 +1734,7 @@ assert "getMostPopularBookPerAuthor".equals( node.getName() );
 assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
 
 node = nodeIter.next();
-assert null == node.getName();
+assert "&lt;return value&gt;" == node.getName();
 assert Kind.RETURN_VALUE.equals( node.getElementDescriptor().getKind() );
 
 node = nodeIter.next();
