@@ -858,7 +858,7 @@ public interface ConstraintViolation&lt;T&gt; {
     the navigation path from the root object to the failing object.</para>
 
     <example revisionflag="changed">
-      <title>Path and Node interfaces</title>
+      <title>Path, Node and ElementKind interfaces</title>
 
       <programlisting>/**
  * Represents the navigation path from an object to another
@@ -878,11 +878,14 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
      */
     interface Node {
         /**
-         * Returns the name of the element which the node represents. The name
-         * will be {@code null}, if it represents an entity on the leaf node. In
-         * particular the node representing the root object has {@code null} as
-         * name. The name of a method or constructor return value is the literal
+         * Returns the name of the element which the node represents.
+         * The name will be {@code null}, if it represents an entity on the leaf
+         * node. In particular the node representing the root object has
+         * {@code null} as name.
+         * The name of a method or constructor return value is the literal
          * {@code &lt;return value&gt;}.
+         * The name of a constructor is the unqualified class name of the class
+         * declaring the constructor.
          *
          * @return Name of the element which the node represents.
          */
@@ -907,16 +910,153 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         Object getKey();
 
         /**
-         * Returns a descriptor for the element (bean, property, method etc.)
-         * represented by this node. The specific type of the element can be
-         * determined using {@link ElementDescriptor#getKind()}.
+         * The kind of element represented by the node. The following relationship
+         * between an {@link javax.validation.ElementKind} and its {@code Node} subtype exists:
+         * &lt;ul&gt;
+         *     &lt;li&gt;{@code ElementKind.BEAN}: {@link BeanNode}&lt;/li&gt;
+         *     &lt;li&gt;{@code ElementKind.PROPERTY}: {@link PropertyNode}&lt;/li&gt;
+         *     &lt;li&gt;{@code ElementKind.METHOD}: {@link MethodNode}&lt;/li&gt;
+         *     &lt;li&gt;{@code ElementKind.CONSTRUCTOR}: {@link ConstructorNode}&lt;/li&gt;
+         *     &lt;li&gt;{@code ElementKind.PARAMETER}: {@link ParameterNode}&lt;/li&gt;
+         *     &lt;li&gt;{@code ElementKind.RETURN_VALUE}: {@link ReturnValueNode}&lt;/li&gt;
+         * &lt;/ul&gt;
          *
-         * @return An element descriptor for this node.
-         *
+         * This is useful to narrow down the Node type and access node specific
+         * information:
+         * &lt;pre&gt;{@code
+         * switch(node.getKind() {
+         * case METHOD:
+         *     name = node.getName();
+         *     params = node.as(MethodNode.class).getParameterTypes();
+         * case PARAMETER:
+         *     index = node.as(ParameterNode.class).getParameterIndex();
+         * [...]
+         * }}&lt;/pre&gt;
          * @since 1.1
          */
-        ElementDescriptor getElementDescriptor();
+        ElementKind getKind();
+
+        /**
+         * Narrows the type of this node down to the given type. The appropriate
+         * type should be checked before by calling {@link getKind()}.
+         *
+         * @param &lt;T&gt; The type to narrow down to
+         * @param nodeType Class object representing the descriptor type to narrow down
+         *                 to.
+         *
+         * @return This node narrowed down to the given type.
+         *
+         * @throws ClassCastException If this node is not assignable to the type {@code T}
+         * @since 1.1
+         */
+        &lt;T extends Node&gt; T as(Class&lt;T&gt; nodeType);
     }
+
+    /**
+     * Node representing a method
+     *
+     * @since 1.1
+     */
+    interface MethodNode extends Node {
+
+        /**
+         * @return The list of parameter types
+         */
+        List&lt;Class&lt;?&gt;&gt; getParameterTypes();
+    }
+
+    /**
+     * Node representing a constructor
+     *
+     * @since 1.1
+     */
+    interface ConstructorNode extends Node {
+
+        /**
+         * @return The list of parameter types
+         */
+        List&lt;Class&lt;?&gt;&gt; getParameterTypes();
+    }
+
+    /**
+     * Node representing the return value of a method or constructor
+     *
+     * @since 1.1
+     */
+    interface ReturnValueNode extends Node {
+    }
+
+    /**
+     * Node representing a parameter of a method or constructor
+     *
+     * @since 1.1
+     */
+    interface ParameterNode extends Node {
+
+        /**
+         * @return The parameter index in the method or constructor definition
+         */
+        int getParameterIndex();
+    }
+
+    /**
+     * Node representing a bean
+     *
+     * @since 1.1
+     */
+    interface BeanNode extends Node {
+    }
+
+    /**
+     * Node representing a property
+     *
+     * @since 1.1
+     */
+    interface PropertyNode extends Node {
+    }
+}
+
+/**
+ * Enum of possible kinds of elements encountered in Bean Validation
+ * Mostly elements that can be constrained and described in the metadata
+ * but also elements that can be part of a {@link Path} and represented
+ * by a {@link Path.Node}
+ *
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @author Gunnar Morling
+ *
+ * @since 1.1
+ */
+public enum ElementKind {
+    /**
+     * A Java Bean.
+     */
+    BEAN,
+
+    /**
+     * A property of a Java Bean.
+     */
+    PROPERTY,
+
+    /**
+     * A method.
+     */
+    METHOD,
+
+    /**
+     * A constructor.
+     */
+    CONSTRUCTOR,
+
+    /**
+     * A parameter of a method or constructor.
+     */
+    PARAMETER,
+
+    /**
+     * The return value of a method or constructor.
+     */
+    RETURN_VALUE
 }</programlisting>
     </example>
 
@@ -955,18 +1095,90 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         </listitem>
 
         <listitem>
-          <para><methodname>getElementDescriptor()</methodname> returns an
-          element descriptor (see <xref
-          linkend="constraintmetadata-elementdescriptor"/>), hosting
-          constraint-related metadata for the element represented by a node.
-          In particular the type of a node can be determined via
-          <methodname>getElementDescriptor().getKind()</methodname>. By
-          narrowing down a node's descriptor to a specific subtype using the
-          method <methodname>ElementDescriptor#as()</methodname>,
-          type-specific information can be retrieved, e.g. the parameter index
-          in case a node represents a method parameter.</para>
+          <para revisionflag="added"><methodname>getKind()</methodname>
+          returns the <classname>ElementKind</classname> corresponding to the
+          actual node type. This can be used in conjunction with the method
+          <methodname>as()</methodname> to narrow the type and access node
+          specific methods</para>
+        </listitem>
+
+        <listitem revisionflag="added">
+          <para><methodname>as(Class&lt;? extends Node&gt;)</methodname>
+          returns the node instance narrowed to the type passed as a
+          parameter.</para>
         </listitem>
       </itemizedlist></para>
+
+    <para revisionflag="added">Nodes are of the following possible
+    types:</para>
+
+    <itemizedlist revisionflag="added">
+      <listitem>
+        <para><classname>BeanNode</classname></para>
+      </listitem>
+
+      <listitem>
+        <para><classname>PropertyNode</classname></para>
+      </listitem>
+
+      <listitem>
+        <para><classname>MethodNode</classname></para>
+      </listitem>
+
+      <listitem>
+        <para><classname>ConstructorNode</classname></para>
+      </listitem>
+
+      <listitem>
+        <para><classname>ParameterNode</classname></para>
+      </listitem>
+
+      <listitem>
+        <para><classname>ReturnValueNode</classname></para>
+      </listitem>
+    </itemizedlist>
+
+    <para revisionflag="added">It is possible to narrow a node instance to its
+    precise type and extract node specific informations by the use of
+    <methodname>Node.getKind()</methodname> and <methodname>Node.as(Class&lt;?
+    extends Node&gt;)</methodname>. In particular,
+    <classname>MethodNode</classname> and
+    <classname>ConstructorNode</classname> host
+    <methodname>getParameterTypes()</methodname> which return the method or
+    constructor parameter list. Likewise <classname>ParameterNode</classname>
+    hosts <methodname>getParameterIndex()</methodname> which returns the
+    parameter index in the method or constructor parameter list.</para>
+
+    <example revisionflag="added">
+      <title>Narrow a node to its specific type</title>
+
+      <programlisting>Node node = ...;
+switch ( node.getKind() ) {
+case METHOD:
+    MethodNode methodNode = node.as(MethodNode.class);
+    methodName = methodNode.getName();
+    params = methodNode.getParameterTypes().toArray( 
+        new Class&lt;?&gt;[methodNode.getParameterTypes().size()] );
+    break;
+case CONSTRUCTOR:
+    ConstructorNode constructorNode = node.as(ConstructorNode.class);
+    methodName = constructorNode.getName();
+    params = constructorNode.getParameterTypes().toArray( 
+        new Class&lt;?&gt;[constructorNode.getParameterTypes().size()] );
+    break;
+case PARAMETER:
+    arg = node.as(ParameterNode.class).getParameterIndex();
+    break;
+case RETURN_VALUE:
+    [...]
+case PARAMETER:
+    [...]
+case BEAN:
+    [...]
+case PROPERTY:
+    [...]
+}</programlisting>
+    </example>
 
     <para revisionflag="changed"><classname>Path</classname> objects are built
     according to the following rules:</para>
@@ -982,11 +1194,11 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
 
       <listitem>
         <para role="tck-testable tck-needs-update">If the failing object is
-        the root object, a <classname>Node</classname> with name set to null
-        is added to the <classname>Path</classname>. <phrase
-        revisionflag="added">The <classname>Kind</classname> of the node's
-        <classname>ElementDescriptor</classname> is
-        <varname>Kind.BEAN</varname>. </phrase></para>
+        the root object, a <classname>BeanNode</classname> with name set to
+        null is added to the <classname>Path</classname>. <phrase
+        revisionflag="added">The <classname>ElementKind</classname> of the
+        node's <classname>BeanNode</classname> is
+        <varname>ElementKind.BEAN</varname>. </phrase></para>
       </listitem>
 
       <listitem>
@@ -995,12 +1207,13 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
         <itemizedlist>
           <listitem>
             <para role="tck-testable tck-needs-update">a
-            <classname>Node</classname> object whose <literal>name</literal>
-            equals the name of the association property (field name or Java
-            Bean property name) is added to <classname>Path</classname>.
-            <phrase revisionflag="added">The <classname>Kind</classname> of
-            the node's <classname>ElementDescriptor</classname> is
-            <varname>Kind.PROPERTY</varname>.</phrase></para>
+            <classname>PropertyNode</classname> object whose
+            <literal>name</literal> equals the name of the association
+            property (field name or Java Bean property name) is added to
+            <classname>Path</classname>. <phrase revisionflag="added">The
+            <classname>ElementKind</classname> of the node's
+            <classname>PropertyNode</classname> is
+            <varname>ElementKind.PROPERTY</varname>.</phrase></para>
           </listitem>
 
           <listitem>
@@ -1033,12 +1246,13 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
 
         <itemizedlist>
           <listitem>
-            <para>a <classname>Node</classname> object is added to
+            <para>a <classname>PropertyNode</classname> object is added to
             <classname>Path</classname> whose <literal>name</literal> equals
             the name of the property (field name or Java Bean property name).
-            <phrase revisionflag="added">The <classname>Kind</classname> of
-            the node's <classname>ElementDescriptor</classname> is
-            <varname>Kind.PROPERTY</varname>.</phrase></para>
+            <phrase revisionflag="added">The
+            <classname>ElementKind</classname> of the node's
+            <classname>PropertyNode</classname> is
+            <varname>ElementKind.PROPERTY</varname>.</phrase></para>
           </listitem>
 
           <listitem>
@@ -1052,11 +1266,12 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
 
         <itemizedlist>
           <listitem>
-            <para>a <classname>Node</classname> object is added to
+            <para>a <classname>BeanNode</classname> object is added to
             <classname>Path</classname> whose <literal>name</literal> is null.
-            <phrase revisionflag="added">The <classname>Kind</classname> of
-            the node's <classname>ElementDescriptor</classname> is
-            <varname>Kind.BEAN</varname>.</phrase></para>
+            <phrase revisionflag="added">The
+            <classname>ElementKind</classname> of the node's
+            <classname>BeanNode</classname> is
+            <varname>ElementKind.BEAN</varname>.</phrase></para>
           </listitem>
 
           <listitem>
@@ -1071,29 +1286,39 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
 
         <itemizedlist>
           <listitem>
-            <para role="tck-testable">a <classname>Node</classname> object is
+            <para role="tck-testable">a <classname>MethodNode</classname>
+            respectively a <classname>ConstructorNode</classname> object is
             added to the <classname>Path</classname> which represents the
-            validated method or constructor. The <literal>name</literal> of
-            the node equals the validated method or constructor, the
-            <classname>Kind</classname> of the node's
-            <classname>ElementDescriptor</classname> is
-            <varname>Kind.METHOD</varname> or
-            <varname>Kind.CONSTRUCTOR</varname>, respectively.</para>
+            validated method respectively constructor. The
+            <literal>name</literal> of the node equals the validated method
+            name or the validated constructor's unqualified class name, the
+            <classname>ElementKind</classname> of the node's
+            <classname>MethodNode</classname> respectively
+            <classname>ConstructorNode</classname> is
+            <varname>ElementKind.METHOD</varname> respectively
+            <varname>ElementKind.CONSTRUCTOR</varname>.</para>
           </listitem>
 
           <listitem>
-            <para role="tck-testable">a <classname>Node</classname> object is
-            added to the <classname>Path</classname> which represents the
-            validated parameter or return value. In the parameter case, the
-            <literal>name</literal> of the node equals the parameter name as
-            determined by the current parameter name provider (see <xref
+            <para role="tck-testable">a <classname>ParameterNode</classname>
+            object is added to the <classname>Path</classname> which
+            represents the validated parameter. The <literal>name</literal> of
+            the node equals the parameter name as determined by the current
+            parameter name provider (see <xref
             linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>).
-            In the return value case, the <literal>name</literal> of the node
-            has the constant value <literal>&lt;return value&gt;</literal>.
-            The <classname>Kind</classname> of the node's
-            <classname>ElementDescriptor</classname> is
-            <varname>Kind.PARAMETER</varname> or
-            <varname>Kind.RETURN_VALUE</varname>, respectively.</para>
+            The <classname>ElementKind</classname> of the node's
+            <classname>ParameterNode</classname> is
+            <varname>elementKind.PARAMETER</varname>.</para>
+          </listitem>
+
+          <listitem>
+            <para role="tck-testable">a <classname>ReturnValueNode</classname>
+            object is added to the <classname>Path</classname> which
+            represents the validated return value. The <literal>name</literal>
+            of the node has the constant value <literal>&lt;return
+            value&gt;</literal>. The <classname>ElementKind</classname> of the
+            node's <classname>ReturnValueNode</classname> is
+            <varname>ElementKind.RETURN_VALUE.</varname></para>
           </listitem>
 
           <listitem>
@@ -1115,28 +1340,37 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
 
         <itemizedlist>
           <listitem>
-            <para role="tck-testable">a <classname>Node</classname> object is
+            <para role="tck-testable">a <classname>MethodNode</classname>
+            respectively <classname>ConstructorNode</classname> object is
             added to the <classname>Path</classname> which represents the
-            concerned method or constructor. The <literal>name</literal> of
-            the node equals the concerned method or constructor, the
-            <classname>Kind</classname> of the node's
-            <classname>ElementDescriptor</classname> is
-            <varname>Kind.METHOD</varname> or
-            <varname>Kind.CONSTRUCTOR</varname>, respectively.</para>
+            concerned method respectively constructor. The
+            <literal>name</literal> of the node equals the concerned method
+            name or the constructor's unqualified class name, the
+            <classname>ElementKind</classname> of the node's
+            <classname>MethodName</classname> or
+            <classname>ConstructorName</classname> is
+            <varname>ElementKind.METHOD</varname> or
+            <varname>ElementKind.CONSTRUCTOR</varname>, respectively.</para>
           </listitem>
 
           <listitem>
-            <para role="tck-testable">a <classname>Node</classname> object is
-            added to the <classname>Path</classname> which represents the
-            traversed parameter or return value. In the parameter case, the
-            <literal>name</literal> of the node equals the parameter name as
-            determined by the current parameter name provider. In the return
-            value case, the <literal>name</literal> of the node has the
-            constant value <literal>&lt;return value&gt;</literal>. The
-            <classname>Kind</classname> of the node's
-            <classname>ElementDescriptor</classname> is
-            <varname>Kind.PARAMETER</varname> or
-            <varname>Kind.RETURN_VALUE</varname>, respectively.</para>
+            <para role="tck-testable">a <classname>ParameterNode</classname>
+            object is added to the <classname>Path</classname> which
+            represents the traversed parameter. The <literal>name</literal> of
+            the node equals the parameter name as determined by the current
+            parameter name provider. The <classname>ElementKind</classname> of
+            the node's <classname>ParameterNode</classname> is
+            <varname>ElementKind.PARAMETER</varname>.</para>
+          </listitem>
+
+          <listitem>
+            <para role="tck-testable">a <classname>ReturnValueNode</classname>
+            object is added to the <classname>Path</classname> which
+            represents the traversed return value. The <literal>name</literal>
+            of the node has the constant value <literal>&lt;return
+            value&gt;</literal>. The <classname>ElementKind</classname> of the
+            node's <classname>ReturnValueNode</classname> is
+            <varname>ElementKind.RETURN_VALUE.</varname></para>
           </listitem>
 
           <listitem>
@@ -1182,11 +1416,11 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
       <para><classname>ConstraintViolation</classname>s occurred during
       standard bean validation can be distinguished from violations occurred
       during method/constructor validation by analyzing the
-      <classname>Kind</classname> of the
-      <classname>ElementDescriptor</classname> of the first node in the
-      violation's property path. In case of method-validation, that
-      <classname>Kind</classname> will be either
-      <varname>CONSTRUCTOR</varname> or <varname>METHOD</varname>.</para>
+      <classname>ElementKind</classname> of the <classname>Node</classname> of
+      the first node in the violation's property path. In case of constructor
+      or method validation, that <classname>ElementKind</classname> will be
+      either <varname>CONSTRUCTOR</varname> or
+      <varname>METHOD</varname>.</para>
     </note>
 
     <para revisionflag="changed">Let there be the following object
@@ -1264,82 +1498,86 @@ public class Library {
             <entry><classname>@AvailableInStore</classname> on
             <classname>Book</classname></entry>
 
-            <entry><para>Node(name=null,inIterable=false, index=null,
+            <entry><para>BeanNode(name=null,inIterable=false, index=null,
             key=null<phrase revisionflag="added">,
-            elementDescriptor=BeanDescriptor()</phrase>)</para></entry>
+            kind=ElementKind.BEAN</phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@NotEmpty</classname> on
             <classname>Book.title</classname></entry>
 
-            <entry><para>Node(name=title,inIterable=false, index=null,
+            <entry><para>PropertyNode(name=title,inIterable=false, index=null,
             key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
+            kind=ElementKind.PROPERTY</phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@NotNull</classname> on
             <classname>Book.authors</classname></entry>
 
-            <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
+            <entry><para>PropertyNode(name=authors,inIterable=false,
+            index=null, key=null<phrase revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@SecurityChecking</classname> on the fourth
             author, <classname>Author</classname></entry>
 
-            <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=null,inIterable=true,
+            <entry><para>PropertyNode(name=authors,inIterable=false,
+            index=null, key=null<phrase revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase>)</para><para>BeanNode(name=null,inIterable=true,
             index=3, key=null<phrase revisionflag="added">,
-            elementDescriptor=BeanDescriptor()</phrase>)</para></entry>
+            kind=ElementKind.BEAN</phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@Size</classname> on the fourth author,
             <classname>Author.lastname</classname></entry>
 
-            <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=lastname,inIterable=true,
-            index=4, key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
+            <entry><para>PropertyNode(name=authors,inIterable=false,
+            index=null, key=null<phrase revisionflag="added"><phrase
+            revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase></phrase>)</para><para>PropertyNode(name=lastname,inIterable=true,
+            index=4, key=null<phrase revisionflag="added"><phrase
+            revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase></phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@NotEmpty</classname> on the first author,
             <classname>Author.company</classname></entry>
 
-            <entry><para>Node(name=authors,inIterable=false, index=null,
-            key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=company,inIterable=true,
-            index=0, key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
+            <entry><para>PropertyNode(name=authors,inIterable=false,
+            index=null, key=null<phrase revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase>)</para><para>PropertyNode(name=company,inIterable=true,
+            index=0, key=null<phrase revisionflag="added"><phrase
+            revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase></phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@Min</classname> on the review associated to
             Consumer Report, <classname>Review.rating</classname></entry>
 
-            <entry><para>Node(name=reviewsPerSource,inIterable=false,
-            index=null, key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=rating,inIterable=true,
+            <entry><para>PropertyNode(name=reviewsPerSource,inIterable=false,
+            index=null, key=null<phrase revisionflag="added"><phrase
+            revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase></phrase>)</para><para>PropertyNode(name=rating,inIterable=true,
             index=null, key="Consumer Report"<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
+            kind=ElementKind.PROPERTY</phrase>)</para></entry>
           </row>
 
           <row>
             <entry><classname>@Min</classname> on the picked review,
             <classname>Review.rating</classname></entry>
 
-            <entry><para>Node(name=pickedReview,inIterable=false, index=null,
-            key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para><para>Node(name=rating,inIterable=false,
+            <entry><para>PropertyNode(name=pickedReview,inIterable=false,
             index=null, key=null<phrase revisionflag="added">,
-            elementDescriptor=PropertyDescriptor()</phrase>)</para></entry>
+            kind=ElementKind.PROPERTY</phrase>)</para><para>PropertyNode(name=rating,inIterable=false,
+            index=null, key=null<phrase revisionflag="added">,
+            kind=ElementKind.PROPERTY</phrase>)</para></entry>
           </row>
         </tbody>
       </tgroup>
@@ -1368,11 +1606,11 @@ public class Library {
               <entry><classname>@NotNull</classname> on the <varname>location
               </varname>parameter of the constructor</entry>
 
-              <entry><para>Node(name=Library, inIterable=false, index=null,
-              key=null,
-              elementDescriptor=ConstructorDescriptor())</para><para>Node(name=arg1,
+              <entry><para>ConstructorNode(name=Library, inIterable=false,
+              index=null, key=null,
+              kind=ElementKind.CONSTRUCTOR)</para><para>ParameterNode(name=arg1,
               inIterable=false, index=null, key=null,
-              elementDescriptor=ParameterDescriptor())</para></entry>
+              kind=ElementKind.PARAMETER)</para></entry>
             </row>
 
             <row>
@@ -1380,11 +1618,11 @@ public class Library {
               </varname>parameter of the <methodname>addBook()</methodname>
               method</entry>
 
-              <entry><para>Node(name=addBook, inIterable=false, index=null,
-              key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=arg0,
+              <entry><para>MethodNode(name=addBook, inIterable=false,
+              index=null, key=null,
+              kind=ElementKind.METHOD)</para><para>ParameterNode(name=arg0,
               inIterable=false, index=null, key=null,
-              elementDescriptor=ParameterDescriptor())</para></entry>
+              kind=ElementKind.PARAMETER)</para></entry>
             </row>
 
             <row>
@@ -1392,13 +1630,13 @@ public class Library {
               <classname>Book.title</classname> during validation of
               <methodname>addBook()</methodname></entry>
 
-              <entry><para>Node(name=addBook, inIterable=false, index=null,
-              key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=arg0,
+              <entry><para>MethodNode(name=addBook, inIterable=false,
+              index=null, key=null,
+              kind=ElementKind.METHOD)</para><para>ParameterNode(name=arg0,
               inIterable=false, index=null, key=null,
-              elementDescriptor=ParameterDescriptor())</para><para>Node(name=title,
+              kind=ElementKind.PARAMETER)</para><para>PropertyNode(name=title,
               inIterable=false, index=null, key=null,
-              elementDescriptor=PropertyDescriptor())</para></entry>
+              kind=ElementKind.PROPERTY)</para></entry>
             </row>
 
             <row>
@@ -1406,24 +1644,23 @@ public class Library {
               <classname>Book.title</classname> during validation of
               <methodname>addAllBooks()</methodname></entry>
 
-              <entry><para>Node(name=addAllBooks, inIterable=false,
+              <entry><para>MethodNode(name=addAllBooks, inIterable=false,
               index=null, key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=arg0,
+              kind=ElementKind.METHOD)</para><para>ParameterNode(name=arg0,
               inIterable=false, index=null, key=null,
-              elementDescriptor=ParameterDescriptor())</para><para>Node(name=title,inIterable=true,
-              index=3, key=null,
-              elementDescriptor=PropertyDescriptor())</para></entry>
+              kind=ElementKind.PARAMETER)</para><para>PropertyNode(name=title,inIterable=true,
+              index=3, key=null, kind=ElementKind.PROPERTY)</para></entry>
             </row>
 
             <row>
               <entry><classname>@NotNull</classname> on the return value of
               the <methodname>getLocation()</methodname> method</entry>
 
-              <entry><para>Node(name=getLocation, inIterable=false,
+              <entry><para>MethodNode(name=getLocation, inIterable=false,
               index=null, key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=&lt;return
+              kind=ElementKind.METHOD)</para><para>ReturnValueNode(name=&lt;return
               value&gt;, inIterable=false, index=null, key=null,
-              elementDescriptor=ReturnValueDescriptor())</para></entry>
+              kind=ElementKind.RETURN_VALUE)</para></entry>
             </row>
 
             <row>
@@ -1432,13 +1669,13 @@ public class Library {
               validation of
               <methodname>getMostPopularBookPerAuthor()</methodname></entry>
 
-              <entry><para>Node(name=getMostPopularBookPerAuthor,
+              <entry><para>MethodNode(name=getMostPopularBookPerAuthor,
               inIterable=false, index=null, key=null,
-              elementDescriptor=MethodDescriptor())</para><para>Node(name=&lt;return
+              kind=ElementKind.METHOD)</para><para>ReturnValueNode(name=&lt;return
               value&gt;, inIterable=false, index=null, key=null,
-              elementDescriptor=ReturnValueDescriptor())</para><para>Node(name=title,inIterable=true,
+              kind=ElementKind.RETURN_VALUE)</para><para>PropertyNode(name=title,inIterable=true,
               index=null, key=Author(firstName=John, lastName=Doe),
-              elementDescriptor=PropertyDescriptor())</para></entry>
+              kind=ElementKind.PROPERTY)</para></entry>
             </row>
           </tbody>
         </tgroup>
@@ -1588,7 +1825,7 @@ assert book.getTitle().equals( constraintViolation.getInvalidValue() );
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
 Node node = nodeIter.next();
 assert "title".equals( node.getName() );
-assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PROPERTY.equals( node.getKind() );
 
 assert false == nodeIter.hasNext();</programlisting>
       </example>
@@ -1612,11 +1849,11 @@ Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator()
 
 Node node = nodeIter.next();
 assert "author".equals( node.getName() );
-assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PROPERTY.equals( node.getKind() );
 
 node = nodeIter.next();
 assert "lastName".equals( node.getName() );
-assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PROPERTY.equals( node.getKind() );
 
 assert false == nodeIter.hasNext();</programlisting>
     </section>
@@ -1663,12 +1900,12 @@ Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator()
 
 Node node = nodeIter.next();
 assert "addBook".equals( node.getName() );
-assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.METHOD.equals( node.getKind() );
 
 node = nodeIter.next();
 //assuming the default parameter name provider is used
 assert "arg0".equals( node.getName() );
-assert Kind.PARAMETER.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PARAMETER.equals( node.getKind() );
 
 assert false == nodeIter.hasNext();</programlisting>
 
@@ -1694,16 +1931,16 @@ Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator()
 
 Node node = nodeIter.next();
 assert "addBook".equals( node.getName() );
-assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.METHOD.equals( node.getKind() );
 
 node = nodeIter.next();
 //assuming the default parameter name provider is used
 assert "arg0".equals( node.getName() );
-assert Kind.PARAMETER.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PARAMETER.equals( node.getKind() );
 
 node = nodeIter.next();
 assert "title".equals( node.getName() );
-assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PROPERTY.equals( node.getKind() );
 
 assert false == nodeIter.hasNext();</programlisting>
 
@@ -1731,15 +1968,15 @@ Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator()
 
 Node node = nodeIter.next();
 assert "getMostPopularBookPerAuthor".equals( node.getName() );
-assert Kind.METHOD.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.METHOD.equals( node.getKind() );
 
 node = nodeIter.next();
 assert "&lt;return value&gt;" == node.getName();
-assert Kind.RETURN_VALUE.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.RETURN_VALUE.equals( node.getKind() );
 
 node = nodeIter.next();
 assert "title".equals( node.getName() );
-assert Kind.PROPERTY.equals( node.getElementDescriptor().getKind() );
+assert ElementKind.PROPERTY.equals( node.getKind() );
 assert author.equals( node.getKey() );
 assert true == node.isInIterable();
 
