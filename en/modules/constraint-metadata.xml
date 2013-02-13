@@ -329,9 +329,6 @@ assert 2 == constraints.size();</programlisting>
     constraints, taking into account locally declared constraints as well as
     constraints declared in the inheritance hierarchy.</para>
 
-    <para revisionflag="added"><remark>TODO: Update code relating to
-    cross-parameter constraints, once BVAL-370 is resolved</remark></para>
-
     <example revisionflag="added">
       <title>Using the fluent API to select method and constructor
       constraints</title>
@@ -360,7 +357,7 @@ MethodDescriptor methodDescriptor = validator
     .getConstraintsForMethod( "resetPassword", String.class, String.class );
 
 //one cross-parameter constraint
-assert 1 == methodDescriptor.getConstraintDescriptors().size();
+assert 1 == methodDescriptor.getCrossParameterDescriptor().getConstraintDescriptors().size();
 
 //one local return value constraint
 assert 1 == methodDescriptor.getReturnValueDescriptor()
@@ -394,13 +391,6 @@ assert 1 == constructorDescriptor.getParameterDescriptors()
     .getConstraintDescriptors()
     .size();</programlisting>
     </example>
-
-    <para revisionflag="added"><remark>TODO: Consider renaming
-    <classname>ElementDescriptor$Kind</classname> to
-    <classname>ElementType</classname> or <classname>Type</classname> and/or
-    making it a top-level type. Currently
-    <classname>ElementDescriptor$Type</classname> is being
-    considered.</remark></para>
   </section>
 
   <section>
@@ -569,7 +559,7 @@ public interface BeanDescriptor extends ElementDescriptor {
 
     <para revisionflag="added"
     role="tck-testable"><methodname>getConstraintsForConstructor</methodname>
-    returns a <classname>ConstructorDescriptor</classname> ojbect describing
+    returns a <classname>ConstructorDescriptor</classname> object describing
     the method constraints of the given constructor. The constructor is
     uniquely identified by its name and the types of its parameters.</para>
 
@@ -754,6 +744,15 @@ public interface ExecutableDescriptor extends ElementDescriptor {
     List&lt;ParameterDescriptor&gt; getParameterDescriptors();
 
     /**
+     * Returns a descriptor containing cross-parameter constraints
+     * of this executable.
+     *
+     * @return A descriptor containing cross-parameter constraints of this
+     *         executable
+     */
+    CrossParameterDescriptor getCrossParameterDescriptor();
+
+    /**
      * Returns a descriptor for this executable's return value.
      *
      * @return A descriptor for this executable's return value or {@code null}
@@ -834,6 +833,12 @@ public interface ExecutableDescriptor extends ElementDescriptor {
     method or constructor has no parameters.</para>
 
     <para
+    role="tck-testable"><methodname>getCrossParameterDescriptor()</methodname>
+    returns a descriptor containing cross-parameter constraints of the method
+    or constructor. If no cross-parameter constraint is present, the
+    descriptor will return an empty set of constraint descriptors.</para>
+
+    <para
     role="tck-testable"><methodname>getReturnValueDescriptor()</methodname>
     returns a descriptor for the method's or constructor's return value or
     <varname>null</varname> if it has no return value.</para>
@@ -856,7 +861,7 @@ public interface ExecutableDescriptor extends ElementDescriptor {
     <classname>ElementDescriptor</classname> are redefined to take
     cross-parameter constraints into account only. Constraint descriptors for
     individual parameters can be obtained from the corresponding
-    <classname>ParameterMetaData</classname> object, while constraint
+    <classname>ParameterDescriptor</classname> object, while constraint
     descriptors for the return value can be obtained from
     <classname>ReturnValueDescriptor</classname>.</para>
 
@@ -949,6 +954,36 @@ public interface ParameterDescriptor extends ElementDescriptor, CascadableDescri
 
     <para role="tck-testable"><methodname>getName()</methodname> returns the
     name of the represented parameter.</para>
+  </section>
+
+  <section revisionflag="added">
+    <title>CrossParameterDescriptor</title>
+
+    <para>The <classname>CrossParameterDescriptor</classname> interface
+    describes a element containing all cross-parameter constraints of a method
+    or constructor.</para>
+
+    <para>This interface is returned by
+    <methodname>MethodDescriptor#getCrossParameterDescriptor()</methodname>
+    and
+    <methodname>ConstructorDescriptor#getCrossParameterDescriptor()</methodname>.</para>
+
+    <programlisting>package javax.validation.metadata;
+
+/**
+ * Describes an element holding cross-parameter constraints of a method or constructor
+ *
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @since 1.1
+ */
+public interface CrossParameterDescriptor extends ElementDescriptor {
+
+    /**
+     * @return {@code Object[].class} - the type of the parameter array
+     */
+    @Override
+    Class&lt;?&gt; getElementClass();
+}</programlisting>
   </section>
 
   <section revisionflag="added">

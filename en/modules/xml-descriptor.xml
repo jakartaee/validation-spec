@@ -346,6 +346,11 @@
         element is used to change the configuration of a constructor's return
         value if required.</para>
 
+        <para role="tck-testable">The optional
+        <literal>cross-parameter</literal> element is used to change the
+        configuration of a constructor's cross-parameter constraints if
+        required.</para>
+
         <para><phrase role="tck-testable">The constraints applying for a
         constructor's parameters and its return value are specified by adding
         <literal>constraint</literal> elements to the
@@ -354,14 +359,16 @@
         not to perform cascaded validation is controlled using the
         <literal>valid</literal> element</phrase>.<phrase role="tck-testable">
         Group conversion rules for cascaded validation are specified using the
-        <literal>convert-group</literal> element. </phrase><phrase
-        role="tck-testable">By adding
-        <literal>cross-parameter-constraint</literal> elements to the
-        <literal>constructor</literal> element, cross-parameter constraints
-        can be configured.</phrase></para>
+        <literal>convert-group</literal> element. </phrase></para>
 
-        <para role="tck-testable">If <literal>ignore-annotations</literal> is
-        declared on the parameter or return value level, Bean Validation must
+        <para><phrase role="tck-testable tck-needs-update">The cross-parameter
+        constraints applied on a constructor parameter list are specified by
+        adding <literal>constraint</literal> elements to the
+        <literal>cross-parameter</literal> element.</phrase></para>
+
+        <para role="tck-testable tck-needs-update">If
+        <literal>ignore-annotations</literal> is declared on the parameter,
+        cross-parameter element or return value level, Bean Validation must
         honor the explicit value for this element. Otherwise, if
         <literal>ignore-annotations</literal> is declared for the
         <literal>constructor</literal> element, Bean Validation must honor
@@ -390,7 +397,9 @@
             explicitly used.</phrase> <phrase role="tck-testable">Note that
             the only way to disable cascading on a constructor parameter or
             return value marked as <classname>@Valid</classname> is to use
-            <literal>ignore-annotations=true</literal>.</phrase></para>
+            <literal>ignore-annotations=true</literal>. This does not apply to
+            cross-parameter elements as cascading does not make sense in this
+            situation.</phrase></para>
           </listitem>
 
           <listitem revisionflag="added" role="tck-testable">
@@ -401,7 +410,9 @@
             outlined in <xref
             linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>
             apply, in particular it is not legal to declare several
-            conversions for the same source group.</para>
+            conversions for the same source group. This does not apply to
+            cross-parameter elements as cascading does not make sense in this
+            situation.</para>
           </listitem>
         </itemizedlist>
 
@@ -426,6 +437,9 @@
                 [...]
             &lt;/parameter&gt;
             &lt;parameter type="long" ignore-annotations="false"/&gt;
+            &lt;cross-parameter ignore-annotations="false"&gt;
+                [...]
+            &lt;/cross-parameter&gt;
             &lt;return-value&gt;
                 &lt;valid/&gt;
                 [...]
@@ -473,8 +487,13 @@
         <classname>ValidationException</classname> is raised.</para>
 
         <para role="tck-testable">The optional <literal>return-value</literal>
-        element is used to change the configuration of a mehod's return value
+        element is used to change the configuration of a method's return value
         if required.</para>
+
+        <para role="tck-testable">The optional
+        <literal>cross-parameter</literal> element is used to change the
+        configuration of a method's cross-parameter constraints if
+        required.</para>
 
         <para><phrase role="tck-testable">The constraints applying for a
         method's parameters and its return value are specified by adding
@@ -484,14 +503,16 @@
         not to perform cascaded validation is controlled using the
         <literal>valid</literal> element.</phrase><phrase role="tck-testable">
         Group conversion rules for cascaded validation are specified using the
-        <literal>convert-group</literal> element. </phrase><phrase
-        role="tck-testable">By adding
-        <literal>cross-parameter-constraint</literal> elements to the
-        <literal>method</literal> element, cross-parameter constraints can be
-        configured.</phrase></para>
+        <literal>convert-group</literal> element. </phrase></para>
 
-        <para role="tck-testable">If <literal>ignore-annotations</literal> is
-        declared on the parameter or return value level, Bean Validation must
+        <para><phrase role="tck-testable tck-needs-update">The cross-parameter
+        constraints applied on a method parameter list are specified by adding
+        <literal>constraint</literal> elements to the
+        <literal>cross-parameter</literal> element.</phrase></para>
+
+        <para role="tck-testable tck-needs-update">If
+        <literal>ignore-annotations</literal> is declared on the parameter,
+        cross-parameter element or return value level, Bean Validation must
         honor the explicit value for this element. Otherwise, if
         <literal>ignore-annotations</literal> is declared for the
         <literal>method</literal> element, Bean Validation must honor this
@@ -519,7 +540,9 @@
             explicitly used.</phrase> <phrase role="tck-testable">Note that
             the only way to disable cascading on a method parameter or return
             value marked as <classname>@Valid</classname> is to use
-            <literal>ignore-annotations=true</literal>.</phrase></para>
+            <literal>ignore-annotations=true</literal>. This does not apply to
+            cross-parameter elements as cascading does not make sense in this
+            situation.</phrase></para>
           </listitem>
 
           <listitem revisionflag="added" role="tck-testable">
@@ -530,7 +553,9 @@
             outlined in <xref
             linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>
             apply, in particular it is not legal to declare several
-            conversions for the same source group.</para>
+            conversions for the same source group. This does not apply to
+            cross-parameter elements as cascading does not make sense in this
+            situation.</para>
           </listitem>
         </itemizedlist>
 
@@ -555,6 +580,9 @@
                 [...]
             &lt;/parameter&gt;
             &lt;parameter type="long" ignore-annotations="false"/&gt;
+            &lt;cross-parameter ignore-annotations="false"&gt;
+                [...]
+            &lt;/cross-parameter&gt;
             &lt;return-value&gt;
                 &lt;valid/&gt;
                 [...]
@@ -572,13 +600,11 @@
 
         <para><phrase revisionflag="changed">New constraint declarations are
         represented by the <literal>constraint</literal> element for generic
-        constraints and the <literal>cross-parameter-constraint</literal>
-        element for cross-parameter constraints.</phrase> The
-        <literal>annotation</literal> attribute is the class name of the
-        annotation representing the constraint. Message, groups and payload
-        are defined respectively by the <literal>message</literal>,
-        <literal>groups</literal> and <literal>payload</literal>
-        elements.</para>
+        constraints.</phrase> The <literal>annotation</literal> attribute is
+        the class name of the annotation representing the constraint. Message,
+        groups and payload are defined respectively by the
+        <literal>message</literal>, <literal>groups</literal> and
+        <literal>payload</literal> elements.</para>
 
         <para>Other custom elements of an annotation are represented by
         <literal>element</literal>. <phrase role="tck-testable">The
@@ -732,8 +758,10 @@
             &lt;parameter type="java.lang.String"/&gt;
             &lt;parameter type="java.lang.String"/&gt;
 
-            &lt;!-- @ValidResetPasswordParameters --&gt;
-            &lt;cross-parameter-constraint annotation="com.acme.app.constraint.ValidResetPasswordParameters"/&gt;
+            &lt;cross-parameter&gt;
+                &lt;!-- @ValidResetPasswordParameters --&gt;
+                &lt;constraint annotation="com.acme.app.constraint.ValidResetPasswordParameters"/&gt;
+            &lt;/cross-parameter&gt;
         &lt;/method&gt;
     &lt;/bean&gt;
 &lt;/constraint-mappings&gt;</programlisting>
@@ -1115,14 +1143,14 @@
                         name="parameter"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:crossParameterType"
+                        name="cross-parameter"
+                        minOccurs="0"
+                        maxOccurs="1"/&gt;
             &lt;xs:element type="map:returnValueType"
                         name="return-value"
                         minOccurs="0"
                         maxOccurs="1"/&gt;
-            &lt;xs:element type="map:constraintType"
-                        name="cross-parameter-constraint"
-                        minOccurs="0"
-                        maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:string" name="name" use="required"/&gt;
         &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
@@ -1133,14 +1161,14 @@
                         name="parameter"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:crossParameterType"
+                        name="cross-parameter"
+                        minOccurs="0"
+                        maxOccurs="1"/&gt;
             &lt;xs:element type="map:returnValueType"
                         name="return-value"
                         minOccurs="0"
                         maxOccurs="1"/&gt;
-            &lt;xs:element type="map:constraintType"
-                        name="cross-parameter-constraint"
-                        minOccurs="0"
-                        maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
         &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
     &lt;/xs:complexType&gt;
@@ -1168,6 +1196,15 @@
                         maxOccurs="unbounded"/&gt;
             &lt;xs:element type="map:groupConversionType"
                         name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+        &lt;/xs:sequence&gt;
+        &lt;xs:attribute type="xs:boolean" name="ignore-annotations" use="optional"/&gt;
+    &lt;/xs:complexType&gt;
+    &lt;xs:complexType name="crossParameterType"&gt;
+        &lt;xs:sequence&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
