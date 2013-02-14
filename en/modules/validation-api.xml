@@ -347,12 +347,14 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
       <para>The methods for the validation of parameters and return values of
       methods and constructors can be found on the interface
-      <classname>javax.validation.ExecutableValidator</classname>.</para>
+      <classname>javax.validation.executable.ExecutableValidator</classname>.</para>
 
       <example>
         <title>ExecutableValidator interface</title>
 
-        <programlisting>/**
+        <programlisting>package javax.validation.executable;
+
+/**
  * Validates parameters and return values of methods and constructors.
  * Implementations of this interface must be thread-safe.
  *
@@ -376,11 +378,10 @@ public interface ExecutableValidator {
      *         Will be empty, if no error occurs, but never {@code null}.
      *
      * @throws IllegalArgumentException if {@code null} is passed for any of the parameters
-     * @throws ValidationException if a non recoverable error happens during the
+     * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(
-        T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
 
     /**
      * Validates all return value constraints of the given method.
@@ -397,11 +398,10 @@ public interface ExecutableValidator {
      *
      * @throws IllegalArgumentException if {@code null} is passed for any of the object,
      * method or groups parameters
-     * @throws ValidationException if a non recoverable error happens during the
+     * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(
-        T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
 
     /**
      * Validates all constraints placed on the parameters of the given constructor.
@@ -417,11 +417,10 @@ public interface ExecutableValidator {
      *         Will be empty, if no error occurs, but never {@code null}.
      *
      * @throws IllegalArgumentException if {@code null} is passed for any of the parameters
-     * @throws ValidationException if a non recoverable error happens during the
+     * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(
-        Constructor&lt;? extends T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(Constructor&lt;? extends T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
 
     /**
      * Validates all return value constraints of the given constructor.
@@ -436,11 +435,10 @@ public interface ExecutableValidator {
      *         Will be empty, if no error occurs, but never {@code null}.
      *
      * @throws IllegalArgumentException if {@code null} is passed for any of the parameters
-     * @throws ValidationException if a non recoverable error happens during the
+     * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(
-        Constructor&lt;? extends T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;? extends T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
 }</programlisting>
       </example>
 
@@ -2676,8 +2674,8 @@ Validator validator = factory.getValidator();</programlisting>
 
     <para>Instead method constraints must be validated by invoking the
     appropriate methods on
-    <classname>javax.validation.ExecutableValidator</classname>. Typically
-    this won't happen by manually calling these methods but rather
+    <classname>javax.validation.executable.ExecutableValidator</classname>.
+    Typically this won't happen by manually calling these methods but rather
     automatically upon invocation of the constrained methods or constructors,
     using approaches and techniques such as CDI/EJB interceptors,
     aspect-oriented programming or dynamic proxies.</para>
