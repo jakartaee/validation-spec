@@ -2558,7 +2558,12 @@ Validator validator = factory.getValidator();</programlisting>
     <para>Integrators are encouraged to use Bean Validation's metadata API to
     find whether or not a method or a constructor should be intercepted. This
     guarantees that XML descriptors as well as future mapping strategies are
-    taken into account. Here is an example of what such usage would be:</para>
+    taken into account. Note that the metadata API does not take into account
+    the fact that a method or constructor validation as been enabled or
+    disabled by the techniques described in <xref
+    linkend="integration-general-executable"/>. </para>
+
+    <para>Here is an example of what such metadata usage would be:</para>
 
     <example>
       <title>Using metadata API to figure out if method interception is
@@ -2701,115 +2706,6 @@ public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Constructor&lt
         </listitem>
       </itemizedlist>
     </note>
-
-    <section>
-      <title>PROPOSAL: customizing method interception</title>
-
-      <para>By default, all constrained methods (that can be intercepted) are
-      validated using the default group.</para>
-
-      <para>You can customize whether or not a method is validated and which
-      group is used via the <classname>MethodValidationActivator</classname>
-      and <classname>MethodValidationGroupSelector</classname> contracts and
-      providing implementations to the Bean Validation bootstrap or via the
-      XML deployment descriptor.</para>
-
-      <example>
-        <title>MethodValidationActivator contract</title>
-
-        <programlisting language="JAVA" role="JAVA">/**
- * Decides if constraints of a given method should be validated
- * 
- * @author Emmanuel Bernard
- */
-interface MethodValidationActivator {
-    boolean activateMethodValidation(Method method):
-    boolean activateConstructorValidation(Constructor constructor);
-}</programlisting>
-      </example>
-
-      <example>
-        <title>MethodValidationGroupSelector contract</title>
-
-        <programlisting language="JAVA" role="JAVA">/**
- * Provides the (set of) groups that should be used when validating the
- * given constrained method.
- * 
- * @author Emmanuel Bernard
- */
-interface MethodValidationGroupSelector {
-    Class&lt;?&gt;[] selectGroupsForMethod(Method method):
-    Class&lt;?&gt;[] selectGroupsForConstructor(Constructor constructor);
-}</programlisting>
-      </example>
-
-      <para>The components <classname>MethodValidationActivator</classname>
-      and <classname>MethodValidationGroupSelector</classname> are accepting
-      injection points in a container environment (CDI in particular).
-      Implementations must be thread-safe.</para>
-
-      <para>Method and constructor validations can be globally disabled via
-      the XML configuration descriptor by using the
-      <literal>disable-method-validation</literal> element. Likewise, you can
-      disable validation for a specific method / constructor or for all
-      methods / constructors of a given bean by using the
-      <literal>disable-method-validation</literal> attribute on the respective
-      elements.</para>
-
-      <remark>TODO: should we change the boolean disable-method-validation
-      with the following enum based method-validation: NONE, PARAMETERS,
-      RETURN_VALUE, ALL. What would be the use case for PARAMETERS /
-      RETURN_VALUE? We could also use the enum but restrict it to NONE and ALL
-      to plan for the future.</remark>
-
-      <para>Here are a few use cases :</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>choose a different group depending on the caller stack: a
-          batch input might want different validation than a user input</para>
-        </listitem>
-
-        <listitem>
-          <para>choose a different group depending on a specific context: if a
-          user is flagged as rogue, enforce more constraints</para>
-        </listitem>
-
-        <listitem>
-          <para>disable validations for a given deployment as it is considered
-          a "safe" environment</para>
-        </listitem>
-
-        <listitem>
-          <para>disable a specific method validation for development purposes
-          either via a custom
-          <classname>MethodValidationGroupSelector</classname> implementation
-          or via the XML deployment descriptor</para>
-        </listitem>
-      </itemizedlist>
-
-      <para>Context or caller stack implementations can be implemented in a
-      couple of ways:</para>
-
-      <itemizedlist>
-        <listitem>
-          <para>use a thread local variable to carry the groups</para>
-        </listitem>
-
-        <listitem>
-          <para>use a request scoped CDI component to carry the groups: this
-          component being injected in the
-          <classname>MethodValidationGroupSelector</classname>
-          implementation.</para>
-        </listitem>
-      </itemizedlist>
-
-      <para>Should we provide in the CDI integration a way to customize the
-      group via an annotation? An annotation in the caller stack would set the
-      expected group. This would resurrect the
-      <classname>@MethodValidated</classname> annotation but not on the
-      validated method itself.</para>
-    </section>
   </section>
 
   <section id="bootstrapping">
