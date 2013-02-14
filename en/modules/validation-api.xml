@@ -878,14 +878,21 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
      */
     interface Node {
         /**
-         * Returns the name of the element which the node represents.
-         * The name will be {@code null}, if it represents an entity on the leaf
-         * node. In particular the node representing the root object has
-         * {@code null} as name.
-         * The name of a method or constructor return value is the literal
-         * {@code &lt;return value&gt;}.
-         * The name of a constructor is the unqualified class name of the class
-         * declaring the constructor.
+         * Returns the name of the element which the node represents:
+         * &lt;ul&gt;
+         *     &lt;li&gt;{@code null} if it is a leaf node which represents an entity / bean.
+         *     In particular, the node representing the root object.&lt;/li&gt;
+         *     &lt;li&gt;The property name for a property.&lt;/li&gt;
+         *     &lt;li&gt;The method name for a method.&lt;/li&gt;
+         *     &lt;li&gt;The unqualified name of the type declaring the constructor
+         *     for a constructor.&lt;/li&gt;
+         *     &lt;li&gt;The parameter named as defined by the {@link ParameterNameProvider}
+         *     for a method or constructor parameter.&lt;/li&gt;
+         *     &lt;li&gt;{@code &lt;cross-parameter&gt;} for a method or constructor cross-parameter
+         *     &lt;/li&gt;
+         *     &lt;li&gt;{@code &lt;return value&gt;} for a method or constructor return
+         *     value.&lt;/li&gt;
+         * &lt;/ul&gt;
          *
          * @return Name of the element which the node represents.
          */
@@ -918,6 +925,7 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
          *     &lt;li&gt;{@code ElementKind.METHOD}: {@link MethodNode}&lt;/li&gt;
          *     &lt;li&gt;{@code ElementKind.CONSTRUCTOR}: {@link ConstructorNode}&lt;/li&gt;
          *     &lt;li&gt;{@code ElementKind.PARAMETER}: {@link ParameterNode}&lt;/li&gt;
+         *     &lt;li&gt;{@code ElementKind.CROSS_PARAMETER}: {@link CrossParameterNode}&lt;/li&gt;
          *     &lt;li&gt;{@code ElementKind.RETURN_VALUE}: {@link ReturnValueNode}&lt;/li&gt;
          * &lt;/ul&gt;
          *
@@ -1000,6 +1008,15 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
     }
 
     /**
+     * Node representing the element holding cross-parameter constraints
+     * of a method or constructor.
+     *
+     * @since 1.1
+     */
+    interface CrossParameterNode extends Node {
+    }
+
+    /**
      * Node representing a bean
      *
      * @since 1.1
@@ -1014,9 +1031,9 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
      */
     interface PropertyNode extends Node {
     }
-}
+}</programlisting>
 
-/**
+      <programlisting>/**
  * Enum of possible kinds of elements encountered in Bean Validation
  * Mostly elements that can be constrained and described in the metadata
  * but also elements that can be part of a {@link Path} and represented
@@ -1029,7 +1046,7 @@ public interface Path extends Iterable&lt;Path.Node&gt; {
  */
 public enum ElementKind {
     /**
-     * A Java Bean.
+     * A Java Bean or object.
      */
     BEAN,
 
@@ -1054,10 +1071,16 @@ public enum ElementKind {
     PARAMETER,
 
     /**
+     * Element holding cross-parameter constraints of a method or constructor
+     */
+    CROSS_PARAMETER,
+
+    /**
      * The return value of a method or constructor.
      */
     RETURN_VALUE
-}</programlisting>
+}
+</programlisting>
     </example>
 
     <para revisionflag="added"><classname>Path</classname> is an iterable of
@@ -1067,11 +1090,49 @@ public enum ElementKind {
     <para><itemizedlist revisionflag="added">
         <listitem>
           <para><methodname>getName()</methodname> returns the name of the
-          element represented by a node, e.g. a property, method or parameter
-          name. The literal <literal>&lt;return value&gt;</literal> will be
-          returned if a node represents the return value of a method or
-          constructor. For leaf nodes representing an entity,
-          <literal>null</literal> will be returned.</para>
+          element which the node represents:represented by a node, e.g. a
+          property, method or parameter name. The literal <literal>&lt;return
+          value&gt;</literal> will be returned if a node represents the return
+          value of a method or constructor. For leaf nodes representing an
+          entity, <literal>null</literal> will be returned.</para>
+
+          <itemizedlist>
+            <listitem>
+              <para><literal>null</literal> if it is a leaf node which
+              represents an entity / bean. In particular, the node
+              representing the root object.</para>
+            </listitem>
+
+            <listitem>
+              <para>The property name for a property.</para>
+            </listitem>
+
+            <listitem>
+              <para>The method name for a method.</para>
+            </listitem>
+
+            <listitem>
+              <para>The unqualified name of the type declaring the constructor
+              for a constructor.</para>
+            </listitem>
+
+            <listitem>
+              <para>The parameter named as defined by the
+              <classname>ParameterNameProvider</classname> (see <xref
+              linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>)
+              for a method or constructor parameter.</para>
+            </listitem>
+
+            <listitem>
+              <para><literal>&lt;cross-parameter&gt;</literal> for a method or
+              constructor cross-parameter.</para>
+            </listitem>
+
+            <listitem>
+              <para><literal>&lt;return value&gt;</literal> for a method or
+              constructor return value.</para>
+            </listitem>
+          </itemizedlist>
         </listitem>
 
         <listitem>
@@ -1134,6 +1195,10 @@ public enum ElementKind {
       </listitem>
 
       <listitem>
+        <para><classname>CrossParameterNode</classname></para>
+      </listitem>
+
+      <listitem>
         <para><classname>ReturnValueNode</classname></para>
       </listitem>
     </itemizedlist>
@@ -1169,6 +1234,8 @@ case CONSTRUCTOR:
 case PARAMETER:
     arg = node.as(ParameterNode.class).getParameterIndex();
     break;
+case CROSS_PARAMETER:
+    [...]
 case RETURN_VALUE:
     [...]
 case PARAMETER:
@@ -1277,8 +1344,8 @@ case PROPERTY:
       </listitem>
 
       <listitem revisionflag="added">
-        <para>For a method/constructor constraint (parameter or return value
-        constraint on a method or constructor):</para>
+        <para>For a method/constructor constraint (parameter, cross-parameter
+        or return value constraint on a method or constructor):</para>
 
         <itemizedlist>
           <listitem>
@@ -1294,34 +1361,41 @@ case PROPERTY:
           </listitem>
 
           <listitem>
-            <para role="tck-testable">a <classname>ParameterNode</classname>
-            object is added to the <classname>Path</classname> which
-            represents the validated parameter. The <literal>name</literal> of
-            the node equals the parameter name as determined by the current
-            parameter name provider (see <xref
+            <para role="tck-testable">if the constraint is on a parameter, a
+            <classname>ParameterNode</classname> object is added to the
+            <classname>Path</classname> which represents the validated
+            parameter. The <literal>name</literal> of the node equals the
+            parameter name as determined by the current parameter name
+            provider (see <xref
             linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>).
             The <classname>ElementKind</classname> of the node is
             <varname>elementKind.PARAMETER</varname>.</para>
           </listitem>
 
           <listitem>
-            <para role="tck-testable">a <classname>ReturnValueNode</classname>
-            object is added to the <classname>Path</classname> which
-            represents the validated return value. The <literal>name</literal>
-            of the node has the constant value <literal>&lt;return
-            value&gt;</literal>. The <classname>ElementKind</classname> of the
-            node is <varname>ElementKind.RETURN_VALUE.</varname></para>
+            <para role="tck-testable">if the constraint is a cross-parameter
+            constraint, a <classname>CrossParameterNode</classname> object is
+            added to the <classname>Path</classname> which represents the
+            validated cross-parameter element. The <literal>name</literal> of
+            the node has the constant value
+            <literal>&lt;cross-parameter&gt;</literal>. The
+            <classname>ElementKind</classname> of the node is
+            <varname>ElementKind.CROSS_PARAMETER.</varname></para>
+          </listitem>
+
+          <listitem>
+            <para role="tck-testable">if the constraint is on the return
+            value, a <classname>ReturnValueNode</classname> object is added to
+            the <classname>Path</classname> which represents the validated
+            return value. The <literal>name</literal> of the node has the
+            constant value <literal>&lt;return value&gt;</literal>. The
+            <classname>ElementKind</classname> of the node is
+            <varname>ElementKind.RETURN_VALUE.</varname></para>
           </listitem>
 
           <listitem>
             <para role="tck-testable">the property path is considered
             complete</para>
-          </listitem>
-
-          <listitem>
-            <remark>TODO: Decide what to return for cross-parameter
-            constraints. Maybe we could have a
-            <classname>CrossParameterDescriptor</classname>/<varname>Kind.CROSS_PARAMETER</varname>?</remark>
           </listitem>
         </itemizedlist>
       </listitem>
@@ -1344,21 +1418,23 @@ case PROPERTY:
           </listitem>
 
           <listitem>
-            <para role="tck-testable">a <classname>ParameterNode</classname>
-            object is added to the <classname>Path</classname> which
-            represents the traversed parameter. The <literal>name</literal> of
-            the node equals the parameter name as determined by the current
-            parameter name provider. The <classname>ElementKind</classname> of
-            the node is <varname>ElementKind.PARAMETER</varname>.</para>
+            <para role="tck-testable">if a parameter is traversed, a
+            <classname>ParameterNode</classname> object is added to the
+            <classname>Path</classname> which represents the traversed
+            parameter. The <literal>name</literal> of the node equals the
+            parameter name as determined by the current parameter name
+            provider. The <classname>ElementKind</classname> of the node is
+            <varname>ElementKind.PARAMETER</varname>.</para>
           </listitem>
 
           <listitem>
-            <para role="tck-testable">a <classname>ReturnValueNode</classname>
-            object is added to the <classname>Path</classname> which
-            represents the traversed return value. The <literal>name</literal>
-            of the node has the constant value <literal>&lt;return
-            value&gt;</literal>. The <classname>ElementKind</classname> of the
-            node is <varname>ElementKind.RETURN_VALUE.</varname></para>
+            <para role="tck-testable">if a return value is traversed, a
+            <classname>ReturnValueNode</classname> object is added to the
+            <classname>Path</classname> which represents the traversed return
+            value. The <literal>name</literal> of the node has the constant
+            value <literal>&lt;return value&gt;</literal>. The
+            <classname>ElementKind</classname> of the node is
+            <varname>ElementKind.RETURN_VALUE.</varname></para>
           </listitem>
 
           <listitem>
@@ -1386,6 +1462,60 @@ case PROPERTY:
         </itemizedlist>
       </listitem>
     </itemizedlist>
+
+    <para revisionflag="added" role="tck-testable">If path nodes are added in
+    a constraint validator implementation using the node builder API (see
+    <xref
+    linkend="constraintsdefinitionimplementation-validationimplementation"/>),
+    the following nodes are appended to the path generated by the Bean
+    Validation engine as previously described:<itemizedlist>
+        <listitem>
+          <para>A <classname>PropertyNode</classname> is appended in case
+          <methodname>addPropertyNode(String)</methodname> is invoked. The
+          node name is equals to the name provided. The
+          <classname>ElementKind</classname> of the node is
+          <literal>ElementKind.PROPERTY</literal>.</para>
+        </listitem>
+
+        <listitem>
+          <para>A <classname>BeanNode</classname> is appended in case
+          <methodname>addBeanNode()</methodname> is invoked. The node name is
+          <literal>null</literal>. The <classname>ElementKind</classname> of
+          the node is <literal>ElementKind.BEAN</literal>.</para>
+        </listitem>
+
+        <listitem>
+          <para>A <classname>ParameterNode</classname> is appended in case
+          <methodname>addParameterNode(int)</methodname> is invoked. The node
+          name is equals the parameter name at the provided index. The name is
+          determined by the current parameter name provider. The
+          <classname>ElementKind</classname> of the node is
+          <literal>ElementKind.PARAMETER</literal>. The previous node must be
+          a <classname>CrossParameterNode</classname>.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable">if <methodname>inIterable()</methodname>
+          is invoked, the node returns <literal>true</literal> for
+          <methodname>isInIterable()</methodname>, <literal>false</literal>
+          otherwise.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable">if
+          <methodname>atIndex(Integer)</methodname> is invoked, the node
+          returns the provided interger for
+          <methodname>getIndex()</methodname>, <literal>null</literal>
+          otherwise.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-testable">if <methodname>atKey(Object)</methodname>
+          is invoked, the node returns the provided object for
+          <methodname>getKey()</methodname>, <literal>null</literal>
+          otherwise.</para>
+        </listitem>
+      </itemizedlist></para>
 
     <note revisionflag="changed">
       <para>A given <classname>Node</classname> object derives its
@@ -1427,6 +1557,9 @@ public class Author {
     @Size(max=30)
     private String company;
     ...
+
+    @OldAndNewPasswordsDifferent @NewPasswordsIdentical
+    public void renewPassword(String oldPAssword, String newPassword, String retypedNewPassword);
 }
 
 @AvailableInStore(groups={Availability.class})
@@ -1665,10 +1798,43 @@ public class Library {
               index=null, key=Author(firstName=John, lastName=Doe),
               kind=ElementKind.PROPERTY)</para></entry>
             </row>
+
+            <row>
+              <entry><classname>@OldAndNewPasswordsDifferent</classname> when
+              executing <methodname>Author.renewPassword</methodname> with
+              <literal>oldPassword</literal>, <literal>newPassword</literal>
+              and <literal>retypedNewPassword</literal> set to "foo".
+              <classname>@OldAndNewPasswordsDifferent</classname> is a
+              cross-parameter constraint.</entry>
+
+              <entry><para>MethodNode(name=renewPassword, inIterable=false,
+              index=null, key=null,
+              kind=ElementKind.METHOD)</para><para>CrossParameterNode(name=&lt;cross-parameter&gt;,
+              inIterable=false, index=null, key=null,
+              kind=ElementKind.CROSS_PARAMETER)</para></entry>
+            </row>
+
+            <row>
+              <entry><classname>@NewPasswordsIdentical</classname> when
+              executing <methodname>Author.renewPassword</methodname> with
+              <literal>oldPassword</literal> as "foo",
+              <literal>newPassword</literal> as "bar" and
+              <literal>retypedNewPassword</literal> as "baz".
+              <classname>@NewPasswordsIdentical</classname> is a
+              cross-parameter constraint creating a constraint violation on
+              the <literal>retypedNewPassword</literal> parameter.</entry>
+
+              <entry><para>MethodNode(name=renewPassword, inIterable=false,
+              index=null, key=null,
+              kind=ElementKind.METHOD)</para><para>CrossParameterNode(name=&lt;cross-parameter&gt;,
+              inIterable=false, index=null, key=null,
+              kind=ElementKind.CROSS_PARAMETER)</para><para>ParameterNode(name=arg2,
+              inIterable=false, index=null, key=null,
+              kind=ElementKind.PARAMETER)</para></entry>
+            </row>
           </tbody>
         </tgroup>
-      </table><remark>TODO: Add paths for cross-parameter
-    constraints.</remark></para>
+      </table></para>
 
     <note>
       <para role="tck-not-testable">Bean Validation implementations should
@@ -1849,9 +2015,6 @@ assert false == nodeIter.hasNext();</programlisting>
     <section revisionflag="added">
       <title>Examples for method/constructor constraint violations</title>
 
-      <remark>TODO: Add examples for cross-parameter constraints. Do we need
-      any more examples here?</remark>
-
       <para>The following examples assume the constraint, class and object
       definitions given in the previous section. Additionally the following
       class and object definitions are assumed:</para>
@@ -1861,6 +2024,11 @@ assert false == nodeIter.hasNext();</programlisting>
     public void addBook(@NotNull @Valid Book book) { ... }
 
     @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() { ... }
+}
+
+public class User {
+    @OldAndNewPasswordsDifferent
+    public void renewPassword(String oldPAssword, String newPassword, String retypedNewPassword);
 }
 
 Library library = new Library();
@@ -1969,6 +2137,29 @@ assert author.equals( node.getKey() );
 assert true == node.isInIterable();
 
 assert false == nodeIter.hasNext();</programlisting>
+
+      <para>Assuming the invocation of <methodname>User.renewPassword("foo",
+      "bar", "baz")</methodname></para>
+
+      <programlisting>assert null == constraintViolation.getRootBean();
+assert TODO ?? == constraintViolation.getLeafBean();
+
+assert 3 == ( (Object[]) constraintViolation.getInvalidValue() ).length;
+assert "foo" == ( (Object[]) constraintViolation.getInvalidValue() )[0];
+
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+
+Node node = nodeIter.next();
+assert "renewPassword".equals( node.getName() );
+assert ElementKind.METHOD.equals( node.getKind() );
+
+node = nodeIter.next();
+assert "&lt;cross-parameter&gt;" == node.getName();
+assert ElementKind.CROSS_PARAMETER.equals( node.getKind() );
+
+assert false == nodeIter.hasNext();
+
+//TODO add an example with parmeter subnode from cross-parameter</programlisting>
     </section>
   </section>
 
