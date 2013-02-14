@@ -434,81 +434,44 @@ public class ComplexOrderService extends SimpleOrderService {
     integration</title>
 
     <para>There are several integrations points between Bean Validation and
-    CDI. These are discussed in the following sections.</para>
+    CDI. If a Bean Validation provider integrates with CDI, it must follow the
+    rules laid out in this section. In a Java EE container, a Bean Validation
+    provider must integrate with CDI.</para>
 
     <section>
       <title><classname>ValidatorFactory</classname> and
       <classname>Validator</classname></title>
 
-      <para>Similar to the Java EE integration via
+      <para role="tck-testable">Similar to the Java EE integration via
       <classname>@Resource</classname> (see <xref
-      linkend="integration-javaee"/>), a CDI container must allow the
-      injection of built-in default <classname>ValidatorFactory</classname>
-      and <classname>Validator beans</classname> via
-      <classname>@Inject</classname>:<programlisting>@Inject ValidatorFactory;
-@Inject Validator;
-</programlisting>These default beans must be injectable via the
-      <classname>@Default</classname> qualifier even if there are multiple
-      Bean Validation providers available.</para>
+      linkend="integration-javaee"/>), a CDI container must support injection
+      of built-in default <classname>ValidatorFactory</classname> and
+      <classname>Validator</classname> beans via
+      <classname>@Inject</classname>. These default beans are injectable via
+      the <classname>@Default</classname> qualifier.</para>
 
-      <para>Every Bean Validation provider should provide a CDI Extension (or
-      alternative solution provided it fulfills the requirements) in order to
-      make its implementation available for the container. The following rules
-      apply:<itemizedlist>
-          <listitem>
-            <para>At registration, the extension verifies the existence of a
-            built-in bean with bean type
-            <classname>javax.validation.ValidatorFactory</classname> and a
-            built-in bean with bean type
-            <classname>javax.validation.Validator</classname>, allowing
-            injection of the default <classname>ValidatorFactory</classname>
-            and <classname>Validator</classname>. Both built-in beans must
-            have the qualifier <classname>@Default</classname>. These beans
-            are passivation capable dependencies, as defined in the CDI
-            specification.<itemizedlist>
-                <listitem>
-                  <para>If there are no default
-                  <classname>ValidatorFactory</classname> and
-                  <classname>Validator</classname> beans, it is the
-                  responsibility of the extension to register them. The
-                  extension creates and registers a default
-                  <classname>ValidatorFactory</classname> respective
-                  <classname>Validator</classname> bean using the
-                  bootstrapping API as discussed in the introduction of this
-                  chapter.</para>
-                </listitem>
+      <programlisting>@Inject ValidatorFactory;
+@Inject Validator;</programlisting>
 
-                <listitem>
-                  <para>If the default <classname>ValidatorFactory</classname>
-                  and <classname>Validator</classname> instances are already
-                  registered no action needs to be taken.</para>
-                </listitem>
-              </itemizedlist></para>
-          </listitem>
+      <para>Optionally, the CDI container can support injection of provider
+      specific - as defined by <code>Validation.byProvider()</code> -
+      <classname>ValidatorFactory</classname> and
+      <classname>Validator</classname> beans via
+      <classname>@Inject</classname>. These beans must be registered with a
+      custom qualifier, for example <classname>@ACME</classname>. Using the
+      product name or brand for the qualifier is considered good
+      practice.</para>
 
-          <listitem>
-            <para>On top of the default
-            <classname>ValidatorFactory</classname> and
-            <classname>Validator</classname> beans, the Bean Validation
-            provider can register an additional provider specific - as defined
-            by <code>Validation.byProvider()</code> -
-            <classname>ValidatorFactory</classname> and its respective
-            <classname>Validator</classname> bean. They must be registered
-            with a custom qualifier, for example <classname>@ACME</classname>,
-            to prevent an ambiguous dependency due to multiple beans being
-            eligible for injection to the injection point. Using the product
-            name or brand for the qualifier is considered good
-            practice.<programlisting>@Inject @ACME ValidatorFactory;
-@Inject @ACME Validator;</programlisting><note>
-                <para>These rules ensure that in any CDI container (Java SE or
-                EE environment), a default injectable
-                <classname>ValidatorFactory</classname> and
-                <classname>Validator</classname> bean are made available by
-                adding the Bean Validation provider's CDI extension and its
-                dependencies.</para>
-              </note></para>
-          </listitem>
-        </itemizedlist></para>
+      <programlisting>@Inject @ACME ValidatorFactory;
+@Inject @ACME Validator;</programlisting>
+
+      <note>
+        <title>Discussion on possible implementations</title>
+
+        <para>Registration of the built-in default beans and the provider
+        specific beans may be achieved using the CDI portable extension SPI or
+        a vendor specific SPI.</para>
+      </note>
     </section>
 
     <section>
@@ -569,23 +532,31 @@ public class ComplexOrderService extends SimpleOrderService {
     <section>
       <title>Method validation</title>
 
-      <para>A Bean Validation provider also provides an CDI interceptor for
-      method validation. This interceptor implements the steps specified in
-      <xref linkend="validationapi-triggeringmethodvalidation"/>.</para>
+      <para role="tck-testable">Bean Validation requires that CDI beans
+      support constructor and method validation as defined in <xref
+      linkend="integration-general-executable"/>. Validation must happen at
+      the equivalent time an interceptor occurs when having priority
+      <code>Interceptor.Priority.PLATFORM_AFTER+800</code>, in other words
+      priority of <literal>4800</literal>.</para>
 
-      <para>Ordinarily CDI requires that intercepted methods are annotated
-      with a so called interceptor binding annotation. To make method
-      validation implicit by just adding the Bean Validation constraints to a
-      constructor or method, the interceptor biding annotation needs to be
-      added programmatically to any method requiring validation.<note>
-          <para>It is recommended to only add the interceptor for methods and
-          constructors that are to be both constrained and validated according
-          to the rules defined at <xref
-          linkend="integration-general-executable"/>. <xref
-          linkend="validationapi-triggeringmethodvalidation"/> gives examples
-          how the metadata API can be used to determine whether or not a
-          method is constrained.</para>
-        </note></para>
+      <note>
+        <title>Discussion on possible implementations</title>
+
+        <para>The CDI interceptor binding facility does not directly support
+        this, but the effect may be achieved using the CDI portable extension
+        SPI, or vendor specific SPIs. For example, an interceptor with the
+        expected priority can be programmatically bound to the constructors
+        and methods expected to be validated according to the rules at <xref
+        linkend="integration-general-executable"/>.</para>
+
+        <para>It is recommended to only intercept methods and constructors
+        that are both constrained and validated according to the rules defined
+        at <xref linkend="integration-general-executable"/>. <xref
+        linkend="validationapi-triggeringmethodvalidation"/> gives examples
+        how the metadata API can be used to determine whether or not a method
+        is constrained besides the filtering rules of
+        <classname>@ValidateEecutable</classname>.</para>
+      </note>
     </section>
   </section>
 
