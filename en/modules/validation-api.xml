@@ -817,6 +817,22 @@ public interface ConstraintViolation&lt;T&gt; {
      * @return constraint metadata
      */
     ConstraintDescriptor&lt;?&gt; getConstraintDescriptor();
+
+    /**
+     * Return an instance of the specified type allowing access to
+     * provider-specific APIs. If the Bean Validation provider
+     * implementation does not support the specified class,
+     * {@code ValidationException} is thrown.
+     *
+     * @param type the class of the object to be returned.
+     *
+     * @return an instance of the specified class
+     *
+     * @throws ValidationException if the provider does not support the call.
+     *
+     * @since 1.1
+     */
+    &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 }</programlisting>
 
     <para><phrase role="tck-testable">The <methodname>getMessage</methodname>
@@ -854,6 +870,12 @@ public interface ConstraintViolation&lt;T&gt; {
     <methodname>getPropertyPath</methodname> <phrase
     revisionflag="added">method</phrase> returns the Path object representing
     the navigation path from the root object to the failing object.</para>
+
+    <para revisionflag="added"><methodname>unwrap</methodname> is provided as
+    a way to access objects of a given type specific to a Bean Validation
+    provider typically as a complement to the
+    <classname>ConstraintViolation</classname> contract. Using this method
+    makes your code non portable.</para>
 
     <example revisionflag="changed">
       <title>Path, Node and ElementKind interfaces</title>
@@ -2746,7 +2768,7 @@ Validator validator = factory.getValidator();</programlisting>
     taken into account. Note that the metadata API does not take into account
     the fact that a method or constructor validation as been enabled or
     disabled by the techniques described in <xref
-    linkend="integration-general-executable"/>. </para>
+    linkend="integration-general-executable"/>.</para>
 
     <para>Here is an example of what such metadata usage would be:</para>
 
