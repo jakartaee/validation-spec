@@ -758,7 +758,7 @@ public class Address {
     validation.</para>
 
     <programlisting revisionflag="changed">/**
- * Describe a constraint violation. This object exposes the constraint
+ * Describes a constraint violation. This object exposes the constraint
  * violation context as well as the message describing the violation.
  *
  * @author Emmanuel Bernard
@@ -776,25 +776,73 @@ public interface ConstraintViolation&lt;T&gt; {
     String getMessageTemplate();
 
     /**
-     * @return The root bean being validated. Null when returned by
-     *         {@link javax.validation.Validator#validateValue(Class, String, Object, Class[])}
+     * Returns the root bean being validated. For method validation, returns
+     * the object the method is executed on.
+     *
+     * Returns {@code null} when:
+     * &lt;ul&gt;
+     *     &lt;li&gt;the {@code ConstraintViolation} is returned after calling
+     *     {@link javax.validation.Validator#validateValue(Class, String, Object, Class[])}&lt;/li&gt;
+     *     &lt;li&gt;the {@code ConstraintViolation} is returned after validating a
+     *     constructor.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return The validated object, the object hosting the validated element or {@code null}
      */
     T getRootBean();
 
     /**
-     * @return The class of the root bean being validated
+     * Returns the class of the root bean being validated.
+     * For method validation, this is the object class the
+     * method is executed on.
+     * For constructor validation, this is the class the constructor
+     * is declared on.
+     *
+     * @return The class of the root bean or of the object hosting the validated element
      */
     Class&lt;T&gt; getRootBeanClass();
 
     /**
-     * If a bean constraint, the bean instance the constraint is applied on
-     * If a property constraint, the bean instance hosting the property the
-     * constraint is applied on
+     * Returns:
+     * &lt;ul&gt;
+     *     &lt;li&gt;the bean instance the constraint is applied on if it is
+     *     a bean constraint&lt;/li&gt;
+     *     &lt;li&gt;the bean instance hosting the property the constraint
+     *     is applied on if it is a property constraint&lt;/li&gt;
+     *     &lt;li&gt;the object the method is executed on if it is
+     *     a method parameter, cross-parameter or return value constraint&lt;/li&gt;
+     *     &lt;li&gt;{@code null} if it is a constructor parameter or
+     *     cross-parameter constraint&lt;/li&gt;
+     *     &lt;li&gt;the object the constructor has created if it is a
+     *     constructor return value constraint&lt;/li&gt;
+     * &lt;/ul&gt;
      *
-     * @return the leaf bean the constraint is applied on. Null when returned by
-     *         {@link javax.validation.Validator#validateValue(Class, String, Object, Class[])}
+     * @return the leaf bean
      */
     Object getLeafBean();
+
+    /**
+     * Returns an {@code Object[]} representing the constructor or method invocation
+     * arguments if the {@code ConstraintViolation} is returned after validating the
+     * method or constructor parameters.
+     * Returns {@code null} otherwise.
+     *
+     * @return parameters of the method or constructor invocation or {@code null}
+     * @since 1.1
+     */
+    Object[] getExecutableParameters();
+
+    /**
+     * Returns the return value of the constructor or method invocation
+     * if the {@code ConstraintViolation} is returned after validating the method
+     * or constructor return value.
+     * {@code null} is returned if the method has no return value.
+     * Returns {@code null} otherwise.
+     *
+     * @return the method or constructor return value or {@code null}
+     * @since 1.1
+     */
+    Object getExecutableReturnValue();
 
     /**
      * @return the property path to the value from {@code rootBean}.
@@ -850,14 +898,65 @@ public interface ConstraintViolation&lt;T&gt; {
     <para><phrase role="tck-testable">The <methodname>getRootBean</methodname>
     method returns the root object being validated that led to the failing
     constraint</phrase> (i.e. the object the client code passes to the
-    <methodname>Validator.validate</methodname> method).</para>
+    <methodname>Validator.validate</methodname> method). <phrase
+    revisionflag="added" role="tck-testable">For method validation, returns
+    the object the method is executed on. For constructors or when
+    <methodname>Validator.validateValue()</methodname> is used, returns
+    <literal>null</literal>.</phrase></para>
+
+    <para revisionflag="added" role="tck-testable">The
+    <methodname>getRootBeanClass</methodname> method returns the class of the
+    root bean being validated. For method validation, this is the object class
+    the method is executed on. For constructor validation, this is the class
+    the constructor is declared on.</para>
+
+    <para revisionflag="added" role="tck-testable">The
+    <methodname>getLeafBean</methodname> method returns the following
+    object:<itemizedlist>
+        <listitem>
+          <para>If a bean constraint, the bean instance the constraint is
+          applied on.</para>
+        </listitem>
+
+        <listitem>
+          <para>If a property constraint, the bean instance hosting the
+          property the constraint is applied on.</para>
+        </listitem>
+
+        <listitem>
+          <para>If a method parameter, cross-parameter or return value
+          constraint, the object the method is executed on.</para>
+        </listitem>
+
+        <listitem>
+          <para>If a constructor parameter or cross-parameter constraint,
+          <literal>null</literal>.</para>
+        </listitem>
+
+        <listitem>
+          <para>If a constructor return value constraint, the object the
+          constructor has created.</para>
+        </listitem>
+      </itemizedlist></para>
+
+    <para revisionflag="added" role="tck-testable">The
+    <methodname>getExecutableParameters</methodname> returns the parameters
+    provided to the method or constructor invocation or
+    <literal>null</literal> if not validating the method or constructor
+    parameters.</para>
+
+    <para revisionflag="added" role="tck-testable">The
+    <methodname>getExecutablePReturnValue</methodname> returns the return
+    value of the method or constructor invocation or <literal>null</literal>
+    if not validating the method or constructor return value or if the method
+    returns no value.</para>
 
     <para><phrase role="tck-testable tck-needs-update">The
     <methodname>getInvalidValue</methodname> method returns the value (field,
     property<phrase revisionflag="added">, method/constructor parameter,
     method/constructor return value</phrase> or validated object) being passed
     to <methodname>isValid</methodname>.</phrase> <phrase revisionflag="added"
-    role="tck-testable">For a cross-parameter constraint, an
+    role="tck-testable">For a cross-parameter constraint failure, an
     <code>Object[]</code> representing the method/constructor invocation
     arguments is returned.</phrase></para>
 
