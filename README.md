@@ -57,3 +57,6 @@ Recommended tools by decreasing order of preference:
 2. Any XML editor
 
 Make sure to not go beyond 80 columns per line.
+
+For the API, in particular the JavaDoc, follow the conventions described at
+<https://community.jboss.org/wiki/ContributingToHibernateValidator#Coding_Guidelines>.
