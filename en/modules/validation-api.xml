@@ -3441,25 +3441,27 @@ acmeFactory.setSpecificConfiguration(...);</programlisting>
         <title>ValidatorContext interface</title>
 
         <programlisting>/**
- * Represents the context that is used to create &lt;code&gt;Validator&lt;/code&gt;
+ * Represents the context that is used to create {@code Validator}
  * instances.
  *
- * A client may use methods of the &lt;code&gt;ValidatorContext&lt;/code&gt; returned by
- * &lt;code&gt;ValidatorFactory#usingContext&lt;/code&gt; to customize
- * the context used to create &lt;code&gt;Validator&lt;/code&gt; instances
+ * A client may use methods of the {@code ValidatorContext} returned by
+ * {@code ValidatorFactory#usingContext} to customize
+ * the context used to create {@code Validator} instances
  * (for instance establish different message interpolators or
  * traversable resolvers).
- * 
+ *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
  */
 public interface ValidatorContext {
     /**
      * Defines the message interpolator implementation used by the
-     * &lt;code&gt;Validator&lt;/code&gt;.
-     * If not set or if null is passed as a parameter,
-     * the message interpolator of the &lt;code&gt;ValidatorFactory&lt;/code&gt;
+     * {@code Validator}.
+     * If not set or if {@code null} is passed as a parameter,
+     * the message interpolator of the {@code ValidatorFactory}
      * is used.
+     *
+     * @param messageInterpolator the {@code MessageInterpolator} used by the {@code Validator}
      *
      * @return self following the chaining method pattern
      */
@@ -3467,9 +3469,11 @@ public interface ValidatorContext {
 
     /**
      * Defines the traversable resolver implementation used by the
-     * &lt;code&gt;Validator&lt;/code&gt;.
-     * If not set or if null is passed as a parameter,
-     * the traversable resolver of the &lt;code&gt;ValidatorFactory&lt;/code&gt; is used.
+     * {@code Validator}.
+     * If not set or if {@code null} is passed as a parameter,
+     * the traversable resolver of the {@code ValidatorFactory} is used.
+     *
+     * @param traversableResolver the {@code TraversableResolver} used by the {@code Validator}
      *
      * @return self following the chaining method pattern
      */
@@ -3477,9 +3481,11 @@ public interface ValidatorContext {
 
     /**
      * Defines the constraint validator factory implementation used by the
-     * &lt;code&gt;Validator&lt;/code&gt;.
-     * If not set or if null is passed as a parameter,
-     * the constraint validator factory of the &lt;code&gt;ValidatorFactory&lt;/code&gt; is used.
+     * {@code Validator}.
+     * If not set or if {@code null} is passed as a parameter,
+     * the constraint validator factory of the {@code ValidatorFactory} is used.
+     *
+     * @param factory the {@code ConstraintValidatorFactory} used by the {@code Validator}
      *
      * @return self following the chaining method pattern
      */
@@ -3487,18 +3493,20 @@ public interface ValidatorContext {
 
     /**
      * Defines the parameter name provider implementation used by the
-     * &lt;code&gt;Validator&lt;/code&gt;. If not set or if null is passed as a parameter,
-     * the parameter name provider of the &lt;code&gt;ValidatorFactory&lt;/code&gt; is used.
+     * {@code Validator}. If not set or if null is passed as a parameter,
+     * the parameter name provider of the {@code ValidatorFactory} is used.
      *
      * @param parameterNameProvider Parameter name provider implementation.
      *
      * @return self following the chaining method pattern
+     *
+     * @since 1.1
      */
     ValidatorContext parameterNameProvider(ParameterNameProvider parameterNameProvider);
 
     /**
-     * @return an initialized &lt;code&gt;Validator&lt;/code&gt; instance respecting the defined state.
-     * Validator instances can be pooled and shared by the implementation.
+     * @return an initialized {@code Validator} instance respecting the defined state.
+     *         Validator instances can be pooled and shared by the implementation.
      */
     Validator getValidator();
 }</programlisting>
@@ -3663,9 +3671,7 @@ Validator validatorUsingCustomTraversable = factory
       <example revisionflag="changed">
         <title>Configuration and BootstrapConfiguration interfaces</title>
 
-        <programlisting>package javax.validation;
-
-/**
+        <programlisting>/**
  * Receives configuration information, selects the appropriate
  * Bean Validation provider and builds the appropriate {@code ValidatorFactory}.
  * &lt;p/&gt;
@@ -3902,10 +3908,7 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
     ValidatorFactory buildValidatorFactory();
 }</programlisting>
 
-        <programlisting revisionflag="added">package javax.validation;
-
-
-/**
+        <programlisting revisionflag="added">/**
  * Represents the user specified default configuration in
  * &lt;i&gt;META-INF/validation.xml&lt;/i&gt;. Note that modifications to the returned
  * objects don't have any effect; Instead use the methods provided on
@@ -4315,10 +4318,10 @@ ValidatorFactory factory2 = configuration
  * Bean Validation providers are identified by the presence of
  * META-INF/services/javax.validation.spi.ValidationProvider
  * files following the Service Provider pattern described
- * &lt;a href="http://java.sun.com/j2se/1.5.0/docs/guide/jar/jar.html#Service%20Provider"&gt;here&lt;/a&gt;
+ * &lt;a href="http://docs.oracle.com/javase/6/docs/technotes/guides/jar/jar.html#Service%20Provider"&gt;here&lt;/a&gt;.
  * &lt;p/&gt;
  * Each META-INF/services/javax.validation.spi.ValidationProvider file contains the list of
- * &lt;code&gt;ValidationProvider&lt;/code&gt; implementations each of them representing a provider.
+ * {@code ValidationProvider} implementations each of them representing a provider.
  * &lt;p/&gt;
  * Implementations must be thread-safe.
  *
@@ -4408,7 +4411,7 @@ public interface ValidationProviderResolver {
  * Implementations must have a public no-arg constructor. The construction of a provider
  * should be as "lightweight" as possible.
  *
- * &lt;code&gt;T&lt;/code&gt; represents the provider specific Configuration subclass
+ * {@code T} represents the provider specific Configuration subclass
  * which typically host provider's additional configuration methods.
  *
  * @author Emmanuel Bernard
@@ -4417,10 +4420,10 @@ public interface ValidationProviderResolver {
 public interface ValidationProvider&lt;T extends Configuration&lt;T&gt;&gt; {
 
     /**
-     * Returns a &lt;code&gt;Configuration&lt;/code&gt; instance implementing &lt;code&gt;T&lt;/code&gt;,
-     * the &lt;code&gt;Configuration&lt;/code&gt; subinterface.
-     * The returned &lt;code&gt;Configuration&lt;/code&gt; instance must use the current provider
-     * (&lt;code&gt;this&lt;/code&gt;) to build the &lt;code&gt;ValidatorFactory&lt;/code&gt; instance.
+     * Returns a {@code Configuration} instance implementing {@code T},
+     * the {@code Configuration} sub-interface.
+     * The returned {@code Configuration} instance must use the current provider
+     * ({@code this}) to build the {@code ValidatorFactory} instance.
      * &lt;p/&gt;
      *
      * @param state bootstrap state
@@ -4430,13 +4433,13 @@ public interface ValidationProvider&lt;T extends Configuration&lt;T&gt;&gt; {
     T createSpecializedConfiguration(BootstrapState state);
 
     /**
-     * Returns a &lt;code&gt;Configuration&lt;/code&gt; instance. This instance is not bound to
+     * Returns a {@code Configuration} instance. This instance is not bound to
      * use the current provider. The choice of provider follows the algorithm described
      * in {@link javax.validation.Configuration}
      * &lt;p/&gt;
-     * The &lt;code&gt;ValidationProviderResolver&lt;/code&gt; used by &lt;code&gt;Configuration&lt;/code&gt;
-     * is provided by &lt;code&gt;state&lt;/code&gt;.
-     * If null, the default &lt;code&gt;ValidationProviderResolver&lt;/code&gt; is used.
+     * The {@code ValidationProviderResolver} used by {@code Configuration}
+     * is provided by {@code state}.
+     * If null, the default {@code ValidationProviderResolver} is used.
      *
      * @param state bootstrap state
      *
@@ -4445,16 +4448,16 @@ public interface ValidationProvider&lt;T extends Configuration&lt;T&gt;&gt; {
     Configuration&lt;?&gt; createGenericConfiguration(BootstrapState state);
 
     /**
-     * Build a &lt;code&gt;ValidatorFactory&lt;/code&gt; using the current provider implementation.
-     * The &lt;code&gt;ValidatorFactory&lt;/code&gt; is assembled and follows the configuration passed
-     * via &lt;code&gt;ConfigurationState&lt;/code&gt;.
+     * Build a {@code ValidatorFactory} using the current provider implementation.
+     * The {@code ValidatorFactory} is assembled and follows the configuration passed
+     * via {@code ConfigurationState}.
      * &lt;p&gt;
-     * The returned &lt;code&gt;ValidatorFactory&lt;/code&gt; is properly initialized and ready for use.
+     * The returned {@code ValidatorFactory} is properly initialized and ready for use.
      * &lt;/p&gt;
      *
      * @param configurationState the configuration descriptor
      *
-     * @return the instanciated ValidatorFactory
+     * @return the instantiated ValidatorFactory
      * @throws javax.validation.ValidationException if the ValidatorFactory cannot be built
      */
     ValidatorFactory buildValidatorFactory(ConfigurationState configurationState);
@@ -4467,22 +4470,22 @@ public interface ValidationProvider&lt;T extends Configuration&lt;T&gt;&gt; {
           <programlisting>package javax.validation.spi;
 
 /**
- * Defines the state used to bootstrap the &lt;code&gt;Configuration&lt;/code&gt;
+ * Defines the state used to bootstrap the {@code Configuration}
  *
  * @author Emmanuel Bernard
  * @author Sebastian Thomschke 
  */
 public interface BootstrapState {
     /**
-     * User defined &lt;code&gt;ValidationProviderResolver&lt;/code&gt; strategy
-     * instance or &lt;code&gt;null&lt;/code&gt; if undefined.
+     * User defined {@code ValidationProviderResolver} strategy
+     * instance or {@code null} if undefined.
      *
      * @return ValidationProviderResolver instance or null
      */
     ValidationProviderResolver getValidationProviderResolver();
 
     /**
-     * Specification default &lt;code&gt;ValidationProviderResolver&lt;/code&gt;
+     * Specification default {@code ValidationProviderResolver}
      * strategy instance.
      * 
      * @return default implementation of ValidationProviderResolver
@@ -4628,7 +4631,7 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
  * to bootstrap it:
  * &lt;ul&gt;
  * &lt;li&gt;
- * The easiest approach is to build the default &lt;code&gt;ValidatorFactory&lt;/code&gt;.
+ * The easiest approach is to build the default {@code ValidatorFactory}.
  * &lt;pre&gt;{@code ValidatorFactory factory = Validation.buildDefaultValidatorFactory();}&lt;/pre&gt;
  * In this case, the default validation provider resolver
  * will be used to locate available providers.
@@ -4636,14 +4639,14 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
  * &lt;ul&gt;
  * &lt;li&gt;if the XML configuration defines a provider, this provider is used&lt;/li&gt;
  * &lt;li&gt;if the XML configuration does not define a provider or if no XML configuration
- * is present the first provider returned by the 
- * &lt;code&gt;ValidationProviderResolver&lt;/code&gt; instance is used.&lt;/li&gt;
+ * is present the first provider returned by the
+ * {@code ValidationProviderResolver} instance is used.&lt;/li&gt;
  * &lt;/ul&gt;
  * &lt;/li&gt;
  * &lt;li&gt;
  * The second bootstrap approach allows to choose a custom
- * &lt;code&gt;ValidationProviderResolver&lt;/code&gt;. The chosen
- * &lt;code&gt;ValidationProvider&lt;/code&gt; is then determined in the same way
+ * {@code ValidationProviderResolver}. The chosen
+ * {@code ValidationProvider} is then determined in the same way
  * as in the default bootstrapping case (see above).
  * &lt;pre&gt;{@code
  * Configuration&lt;?&gt; configuration = Validation
@@ -4657,7 +4660,7 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
  * The third approach allows you to specify explicitly and in
  * a type safe fashion the expected provider.
  * &lt;p/&gt;
- * Optionally you can choose a custom &lt;code&gt;ValidationProviderResolver&lt;/code&gt;.
+ * Optionally you can choose a custom {@code ValidationProviderResolver}.
  * &lt;pre&gt;{@code
  * ACMEConfiguration configuration = Validation
  *    .byProvider(ACMEProvider.class)
@@ -4670,8 +4673,8 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
  * Note:&lt;br/&gt;
  * &lt;ul&gt;
  * &lt;li&gt;
- * The &lt;code&gt;ValidatorFactory&lt;/code&gt; object built by the bootstrap process should be cached
- * and shared amongst &lt;code&gt;Validator&lt;/code&gt; consumers.
+ * The {@code ValidatorFactory} object built by the bootstrap process should be cached
+ * and shared amongst {@code Validator} consumers.
  * &lt;/li&gt;
  * &lt;li&gt;
  * This class is thread-safe.
@@ -4684,15 +4687,15 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
 public class Validation {
 
     /**
-     * Build and return a &lt;code&gt;ValidatorFactory&lt;/code&gt; instance based on the
+     * Build and return a {@code ValidatorFactory} instance based on the
      * default Bean Validation provider and following the XML configuration.
      * &lt;p/&gt;
      * The provider list is resolved using the default validation provider resolver
      * logic.
      * &lt;p/&gt; The code is semantically equivalent to
-     * &lt;code&gt;Validation.byDefaultProvider().configure().buildValidatorFactory()&lt;/code&gt;
+     * {@code Validation.byDefaultProvider().configure().buildValidatorFactory()}
      *
-     * @return &lt;code&gt;ValidatorFactory&lt;/code&gt; instance.
+     * @return {@code ValidatorFactory} instance.
      *
      * @throws ValidationException if the ValidatorFactory cannot be built
      */
@@ -4701,7 +4704,7 @@ public class Validation {
     }
 
     /**
-     * Build a &lt;code&gt;Configuration&lt;/code&gt;. The provider list is resolved
+     * Build a {@code Configuration}. The provider list is resolved
      * using the strategy provided to the bootstrap state.
      * &lt;pre&gt;
      * Configuration&amp;lt?&amp;gt; configuration = Validation
@@ -4711,10 +4714,10 @@ public class Validation {
      * ValidatorFactory factory = configuration.buildValidatorFactory();
      * &lt;/pre&gt;
      * The provider can be specified in the XML configuration. If the XML
-     * configuration does not exsist or if no provider is specified,
+     * configuration does not exist or if no provider is specified,
      * the first available provider will be returned.
      *
-     * @return instance building a generic &lt;code&gt;Configuration&lt;/code&gt;
+     * @return instance building a generic {@code Configuration}
      *         compliant with the bootstrap state provided.
      */
     public static GenericBootstrap byDefaultProvider() {
@@ -4722,7 +4725,7 @@ public class Validation {
     }
 
     /**
-     * Build a &lt;code&gt;Configuration&lt;/code&gt; for a particular provider implementation.
+     * Build a {@code Configuration} for a particular provider implementation.
      * Optionally overrides the provider resolution strategy used to determine the provider.
      * &lt;p/&gt;
      * Used by applications targeting a specific provider programmatically.
@@ -4733,14 +4736,14 @@ public class Validation {
      *             .providerResolver( new MyResolverStrategy() )
      *             .configure();
      * &lt;/pre&gt;,
-     * where &lt;code&gt;ACMEConfiguration&lt;/code&gt; is the
-     * &lt;code&gt;Configuration&lt;/code&gt; sub interface uniquely identifying the
-     * ACME Bean Validation provider. and &lt;code&gt;ACMEProvider&lt;/code&gt; is the
-     * &lt;code&gt;ValidationProvider&lt;/code&gt; implementation of the ACME provider.
+     * where {@code ACMEConfiguration} is the
+     * {@code Configuration} sub interface uniquely identifying the
+     * ACME Bean Validation provider. and {@code ACMEProvider} is the
+     * {@code ValidationProvider} implementation of the ACME provider.
      *
-     * @param providerType the &lt;code&gt;ValidationProvider&lt;/code&gt; implementation type
+     * @param providerType the {@code ValidationProvider} implementation type
      *
-     * @return instance building a provider specific &lt;code&gt;Configuration&lt;/code&gt;
+     * @return instance building a provider specific {@code Configuration}
      *         sub interface implementation.
      */
     public static &lt;T extends Configuration&lt;T&gt;, U extends ValidationProvider&lt;T&gt;&gt;
@@ -4777,7 +4780,7 @@ public class Validation {
 
 /**
  * Defines the state used to bootstrap Bean Validation and
- * creates a provider agnostic &lt;code&gt;Configuration&lt;/code&gt;.
+ * creates a provider agnostic {@code Configuration}.
  *
  * @author Emmanuel Bernard
  */
@@ -4785,26 +4788,28 @@ public interface GenericBootstrap {
     /**
      * Defines the provider resolution strategy.
      * This resolver returns the list of providers evaluated
-     * to build the &lt;code&gt;Configuration&lt;/code&gt;
+     * to build the {@code Configuration}
      * &lt;p/&gt;
-     * If no resolver is defined, the default &lt;code&gt;ValidationProviderResolver&lt;/code&gt;
+     * If no resolver is defined, the default {@code ValidationProviderResolver}
      * implementation is used.
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     * @param resolver the {@code ValidationProviderResolver} to use for bootstrapping
+     * @return {@code this} following the chaining method pattern
      */
     GenericBootstrap providerResolver(ValidationProviderResolver resolver);
 
     /**
-     * Returns a generic &lt;code&gt;Configuration&lt;/code&gt; implementation.
-     * At this stage the provider used to build the &lt;code&gt;ValidatorFactory&lt;/code&gt; 
-     * is not defined.
+     * Returns a generic {@code Configuration} implementation. At this stage the
+     * provider used to build the {@code ValidatorFactory} is not defined.
      * &lt;p/&gt;
-     * The &lt;code&gt;Configuration&lt;/code&gt; implementation is provided by the first provider 
-     * returned by the &lt;code&gt;ValidationProviderResolver&lt;/code&gt; strategy.
+     * The {@code Configuration} implementation is provided by the first
+     * provider returned by the {@code ValidationProviderResolver} strategy.
      *
      * @return a Configuration implementation compliant with the bootstrap state
-     * @throws javax.validation.ValidationException if the Configuration object cannot be built
-     *                        this is generally due to an issue with the ValidationProviderResolver
+     * @throws javax.validation.ValidationException
+     *             If the Configuration object cannot be built. This is
+     *             generally due to an issue with the
+     *             ValidationProviderResolver.
      */
     Configuration&lt;?&gt; configure();
 }</programlisting>
@@ -4834,17 +4839,17 @@ public interface GenericBootstrap {
 
 /**
  * Defines the state used to bootstrap Bean Validation and
- * creates a provider specific &lt;code&gt;Configuration&lt;/code&gt;
- * of type&lt;code&gt;T&lt;/code&gt;.
+ * creates a provider specific {@code Configuration}
+ * of type {@code T}.
  * &lt;p/&gt;
- * The specific &lt;code&gt;Configuration&lt;/code&gt; is linked to the provider via the generic
- * parameter of the &lt;code&gt;ValidationProvider&lt;/code&gt; implementation.
+ * The specific {@code Configuration} is linked to the provider via the generic
+ * parameter of the {@code ValidationProvider} implementation.
  * &lt;p/&gt;
  * The requested provider is the first provider instance assignable to
- * the requested provider type (known when &lt;code&gt;ProviderSpecificBootstrap&lt;/code&gt; is built).
+ * the requested provider type (known when {@code ProviderSpecificBootstrap} is built).
  * The list of providers evaluated is returned by {@link ValidationProviderResolver}.
- * If no &lt;code&gt;ValidationProviderResolver&lt;/code&gt; is defined, the
- * default &lt;code&gt;ValidationProviderResolver&lt;/code&gt; strategy is used.
+ * If no {@code ValidationProviderResolver} is defined, the
+ * default {@code ValidationProviderResolver} strategy is used.
  *
  * @author Emmanuel Bernard
  */
@@ -4852,21 +4857,25 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
 
     /**
      * Optionally defines the provider resolver implementation used.
-     * If not defined, use the default &lt;code&gt;ValidationProviderResolver&lt;/code&gt;
+     * If not defined, use the default {@code ValidationProviderResolver}
      *
-     * @param resolver &lt;code&gt;ValidationProviderResolver&lt;/code&gt; implementation used
+     * @param resolver {@code ValidationProviderResolver} implementation used
      *
-     * @return &lt;code&gt;this&lt;/code&gt; following the chaining method pattern
+     * @return {@code this} following the chaining method pattern
      */
     public ProviderSpecificBootstrap&lt;T&gt; providerResolver(ValidationProviderResolver resolver);
 
     /**
-     * Determines the provider implementation suitable for &lt;code&gt;T&lt;/code&gt; and delegates
-     * the creation of this specific &lt;code&gt;Configuration&lt;/code&gt; subclass to the provider.
+     * Determines the provider implementation suitable for {@code T} and
+     * delegates the creation of this specific {@code Configuration} subclass to
+     * the provider.
      *
-     * @return &lt;code&gt;Configuration&lt;/code&gt; sub interface implementation
-     * @throws javax.validation.ValidationException if the Configuration object cannot be built
-     *                        this is generally due to an issue with the ValidationProviderResolver
+     * @return {@code Configuration} sub interface implementation
+     *
+     * @throws javax.validation.ValidationException
+     *             If the Configuration object cannot be built. This is
+     *             generally due to an issue with the
+     *             ValidationProviderResolver.
      */
     public T configure();
 }</programlisting>
