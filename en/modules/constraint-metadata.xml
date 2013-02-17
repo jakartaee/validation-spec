@@ -542,7 +542,7 @@ public interface BeanDescriptor extends ElementDescriptor {
     linkend="constraintdeclarationvalidationprocess-requirements-property"/>).
     The property is uniquely identified by its name as per the JavaBeans
     convention: field level and getter level constraints of the given name are
-    all returned.</phrase><phrase revisionflag="added" role="tck-testable">An
+    all returned. </phrase><phrase revisionflag="added" role="tck-testable">An
     <classname>IllegalArgumentException</classname> is raised if the
     <varname>propertyName</varname> parameter is null.</phrase></para>
 
@@ -613,8 +613,8 @@ public interface CascadableDescriptor {
 }</programlisting>
 
     <para role="tck-testable">The <methodname>isCascaded</methodname> method
-    returns <literal>true</literal> if the element is marked with
-    <classname>@Valid</classname>.</para>
+    returns <literal>true</literal> if the element is marked for cascaded
+    validation.</para>
 
     <para role="tck-testable"><phrase role="tck-testable">The method
     <methodname>getGroupConversions</methodname> returns a set with the group
@@ -678,7 +678,7 @@ public interface GroupConversionDescriptor {
     <methodname>BeanDescriptor.getConstraintsForProperty(String)</methodname>
     or <methodname>BeanDescriptor.getConstrainedProperties</methodname>.
     Constraints declared on the attribute and the getter of the same name
-    according to the Java Bean rules are returned by this descriptor.</para>
+    according to the JavaBeans rules are returned by this descriptor.</para>
 
     <programlisting revisionflag="changed">package javax.validation.metadata;
 
@@ -700,10 +700,6 @@ public interface PropertyDescriptor extends ElementDescriptor, CascadableDescrip
     String getPropertyName();
 }</programlisting>
 
-    <para revisionflag="deleted">The <methodname>isCascaded</methodname>
-    method returns <literal>true</literal> if the property is marked with
-    <classname>@Valid</classname>.</para>
-
     <para role="tck-testable"><methodname>getPropertyName</methodname> returns
     the property name as described in <xref
     linkend="validationapi-constraintviolation"/>.</para>
@@ -714,7 +710,7 @@ public interface PropertyDescriptor extends ElementDescriptor, CascadableDescrip
     ConstructorDescriptor</title>
 
     <para>The <classname>ExecutableDescriptor</classname> interface describes
-    a constrained method respectively constructor of a Java type.</para>
+    a constrained method or constructor of a Java type.</para>
 
     <programlisting>package javax.validation.metadata;
 
@@ -860,28 +856,30 @@ public interface ExecutableDescriptor extends ElementDescriptor {
 
     <para
     role="tck-testable"><classname>isConstrainedOnParameters()</classname>
-    returns true if any of the parameters is constrained or cascaded or if the
-    represented executable has at least one cross-parameter constraint.
-    Returns false if there is no parameter.</para>
+    returns <literal>true</literal> if any of the parameters is constrained or
+    cascaded or if the represented executable has at least one cross-parameter
+    constraint. Returns <literal>false</literal> if there is no
+    parameter.</para>
 
     <para
     role="tck-testable"><classname>isConstrainedOnReturnValue()</classname>
-    returns true if the return value is constrained or cascaded. Returns false
-    if there is no return value.</para>
+    returns <literal>true</literal> if the return value is constrained or
+    cascaded. Returns <literal>false</literal> if there is no return
+    value.</para>
 
     <para role="tck-testable tck-needs-update">The methods
     <methodname>hasConstraints()</methodname>,
     <methodname>getConstraintDescriptors()</methodname> and
     <methodname>findConstraints()</methodname> defined on
     <classname>ElementDescriptor</classname> are redefined to clarify that
-    executables do not host constraints directly and thus will always be an
-    empty set of constraints. Constraint descriptors for individual parameters
-    can be obtained from the corresponding
-    <classname>ParameterDescriptor</classname> object, constraint descriptors
-    for individual cross-parameter constraints can be obtained from the
-    corresponding <classname>CrossParameterDescriptor</classname> object and
-    constraint descriptors for the return value can be obtained from
-    <classname>ReturnValueDescriptor</classname>.</para>
+    executables do not host constraints directly and thus will always return
+    <literal>false</literal> or an empty set of constraints, respectively.
+    Constraint descriptors for individual parameters can be obtained from the
+    corresponding <classname>ParameterDescriptor</classname> object,
+    constraint descriptors for cross-parameter constraints can be obtained
+    from the corresponding <classname>CrossParameterDescriptor</classname>
+    object and constraint descriptors for the return value can be obtained
+    from <classname>ReturnValueDescriptor</classname>.</para>
 
     <para>The interfaces <classname>MethodDescriptor</classname> and
     <classname>ConstructorDescriptor</classname> are derived from
@@ -918,8 +916,8 @@ public interface ConstructorDescriptor extends ExecutableDescriptor {
     Class&lt;?&gt;...)</methodname> and
     <methodname>BeanDescriptor#getConstrainedMethods()</methodname>, while
     <classname>ConstructorDescriptor</classname> objects are returned by
-    <methodname>BeanDescriptor#getConstraintsForConstructor(String,
-    Class&lt;?&gt;...)</methodname> and
+    <methodname>BeanDescriptor#getConstraintsForConstructor(Class&lt;?&gt;...)</methodname>
+    and
     <methodname>BeanDescriptor#getConstrainedConstructors()</methodname>.</para>
 
     <para role="tck-testable">None of the metadata API methods honor the XML
@@ -1008,7 +1006,7 @@ public interface CrossParameterDescriptor extends ElementDescriptor {
     <title>ReturnValueDescriptor</title>
 
     <para>The <classname>ReturnValueDescriptor</classname> interface describes
-    a constrained return value of a method or constructor.</para>
+    the return value of a method or constructor.</para>
 
     <para>This interface is returned by
     <methodname>MethodDescriptor#getReturnValueDescriptor()</methodname> and
