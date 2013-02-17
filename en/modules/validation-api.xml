@@ -595,7 +595,55 @@ executableValidator.validateConstructorParameters(constructor, new Object[] { nu
 
         <programlisting>executableValidator.validateConstructorReturnValue(constructor, orderService).size() == 1</programlisting>
 
-        <para><remark>Do we need more examples?</remark></para>
+        <para>Let's now look at how a validation interceptor would use these
+        methods.</para>
+
+        <programlisting>@Interceptor
+public class SampleMethodInterceptor {
+    @Inject
+    private Validator validator;
+
+    @AroundInvoke
+    public Object validateMethodInvocation(InvocationContext ctx) throws Exception {
+        //validate parameters
+        Set&lt;ConstraintViolation&lt;Object&gt;&gt; violations = validator.forExecutables().validateParameters(
+                ctx.getTarget(),
+                ctx.getMethod(),
+                ctx.getParameters()
+        );
+
+        //if a violation occurs for parameters, raise an exception
+        if ( !violations.isEmpty() ) {
+            throw new ConstraintViolationException(
+                    buildMessage( ctx.getMethod(), ctx.getParameters(), violations ),
+                    violations
+            );
+        }
+
+        //execute the method proper
+        Object result = ctx.proceed();
+
+        //validate the return type if it has a return value
+        if ( method.getReturnType() == Void.TYPE ) {
+            violations = validator.forExecutables().validateReturnValue(
+                    ctx.getTarget(),
+                    ctx.getMethod(),
+                    result
+            );
+        }
+
+        //if a violation occurs for the return type, raise an exception
+        if ( !violations.isEmpty() ) {
+            throw new ConstraintViolationException(
+                    buildMessage( ctx.getMethod(), ctx.getParameters(), violations ),
+                    violations
+            );
+        }
+
+        //return the result
+        return result;
+    }
+}</programlisting>
       </section>
     </section>
 
