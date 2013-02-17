@@ -385,7 +385,6 @@ public interface ExecutableValidator {
 
     /**
      * Validates all return value constraints of the given method.
-     * Throws a {@link ValidationException} if the method has no return value.
      *
      * @param &lt;T&gt; The type hosting the method to validate.
      * @param object The object on which the method to validate was invoked.
@@ -456,7 +455,7 @@ public interface ExecutableValidator {
       <classname>IllegalArgumentException</classname> will be thrown if null
       is passed for any of the parameters.</phrase></para>
 
-      <para><phrase role="tck-testable tck-needs-update"><methodname>&lt;T&gt;
+      <para><phrase role="tck-testable"><methodname>&lt;T&gt;
       Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object,
       Method method, Object returnValue, Class&lt;?&gt;...
       groups)</methodname> validates the return value (specified by
@@ -468,8 +467,7 @@ public interface ExecutableValidator {
       role="tck-testable"> An <classname>IllegalArgumentException</classname>
       will be thrown if null is passed for any of the parameters
       <varname>object</varname>, <varname>method</varname> and
-      <varname>groups</varname>. A <classname>ValidationException</classname>
-      occurs if the method has no return value.</phrase></para>
+      <varname>groups</varname>.</phrase></para>
 
       <para><phrase role="tck-testable"><methodname>&lt;T&gt;
       Set&lt;ConstraintViolation&lt;T&gt;&gt;
@@ -623,14 +621,12 @@ public class SampleMethodInterceptor {
         //execute the method proper
         Object result = ctx.proceed();
 
-        //validate the return type if it has a return value
-        if ( method.getReturnType() == Void.TYPE ) {
-            violations = validator.forExecutables().validateReturnValue(
-                    ctx.getTarget(),
-                    ctx.getMethod(),
-                    result
-            );
-        }
+        //validate the return type
+        violations = validator.forExecutables().validateReturnValue(
+                ctx.getTarget(),
+                ctx.getMethod(),
+                result
+        );
 
         //if a violation occurs for the return type, raise an exception
         if ( !violations.isEmpty() ) {
