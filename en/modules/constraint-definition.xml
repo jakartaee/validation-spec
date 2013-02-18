@@ -9,8 +9,8 @@
 
   <para>Constraints are defined by the combination of a constraint annotation
   and a list of constraint validation implementations. The constraint
-  annotation is applied on types, methods, fields or other constraint
-  annotations in case of composition.</para>
+  annotation is applied on types, fields, methods, constructors, parameters or
+  other constraint annotations in case of composition.</para>
 
   <para>Unless stated otherwise the default package name for the Bean
   Validation APIs is <classname>javax.validation</classname>.</para>
@@ -200,9 +200,9 @@ public @interface Constraint {
 
         <para><phrase role="tck-testable">Every constraint annotation must
         define a <literal>groups</literal> element that specifies the
-        processing groups with which the constraint declaration is
-        associated.</phrase><phrase revisionflag="added"
-        role="tck-testable">The type of the groups parameter is
+        processing groups with which the constraint declaration is associated.
+        </phrase><phrase revisionflag="added" role="tck-testable">The type of
+        the groups parameter is
         <classname>Class&lt;?&gt;[]</classname>.</phrase></para>
 
         <programlisting>Class&lt;?&gt;[] groups() default {};</programlisting>
@@ -308,7 +308,7 @@ public class Address {
         <example>
           <title>validationAppliesTo and ConstraintTarget</title>
 
-          <programlisting>    ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;</programlisting>
+          <programlisting>ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;</programlisting>
 
           <programlisting>/**
  * Defines the constraint target
@@ -320,9 +320,12 @@ public enum ConstraintTarget {
     /**
      * Discover the type when no ambiguity is present
      * &lt;ul&gt;
-     *     &lt;li&gt;if neither on a method nor a constructor, it implies the annotated element (type, field etc).&lt;/li&gt;
-     *     &lt;li&gt;if on a method or constructor with no parameter, it implies {@code RETURN_VALUE}&lt;/li&gt;
-     *     &lt;li&gt;if on a method with no return value ({@code void}), it implies {@code PARAMETERS}&lt;/li&gt;
+     *     &lt;li&gt;if neither on a method nor a constructor, it implies the annotated element
+     *     (type, field etc).&lt;/li&gt;
+     *     &lt;li&gt;if on a method or constructor with no parameter, it implies
+     *     {@code RETURN_VALUE}&lt;/li&gt;
+     *     &lt;li&gt;if on a method with no return value ({@code void}), it implies
+     *     {@code PARAMETERS}&lt;/li&gt;
      * &lt;/ul&gt;
      * Otherwise, {@code IMPLICIT} is not accepted and either {@code RETURN_VALUE} or
      * {@code PARAMETERS} is required. This is the case for constructors with parameters
@@ -372,21 +375,9 @@ public enum ConstraintTarget {
           </listitem>
         </itemizedlist>
 
-        <note>
-          <title>Question</title>
-
-          <para>An alternative model would be to have
-          <classname>ConstraintTarget</classname> support
-          <literal>IMPLICIT</literal>, <literal>ANNOTATED_ELEMENT</literal>
-          and <literal>PARAMETERS</literal>. In this model,
-          <literal>ANNOTATED_ELEMENT</literal> can be used in all "natural
-          places" like types and fields and is synonym to
-          <literal>RETURN_VALUE</literal> for methods and constructors.</para>
-        </note>
-
-        <para>Constraint users are encouraged to set the explicit
+        <para>Constraint users are encouraged to explicitly set the
         <classname>ConstraintTarget</classname> target when using a constraint
-        supporting both on a method or constructor as it would improve
+        supporting both on a method or constructor as it improves
         readability.</para>
       </section>
 
@@ -425,8 +416,9 @@ public @interface OrderNumber {
 }</programlisting>
       </example>
 
-      <para><xref linkend="example-definition-notnull"/> marks a String as a
-      well-formed order number. The constraint validator is implemented by
+      <para><xref linkend="example-definition-notnull"/> marks a
+      <classname>String</classname> as a well-formed order number. The
+      constraint validator is implemented by
       <classname>OrderNumberValidator</classname>.</para>
 
       <example id="example-definition-crossparameter" revisionflag="added">
@@ -474,7 +466,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy=ELAssertValidator.class)
-@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE, FIELD })
+@Target({ METHOD, FIELD, TYPE, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface ELAssert {
     String message() default "{com.acme.constraint.DateParametersConsistent.message}";
@@ -482,10 +474,14 @@ public @interface ELAssert {
     Class&lt;? extends Payload&gt;[] payload() default {};
     ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
 
-    String expression;
+    String expression();
 }</programlisting>
 
-        <programlisting>@ELAssert(expression="param[1]==param[2]", validationAppliesTo=ConstraintType.PARAMETERS)
+        <programlisting>@ELAssert(
+    message="Please check that your passwords match and try again.",
+    expression="param[1]==param[2]", 
+    validationAppliesTo=ConstraintType.PARAMETERS
+)
 public User createUser(String email, String password, String repreatPassword) { ... }</programlisting>
       </example>
 
@@ -671,7 +667,7 @@ public @interface ZipCode {
 @Size(min=5, max=5)
 @Constraint(validatedBy = FrenchZipcodeValidator.class)
 @Documented
-@Target({ANNOTATION_TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER})
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface FrenchZipcode {
     String message() default "Wrong zipcode";
@@ -715,10 +711,10 @@ public @interface FrenchZipcode {
     <para><phrase role="tck-testable">The type upon which composed constraint
     is placed must be compatible with all constraints (composing and
     composed).</phrase> A constraint designer should ensure that such a type
-    exists and list in the JavaDoc all the compatible types.</para>
+    exists and lists in the JavaDoc all the compatible types.</para>
 
-    <para revisionflag="added">Both composed and composing constraints should
-    share the same constraint type. In particular, it is not legal to mix a
+    <para revisionflag="added">All composed and composing constraints must
+    have a constraint type in common. In particular, it is not legal to mix a
     pure generic constraint and a pure cross-parameter constraint.</para>
 
     <para>It is possible to ensure that composing annotations do not raise
@@ -1217,7 +1213,8 @@ public class ScriptAssertValidator implements ConstraintValidator&lt;ScriptAsser
     @Override
     public boolean isValid(Object[] value, ConstraintValidatorContext context) {
         [...]
-    }</programlisting>
+    }
+}</programlisting>
     </example>
 
     <para><xref
@@ -1229,22 +1226,32 @@ public class ScriptAssertValidator implements ConstraintValidator&lt;ScriptAsser
       <title>Valid ConstraintValidator definitions</title>
 
       <programlisting>//String is not making use of generics
-public class SizeValidatorForString implements ConstraintValidator&lt;Size, String&gt; {...}
+public class SizeValidatorForString implements ConstraintValidator&lt;Size, String&gt; {
+    [...]
+}
 
 //Collection uses generics but the raw type is used
-public class SizeValidatorForCollection implements ConstraintValidator&lt;Size, Collection&gt; {...}
+public class SizeValidatorForCollection implements ConstraintValidator&lt;Size, Collection&gt; {
+    [...]
+}
 
 //Collection uses generics and unbounded windcard type
-public class SizeValidatorForCollection implements ConstraintValidator&lt;Size, Collection&lt;?&gt;&gt; {...}
+public class SizeValidatorForCollection implements ConstraintValidator&lt;Size, Collection&lt;?&gt;&gt; {
+    [...]
+}
 
 //Validator for cross-parameter constraint
 @SupportedValidationTarget(ValidationTarget.PARAMETERS)
 public class DateParametersConsistentValidator 
-    implements ConstraintValidator&lt;DateParametersConsistent, Object[]&gt; {...}
+    implements ConstraintValidator&lt;DateParametersConsistent, Object[]&gt; {
+    [...]
+}
 
 //Validator for both annotated elements and executable parameters
 @SupportedValidationTarget({ValidationTarget.ANNOTATED_ELEMENT, ValidationTarget.PARAMETERS})
-public class ELScriptValidator implements ConstraintValidator&lt;ELScript, Object&gt; {...}</programlisting>
+public class ELScriptValidator implements ConstraintValidator&lt;ELScript, Object&gt; {
+    [...]
+}</programlisting>
     </example>
 
     <para>And some invalid definitions in <xref
@@ -1255,14 +1262,20 @@ public class ELScriptValidator implements ConstraintValidator&lt;ELScript, Objec
       <title>Invalid ConstraintValidator definitions</title>
 
       <programlisting>//parameterized type
-public class SizeValidatorForString implements&lt;Size, Collection&lt;String&gt;&gt; {...}
+public class SizeValidatorForString implements&lt;Size, Collection&lt;String&gt;&gt; {
+    [...]
+}
 
 //parameterized type using bounded wildcard
-public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? extends Address&gt;&gt; {...}
+public class SizeValidatorForCollection implements&lt;Size, Collection&lt;? extends Address&gt;&gt; {
+    [...]
+}
 
 //cross-parameter validator accepting the wrong type
 @SupportedValidationTarget(ValidationTarget.PARAMETERS)
-public class NumberPositiveValidator implements ConstraintValidator&lt;NumberPositive, Number&gt; { ... }</programlisting>
+public class NumberPositiveValidator implements ConstraintValidator&lt;NumberPositive, Number&gt; {
+    [...]
+}</programlisting>
     </example>
 
     <para revisionflag="changed">The life cycle of a constraint validation
@@ -1494,13 +1507,15 @@ public interface ConstraintValidatorContext {
          *
          * @param name property name
          * @return a builder representing node {@code name}
-         * @deprecated since 1.1 - replaced by {@code addPropertyNode}, {@code addBeanNode} and {@code addParameterNode}
+         * @deprecated since 1.1 - replaced by {@code addPropertyNode}, {@code addBeanNode}
+         *             and {@code addParameterNode}
          */
         @Deprecated
         NodeBuilderDefinedContext addNode(String name);
 
         /**
-         * Add a property node to the path the {@code ConstraintViolation} will be associated to.
+         * Add a property node to the path the {@code ConstraintViolation}
+         * will be associated to.
          *
          * {@code name} describes a single property. In particular,
          * dot (.) is not allowed.
@@ -1514,7 +1529,8 @@ public interface ConstraintValidatorContext {
         NodeBuilderCustomizableContext addPropertyNode(String name);
 
         /**
-         * Add a bean node (class-level) to the path the {@code ConstraintViolation} will be associated to.
+         * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+         * will be associated to.
          * Note that bean nodes are always leaf nodes.
          *
          * @return a builder representing the bean node
@@ -1524,8 +1540,10 @@ public interface ConstraintValidatorContext {
         LeafNodeBuilderCustomizableContext addBeanNode();
 
         /**
-         * Add a method parameter node to the path the {@code ConstraintViolation} will be associated to.
-         * The parameter index must be valid (ie. within the boundaries of the method parameter indexes).
+         * Add a method parameter node to the path the {@code ConstraintViolation}
+         * will be associated to.
+         * The parameter index must be valid (ie. within the boundaries of the method
+         * parameter indexes).
          *
          * @param index the parameter index
          * @return a builder representing the index-th parameter node
@@ -1653,13 +1671,15 @@ public interface ConstraintValidatorContext {
              *
              * @param name property name
              * @return a builder representing node {@code name}
-             * @deprecated since 1.1 - replaced by {@code addPropertyNode} and {@code addBeanNode}
+             * @deprecated since 1.1 - replaced by {@code addPropertyNode}
+             *             and {@code addBeanNode}
              */
             @Deprecated
             NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add a property node to the path the {@code ConstraintViolation} will be associated to.
+             * Add a property node to the path the {@code ConstraintViolation}
+             * will be associated to.
              *
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
@@ -1673,7 +1693,8 @@ public interface ConstraintValidatorContext {
             NodeBuilderCustomizableContext addPropertyNode(String name);
 
             /**
-             * Add a bean node (class-level) to the path the {@code ConstraintViolation} will be associated to.
+             * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+             * will be associated to.
              * Note that bean nodes are always leaf nodes.
              *
              * @return a builder representing the bean node
@@ -1718,13 +1739,15 @@ public interface ConstraintValidatorContext {
              *
              * @param name property name
              * @return a builder representing node {@code name}
-             * @deprecated since 1.1 - replaced by {@code addPropertyNode} and {@code addBeanNode}
+             * @deprecated since 1.1 - replaced by {@code addPropertyNode}
+             *             and {@code addBeanNode}
              */
             @Deprecated
             NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add a property node to the path the {@code ConstraintViolation} will be associated to.
+             * Add a property node to the path the {@code ConstraintViolation}
+             * will be associated to.
              *
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
@@ -1738,7 +1761,8 @@ public interface ConstraintValidatorContext {
             NodeBuilderCustomizableContext addPropertyNode(String name);
 
             /**
-             * Add a bean node (class-level) to the path the {@code ConstraintViolation} will be associated to.
+             * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+             * will be associated to.
              * Note that bean nodes are always leaf nodes.
              *
              * @return a builder representing the bean node
@@ -1794,13 +1818,15 @@ public interface ConstraintValidatorContext {
              *
              * @param name property name
              * @return a builder representing node {@code name}
-             * @deprecated since 1.1 - replaced by {@code addPropertyNode} and {@code addBeanNode}
+             * @deprecated since 1.1 - replaced by {@code addPropertyNode}
+             *             and {@code addBeanNode}
              */
             @Deprecated
             NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add a property node to the path the {@code ConstraintViolation} will be associated to.
+             * Add a property node to the path the {@code ConstraintViolation}
+             * will be associated to.
              *
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
@@ -1814,7 +1840,8 @@ public interface ConstraintValidatorContext {
             NodeBuilderCustomizableContext addPropertyNode(String name);
 
             /**
-             * Add a bean node (class-level) to the path the {@code ConstraintViolation} will be associated to.
+             * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+             * will be associated to.
              * Note that bean nodes are always leaf nodes.
              *
              * @return a builder representing the bean node
