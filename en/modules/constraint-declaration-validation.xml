@@ -2584,7 +2584,16 @@ public class Address {
       constraint evaluation, a single
       <classname>ConstraintValidator</classname> is considered.</para>
 
-      <para><phrase role="tck-testable">If the constraint declaration is
+      <para>The list of <classname>ConstraintValidator</classname> can contain
+      at most one which targets cross-parameter. If the constraint targets the
+      parameters of an executable either implicitly or by the use of
+      <methodname>validationAppliesTo</methodname> - see <xref
+      linkend="constraintsdefinitionimplementation-constraintdefinition-validationappliesto"/>,
+      then the cross-parameter <classname>ConstraintValidator</classname> is
+      used. If none is present, an exception is raised.</para>
+
+      <para><phrase role="tck-testable">If the constraint is a generic
+      constraint, the following rules apply. If the constraint declaration is
       hosted on a class or an interface, the targeted type is the class or the
       interface.</phrase> <phrase role="tck-testable">If the constraint is
       hosted on a class attribute, the type of the attribute is the targeted
@@ -2596,8 +2605,10 @@ public class Address {
 
       <para>The rules written below describe formally the following statement:
       <phrase role="tck-testable">the
-      <classname>ConstraintValidator</classname> chosen to validate a declared
-      type <classname>T</classname> is the one where the type supported by the
+      <classname>ConstraintValidator</classname> chosen to validate the
+      generic constraint on a declared type <classname>T</classname> is the
+      one where the <classname>ConstraintValidator</classname> targets the
+      annotated element, where the type supported by the
       <classname>ConstraintValidator</classname> is a supertype of
       <classname>T</classname> and where there is no other
       <classname>ConstraintValidator</classname> whose supported type is a
@@ -2605,12 +2616,17 @@ public class Address {
       <classname>ConstraintValidator</classname> supported
       type.</phrase></para>
 
-      <para>When validating a constraint A placed on a target declaring the
-      type <classname>T</classname>, the following resolution rules
-      apply:</para>
+      <para>When validating a generic constraint A placed on a target
+      declaring the type <classname>T</classname>, the following resolution
+      rules apply:</para>
 
       <itemizedlist>
-        <listitem>
+        <listitem revisionflag="added" role="tck-testable">
+          <para>Only <classname>ConstraintValidator</classname> targeting
+          annotated elements are considered.</para>
+        </listitem>
+
+        <listitem role="tck-testable">
           <para>Primitive types are considered equivalent to their respective
           primitive wrapper class. Likewise, arrays of primitive types are
           considered equivalent to arrays of their wrapper classes.</para>
@@ -2628,7 +2644,7 @@ public class Address {
           <classname>U</classname>.</para>
         </listitem>
 
-        <listitem>
+        <listitem role="tck-testable">
           <para role="tck-testable">If no
           <classname>ConstraintValidator</classname> compliant with
           <classname>T</classname> is found amongst the
@@ -2637,7 +2653,7 @@ public class Address {
           <classname>UnexpectedTypeException</classname> is raised.</para>
         </listitem>
 
-        <listitem>
+        <listitem role="tck-testable">
           <para>A <classname>ConstraintValidator&lt;A, U&gt;</classname>
           compliant with <classname>T</classname> is considered
           <emphasis>strictly more specific</emphasis> than a
