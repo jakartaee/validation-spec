@@ -422,16 +422,24 @@ public interface BeanDescriptor extends ElementDescriptor {
     /**
      * Returns {@code true} if the bean involves validation:
      * &lt;ul&gt;
-     * &lt;li&gt; a constraint is hosted on the bean itself &lt;/li&gt;
-     * &lt;li&gt; a constraint is hosted on one of the bean properties&lt;/li&gt;
-     * &lt;li&gt; a bean property is marked for cascaded validation ({@code @Valid})&lt;/li&gt;
-     * &lt;li&gt; a constraint is hosted on the return value or a method parameter of one of the bean's methods&lt;/li&gt;
-     * &lt;li&gt; or the return value or a method parameter of one of the bean's methods is marked for cascaded validation ({@code @Valid})&lt;/li&gt;
+     *     &lt;li&gt;a constraint is hosted on the bean itself&lt;/li&gt;
+     *     &lt;li&gt;a constraint is hosted on one of the bean properties&lt;/li&gt;
+     *     &lt;li&gt;or a bean property is marked for cascaded validation ({@code @Valid})&lt;/li&gt;
      * &lt;/ul&gt;
+     * Constrained methods and constructors are ignored.
      *
      * @return {@code true} if the bean involves validation, {@code false} otherwise.
      */
     boolean isBeanConstrained();
+
+    /**
+     * Returns {@code true} if any of the bean constructors
+     * or methods are constrained executables.
+     *
+     * @return Whether or not the bean has constrained executables
+     * @since 1.1
+     */
+    boolean hasConstrainedExecutables();
 
     /**
      * Return the property descriptor for a given property.
@@ -525,15 +533,15 @@ public interface BeanDescriptor extends ElementDescriptor {
 
     <para><phrase
     role="tck-testable"><methodname>isBeanConstrained</methodname> returns
-    true if the given class (and superclasses and interfaces) hosts at least
-    one validation declaration (either constraint or
-    <classname>@Valid</classname> annotation).</phrase> If the method returns
-    false, the Bean Validation engine can safely ignore the bean as it will
-    not be impacted by validation.</para>
+    true if the given class (and superclasses and interfaces) has at least one
+    class-level or property-level constraint or validation cascade.</phrase>
+    If the method returns false, the Bean Validation engine can safely ignore
+    the bean as it will not be impacted by validation.</para>
 
-    <para revisionflag="added"><remark>TODO: Specify behavior with respect to
-    method constraints, or add a dedicated method for that (see <ulink
-    url="http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html">http://lists.jboss.org/pipermail/beanvalidation-dev/2012-January/000239.html</ulink>)</remark></para>
+    <para revisionflag="added"
+    role="tck-testable"><methodname>hasConstrainedExecutables</methodname>
+    returns true if the given class (and superclasses and interfaces) has at
+    least one constrained method or constructor.</para>
 
     <para><phrase
     role="tck-testable"><methodname>getConstraintsForProperty</methodname>
