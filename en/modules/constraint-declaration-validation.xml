@@ -66,7 +66,9 @@
     </note>
 
     <para role="tck-testable">The target of an annotation definition can be a
-    field, property, or type, provided that: <itemizedlist>
+    field, property, type, constructor or method return value, constructor or
+    method parameter or constructor or method cross-parameter provided that:
+    <itemizedlist>
         <listitem>
           <para>the constraint definition supports the specified target
           (<classname>java.lang.annotation.Target</classname>)</para>
@@ -75,7 +77,10 @@
         <listitem>
           <para>one of the <classname>ConstraintValidator</classname>s
           declared on the constraint supports the declared type of the target
-          (see <xref linkend="typevalidatorresolution"/>).</para>
+          or in the case of cross-parameter, one cross-parameter
+          <classname>ConstraintValidator</classname> is present (see <xref
+          linkend="typevalidatorresolution"/> to learn about
+          <classname>ConstraintValidator</classname> resolution).</para>
         </listitem>
       </itemizedlist></para>
 
@@ -216,7 +221,8 @@ public @interface Valid {
       </itemizedlist>
 
       <para>Each object provided by the iterator is validated. <phrase
-      role="tck-testable">For <classname>Map</classname>, the value of each
+      role="tck-testable">For <classname>Map</classname>, the value (retrieved
+      by <methodname>getValue</methodname>) of each
       <classname>Map.Entry</classname> is validated (the key is not
       validated).</phrase></para>
 
@@ -246,6 +252,10 @@ public @interface Valid {
     to the <classname>ConstraintValidator</classname>. When a constraint is
     defined on a getter, the result of the getter invocation is passed to the
     <classname>ConstraintValidator</classname>.</para>
+
+    <para><xref
+    linkend="constraintdeclarationvalidationprocess-methodlevelconstraints"/>
+    discuss in detail constraints on methods and constructors.</para>
   </section>
 
   <section id="constraintdeclarationvalidationprocess-inheritance">
@@ -285,7 +295,7 @@ public @interface Valid {
 public interface Billable {}
 
 /**
- * customer can buy without any harrassing checking process
+ * Customer can buy without any harrassing checking process
  */
 public interface BuyInOneClick {
 }</programlisting>
@@ -824,9 +834,6 @@ public @interface ConvertGroup {
         </itemizedlist>
       </note>
 
-      <para><remark>TODO: is ConstraintDeclarationException the right
-      exception? Should we create a new one?</remark></para>
-
       <para><phrase role="tck-testable"><classname>@ConvertGroup</classname>
       and <classname>@ConvertGroup.List</classname> can only be placed where
       <classname>@Valid</classname> is present to ensure proper respect of the
@@ -1257,8 +1264,8 @@ public class OrderService implements RetailOrderService, B2BOrderService {
       are ignored by validation. Putting constraints on a static method is not
       portable.</phrase> No other restrictions exist from the perspective of
       this specification, however it is possible that technologies integrating
-      with method validation impose further restrictions to methods to which a
-      validation shall be applied. For instance certain integration
+      with method validation impose further restrictions to methods for which
+      a validation shall be applied. For instance certain integration
       technologies might require that methods to be validated must have
       <methodname>public</methodname> visibility and/or must not be
       final.</para>
@@ -1276,7 +1283,7 @@ public class OrderService implements RetailOrderService, B2BOrderService {
         <programlisting>public class OrderService {
 
     public OrderService(@NotNull CreditCardProcessor creditCardProcessor) {
-        //...
+        [...]
     }
 
     public void placeOrder(
@@ -1284,12 +1291,10 @@ public class OrderService implements RetailOrderService, B2BOrderService {
         @NotNull Item item,
         @Min(1) int quantity) {
 
-        //...
+        [...]
     }
 }</programlisting>
       </example>
-
-      <remark>TODO: Consistently use "..." or "//..." for omissions</remark>
 
       <para>Using constraint annotations, several preconditions are defined
       here. These preconditions which must be satisfied in order to legally
@@ -1511,7 +1516,7 @@ public interface ParameterNameProvider {
         <listitem>
           <para>The set of <classname>CreditCardProcessor</classname> objects
           returned by <methodname>getCreditCardProcessors()</methodname> will
-          neither be null nor empty.</para>
+          neither be null nor be empty.</para>
         </listitem>
 
         <listitem>
@@ -1530,13 +1535,12 @@ public interface ParameterNameProvider {
       <title>Marking parameters and return values for cascaded
       validation</title>
 
-      <para><phrase role="tck-testable">Similar to normal bean validation, the
-      <classname>@Valid</classname> annotation is used to declare that a
-      cascaded validation of the given method parameters or return values
-      shall be performed by the Bean Validation provider. When marked, the
-      parameter or return value is considered a bean object to
-      validate.</phrase> Generally the same rules as for standard object graph
-      validation (see <xref
+      <para><phrase role="tck-testable">The <classname>@Valid</classname>
+      annotation is used to declare that a cascaded validation of the given
+      method/constructor parameters or return values is performed by the Bean
+      Validation provider. When marked, the parameter or return value is
+      considered a bean object to validate.</phrase> The same rules as for
+      standard object graph validation (see <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
       apply, in particular</para>
 
@@ -1664,7 +1668,7 @@ public interface ParameterNameProvider {
       <itemizedlist>
         <listitem>
           <para role="tck-testable">In sub types (be it sub classes/interfaces
-          or interface implementations) no parameter constraints must be
+          or interface implementations), no parameter constraints may be
           declared on overridden or implemented methods, nor may parameters be
           marked for cascaded validation. This would pose a strengthening of
           preconditions to be fulfilled by the caller.</para>
@@ -1674,7 +1678,7 @@ public interface ParameterNameProvider {
           <para role="tck-testable">If a sub type overrides/implements a
           method originally defined in several parallel types of the hierarchy
           (e.g. two interfaces not extending each other, or a class and an
-          interface not implemented by said class) no parameter constraints
+          interface not implemented by said class), no parameter constraints
           may be declared for that method at all nor parameters be marked for
           cascaded validation. This again is to avoid an unexpected
           strengthening of preconditions to be fulfilled by the caller.</para>
@@ -1682,11 +1686,11 @@ public interface ParameterNameProvider {
 
         <listitem>
           <para role="tck-testable">In sub types (be it sub classes/interfaces
-          or interface implementations) return value constraints may be
+          or interface implementations), return value constraints may be
           declared on overridden or implemented methods and the return value
           may be marked for cascaded validation. Upon validation, all return
           value constraints of the method in question are validated, wherever
-          they are declared in the hierarchy; This only poses possibly a
+          they are declared in the hierarchy. This only poses possibly a
           strengthening but no weakening of the method's postconditions
           guaranteed to the caller.</para>
         </listitem>
@@ -1709,7 +1713,7 @@ public interface ParameterNameProvider {
       constrained methods in inheritance hierarchies. Possible means for
       activating such alternative behavior include provider-specific
       configuration properties or annotations. Note that client code relying
-      on such alternative behavior may not be portable between Bean Validation
+      on such alternative behavior is not portable between Bean Validation
       providers.</para>
 
       <para role="tck-testable">The above rules do not apply when validating
@@ -1732,7 +1736,6 @@ public interface ParameterNameProvider {
           <programlisting language="JAVA" role="JAVA">public interface OrderService {
 
     void placeOrder(String customerCode, Item item, int quantity);
-
 }
 
 public class SimpleOrderService implements OrderService {
@@ -1741,8 +1744,9 @@ public class SimpleOrderService implements OrderService {
     public void placeOrder(
         @NotNull @Size(min=3, max=20) String customerCode,
         @NotNull Item item,
-        @Min(1) int quantity) { ... }
-
+        @Min(1) int quantity) {
+        [...]
+    }
 }</programlisting>
         </example>
 
@@ -1758,7 +1762,6 @@ public class SimpleOrderService implements OrderService {
             <programlisting language="JAVA" role="JAVA">public class OrderService {
 
     void placeOrder(String customerCode, Item item, int quantity) { ... }
-
 }
 
 public class SimpleOrderService extends OrderService {
@@ -1767,8 +1770,9 @@ public class SimpleOrderService extends OrderService {
     public void placeOrder(
         @NotNull @Size(min=3, max=20) String customerCode,
         @NotNull Item item,
-        @Min(1) int quantity) { ... }
-
+        @Min(1) int quantity) {
+        [...]
+    }
 }</programlisting>
           </example></para>
 
@@ -1784,7 +1788,6 @@ public class SimpleOrderService extends OrderService {
             <programlisting language="JAVA" role="JAVA">public interface OrderService {
 
     void placeOrder(String customerCode, Item item, int quantity);
-
 }
 
 public interface OrderPlacementService {
@@ -1793,14 +1796,14 @@ public interface OrderPlacementService {
         @NotNull @Size(min=3, max=20) String customerCode,
         @NotNull Item item,
         @Min(1) int quantity);
-
 }
 
 public class SimpleOrderService implements OrderService, OrderPlacementService {
 
     @Override
-    public void placeOrder(String customerCode, Item item, int quantity) { ... }
-
+    public void placeOrder(String customerCode, Item item, int quantity) {
+        [...]
+    }
 }</programlisting>
           </example>Here the class <classname>SimpleOrderService</classname>
         implements the interfaces <classname>OrderService</classname> and
@@ -1810,9 +1813,8 @@ public class SimpleOrderService implements OrderService, OrderPlacementService {
         This hierarchy is illegal with respect to the parameter constraints as
         a client of <classname>SimpleOrderService</classname> would have to
         fulfill the constraints defined on the interface
-        <classname>OrderPlacementService</classname> also if she only has a
-        reference of the static type
-        <classname>OrderService</classname>.</para>
+        <classname>OrderPlacementService</classname> even if the client only
+        expects <classname>OrderService</classname>.</para>
 
         <para><example>
             <title>Correctly declared return value constraints on sub
@@ -1820,8 +1822,9 @@ public class SimpleOrderService implements OrderService, OrderPlacementService {
 
             <programlisting language="JAVA" role="JAVA">public class OrderService {
 
-    Order placeOrder(String customerCode, Item item, int quantity) { ... }
-
+    Order placeOrder(String customerCode, Item item, int quantity) {
+        [...]
+    }
 }
 
 public class SimpleOrderService extends OrderService {
@@ -1829,8 +1832,9 @@ public class SimpleOrderService extends OrderService {
     @Override
     @NotNull
     @Valid
-    public Order placeOrder(String customerCode, Item item, int quantity) { ... }
-
+    public Order placeOrder(String customerCode, Item item, int quantity) {
+        [...]
+    }
 }</programlisting>
           </example>The return value constraints in
         <classname>DefaultOrderService</classname> are legal, as they
@@ -1896,10 +1900,10 @@ public class SimpleOrderService extends OrderService {
     associations are defined in <xref
     linkend="constraintdeclarationvalidationprocess-validationroutine-traversable"/>.</para>
 
-    <para><phrase>Note that this implies that a given validation constraint
-    will not be processed more than once per validation per path.</phrase>
-    Some implementations might even process a single constraint only once
-    across paths provided that they return the expected set of
+    <para>Note that this implies that a given validation constraint will not
+    be processed more than once per validation per path. Some implementations
+    might even process a single constraint only once across paths provided
+    that they return the expected set of
     <classname>ConstraintViolation</classname>.</para>
 
     <para><phrase role="tck-not-testable">Unless ordered by group sequences,
@@ -2179,8 +2183,11 @@ assert violations.size() == 1;</programlisting>
         </listitem>
       </itemizedlist>
 
-      <para role="tck-testable">Note that this implies that a given validation
-      constraint will not be processed more than once per validation.</para>
+      <para>Note that this implies that a given validation constraint will not
+      be processed more than once per validation per path. Some
+      implementations might even process a single constraint only once across
+      paths provided that they return the expected set of
+      <classname>ConstraintViolation</classname>.</para>
 
       <para><phrase role="tck-testable">Unless ordered by group sequences,
       groups can be validated in no particular order.</phrase> This implies
@@ -2554,16 +2561,18 @@ public class Address {
           </listitem>
 
           <listitem>
-            <para>the parameter values being validated</para>
+            <para>the method and constructor parameter values being
+            validated</para>
           </listitem>
 
           <listitem>
-            <para>the return value being validated</para>
+            <para>the method and constructor return value being
+            validated</para>
           </listitem>
         </itemizedlist></para>
 
       <para revisionflag="added" role="tck-testable">But the properties of
-      these elements (if validated) are in which case the complete path is
+      these elements (if validated) are. In this case the complete path is
       provided via <literal>pathToTraversableObject</literal>.</para>
     </section>
 
@@ -2705,11 +2714,18 @@ public class Address {
     SizeValidatorForSerializable.class })
 public @interface Size { ...}
 
-public class SizeValidatorForCollection implements ConstraintValidator&lt;Size, Collection&gt; { ... }
-public class SizeValidatorForSet implements ConstraintValidator&lt;Size, Set&gt; { ... }
-public class SizeValidatorForSerializable implements ConstraintValidator&lt;Size, Serializable&gt; { ... }
+public class SizeValidatorForCollection implements ConstraintValidator&lt;Size, Collection&gt; {
+    [...]
+}
+public class SizeValidatorForSet implements ConstraintValidator&lt;Size, Set&gt; {
+    [...]
+}
+public class SizeValidatorForSerializable implements ConstraintValidator&lt;Size, Serializable&gt; {
+    [...]
+}
 
-public interface SerializableCollection extends Serializable,  Collection {}</programlisting>
+public interface SerializableCollection extends Serializable, Collection {
+}</programlisting>
       </example>
 
       <para>The resolutions shown in <xref
@@ -2732,7 +2748,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
 
           <tbody>
             <row>
-              <entry><code>@Size Collection getAddresses() { ...
+              <entry><code>@Size Collection getAddresses() { [...]
               }</code></entry>
 
               <entry><classname>SizeValidatorForCollection</classname>: direct
@@ -2740,7 +2756,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
             </row>
 
             <row>
-              <entry><code>@Size Collection&lt;?&gt; getAddresses() { ...
+              <entry><code>@Size Collection&lt;?&gt; getAddresses() { [...]
               }</code></entry>
 
               <entry><classname>SizeValidatorForCollection</classname>:
@@ -2750,7 +2766,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
 
             <row>
               <entry><code>@Size Collection&lt;Address&gt; getAddresses() {
-              ... }</code></entry>
+              [...] }</code></entry>
 
               <entry><classname>SizeValidatorForCollection</classname>:
               <classname>Collection</classname> is a direct supertype of
@@ -2758,7 +2774,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
             </row>
 
             <row>
-              <entry><code>@Size Set&lt;Address&gt; getAddresses() { ...
+              <entry><code>@Size Set&lt;Address&gt; getAddresses() { [...]
               }</code></entry>
 
               <entry><classname>SizeValidatorForSet</classname>: direct
@@ -2766,8 +2782,8 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
             </row>
 
             <row>
-              <entry><code>@Size SortedSet&lt;Address&gt; getAddresses() { ...
-              }</code></entry>
+              <entry><code>@Size SortedSet&lt;Address&gt; getAddresses() {
+              [...] }</code></entry>
 
               <entry><classname>SizeValidatorForSet</classname>:
               <classname>Set</classname> is the closest supertype of
@@ -2775,7 +2791,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
             </row>
 
             <row>
-              <entry><code>@Size SerializableCollection getAddresses() { ...
+              <entry><code>@Size SerializableCollection getAddresses() { [...]
               }</code></entry>
 
               <entry><classname>UnexpectedTypeException</classname>:
@@ -2788,7 +2804,7 @@ public interface SerializableCollection extends Serializable,  Collection {}</pr
             </row>
 
             <row>
-              <entry><code>@Size String getName() { ... }</code></entry>
+              <entry><code>@Size String getName() { [...] }</code></entry>
 
               <entry><classname>UnexpectedTypeException</classname>: none of
               the <classname>ConstraintValidator</classname> types are
