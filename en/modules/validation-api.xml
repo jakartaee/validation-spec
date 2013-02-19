@@ -129,10 +129,10 @@ public interface Validator {
     &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 
     /**
-     * Returns a delegate for validating parameters and return values of methods
-     * respectively constructors.
+     * Returns the contract for validating parameters and return values of methods
+     * and constructors.
      *
-     * @return A delegate for method and constructor validation.
+     * @return Contract for method and constructor validation.
      *
      * @since 1.1
      */
@@ -148,13 +148,10 @@ public interface Validator {
     more details.</para>
 
     <para revisionflag="added"><methodname>forExecutables()</methodname>
-    provides access to a delegate for the validation of method and constructor
-    parameters respectively return values. The individual methods for method
-    and constructor validation are described in <xref
+    provides access to the contract for validating method and constructor
+    parameters and return values. The individual methods for method and
+    constructor validation are described in <xref
     linkend="validationapi-validatorapi-methodlevelvalidationmethods"/>.</para>
-
-    <remark revisionflag="added">TODO: Do we find another term than
-    "delegate"?</remark>
 
     <para
     revisionflag="changed"><methodname>getConstraintsForClass()</methodname>
@@ -258,7 +255,7 @@ acmeValidator.setSpecificConfiguration(...);</programlisting>
       raised.</phrase> This exception can be specialized in some situations
       (invalid group definition, invalid constraint definition, invalid
       constraint declaration). See <xref linkend="exception"/> or the relative
-      sections for more information).</para>
+      sections for more information.</para>
 
       <section>
         <title>Examples</title>
@@ -367,8 +364,8 @@ public interface ExecutableValidator {
      * Validates all constraints placed on the parameters of the given method.
      *
      * @param &lt;T&gt; The type hosting the method to validate.
-     * @param object The object on which the method to validate was invoked.
-     * @param method The method for which the parameter constraints shall be validated.
+     * @param object The object on which the method to validate is invoked.
+     * @param method The method for which the parameter constraints is validated.
      * @param parameterValues The values provided by the caller for the given method's
      * parameters.
      * @param groups The group or list of groups targeted for validation (defaults to
@@ -381,14 +378,17 @@ public interface ExecutableValidator {
      * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(T object, Method method, Object[] parameterValues, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateParameters(T object, 
+                                                       Method method,
+                                                       Object[] parameterValues, 
+                                                       Class&lt;?&gt;... groups);
 
     /**
      * Validates all return value constraints of the given method.
      *
      * @param &lt;T&gt; The type hosting the method to validate.
-     * @param object The object on which the method to validate was invoked.
-     * @param method The method for which the return value constraints shall be validated.
+     * @param object The object on which the method to validate is invoked.
+     * @param method The method for which the return value constraints is validated.
      * @param returnValue The value returned by the given method.
      * @param groups The group or list of groups targeted for validation (defaults to
      * {@link Default}).
@@ -401,13 +401,16 @@ public interface ExecutableValidator {
      * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object, Method method, Object returnValue, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object, 
+                                                        Method method, 
+                                                        Object returnValue, 
+                                                        Class&lt;?&gt;... groups);
 
     /**
      * Validates all constraints placed on the parameters of the given constructor.
      *
      * @param &lt;T&gt; The type hosting the constructor to validate.
-     * @param constructor The constructor for which the parameter constraints shall be validated.
+     * @param constructor The constructor for which the parameter constraints is validated.
      * @param parameterValues The values provided by the caller for the given constructor's
      * parameters.
      * @param groups The group or list of groups targeted for validation (defaults to
@@ -420,13 +423,15 @@ public interface ExecutableValidator {
      * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(Constructor&lt;? extends T&gt; constructor, Object[] parameterValues, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorParameters(Constructor&lt;? extends T&gt; constructor, 
+                                                                  Object[] parameterValues, 
+                                                                  Class&lt;?&gt;... groups);
 
     /**
      * Validates all return value constraints of the given constructor.
      *
      * @param &lt;T&gt; The type hosting the constructor to validate.
-     * @param constructor The constructor for which the return value constraints shall be validated.
+     * @param constructor The constructor for which the return value constraints is validated.
      * @param createdObject The object instantiated by the given method.
      * @param groups The group or list of groups targeted for validation (defaults to
      * {@link Default}).
@@ -438,7 +443,9 @@ public interface ExecutableValidator {
      * @throws javax.validation.ValidationException if a non recoverable error happens during the
      * validation process
      */
-    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;? extends T&gt; constructor, T createdObject, Class&lt;?&gt;... groups);
+    &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;? extends T&gt; constructor, 
+                                                                   T createdObject, 
+                                                                   Class&lt;?&gt;... groups);
 }</programlisting>
       </example>
 
@@ -515,7 +522,7 @@ public interface ExecutableValidator {
 
     @Valid
     public OrderService(@NotNull CreditCardProcessor creditCardProcessor) {
-        //...
+        [...]
     }
 
     @NotNull
@@ -524,7 +531,7 @@ public interface ExecutableValidator {
         @NotNull @Valid Item item,
         @Min(1) int quantity) {
 
-        //...
+        [...]
     }
 }
 
@@ -543,8 +550,8 @@ item1.setName("Kiwi");
 Item item2 = new Item();
 item2.setName(null);
 
-Constructor&lt;OrderService&gt; constructor = ... ; //get constructor object
-Method placeOrder = ... ; //get method object
+Constructor&lt;OrderService&gt; constructor = [...]; //get constructor object
+Method placeOrder = [...]; //get method object
 
 OrderService orderService = new OrderService(new DefaultCreditCardProcessor());
 
@@ -574,7 +581,8 @@ executableValidator.validateParameters(
         for the <varname>creditCardProcessor</varname> parameter:</para>
 
         <programlisting>//new OrderService(null);
-executableValidator.validateConstructorParameters(constructor, new Object[] { null }).size() == 1</programlisting>
+executableValidator.validateConstructorParameters(constructor, new Object[] { null })
+    .size() == 1</programlisting>
 
         <para>Assuming the <methodname>placeOrder()</methodname> method
         returned <varname>null</varname>, the following return value
@@ -604,7 +612,8 @@ public class SampleMethodInterceptor {
     @AroundInvoke
     public Object validateMethodInvocation(InvocationContext ctx) throws Exception {
         //validate parameters
-        Set&lt;ConstraintViolation&lt;Object&gt;&gt; violations = validator.forExecutables().validateParameters(
+        Set&lt;ConstraintViolation&lt;Object&gt;&gt; violations;
+        violations = validator.forExecutables().validateParameters(
                 ctx.getTarget(),
                 ctx.getMethod(),
                 ctx.getParameters()
@@ -685,7 +694,8 @@ public class Address {
 
     @NotEmpty(groups = {Minimal.class, Default.class})
     private String zipCode;
-    ...
+
+    [...]
 }</programlisting>
 
         <para>In the previous example, <classname>@NotEmpty</classname> (and
@@ -744,7 +754,8 @@ public class Address {
 
     @NotEmpty(groups = {Minimal.class, SecondStep.class})
     private String zipCode;
-    ...
+
+    [...]
 
     public interface FirstStep {}
 
@@ -1013,8 +1024,9 @@ public interface ConstraintViolation&lt;T&gt; {
 
     <para role="tck-testable tck-needs-update">The
     <methodname>getPropertyPath</methodname> <phrase
-    revisionflag="added">method</phrase> returns the Path object representing
-    the navigation path from the root object to the failing object.</para>
+    revisionflag="added">method</phrase> returns the
+    <classname>Path</classname> object representing the navigation path from
+    the root object to the failing object.</para>
 
     <para revisionflag="added"><methodname>unwrap</methodname> is provided as
     a way to access objects of a given type specific to a Bean Validation
@@ -1382,7 +1394,7 @@ public enum ElementKind {
     <example revisionflag="added">
       <title>Narrow a node to its specific type</title>
 
-      <programlisting>Node node = ...;
+      <programlisting>Node node = [...];
 switch ( node.getKind() ) {
 case METHOD:
     MethodNode methodNode = node.as(MethodNode.class);
@@ -1690,9 +1702,11 @@ case PROPERTY:
     </note>
 
     <note>
-      <para>From <methodname>rootBean</methodname> and
-      <methodname>propertyPath</methodname>, it is possible to rebuild the
-      context of the failure.</para>
+      <para>From <methodname>getRootBean</methodname>,
+      <methodname>getPropertyPath</methodname>,
+      <methodname>getExecutableParameters</methodname> and
+      <methodname>getExecutableReturnValue</methodname>, it is possible to
+      rebuild the context of the failure.</para>
     </note>
 
     <note revisionflag="added">
@@ -1721,7 +1735,8 @@ public class Author {
 
     @Size(max=30)
     private String company;
-    ...
+
+    [...]
 
     @OldAndNewPasswordsDifferent @NewPasswordsIdentical
     public void renewPassword(String oldPassword, String newPassword, String retypedNewPassword);
@@ -1741,25 +1756,36 @@ public class Book {
 
     @Valid
     private Review pickedReview;
-    ...
+
+    [...]
 }
 
 public class Review {
     @Min(0) private int rating;
-    ...
+    [...]
 }
 
 public class Library {
 
-    public Library(@NotNull String name, @NotNull String location) { ... }
+    public Library(@NotNull String name, @NotNull String location) {
+        [...]
+    }
 
-    public void addBook(@NotNull @Valid Book book) { ... }
+    public void addBook(@NotNull @Valid Book book) {
+        [...]
+    }
 
-    public void addAllBooks(@NotNull @Valid List&lt;Book&gt; books) { ... }
+    public void addAllBooks(@NotNull @Valid List&lt;Book&gt; books) {
+        [...]
+    }
 
-    @NotNull public String getLocation() { ... }
+    @NotNull public String getLocation() {
+        [...]
+    }
 
-    @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() { ... }
+    @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() {
+        [...]
+    }
 }</programlisting>
     </example>
 
@@ -2190,12 +2216,17 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <programlisting>public class Library {
 
-    public void addBook(@NotNull @Valid Book book) { ... }
+    public void addBook(@NotNull @Valid Book book) {
+        [...]
+    }
 
-    @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() { ... }
+    @Valid public Map&lt;Author, Book&gt; getMostPopularBookPerAuthor() {
+        [...]
+    }
 }
 
 public class User {
+
     @OldAndNewPasswordsDifferent
     public void renewPassword(String oldPassword, String newPassword, String retypedNewPassword);
 }
@@ -2356,8 +2387,8 @@ assert false == nodeIter.hasNext();
         </listitem>
 
         <listitem>
-          <phrase role="tck-testable">Every constraint definition shall define
-          a default message descriptor for that constraint.</phrase>
+          <phrase role="tck-testable">Every constraint definition defines a
+          default message descriptor for that constraint.</phrase>
         </listitem>
 
         <listitem>
@@ -2564,6 +2595,7 @@ assert false == nodeIter.hasNext();
       <programlisting revisionflag="changed">/**
  * Interpolate a given constraint violation message.
  * Implementations should be as tolerant as possible on syntax errors.
+ * Implementations must be thread-safe.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -2653,8 +2685,8 @@ public interface MessageInterpolator {
       default <classname>Locale</classname> strategy (see <xref
       linkend="validationapi-message-examples-specificlocale"/>).</para>
 
-      <para role="tck-not-testable">A message interpolator implementation
-      shall be thread-safe.</para>
+      <para role="tck-not-testable">A message interpolator implementation must
+      be thread-safe.</para>
 
       <para>The message interpolator is provided to the
       <classname>ValidatorFactory</classname> at construction time using
@@ -2751,7 +2783,7 @@ myapp.creditcard.error=credit card number not valid</programlisting>
         <title>Use MessageInterpolator to use a specific Locale value</title>
 
         <programlisting>/**
- * delegates to a MessageInterpolator implementation but enforce a given Locale
+ * Delegates to a MessageInterpolator implementation but enforce a given Locale
  */
 public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
     private final MessageInterpolator defaultInterpolator;
@@ -3152,7 +3184,7 @@ public boolean requiresReturnValueValidation(Class&lt;?&gt; type, Constructor&lt
 
       <listitem>
         <para><filename>META-INF/validation.xml</filename>: a configuration
-        file, Bean Validation users can use to customize the configuration of
+        file Bean Validation users can use to customize the configuration of
         the default <classname>ValidatorFactory</classname>.</para>
       </listitem>
     </itemizedlist>
@@ -3275,7 +3307,7 @@ public interface ACMEConfiguration extends Configuration&lt;ACMEConfiguration&gt
  * via the generic parameter.
  */
 public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt; {
-    ...
+    [...]
 }</programlisting>
       </example>
 
@@ -3287,7 +3319,7 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
         <title>Use a specific MessageInterpolator instance for a given
         Validator</title>
 
-        <programlisting>ValidatorFactory factory = ...;
+        <programlisting>ValidatorFactory factory = [...];
 MessageInterpolator customInterpolator = new LocaleSpecificMessageInterpolator(
     locale, 
     factory.getMessageInterpolator()
@@ -3315,7 +3347,7 @@ Validator localizedValidator =
       objects build and provide initialized instances of
       <classname>Validator</classname> to Bean Validation clients. Each
       <classname>Validator</classname> instance is configured for a given
-      context (message interpolator, traversable resolver). Clients should
+      context (message interpolator, traversable resolver etc). Clients should
       cache <classname>ValidatorFactory</classname> objects and reuse them for
       optimal performances. The API is designed to allow implementors to share
       constraint metadata in <classname>ValidatorFactory</classname>.
@@ -3438,13 +3470,6 @@ public interface ValidatorFactory {
       as a complement to the <classname>ValidatorFactory</classname> contract.
       Using this method makes your code non portable.</para>
 
-      <para revisionflag="added"><methodname>close</methodname> closes the
-      <classname>ValidatorFactory</classname> instance which becomes
-      unavailable and should be immediately discarded. This is also true of
-      all the <classname>Validator</classname> instances it has spawned. The
-      behavior is undefined and non portable if these instances are used after
-      the <classname>ValidatorFactory</classname> has been closed.</para>
-
       <example>
         <title>Using unwrap to access a provider specific contract</title>
 
@@ -3452,6 +3477,13 @@ public interface ValidatorFactory {
 ACMEValidatorFactory acmeFactory = factory.unwrap(ACMEValidatorFactory.class);
 acmeFactory.setSpecificConfiguration(...);</programlisting>
       </example>
+
+      <para revisionflag="added"><methodname>close</methodname> closes the
+      <classname>ValidatorFactory</classname> instance which becomes
+      unavailable and should be immediately discarded. This is also true of
+      all the <classname>Validator</classname> instances it has spawned. The
+      behavior is undefined and non portable if these instances are used after
+      the <classname>ValidatorFactory</classname> has been closed.</para>
 
       <para><phrase
       role="tck-testable"><methodname>getMessageInterpolator()</methodname>
@@ -3583,7 +3615,7 @@ public interface ValidatorContext {
       <example>
         <title>Use of ValidatorFactory</title>
 
-        <programlisting>ValidatorFactory factory = ...
+        <programlisting>ValidatorFactory factory = [...];
 Validator validatorUsingDefaults = factory.getValidator();
 Validator validatorUsingCustomTraversable = factory
                      .usingContext()
@@ -3947,9 +3979,11 @@ public interface Configuration&lt;T extends Configuration&lt;T&gt;&gt; {
      * &lt;b&gt;Note&lt;/b&gt;:&lt;br/&gt;
      * Implementations are encouraged to lazily build this object to delay parsing.
      *
-     * @return Returns an instance of {@code BootstrapConfiguration}. This method returns never {@code null}. If there
-     *         is no &lt;i&gt;META-INF/validation.xml&lt;/i&gt; the different getters of the returned instance will return {@code null} respective
-     *         the empty set or map.
+     * @return Returns an instance of {@code BootstrapConfiguration}. This method never
+     *         returns {@code null}. If there is no &lt;i&gt;META-INF/validation.xml&lt;/i&gt; the
+     *         different getters of the returned instance will return {@code null}
+     *         respectively an empty set or map.
+     * 
      * @since 1.1
      */
     BootstrapConfiguration getBootstrapConfiguration();
@@ -4309,7 +4343,7 @@ public interface ConfigurationState {
       <example>
         <title>Use Configuration</title>
 
-        <programlisting>Configuration&lt;?&gt; configuration = ...
+        <programlisting>Configuration&lt;?&gt; configuration = [...];
 ValidatorFactory factory = configuration
               .messageInterpolator( new WBMessageInterpolator() )
               .traversableResolver( new JPAAwareTraversableResolver() )
@@ -4325,7 +4359,7 @@ ValidatorFactory factory = configuration
         <title>Using Configuration to create several validator
         factories</title>
 
-        <programlisting>Configuration&lt;?&gt; configuration = ...
+        <programlisting>Configuration&lt;?&gt; configuration = [...];
 ValidatorFactory factory1 = configuration
               .messageInterpolator( new WBMessageInterpolator() )
               .buildValidatorFactory();
@@ -4593,7 +4627,7 @@ public interface ACMEConfiguration
  * via the generic parameter.
  */
 public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt; {
-    ...
+    [...]
 }</programlisting>
         </example>
 
@@ -4674,10 +4708,6 @@ public class ACMEProvider implements ValidationProvider&lt;ACMEConfiguration&gt;
       to be the default <classname>ValidatorFactory</classname> and is
       equivalent to the <classname>ValidatorFactory</classname> returned by
       <code>Validation.byDefaultProvider().configure().buildValidatorFactory()</code>.</phrase></para>
-
-      <warning>
-        <para>Should the resolver strategy be configurable by XML</para>
-      </warning>
 
       <example>
         <title>Validation methods available</title>
@@ -5041,7 +5071,7 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       constructor.</para>
 
       <para revisionflag="added"
-      role="tck-testable"><literal>validated-executables</literal> contains
+      role="tck-testable"><literal>validated-executables</literal>: contains
       the list of <literal>executable-type</literal> that are considered by
       default by the integration technology validating executables upon
       execution.</para>
