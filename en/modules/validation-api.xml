@@ -2208,13 +2208,22 @@ assert false == nodeIter.hasNext();</programlisting>
     </section>
 
     <section revisionflag="added">
-      <title>Examples for method/constructor constraint violations</title>
+      <title>Examples for method and constructor constraint violations</title>
 
       <para>The following examples assume the constraint, class and object
       definitions given in the previous section. Additionally the following
       class and object definitions are assumed:</para>
 
       <programlisting>public class Library {
+
+    @PublicLibrary
+    public Library() {
+        [...]
+    }
+
+    public Library(@NotNull @Valid List&lt;Book&gt; books) {
+        [...]
+    }
 
     public void addBook(@NotNull @Valid Book book) {
         [...]
@@ -2235,22 +2244,26 @@ Library library = new Library();
 author.setLastName("Doe");</programlisting>
 
       <para>Assuming the following invocation of
-      <methodname>addBook()</methodname> is subject to method constraint
+      <methodname>addBook()</methodname> is subject to method parameter
       validation:</para>
 
       <programlisting>library.addBook(null);</programlisting>
 
       <para>Then one <classname>ConstraintViolation</classname> object would
       be returned by
-      <methodname>ExecutableValidator#validateParameters()</methodname> which
+      <methodname>ExecutableValidator.validateParameters()</methodname> which
       satisfies the following assertions:</para>
 
       <programlisting>//assuming an english locale, the interpolated message is returned
 assert "may not be null".equals( constraintViolation.getMessage() );
-assert library == constraintViolation.getRootBean();
-assert library == constraintViolation.getLeafBean();
 
+assert library == constraintViolation.getRootBean();
+assert Library.class == constraintViolation.getRootBeanClass();
+assert library == constraintViolation.getLeafBean();
 assert null == constraintViolation.getInvalidValue();
+
+assert new Object[]{ null }.equals( constraintViolation.getExecutableParameters() );
+assert null == constraintViolation.getExecutableReturnValue();
 
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
 
@@ -2273,15 +2286,19 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <para>Then one <classname>ConstraintViolation</classname> object would
       be returned by
-      <methodname>ExecutableValidator#validateParameters()</methodname> which
+      <methodname>ExecutableValidator.validateParameters()</methodname> which
       satisfies the following assertions:</para>
 
       <programlisting>//assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( constraintViolation.getMessage() );
-assert library == constraintViolation.getRootBean();
-assert book == constraintViolation.getLeafBean();
 
+assert library == constraintViolation.getRootBean();
+assert Library.class == constraintViolation.getRootBeanClass();
+assert book == constraintViolation.getLeafBean();
 assert book.getTitle().equals( constraintViolation.getInvalidValue() );
+
+assert new Object[]{ book }.equals( constraintViolation.getExecutableParameters() );
+assert null == constraintViolation.getExecutableReturnValue();
 
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
 
@@ -2301,6 +2318,75 @@ assert ElementKind.PROPERTY.equals( node.getKind() );
 assert false == nodeIter.hasNext();</programlisting>
 
       <para>Assuming the following invocation of
+      <methodname>User.renewPassword()</methodname> is subject to method
+      parameter validation and the
+      <classname>@OldAndNewPasswordsDifferent</classname> constraint is
+      violated:</para>
+
+      <programlisting>User user = [...]
+user.renewPassword("foo", "foo", "foo");</programlisting>
+
+      <para>Then one <classname>ConstraintViolation</classname> object would
+      be returned by
+      <methodname>ExecutableValidator.validateParameters()</methodname> which
+      satisfies the following assertions:</para>
+
+      <programlisting>assert user == constraintViolation.getRootBean();
+assert User.class == constraintViolation.getRootBeanClass();
+assert user == getLeafBean();
+assert new Object[]{ "foo", "foo", "foo" }.equals( constraintViolation.getInvalidValue() );
+
+assert new Object[]{ "foo", "foo", "foo" }.equals( constraintViolation.getExecutableParameters() );
+assert null == constraintViolation.getExecutableReturnValue();
+
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+
+Node node = nodeIter.next();
+assert "renewPassword".equals( node.getName() );
+assert ElementKind.METHOD.equals( node.getKind() );
+
+node = nodeIter.next();
+assert "&lt;cross-parameter&gt;" == node.getName();
+assert ElementKind.CROSS_PARAMETER.equals( node.getKind() );
+
+assert false == nodeIter.hasNext();</programlisting>
+
+      <para>Assuming the following invocation of the
+      <classname>Library</classname> constructor accepting a list of books is
+      subject to constructor parameter validation:</para>
+
+      <programlisting>Library anotherLibrary = new Library(null);</programlisting>
+
+      <para>Then one <classname>ConstraintViolation</classname> object would
+      be returned by
+      <methodname>ExecutableValidator.validateConstructorParameters()</methodname>
+      which satisfies the following assertions:</para>
+
+      <programlisting>//assuming an english locale, the interpolated message is returned
+assert "may not be null".equals( constraintViolation.getMessage() );
+
+assert null == constraintViolation.getRootBean();
+assert Library.class == constraintViolation.getRootBeanClass();
+assert null == constraintViolation.getLeafBean();
+assert null == constraintViolation.getInvalidValue();
+
+assert new Object[]{ null }.equals( constraintViolation.getExecutableParameters() );
+assert null == constraintViolation.getExecutableReturnValue();
+
+Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
+
+Node node = nodeIter.next();
+assert "Library".equals( node.getName() );
+assert ElementKind.CONSTRUCTOR.equals( node.getKind() );
+
+node = nodeIter.next();
+//assuming the default parameter name provider is used
+assert "arg0".equals( node.getName() );
+assert ElementKind.PARAMETER.equals( node.getKind() );
+
+assert false == nodeIter.hasNext();</programlisting>
+
+      <para>Assuming the following invocation of
       <methodname>getMostPopularBookPerAuthor()</methodname> is subject to
       method return value validation and returns a <classname>Map</classname>
       containing one entry with key <varname>author</varname> and value
@@ -2310,15 +2396,19 @@ assert false == nodeIter.hasNext();</programlisting>
 
       <para>Then one <classname>ConstraintViolation</classname> object would
       be returned by
-      <methodname>ExecutableValidator#validateReturnValue()</methodname> which
+      <methodname>ExecutableValidator.validateReturnValue()</methodname> which
       satisfies the following assertions:</para>
 
       <programlisting>//assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( constraintViolation.getMessage() );
-assert library == constraintViolation.getRootBean();
-assert book == constraintViolation.getLeafBean();
 
+assert library == constraintViolation.getRootBean();
+assert Library.class == constraintViolation.getRootBeanClass();
+assert book == constraintViolation.getLeafBean();
 assert book.getTitle().equals( constraintViolation.getInvalidValue() );
+
+assert null == constraintViolation.getExecutableParameters();
+assert mostPopularBookPerAuthor == constraintViolation.getExecutableReturnValue();
 
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
 
@@ -2338,28 +2428,37 @@ assert true == node.isInIterable();
 
 assert false == nodeIter.hasNext();</programlisting>
 
-      <para>Assuming the invocation of <methodname>User.renewPassword("foo",
-      "bar", "baz")</methodname></para>
+      <para>Assuming the following invocation of the
+      <classname>Library</classname> default constructor is subject to
+      constructor return value validation and returns an instance which
+      violates the <classname>@PublicLibrary</classname> constraint:</para>
+
+      <programlisting>Library publicLibrary = new Library();</programlisting>
+
+      <para>Then one <classname>ConstraintViolation</classname> object would
+      be returned by
+      <methodname>ExecutableValidator.validateConstructorReturnValue()</methodname>
+      which satisfies the following assertions:</para>
 
       <programlisting>assert null == constraintViolation.getRootBean();
-assert TODO ?? == constraintViolation.getLeafBean();
+assert Library.class == constraintViolation.getRootBeanClass();
+assert publicLibrary == constraintViolation.getLeafBean();
+assert publicLibrary == constraintViolation.getInvalidValue();
 
-assert 3 == ( (Object[]) constraintViolation.getInvalidValue() ).length;
-assert "foo" == ( (Object[]) constraintViolation.getInvalidValue() )[0];
+assert null == constraintViolation.getExecutableParameters();
+assert library == constraintViolation.getExecutableReturnValue();
 
 Iterator&lt;Node&gt; nodeIter = constraintViolation.getPropertyPath().iterator();
 
 Node node = nodeIter.next();
-assert "renewPassword".equals( node.getName() );
-assert ElementKind.METHOD.equals( node.getKind() );
+assert "Library".equals( node.getName() );
+assert ElementKind.CONSTRUCTOR.equals( node.getKind() );
 
 node = nodeIter.next();
-assert "&lt;cross-parameter&gt;" == node.getName();
-assert ElementKind.CROSS_PARAMETER.equals( node.getKind() );
+assert "&lt;return value&gt;" == node.getName();
+assert ElementKind.RETURN_VALUE.equals( node.getKind() );
 
-assert false == nodeIter.hasNext();
-
-//TODO add an example with parmeter subnode from cross-parameter</programlisting>
+assert false == nodeIter.hasNext();</programlisting>
     </section>
   </section>
 
@@ -2568,7 +2667,7 @@ assert false == nodeIter.hasNext();
               <constant>formatter</constant> exposing the vararg method
               <methodname>format(String format, Object... args)</methodname>.
               This method must behave like
-              <methodname>java.util.Formatter#format(String format, Object...
+              <methodname>java.util.Formatter.format(String format, Object...
               args)</methodname>. The locale used for formatting is defined by
               <xref linkend="message-interpolation-default-locale"/>. The
               <constant>formatter</constant> bean allows to format property
@@ -2898,8 +2997,8 @@ Validator validator = factory.getValidator();</programlisting>
       <listitem>
         <para>Validate the parameter values provided by the method caller
         using
-        <methodname>ExecutableValidator#validateParameters()</methodname> or
-        <methodname>ExecutableValidator#validateConstructorParameters()</methodname>.</para>
+        <methodname>ExecutableValidator.validateParameters()</methodname> or
+        <methodname>ExecutableValidator.validateConstructorParameters()</methodname>.</para>
       </listitem>
 
       <listitem>
@@ -2912,8 +3011,8 @@ Validator validator = factory.getValidator();</programlisting>
 
       <listitem>
         <para>Validate the result returned by the invoked method using
-        <methodname>ExecutableValidator#validateReturnValue()</methodname> or
-        <methodname>ExecutableValidator#validateConstructorReturnValue()</methodname>.</para>
+        <methodname>ExecutableValidator.validateReturnValue()</methodname> or
+        <methodname>ExecutableValidator.validateConstructorReturnValue()</methodname>.</para>
       </listitem>
 
       <listitem>
