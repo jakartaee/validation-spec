@@ -82,7 +82,7 @@
       </note>
 
       <para role="tck-testable">If the name of the class does refer to a class
-      not present in in the classpath, a
+      not present in the classpath, a
       <classname>ValidationException</classname> is raised.</para>
 
       <example revisionflag="changed">
@@ -651,12 +651,12 @@
         <title>Constraint declaration</title>
 
         <para><phrase revisionflag="changed">New constraint declarations are
-        represented by the <literal>constraint</literal> element for generic
-        constraints.</phrase> The <literal>annotation</literal> attribute is
-        the class name of the annotation representing the constraint. Message,
-        groups and payload are defined respectively by the
-        <literal>message</literal>, <literal>groups</literal> and
-        <literal>payload</literal> elements.</para>
+        represented by the <literal>constraint</literal> element.</phrase> The
+        <literal>annotation</literal> attribute is the class name of the
+        annotation representing the constraint. Message, groups and payload
+        are defined respectively by the <literal>message</literal>,
+        <literal>groups</literal> and <literal>payload</literal>
+        elements.</para>
 
         <para>Other custom elements of an annotation are represented by
         <literal>element</literal>. <phrase role="tck-testable">The
@@ -667,6 +667,15 @@
         names, use the <literal>message</literal>, <literal>groups</literal>
         or <literal>payload</literal> elements instead. Otherwise a
         <classname>ValidationException</classname> is raised.</phrase></para>
+
+        <note>
+          <para><literal>validationAppliesTo</literal> (see <xref
+          linkend="constraintsdefinitionimplementation-constraintdefinition-validationappliesto"/>)
+          is not necessary as cross-parameter constraints and return value
+          constraints are declared in different XML elements, respectively
+          <literal>cross-parameter</literal> and
+          <literal>return-value</literal>.</para>
+        </note>
 
         <para><phrase role="tck-testable">If the element represents a
         primitive type, a class or an enum, the string representation of its
@@ -824,7 +833,7 @@
         <title>Declaration of group conversions</title>
 
         <para role="tck-testable">Group conversion rules are declared by
-        specifying one ore more <literal>convert-group</literal> elements
+        specifying one or more <literal>convert-group</literal> elements
         within the <literal>field</literal>, <literal>getter</literal>,
         <literal>parameter</literal> and <literal>return-value</literal>
         elements.</para>
@@ -850,28 +859,34 @@
     &lt;bean class="Customer" ignore-annotations="false"&gt;
 
         &lt;field name="firstName"&gt;
+            &lt;valid/&gt;
             &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
-            &lt;convert-group from="com.acme.CustomerComplex" to="com.acme.CustomerComplex"/&gt;
+            &lt;convert-group from="com.acmenote.Advanced" to="com.acme.CustomerComplex"/&gt;
         &lt;/field&gt;
 
         &lt;getter name="orders"&gt;
+            &lt;valid/&gt;
             &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
         &lt;/getter&gt;
 
         &lt;constructor&gt;
             &lt;parameter type="java.lang.String"&gt;
+                &lt;valid/&gt;
                 &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
             &lt;/parameter&gt;
             &lt;return-value&gt;
+                &lt;valid/&gt;
                 &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
             &lt;/return-value&gt;
         &lt;/constructor&gt;
 
         &lt;method name="update"&gt;
             &lt;parameter type="java.lang.String"&gt;
+                &lt;valid/&gt;
                 &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
             &lt;/parameter&gt;
             &lt;return-value&gt;
+                &lt;valid/&gt;
                 &lt;convert-group from="javax.validation.groups.Default" to="com.acme.CustomerBasic"/&gt;
             &lt;/return-value&gt;
         &lt;/constructor&gt;
@@ -886,7 +901,7 @@
 
       <para>A constraint definition (i.e. the annotation representing a
       constraint), cannot be fully expressed in XML but the list of
-      <classname>ConstraintValidator</classname> associated to a given
+      <classname>ConstraintValidator</classname>s associated to a given
       constraint can be altered.</para>
 
       <para><phrase role="tck-testable">A constraint definition is represented
@@ -986,9 +1001,11 @@
         </listitem>
       </itemizedlist>
 
-      <para>A <classname>Class</classname> is represented by the fully
-      qualified class name of the class. Note that if the raw string is
-      unqualified, default package is taken into account.</para>
+      <para revisionflag="changed">A <classname>Class</classname> is
+      represented by the fully qualified class name of the class or more
+      precisely according to the syntax described in the documentation of
+      <methodname>java.lang.Class#getName()</methodname>. Note that if the raw
+      string is unqualified, default package is taken into account.</para>
 
       <para>An enum is represented by its <literal>enum.name()</literal>
       value.</para>
@@ -1177,12 +1194,12 @@
     &lt;xs:complexType name="getterType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
-            &lt;xs:element type="map:constraintType"
-                        name="constraint"
-                        minOccurs="0"
-                        maxOccurs="unbounded"/&gt;
             &lt;xs:element type="map:groupConversionType"
                         name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
@@ -1227,12 +1244,12 @@
     &lt;xs:complexType name="parameterType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
-            &lt;xs:element type="map:constraintType"
-                        name="constraint"
-                        minOccurs="0"
-                        maxOccurs="unbounded"/&gt;
             &lt;xs:element type="map:groupConversionType"
                         name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
@@ -1242,12 +1259,12 @@
     &lt;xs:complexType name="returnValueType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
-            &lt;xs:element type="map:constraintType"
-                        name="constraint"
-                        minOccurs="0"
-                        maxOccurs="unbounded"/&gt;
             &lt;xs:element type="map:groupConversionType"
                         name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
@@ -1272,12 +1289,12 @@
     &lt;xs:complexType name="fieldType"&gt;
         &lt;xs:sequence&gt;
             &lt;xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/&gt;
-            &lt;xs:element type="map:constraintType"
-                        name="constraint"
-                        minOccurs="0"
-                        maxOccurs="unbounded"/&gt;
             &lt;xs:element type="map:groupConversionType"
                         name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/&gt;
+            &lt;xs:element type="map:constraintType"
+                        name="constraint"
                         minOccurs="0"
                         maxOccurs="unbounded"/&gt;
         &lt;/xs:sequence&gt;
@@ -1327,7 +1344,7 @@
                     http://jboss.org/xml/ns/javax/validation/configuration
                     validation-configuration-1.1.xsd"
                 version="1.1"&gt;
-                ...
+                [...]
             &lt;/validation-config&gt;
         ]]&gt;
         &lt;/xs:documentation&gt;
