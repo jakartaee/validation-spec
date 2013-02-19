@@ -1929,13 +1929,13 @@ public class SimpleOrderService extends OrderService {
       </listitem>
 
       <listitem>
-        <para>if <methodname>isValid</methodname> returns true, continue to
-        the next constraint,</para>
+        <para>if <methodname>isValid</methodname> returns
+        <literal>true</literal>, continue to the next constraint,</para>
       </listitem>
 
       <listitem>
-        <para>if <methodname>isValid</methodname> returns false, the Bean
-        Validation provider populates
+        <para>if <methodname>isValid</methodname> returns
+        <literal>false</literal>, the Bean Validation provider populates
         <classname>ConstraintViolation</classname> object(s) according to the
         rules defined in <xref
         linkend="constraintsdefinitionimplementation-validationimplementation"/>
@@ -2276,20 +2276,21 @@ public interface TraversableResolver {
       <para><phrase role="tck-testable"><methodname>isReachable</methodname>
       is called for every property about to be accessed either for validation
       or for cascading.</phrase> A property is <emphasis>reachable</emphasis>
-      if this method returns true.</para>
+      if this method returns <literal>true</literal>.</para>
 
       <para><phrase role="tck-testable"><methodname>isCascadable</methodname>
       is called for every property about to be cascaded (i.e. marked as
       <classname>@Valid</classname>).</phrase> A property is
       <emphasis>cascadable</emphasis> if it is reachable and if the
-      <methodname>isCascadable</methodname> method returns true.</para>
+      <methodname>isCascadable</methodname> method returns
+      <literal>true</literal>.</para>
 
       <note>
         <para role="tck-testable"><methodname>isCascadable</methodname> for a
         given property is only called if <methodname>isReachable</methodname>
-        returns true. In other words, <methodname>isReachable</methodname> is
-        always called before <methodname>isCascadable</methodname> for a given
-        property.</para>
+        returns <literal>true</literal>. In other words,
+        <methodname>isReachable</methodname> is always called before
+        <methodname>isCascadable</methodname> for a given property.</para>
       </note>
 
       <para><literal>traversableObject</literal> is the object instance being
@@ -2303,8 +2304,10 @@ public interface TraversableResolver {
       linkend="constraintdeclarationvalidationprocess-requirements-property"/>.</para>
 
       <para><literal>rootBeanType</literal> is the class of the root being
-      validated (and passed to the <methodname>validate</methodname>
-      method).</para>
+      validated, <phrase revisionflag="changed">i.e. either the type of the
+      object passed to the <methodname>validate</methodname> method or the
+      type declaring the validated method/constructor in case of method
+      validation).</phrase></para>
 
       <para><literal>pathToTraversableObject</literal> is the
       <classname>Path</classname> from the
@@ -2312,8 +2315,9 @@ public interface TraversableResolver {
       <methodname>traversableObject</methodname>. If the root object is
       <classname>traversableObject</classname>,
       <classname>pathToTraversableObject</classname> is composed of a single
-      Node whose name is null. The path is described following the conventions
-      described in <xref linkend="validationapi-constraintviolation"/>
+      Node whose name is <literal>null</literal>. The path is described
+      following the conventions described in <xref
+      linkend="validationapi-constraintviolation"/>
       (<methodname>getPropertyPath</methodname>).</para>
 
       <para><literal>elementType</literal> is the
@@ -2324,21 +2328,105 @@ public interface TraversableResolver {
       <para role="tck-testable">The Bean Validation provider must not access
       the state of a property, nor validate its constraints if the property is
       not traversable. A property is traversable if
-      <classname>TraversableResolver</classname> returns true for this
-      property.</para>
+      <classname>TraversableResolver</classname> returns
+      <literal>true</literal> for this property.</para>
 
       <para role="tck-testable">If an exception occurs when the
       <classname>TraversableResolver</classname> is called, the exception is
       wrapped into a <classname>ValidationException</classname>.</para>
 
-      <para>The following example assumes the object graph defined in <xref
-      linkend="example-ognav-definitions"/> and assumes the validation
-      operation is applied on an address object.</para>
+      <para revisionflag="added" role="tck-testable">The following elements
+      are not passed through the traversable resolver filter:<itemizedlist>
+          <listitem>
+            <para>the bean instance validated</para>
+          </listitem>
 
-      <example id="example-ognav-definitions">
-        <title>Definitions used in the example</title>
+          <listitem>
+            <para>the method and constructor parameter values being
+            validated</para>
+          </listitem>
 
-        <programlisting>public class Country {
+          <listitem>
+            <para>the method and constructor return value being
+            validated</para>
+          </listitem>
+        </itemizedlist></para>
+
+      <para revisionflag="added" role="tck-testable">But the properties of
+      these elements (if validated) are. In this case the complete path is
+      provided via <literal>pathToTraversableObject</literal>.</para>
+
+      <para>The traversable resolver used by default by a Bean Validation
+      <phrase revisionflag="added">provider</phrase> behaves as
+      followed:</para>
+
+      <itemizedlist>
+        <listitem>
+          <para><phrase role="tck-not-testable">if Java Persistence is
+          available in the runtime environment, a property is considered
+          reachable if Java Persistence considers the property as
+          loaded.</phrase> A typical implementation will use
+          <code>Persistence.getPersistenceUtil().isLoaded(Object,
+          String)</code> to implement such contract.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-not-testable">if Java Persistence is not available
+          in the runtime environment, all properties are considered
+          reachable.</para>
+        </listitem>
+
+        <listitem>
+          <para role="tck-not-testable">all properties are considered
+          cascadable.</para>
+        </listitem>
+      </itemizedlist>
+
+      <para revisionflag="added">An examplary implementation of such a
+      resolver is shown in <xref
+      linkend="constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver"/>.</para>
+
+      <example id="constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver">
+        <title>Java Persistence aware TraversableResolver</title>
+
+        <programlisting>public class JPATraversableResolver implements TraversableResolver {
+
+    public boolean isReachable(Object traversableObject,
+                               Path.Node traversableProperty,
+                               Class&lt;?&gt; rootBeanType,
+                               Path pathToTraversableObject,
+                               ElementType elementType) {
+        return traversableObject == null ||
+                Persistence.getPersistenceUtil().isLoaded(
+                        traversableObject,
+                        traversableProperty.getName() );
+    }
+
+    public boolean isCascadable(Object traversableObject,
+                               Path.Node traversableProperty,
+                               Class&lt;?&gt; rootBeanType,
+                               Path pathToTraversableObject,
+                               ElementType elementType) {
+        return true;
+    }
+}</programlisting>
+      </example>
+
+      <para>See <xref linkend="bootstrapping"/> to <phrase
+      revisionflag="changed">learn</phrase> how to pass a custom
+      <classname>TraversableResolver</classname>.</para>
+
+      <section id="constraintdeclarationvalidationprocess-validationroutine-traversable-examples">
+        <title>Examples</title>
+
+        <para>The following example assumes the object graph defined in <xref
+        linkend="example-ognav-definitions"/> and assumes the validation
+        operation is applied on an address object.</para>
+
+        <example id="example-ognav-definitions">
+          <title>Definitions used in the example</title>
+
+          <programlisting>public class Country {
     @NotNull private String name;
     @Size(max=2) private String ISO2Code;
     @Size(max=3) private String ISO3Code;
@@ -2421,159 +2509,206 @@ public class Address {
         this.country = country;
     }
 }</programlisting>
-      </example>
+        </example>
 
-      <para>When the Bean Validation provider is about to check constraints of
-      <literal>ISO3Code</literal>, it calls the
-      <classname>TraversableResolver.isReachable()</classname> instance to
-      ensure that the <literal>ISO3Code</literal> property is reachable with
-      the following parameter values:</para>
+        <para>When the Bean Validation provider is about to check constraints
+        of <literal>ISO3Code</literal>, it calls the
+        <classname>TraversableResolver.isReachable()</classname> method to
+        ensure that the <literal>ISO3Code</literal> property is reachable with
+        the following parameter values:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><literal>traversableObject</literal>: country. The instance
-          returned by <code>address.getCountry()</code>.</para>
-        </listitem>
+        <itemizedlist>
+          <listitem>
+            <para><literal>traversableObject</literal>: country. The instance
+            returned by <code>address.getCountry()</code>.</para>
+          </listitem>
 
-        <listitem>
-          <para><literal>traversableProperty</literal>: a
-          <classname>Node</classname> whose name is "ISO3Code". The name of
-          the property of <literal>traversableObject</literal> being
-          verified.</para>
-        </listitem>
+          <listitem>
+            <para><literal>traversableProperty</literal>: a<phrase
+            revisionflag="changed"> <classname>PropertyNode</classname>
+            </phrase>whose name is "ISO3Code". <phrase
+            revisionflag="changed">Represents the </phrase>property of
+            <literal>traversableObject</literal> being verified.</para>
+          </listitem>
 
-        <listitem>
-          <para><methodname>rootBeanType</methodname>: Address.class. The type
-          of the root object being validated.</para>
-        </listitem>
+          <listitem>
+            <para><methodname>rootBeanType</methodname>:
+            <classname>Address.class</classname>. The type of the root object
+            being validated.</para>
+          </listitem>
 
-        <listitem>
-          <para><literal>pathtoTraversableObject</literal>: a
-          <classname>Path</classname> containing a single
-          <classname>Node</classname> whose name is "country". The path from
-          address to the country instance.</para>
-        </listitem>
+          <listitem>
+            <para><literal>pathtoTraversableObject</literal>: a
+            <classname>Path</classname> containing a single<phrase
+            revisionflag="changed"> <classname>PropertyNode</classname>
+            </phrase>whose name is "country". The path from address to the
+            country instance.</para>
+          </listitem>
 
-        <listitem>
-          <para><literal>elementType</literal>:
-          <classname>ElementType.FIELD</classname>. The ISO3Code property is
-          annotated on its field.</para>
-        </listitem>
-      </itemizedlist>
+          <listitem>
+            <para><literal>elementType</literal>:
+            <classname>ElementType.FIELD</classname>. The ISO3Code property is
+            annotated on its field.</para>
+          </listitem>
+        </itemizedlist>
 
-      <para>When the Bean Validation provider is about to cascade validation
-      on <literal>country</literal> (<classname>Address</classname> object),
-      it calls the <classname>TraversableResolver.isReachable()</classname>
-      instance to ensure that the <literal>country</literal> property is
-      reachable and if this method returns true, it calls
-      <classname>TraversableResolver.isCascadable()</classname> with the
-      following parameter values:</para>
+        <para>When the Bean Validation provider is about to cascade validation
+        on <literal>country</literal> (<classname>Address</classname> object),
+        it calls the <classname>TraversableResolver.isReachable()</classname>
+        method to ensure that the <literal>country</literal> property is
+        reachable and if this method returns <literal>true</literal>, it calls
+        <classname>TraversableResolver.isCascadable()</classname> with the
+        following parameter values:</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><literal>traversableObject</literal>: address. The address
-          instance.</para>
-        </listitem>
+        <itemizedlist>
+          <listitem>
+            <para><literal>traversableObject</literal>: address. The address
+            instance.</para>
+          </listitem>
 
-        <listitem>
-          <para><literal>traversableProperty</literal>: a
-          <classname>Node</classname> whose name is "country". The name of the
-          property of <literal>traversableObject</literal> being
-          verified.</para>
-        </listitem>
+          <listitem>
+            <para><literal>traversableProperty</literal>: a<phrase
+            revisionflag="changed"> <classname>PropertyNode</classname>
+            </phrase>whose name is "country". <phrase>Represents the</phrase>
+            property of <literal>traversableObject</literal> being
+            verified.</para>
+          </listitem>
 
-        <listitem>
-          <para><methodname>rootBeanType</methodname>: Address.class. The type
-          of the root object being validated.</para>
-        </listitem>
+          <listitem>
+            <para><methodname>rootBeanType</methodname>:
+            <classname>Address.class</classname>. The type of the root object
+            being validated.</para>
+          </listitem>
 
-        <listitem>
-          <para><literal>pathtoTraversableObject</literal>: a
-          <classname>Path</classname> containing a single
-          <classname>Node</classname> whose name is null.</para>
-        </listitem>
+          <listitem>
+            <para><literal>pathtoTraversableObject</literal>: a
+            <classname>Path</classname> containing a single<phrase
+            revisionflag="changed"> <classname>BeanNode</classname>
+            </phrase>whose name is <literal>null</literal>.</para>
+          </listitem>
 
-        <listitem>
-          <para><literal>elementType</literal>:
-          <classname>ElementType.FIELD</classname>. The country property is
-          annotated on its field.</para>
-        </listitem>
-      </itemizedlist>
+          <listitem>
+            <para><literal>elementType</literal>:
+            <classname>ElementType.FIELD</classname>. The country property is
+            annotated on its field.</para>
+          </listitem>
+        </itemizedlist>
 
-      <example>
-        <title>Java Persistence aware TraversableResolver</title>
+        <para revisionflag="added">The following example shows invocations of
+        the <classname>TraversableResolver</classname> as to be performed by
+        the Bean Validation provider during method validation. The example is
+        based on the object graph defined in <xref
+        linkend="example-ognav-definitions"/> and the
+        <classname>AddressService</classname> class shown in <xref
+        linkend="example-ognav-definitions-methodvalidation"/>. It assumes
+        that a call of <methodname>persistAddress()</methodname> is subject to
+        method parameter validation.</para>
 
-        <programlisting>public class JPATraversableResolver implements TraversableResolver {
+        <example id="example-ognav-definitions-methodvalidation"
+                 revisionflag="added">
+          <title>Examplary class <classname>AddressService</classname></title>
 
-    public boolean isReachable(Object traversableObject, 
-                               Path.Node traversableProperty, 
-                               Class&lt;?&gt; rootBeanType, 
-                               Path pathToTraversableObject, 
-                               ElementType elementType) {
-        return traversableObject == null ||
-                Persistence.getPersistenceUtil().isLoaded( 
-                        traversableObject, 
-                        traversableProperty.getName() );
-    }
-
-    public boolean isCascadable(Object traversableObject, 
-                               Path.Node traversableProperty, 
-                               Class&lt;?&gt; rootBeanType, 
-                               Path pathToTraversableObject, 
-                               ElementType elementType) {
-        return true;
-    }
+          <programlisting>public class AddressService {
+    public void persistAddress(@NotNull @Valid Address address) { ... }
 }</programlisting>
-      </example>
+        </example>
 
-      <para>The traversable resolver used by default in a Bean Validation
-      behaves as followed:</para>
+        <para revisionflag="added">When the Bean Validation provider is about
+        to validate the <classname>@NotNull</classname> constraint on the
+        <varname>address</varname> parameter, no call to
+        <methodname>isReachable()</methodname> is expected, since parameters
+        are assumed to always be reachable. Similarly, no call to
+        <methodname>isCascable()</methodname> is expected when performing
+        cascaded validation of the <varname>address</varname> parameter, since
+        parameters are assumed to always be cascadable.</para>
 
-      <itemizedlist>
-        <listitem>
-          <para><phrase role="tck-not-testable">if Java Persistence is
-          available in the runtime environment, a property is considered
-          reachable if Java Persistence considers the property as
-          loaded.</phrase> A typical implementation will use
-          <code>Persistence.getPersistenceUtil().isLoaded(Object,
-          String)</code> to implement such contract.</para>
-        </listitem>
+        <para revisionflag="added">When the Bean Validation provider is about
+        to validate constraints on the field <varname>addressline1</varname>
+        of the passed <classname>Address</classname> object, it calls the
+        <methodname>isReachable()</methodname> method to ensure that the
+        property is reachable with the following parameter values:</para>
 
-        <listitem>
-          <para role="tck-not-testable">if Java Persistence is not available
-          in the runtime environment, all properties are considered
-          reachable.</para>
-        </listitem>
-
-        <listitem>
-          <para role="tck-not-testable">all properties are considered
-          cascadable.</para>
-        </listitem>
-      </itemizedlist>
-
-      <para>See <xref linkend="bootstrapping"/> to know how to pass a custom
-      <classname>TraversableResolver</classname>.</para>
-
-      <para revisionflag="added" role="tck-testable">The following elements
-      are not passed through the traversable resolver filter:<itemizedlist>
+        <itemizedlist revisionflag="added">
           <listitem>
-            <para>the bean instance validated</para>
+            <para><literal>traversableObject</literal>: address. The instance
+            passed to <methodname>persistAddress()</methodname>.</para>
           </listitem>
 
           <listitem>
-            <para>the method and constructor parameter values being
-            validated</para>
+            <para><literal>traversableProperty</literal>: a
+            <classname>PropertyNode</classname> whose name is "addressline1".
+            Represents the property of <literal>traversableObject</literal>
+            being verified.</para>
           </listitem>
 
           <listitem>
-            <para>the method and constructor return value being
-            validated</para>
+            <para><methodname>rootBeanType</methodname>:
+            <classname>AddressService.class</classname>. The type of the root
+            object being validated.</para>
           </listitem>
-        </itemizedlist></para>
 
-      <para revisionflag="added" role="tck-testable">But the properties of
-      these elements (if validated) are. In this case the complete path is
-      provided via <literal>pathToTraversableObject</literal>.</para>
+          <listitem>
+            <para><literal>pathtoTraversableObject</literal>: a
+            <classname>Path</classname> comprising a
+            <classname>MethodNode</classname> (named "persistService") and a
+            <classname>ParameterNode</classname> (with parameter index 0). The
+            path from <classname>AddressService</classname> to the
+            <classname>Address</classname> instance.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>elementType</literal>:
+            <classname>ElementType.FIELD</classname>. The
+            <varname>addressline1</varname> property is annotated on its
+            field.</para>
+          </listitem>
+        </itemizedlist>
+
+        <para revisionflag="added">When the Bean Validation provider is about
+        to perform a cascaded validation of the <varname>country</varname>
+        property of the passed <classname>Address</classname> object, it calls
+        the <methodname>isReachable()</methodname> method to ensure that the
+        property is reachable. If this method returns
+        <literal><literal>true</literal></literal>, it calls
+        <classname>TraversableResolver.isCascadable()</classname> with the
+        following parameter values:</para>
+
+        <itemizedlist revisionflag="added">
+          <listitem>
+            <para><literal>traversableObject</literal>: address. The instance
+            passed to <methodname>persistAddress()</methodname>.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>traversableProperty</literal>: a
+            <classname>PropertyNode</classname> whose name is "country".
+            Represents the property of <literal>traversableObject</literal>
+            being verified.</para>
+          </listitem>
+
+          <listitem>
+            <para><methodname>rootBeanType</methodname>:
+            <classname>AddressService.class</classname>. The type of the root
+            object being validated.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>pathtoTraversableObject</literal>: a
+            <classname>Path</classname> comprising a
+            <classname>MethodNode</classname> (named "persistService") and a
+            <classname>ParameterNode</classname> (with parameter index 0). The
+            path from <classname>AddressService</classname> to the
+            <classname>Address</classname> instance.</para>
+          </listitem>
+
+          <listitem>
+            <para><literal>elementType</literal>:
+            <classname>ElementType.FIELD</classname>. The
+            <varname>country</varname> property is annotated on its
+            field.</para>
+          </listitem>
+        </itemizedlist>
+      </section>
     </section>
 
     <section id="typevalidatorresolution">
