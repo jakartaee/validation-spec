@@ -79,7 +79,7 @@ public interface Validator {
     <classname>ValidationException</classname> is raised.</phrase> This can be
     a subclass of <classname>ValidationException</classname> like
     <classname>ConstraintDefinitionException</classname>,
-    <classname>ConstraintDeclarationException</classname>,
+    <classname>ConstraintDeclarationException</classname> or
     <classname>UnexpectedTypeException</classname>.</para>
 
     <para revisionflag="added">All descriptor types accessible via
@@ -1193,8 +1193,9 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{com.acme.constraint.NotEmpty.message}"
-    Class&lt;?&gt; groups() default {};
+    String message() default "{com.acme.constraint.NotEmpty.message}";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default { };
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
@@ -1245,6 +1246,9 @@ public @interface NotEmpty {
 }
 
 public class Book {
+
+    public interface FirstLevelCheck {}
+
     private String title;
     private String description;
 
@@ -1287,7 +1291,7 @@ assert ! bookDescriptor.hasConstraints();
 
 assert bookDescriptor.isBeanConstrained();
 
-assert bookDescriptor.getConstraintDescriptors().size() == 0 //no bean-level constraint
+assert bookDescriptor.getConstraintDescriptors().size() == 0; //no bean-level constraint
 
 //more specifically "author" and "title"
 assert bookDescriptor.getConstrainedProperties().size() == 2;
@@ -1298,35 +1302,35 @@ assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null;
 //property with no constraint
 assert bookDescriptor.getConstraintsForProperty("description") == null; 
 
-ElementDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
-assert propertyDescriptor.getConstraintDescriptors().size() == 2
+PropertyDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
+assert propertyDescriptor.getConstraintDescriptors().size() == 2;
 assert "title".equals( propertyDescriptor.getPropertyName() );
 
 //assuming the implementation returns the @NotEmpty constraint first
 ConstraintDescriptor&lt;?&gt; constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
                                                               .iterator().next();
-assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
+assert constraintDescriptor.getAnnotation().annotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
 assert constraintDescriptor.getComposingConstraints().size() == 2;
-assert constraintDescriptor.isReportAsSingleViolation() == true
+assert constraintDescriptor.isReportAsSingleViolation() == true;
 
 //@NotEmpty cannot be null
 boolean notNullPresence = false;
 for ( ConstraintDescriptor&lt;?&gt; composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
-    if ( composingDescriptor.getAnnotation().getAnnotationType().equals( NotNull.class ) ) {
+    if ( composingDescriptor.getAnnotation().annotationType().equals( NotNull.class ) ) {
         notNullPresence = true;
     }
 }
 assert notNullPresence; 
 
 //assuming the implementation returns the Size constraint second
-constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next().next();
-assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Size.class );
-assert constraintDescriptor.getAttributes().get("max") == 30; 
+constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
+assert constraintDescriptor.getAnnotation().annotationType().equals( Size.class );
+assert constraintDescriptor.getAttributes().get("max") == Integer.valueOf( 30 );
 assert constraintDescriptor.getGroups().size() == 1;
 
 propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
-assert propertyDescriptor.getConstraintDescriptors().size() == 1
-assert propertyDescriptor.isCascaded()</programlisting>
+assert propertyDescriptor.getConstraintDescriptors().size() == 1;
+assert propertyDescriptor.isCascaded();</programlisting>
   </section>
 </chapter>
