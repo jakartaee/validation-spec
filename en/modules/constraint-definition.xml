@@ -38,12 +38,13 @@
 @Target({ ANNOTATION_TYPE })
 @Retention(RUNTIME)
 public @interface Constraint {
+
     /**
      * {@link ConstraintValidator} classes must reference distinct target types
-     * for a given {@link javax.validation.constraintvalidation.ValidationTarget}
+     * for a given {@link ValidationTarget}
      * If two {@code ConstraintValidator}s refer to the same type,
      * an exception will occur.
-     *
+     * &lt;p/&gt;
      * At most one {@code ConstraintValidator} targeting the array of parameters of
      * methods or constructors (aka cross-parameter) is accepted. If two or more
      * are present, an exception will occur.
@@ -240,9 +241,10 @@ public @interface Constraint {
         <programlisting>/**
  * Payload type that can be attached to a given
  * constraint declaration.
+ * &lt;p/&gt;
  * Payloads are typically used to carry on metadata information
  * consumed by a validation client.
- *
+ * &lt;/p&gt;
  * Use of payloads is not considered portable.
  *
  * @author Emmanuel Bernard
@@ -311,21 +313,22 @@ public class Address {
           <programlisting>ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;</programlisting>
 
           <programlisting>/**
- * Defines the constraint target
+ * Defines the constraint target.
  *
- * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @author Emmanuel Bernard
  * @since 1.1
  */
 public enum ConstraintTarget {
+
     /**
      * Discover the type when no ambiguity is present
      * &lt;ul&gt;
      *     &lt;li&gt;if neither on a method nor a constructor, it implies the annotated element
-     *     (type, field etc).&lt;/li&gt;
+     *     (type, field etc),&lt;/li&gt;
      *     &lt;li&gt;if on a method or constructor with no parameter, it implies
-     *     {@code RETURN_VALUE}&lt;/li&gt;
+     *     {@code RETURN_VALUE},&lt;/li&gt;
      *     &lt;li&gt;if on a method with no return value ({@code void}), it implies
-     *     {@code PARAMETERS}&lt;/li&gt;
+     *     {@code PARAMETERS}.&lt;/li&gt;
      * &lt;/ul&gt;
      * Otherwise, {@code IMPLICIT} is not accepted and either {@code RETURN_VALUE} or
      * {@code PARAMETERS} is required. This is the case for constructors with parameters
@@ -482,7 +485,7 @@ public @interface ELAssert {
     expression="param[1]==param[2]", 
     validationAppliesTo=ConstraintType.PARAMETERS
 )
-public User createUser(String email, String password, String repreatPassword) { [...] }</programlisting>
+public User createUser(String email, String password, String repeatPassword) { [...] }</programlisting>
       </example>
 
       <para revisionflag="added"><xref
@@ -757,12 +760,10 @@ public @interface FrenchZipcode {
  * A constraint annotation hosting this annotation will return the
  * composed annotation error report if any of the composing annotations fail.
  * The error reports of each individual composing constraint are ignored.
- *
- * &lt;p&gt;
+ * &lt;p/&gt;
  * Note: Evaluation of composed constraints stops on the first validation
  * error in case the composing constraint is annotated with
  * {@code @ReportAsSingleViolation}.
- * &lt;/p&gt;
  *
  * @author Emmanuel Bernard
  */
@@ -954,7 +955,7 @@ public @interface EmmanuelsEmail {
     follows:</para>
 
     <programlisting>/**
- * Mark an attribute as overriding the attribute of a composing constraint.
+ * Marks an attribute as overriding the attribute of a composing constraint.
  * Both attributes must share the same type.
  *
  * @author Emmanuel Bernard
@@ -962,8 +963,9 @@ public @interface EmmanuelsEmail {
 @Retention(RUNTIME)
 @Target({ METHOD })
 public @interface OverridesAttribute {
+
     /**
-     * @return Constraint type the attribute is overriding
+     * @return constraint type the attribute is overriding
      */
     Class&lt;? extends Annotation&gt; constraint();
 
@@ -971,30 +973,34 @@ public @interface OverridesAttribute {
      * Name of the Constraint attribute overridden.
      * Defaults to the name of the attribute hosting {@code @OverridesAttribute}.
      *
-     * @return name of constraint attribute overridden.
+     * @return name of constraint attribute overridden
      */
     String name();
 
     /**
      * The index of the targeted constraint declaration when using
      * multiple constraints of the same type.
-     * The index represents the index of the constraint in the value() array.
-     *
+     * &lt;p/&gt;
+     * The index represents the index of the constraint in the
+     * {@code value()} array.
+     * &lt;p/&gt;
      * By default, no index is defined and the single constraint declaration
-     * is targeted
+     * is targeted.
      *
      * @return constraint declaration index if multivalued annotation is used
      */
     int constraintIndex() default -1;
 
     /**
-     * Defines several @OverridesAttribute annotations on the same element
+     * Defines several {@link OverridesAttribute} annotations on the same element
+     *
      * @see javax.validation.OverridesAttribute
      */
     @Documented
     @Target({ METHOD })
     @Retention(RUNTIME)
     public @interface List {
+
         OverridesAttribute[] value();
     }
 }</programlisting>
@@ -1067,21 +1073,24 @@ public @interface OverridesAttribute {
     interface.</phrase></para>
 
     <programlisting>/**
- * Defines the logic to validate a given constraint A
- * for a given object type T.
+ * Defines the logic to validate a given constraint {@code A}
+ * for a given object type {@code T}.
+ * &lt;p/&gt;
  * Implementations must comply to the following restriction:
  * &lt;ul&gt;
- * &lt;li&gt;T must resolve to a non parameterized type&lt;/li&gt;
- * &lt;li&gt;or generic parameters of T must be unbounded
- * wildcard types&lt;/li&gt;
+ *     &lt;li&gt;{@code T} must resolve to a non parameterized type&lt;/li&gt;
+ *     &lt;li&gt;or generic parameters of {@code T} must be unbounded
+ *     wildcard types&lt;/li&gt;
  * &lt;/ul&gt;
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
 public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
+
     /**
-     * Initialize the validator in preparation for isValid calls.
+     * Initializes the validator in preparation for
+     * {@link #isValid(Object, ConstraintValidatorContext)} calls.
      * The constraint annotation for a given constraint declaration
      * is passed.
      * &lt;p/&gt;
@@ -1093,16 +1102,16 @@ public interface ConstraintValidator&lt;A extends Annotation, T&gt; {
     void initialize(A constraintAnnotation);
 
     /**
-     * Implement the validation logic.
+     * Implements the validation logic.
      * The state of {@code value} must not be altered.
-     *
+     * &lt;p/&gt;
      * This method can be accessed concurrently, thread-safety must be ensured
      * by the implementation.
      *
      * @param value object to validate
      * @param context context in which the constraint is evaluated
      *
-     * @return false if {@code value} does not pass the constraint
+     * @return {@code false} if {@code value} does not pass the constraint
      */
     boolean isValid(T value, ConstraintValidatorContext context);
 }</programlisting>
@@ -1336,41 +1345,44 @@ public class NumberPositiveValidator implements ConstraintValidator&lt;NumberPos
     operations available in the context the constraint is validated to.</para>
 
     <programlisting revisionflag="changed">/**
- * Provide contextual data and operation when applying a given constraint validator.
+ * Provides contextual data and operation when applying a given constraint validator.
  *
- * At least one {@code ConstraintViolation} must be defined (either the default one,
+ * At least one {@link ConstraintViolation} must be defined (either the default one,
  * of if the default {@code ConstraintViolation} is disabled, a custom one).
  *
  * @author Emmanuel Bernard
  */
 public interface ConstraintValidatorContext {
+
     /**
-     * Disable the default {@code ConstraintViolation} object generation (which
+     * Disables the default {@link ConstraintViolation} object generation (which
      * is using the message template declared on the constraint).
+     * &lt;p/&gt;
      * Useful to set a different violation message or generate a {@code ConstraintViolation}
      * based on a different property.
      */
     void disableDefaultConstraintViolation();
 
     /**
-     * @return the current un-interpolated default message.
+     * @return the current un-interpolated default message
      */
     String getDefaultConstraintMessageTemplate();
 
     /**
-     * Return an constraint violation builder building an violation report
+     * Returns a constraint violation builder building a violation report
      * allowing to optionally associate it to a sub path.
      * The violation message will be interpolated.
      * &lt;p/&gt;
-     * To create the {@code ConstraintViolation}, one must call either one of
+     * To create the {@link ConstraintViolation}, one must call either one of
      * the {@code addConstraintViolation()} methods available in one of the
      * interfaces of the fluent API.
      * If another method is called after {@code addConstraintViolation()} on
      * {@code ConstraintViolationBuilder} or any of its associated nested interfaces
      * an {@code IllegalStateException} is raised.
      * &lt;p/&gt;
-     * If {@code isValid} returns {@code false}, a {@code ConstraintViolation}
-     * object will be built per ConstraintViolation report including the default one (unless
+     * If {@link ConstraintValidator#isValid(Object, ConstraintValidatorContext)} returns
+     * {@code false}, a {@code ConstraintViolation} object will be built per constraint
+     * violation report including the default one (unless
      * {@link #disableDefaultConstraintViolation()} has been called).
      * &lt;p/&gt;
      * {@code ConstraintViolation} objects generated from such a call
@@ -1382,29 +1394,28 @@ public interface ConstraintValidatorContext {
      *
      * Here are a few usage examples:
      * &lt;pre&gt;
-     * {@code
      * //assuming the following domain model
      * public class User {
-     *     public Map&lt;String,Address&gt; getAddresses() { [...] }
+     *     public Map&lt;String,Address&gt; getAddresses() { ... }
      * }
      *
      * public class Address {
-     *     public String getStreet() { [...] }
-     *     public Country getCountry() { [...] }
+     *     public String getStreet() { ... }
+     *     public Country getCountry() { ... }
      * }
      *
      * public class Country {
-     *     public String getName() { [...] }
+     *     public String getName() { ... }
      * }
      *
      * //From a property-level constraint on User.addresses
-     * //Build a constraint violation on the default path - ie. the "addresses" property
+     * //Build a constraint violation on the default path - i.e. the "addresses" property
      * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
      *             .addConstraintViolation();
      *
      * //From a class level constraint on Address
      * //Build a constraint violation on the default path + "street"
-     * //ie. the street property of Address
+     * //i.e. the street property of Address
      * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
      *             .addPropertyNode( "street" )
      *             .addConstraintViolation();
@@ -1419,20 +1430,19 @@ public interface ConstraintValidatorContext {
      *
      * //From a class level constraint on User
      * //Build a constraint violation on the default path + addresses["home"].country.name
-     * //ie. property "country.name" on the object stored under "home" in the map
+     * //i.e. property "country.name" on the object stored under "home" in the map
      * context.buildConstraintViolationWithTemplate( "this detail is wrong" )
      *             .addPropertyNode( "addresses" )
      *             .addPropertyNode( "country" )
      *                 .inIterable().atKey( "home" )
      *             .addPropertyNode( "name" )
      *             .addConstraintViolation();
-     * }
      * &lt;/pre&gt;
      * &lt;p/&gt;
      * Cross-parameter constraints on a method can create a node specific
      * to a particular parameter if required. Let's explore a few examples:
      * &lt;p/&gt;
-     * &lt;pre&gt;{@code
+     * &lt;pre&gt;
      * //Cross-parameter constraint on method createUser(String password, String passwordRepeat)
      * //Build a constraint violation on the default path + "passwordRepeat"
      * context.buildConstraintViolationWithTemplate("Passwords do not match")
@@ -1442,7 +1452,7 @@ public interface ConstraintValidatorContext {
      * //Cross-parameter constraint on a method
      * //mergeAddresses(Map&lt;String,Address&gt; addresses, Map&lt;String,Address&gt; otherAddresses)
      * //Build a constraint violation on the default path + "otherAddresses["home"]
-     * //ie. the Address bean hosted in the "home" key of the "otherAddresses" map parameter
+     * //i.e. the Address bean hosted in the "home" key of the "otherAddresses" map parameter
      * context.buildConstraintViolationWithTemplate(
      *         "Map entry home present in both and does not match")
      *                 .addParameterNode(1)
@@ -1453,7 +1463,7 @@ public interface ConstraintValidatorContext {
      * //Cross-parameter constraint on a method
      * //mergeAddresses(Map&lt;String,Address&gt; addresses, Map&lt;String,Address&gt; otherAddresses)
      * //Build a constraint violation on the default path + "otherAddresses["home"].city
-     * //ie. on the "city" property of the Address bean hosted in
+     * //i.e. on the "city" property of the Address bean hosted in
      * //the "home" key of the "otherAddresses" map
      * context.buildConstraintViolationWithTemplate(
      *         "Map entry home present in both but city does not match")
@@ -1461,61 +1471,59 @@ public interface ConstraintValidatorContext {
      *                 .addPropertyNode("city")
      *                     .inIterable().atKey("home")
      *                 .addConstraintViolation();
-     * }
      * &lt;/pre&gt;
      *
-     * @param messageTemplate new un-interpolated constraint message.
-     * @return Returns an constraint violation builder
+     * @param messageTemplate new un-interpolated constraint message
+     * @return returns a constraint violation builder
      */
     ConstraintViolationBuilder buildConstraintViolationWithTemplate(String messageTemplate);
 
     /**
-     * Return an instance of the specified type allowing access to
+     * Returns an instance of the specified type allowing access to
      * provider-specific APIs. If the Bean Validation provider
      * implementation does not support the specified class,
-     * {@code ValidationException} is thrown.
+     * {@link ValidationException} is thrown.
      *
-     * @param type the class of the object to be returned.
-     *
+     * @param type the class of the object to be returned
      * @return an instance of the specified class
-     *
-     * @throws ValidationException if the provider does not support the call.
+     * @throws ValidationException if the provider does not support the call
      *
      * @since 1.1
      */
     &lt;T&gt; T unwrap(Class&lt;T&gt; type);
 
     /**
-     * {@code ConstraintViolation} builder allowing to optionally associate
+     * {@link ConstraintViolation} builder allowing to optionally associate
      * the violation report to a sub path.
-     *
+     * &lt;p/&gt;
      * To create the {@code ConstraintViolation}, one must call either one of
      * the {@code addConstraintViolation()} methods available in one of the
      * interfaces of the fluent API.
+     * &lt;p/&gt;
      * If another method is called after {@code addConstraintViolation()} on
      * {@code ConstraintViolationBuilder} or any of its associated objects
      * an {@code IllegalStateException} is raised.
-     * 
      */
     interface ConstraintViolationBuilder {
+
         /**
-         * Add a node to the path the {@code ConstraintViolation} will be associated to.
-         *
+         * Adds a node to the path the {@link ConstraintViolation} will be associated to.
+         * &lt;p/&gt;
          * {@code name} describes a single property. In particular,
          * dot (.) is not allowed.
          *
          * @param name property name
          * @return a builder representing node {@code name}
-         * @deprecated since 1.1 - replaced by {@code addPropertyNode}, {@code addBeanNode}
-         *             and {@code addParameterNode}
+         * @deprecated since 1.1 - replaced by {@link #addPropertyNode(String)},
+         *             {@link #addBeanNode()} and {@link #addParameterNode(int)}
          */
         @Deprecated
         NodeBuilderDefinedContext addNode(String name);
 
         /**
-         * Add a property node to the path the {@code ConstraintViolation}
+         * Adds a property node to the path the {@link ConstraintViolation}
          * will be associated to.
-         *
+         * &lt;p/&gt;
          * {@code name} describes a single property. In particular,
          * dot (.) is not allowed.
          *
@@ -1528,7 +1536,7 @@ public interface ConstraintValidatorContext {
         NodeBuilderCustomizableContext addPropertyNode(String name);
 
         /**
-         * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+         * Adds a bean node (class-level) to the path the {@link ConstraintViolation}
          * will be associated to.
          * Note that bean nodes are always leaf nodes.
          *
@@ -1539,9 +1547,9 @@ public interface ConstraintValidatorContext {
         LeafNodeBuilderCustomizableContext addBeanNode();
 
         /**
-         * Add a method parameter node to the path the {@code ConstraintViolation}
+         * Adds a method parameter node to the path the {@link ConstraintViolation}
          * will be associated to.
-         * The parameter index must be valid (ie. within the boundaries of the method
+         * The parameter index must be valid (i.e. within the boundaries of the method
          * parameter indexes). May only be called from within cross-parameter validators.
          *
          * @param index the parameter index
@@ -1553,80 +1561,85 @@ public interface ConstraintValidatorContext {
         NodeBuilderDefinedContext addParameterNode(int index);
 
         /**
-         * Add the new {@code ConstraintViolation} to be generated if the
+         * Adds the new {@link ConstraintViolation} to be generated if the
          * constraint validator marks the value as invalid.
+         * &lt;p/&gt;
          * Methods of this {@code ConstraintViolationBuilder} instance and its nested
          * objects throw {@code IllegalStateException} from now on.
          *
          * @return the {@code ConstraintValidatorContext} instance the
-         *           {@code ConstraintViolationBuilder} comes from
+         *         {@code ConstraintViolationBuilder} comes from
          */
         ConstraintValidatorContext addConstraintViolation();
 
         /**
-         * Represent a node whose context is known
-         * (ie. index, key and isInIterable)
-         * and that is a leaf node (ie. no subnode can be added).
+         * Represents a node whose context is known
+         * (i.e. index, key and isInIterable)
+         * and that is a leaf node (i.e. no subnode can be added).
          *
          * @since 1.1
          */
         interface LeafNodeBuilderDefinedContext {
 
             /**
-             * Add the new {@code ConstraintViolation} to be generated if the
+             * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator marks the value as invalid.
+             * &lt;p/&gt;
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
              *
              * @return {@code ConstraintValidatorContext} instance the
-             *           {@code ConstraintViolationBuilder} comes from
+             *         {@code ConstraintViolationBuilder} comes from
              */
             ConstraintValidatorContext addConstraintViolation();
         }
 
         /**
-         * Represent a node whose context is
-         * configurable (ie. index, key and isInIterable)
-         * and that is a leaf node (ie. no subnode can be added).
+         * Represents a node whose context is
+         * configurable (i.e. index, key and isInIterable)
+         * and that is a leaf node (i.e. no subnode can be added).
          *
          * @since 1.1
          */
         interface LeafNodeBuilderCustomizableContext {
 
             /**
-             * Mark the node as being in an {@code Iterable} or a {@code Map}
+             * Marks the node as being in an {@code Iterable} or a {@code Map}.
              * 
              * @return a builder representing iterable details
              */
             LeafNodeContextBuilder inIterable();
 
             /**
-             * Add the new {@code ConstraintViolation} to be generated if the
+             * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
+             * &lt;p/&gt;
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
              *
              * @return {@code ConstraintValidatorContext} instance the
-             *           {@code ConstraintViolationBuilder} comes from
+             *         {@code ConstraintViolationBuilder} comes from
              */
             ConstraintValidatorContext addConstraintViolation();
         }
 
         /**
-         * Represent refinement choices for a node which is
+         * Represents refinement choices for a node which is
          * in an {@code Iterator} or {@code Map}.
+         * &lt;p/&gt;
          * If the iterator is an indexed collection or a map,
          * the index or the key should be set.
-         * The node is a leaf node (ie. no subnode can be added).
+         * &lt;p/&gt;
+         * The node is a leaf node (i.e. no subnode can be added).
          *
          * @since 1.1
          */
         interface LeafNodeContextBuilder {
 
             /**
-             * Define the key the object is into the {@code Map}
+             * Defines the key the object is into the {@code Map}.
              *
              * @param key map key
              * @return a builder representing the current node
@@ -1634,7 +1647,7 @@ public interface ConstraintValidatorContext {
             LeafNodeBuilderDefinedContext atKey(Object key);
 
             /**
-             * Define the index the object is into the {@code List} or array
+             * Defines the index the object is into the {@code List} or array
              *
              * @param index index
              * @return a builder representing the current node
@@ -1642,8 +1655,9 @@ public interface ConstraintValidatorContext {
             LeafNodeBuilderDefinedContext atIndex(Integer index);
 
             /**
-             * Add the new {@code ConstraintViolation} to be generated if the
+             * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
+             * &lt;p/&gt;
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1655,31 +1669,31 @@ public interface ConstraintValidatorContext {
         }
 
         /**
-         * Represent a node whose context is known
-         * (ie. index, key and isInIterable)
-         * and that is not necessarily a leaf node (ie. subnodes can
+         * Represents a node whose context is known
+         * (i.e. index, key and isInIterable)
+         * and that is not necessarily a leaf node (i.e. subnodes can
          * be added).
          */
         interface NodeBuilderDefinedContext {
 
             /**
-             * Add a node to the path the {@code ConstraintViolation} will be associated to.
-             *
+             * Adds a node to the path the {@link ConstraintViolation} will be associated to.
+             * &lt;p/&gt;
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
              *
              * @param name property name
              * @return a builder representing node {@code name}
-             * @deprecated since 1.1 - replaced by {@code addPropertyNode}
-             *             and {@code addBeanNode}
+             * @deprecated since 1.1 - replaced by {@link #addPropertyNode(String)}
+             *             and {@link #addBeanNode()}
              */
             @Deprecated
             NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add a property node to the path the {@code ConstraintViolation}
+             * Adds a property node to the path the {@link ConstraintViolation}
              * will be associated to.
-             *
+             * &lt;p/&gt;
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
              *
@@ -1692,7 +1706,7 @@ public interface ConstraintValidatorContext {
             NodeBuilderCustomizableContext addPropertyNode(String name);
 
             /**
-             * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+             * Adds a bean node (class-level) to the path the {@link ConstraintViolation}
              * will be associated to.
              * Note that bean nodes are always leaf nodes.
              *
@@ -1703,8 +1717,9 @@ public interface ConstraintValidatorContext {
             LeafNodeBuilderCustomizableContext addBeanNode();
 
             /**
-             * Add the new {@code ConstraintViolation} to be generated if the
+             * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator marks the value as invalid.
+             * &lt;p/&gt;
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1716,36 +1731,36 @@ public interface ConstraintValidatorContext {
         }
 
         /**
-         * Represent a node whose context is
-         * configurable (ie. index, key and isInIterable)
-         * and that is not necessarily a leaf node (ie. subnodes can
+         * Represents a node whose context is
+         * configurable (i.e. index, key and isInIterable)
+         * and that is not necessarily a leaf node (i.e. subnodes can
          * be added).
          */
         interface NodeBuilderCustomizableContext {
 
             /**
-             * Mark the node as being in an {@code Iterable} or a {@code Map}
+             * Marks the node as being in an {@code Iterable} or a {@code Map}.
              *
              * @return a builder representing iterable details
              */
             NodeContextBuilder inIterable();
 
             /**
-             * Add a node to the path the {@code ConstraintViolation} will be associated to.
+             * Adds a node to the path the {@link ConstraintViolation} will be associated to.
              *
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
              *
              * @param name property name
              * @return a builder representing node {@code name}
-             * @deprecated since 1.1 - replaced by {@code addPropertyNode}
-             *             and {@code addBeanNode}
+             * @deprecated since 1.1 - replaced by {@link #addPropertyNode(String)}
+             *             and {@link #addBeanNode()}
              */
             @Deprecated
             NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add a property node to the path the {@code ConstraintViolation}
+             * Adds a property node to the path the {@link ConstraintViolation}
              * will be associated to.
              *
              * {@code name} describes a single property. In particular,
@@ -1760,7 +1775,7 @@ public interface ConstraintValidatorContext {
             NodeBuilderCustomizableContext addPropertyNode(String name);
 
             /**
-             * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+             * Adds a bean node (class-level) to the path the {@link ConstraintViolation}
              * will be associated to.
              * Note that bean nodes are always leaf nodes.
              *
@@ -1771,8 +1786,9 @@ public interface ConstraintValidatorContext {
             LeafNodeBuilderCustomizableContext addBeanNode();
 
             /**
-             * Add the new {@code ConstraintViolation} to be generated if the
+             * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
+             * &lt;p/&gt;
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1784,17 +1800,19 @@ public interface ConstraintValidatorContext {
         }
 
         /**
-         * Represent refinement choices for a node which is
+         * Represents refinement choices for a node which is
          * in an {@code Iterator} or {@code Map}.
+         * &lt;p/&gt;
          * If the iterator is an indexed collection or a map,
          * the index or the key should be set.
-         * The node is not necessarily a leaf node (ie. subnodes can
+         * &lt;p/&gt;
+         * The node is not necessarily a leaf node (i.e. subnodes can
           * be added).
          */
         interface NodeContextBuilder {
             
             /**
-             * Define the key the object is into the {@code Map}
+             * Defines the key the object is into the {@code Map}.
              *
              * @param key map key
              * @return a builder representing the current node
@@ -1802,7 +1820,7 @@ public interface ConstraintValidatorContext {
             NodeBuilderDefinedContext atKey(Object key);
 
             /**
-             * Define the index the object is into the {@code List} or array
+             * Defines the index the object is into the {@code List} or array.
              *
              * @param index index
              * @return a builder representing the current node
@@ -1810,21 +1828,21 @@ public interface ConstraintValidatorContext {
             NodeBuilderDefinedContext atIndex(Integer index);
 
             /**
-             * Add a node to the path the {@code ConstraintViolation} will be associated to.
+             * Adds a node to the path the {@code ConstraintViolation} will be associated to.
              *
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
              *
              * @param name property name
              * @return a builder representing node {@code name}
-             * @deprecated since 1.1 - replaced by {@code addPropertyNode}
-             *             and {@code addBeanNode}
+             * @deprecated since 1.1 - replaced by {@link #addPropertyNode(String)}
+             *             and {@link #addBeanNode()}
              */
             @Deprecated
             NodeBuilderCustomizableContext addNode(String name);
 
             /**
-             * Add a property node to the path the {@code ConstraintViolation}
+             * Adds a property node to the path the {@link ConstraintViolation}
              * will be associated to.
              *
              * {@code name} describes a single property. In particular,
@@ -1839,8 +1857,9 @@ public interface ConstraintValidatorContext {
             NodeBuilderCustomizableContext addPropertyNode(String name);
 
             /**
-             * Add a bean node (class-level) to the path the {@code ConstraintViolation}
+             * Adds a bean node (class-level) to the path the {@link ConstraintViolation}
              * will be associated to.
+             * &lt;p/&gt;
              * Note that bean nodes are always leaf nodes.
              *
              * @return a builder representing the bean node
@@ -1850,14 +1869,15 @@ public interface ConstraintValidatorContext {
             LeafNodeBuilderCustomizableContext addBeanNode();
 
             /**
-             * Add the new {@code ConstraintViolation} to be generated if the
+             * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
+             * &lt;p/&gt;
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
              *
              * @return {@code ConstraintValidatorContext} instance the
-             *           {@code ConstraintViolationBuilder} comes from
+             *         {@code ConstraintViolationBuilder} comes from
              */
             ConstraintValidatorContext addConstraintViolation();
         }
@@ -2179,7 +2199,7 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
       <title>ConstraintValidatorFactory interface</title>
 
       <programlisting>/**
- * Instantiate a {@code ConstraintValidator} instance based off its class.
+ * Instantiates a {@link ConstraintValidator} instance based off its class.
  * The {@code ConstraintValidatorFactory} is &lt;b&gt;not&lt;/b&gt; responsible
  * for calling {@link ConstraintValidator#initialize(java.lang.annotation.Annotation)}.
  *
@@ -2190,15 +2210,15 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator&lt;Syntax
 public interface ConstraintValidatorFactory {
 
     /**
-     * @param key The class of the constraint validator to instantiate.
+     * @param key The class of the constraint validator to instantiate
      *
-     * @return A new constraint validator instance of the specified class.
+     * @return A new constraint validator instance of the specified class
      */
     &lt;T extends ConstraintValidator&lt;?, ?&gt;&gt; T getInstance(Class&lt;T&gt; key);
 
     /**
-     * Signal ConstraintValidatorFactory that the instance is no longer
-     * being used by the Bean Validation provider
+     * Signals {@code ConstraintValidatorFactory} that the instance is no longer
+     * being used by the Bean Validation provider.
      *
      * @param instance validator being released
      *

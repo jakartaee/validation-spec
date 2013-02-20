@@ -156,11 +156,11 @@
           <title><classname>@Valid</classname> annotation</title>
 
           <programlisting language="JAVA" role="JAVA">/**
- * Mark a property, method parameter or method return type for validation cascading.
- *
+ * Marks a property, method parameter or method return type for validation cascading.
+ * &lt;p/&gt;
  * Constraints defined on the object and its properties are be validated when the
  * property, method parameter or method return type is validated.
- *
+ * &lt;p/&gt;
  * This behavior is applied recursively.
  *
  * @author Emmanuel Bernard
@@ -491,10 +491,11 @@ public class User {
       annotation.</para>
 
       <programlisting>/**
- * Define a group sequence
+ * Defines group sequence.
+ * &lt;p/&gt;
  * The interface hosting {@code @GroupSequence} is representing
  * the group sequence.
- * When hosted on a class, represents the {@code Default} group
+ * When hosted on a class, represents the {@link Default} group
  * for that class.
  *
  * @author Emmanuel Bernard
@@ -503,10 +504,11 @@ public class User {
 @Target({ TYPE })
 @Retention(RUNTIME)
 public @interface GroupSequence {
+
     Class&lt;?&gt;[] value();
 }</programlisting>
 
-      <para>Here is a usage example</para>
+      <para>Here is a usage example:</para>
 
       <example id="example-groupsequence">
         <title>Make use of group sequence</title>
@@ -1420,22 +1422,20 @@ public interface ParameterNameProvider {
     /**
      * Returns the names of the parameters of the given constructor.
      *
-     * @param constructor The constructor for which the parameter names shall be
-     *        retrieved. Never null.
-     *
-     * @return A list containing the names of the parameters of the given
-     *         constructor. May be empty but never null.
+     * @param constructor the constructor for which the parameter names shall be
+     *        retrieved; never null
+     * @return a list containing the names of the parameters of the given
+     *         constructor; may be empty but never null
      */
     List&lt;String&gt; getParameterNames(Constructor&lt;?&gt; constructor);
 
     /**
      * Returns the names of the parameters of the given method.
      *
-     * @param method The method for which the parameter names shall be retrieved.
-     *        Never null.
-     *
-     * @return A list containing the names of the parameters of the given method.
-     *         May be empty but never null.
+     * @param method the method for which the parameter names shall be retrieved;
+     *        never null
+     * @return a list containing the names of the parameters of the given method;
+     *         may be empty but never null
      */
     List&lt;String&gt; getParameterNames(Method method);
 }</programlisting>
@@ -2223,56 +2223,57 @@ assert violations.size() == 1;</programlisting>
       <programlisting>/**
  * Contract determining if a property can be accessed by the Bean Validation provider.
  * This contract is called for each property that is being either validated or cascaded.
- *
+ * &lt;p/&gt;
  * A traversable resolver implementation must be thread-safe.
  *
  * @author Emmanuel Bernard
  */
 public interface TraversableResolver {
     /**
-     * Determine if the Bean Validation provider is allowed to reach the property state
+     * Determines if the Bean Validation provider is allowed to reach the property state.
      *
-     * @param traversableObject object hosting {@code traversableProperty} or null
-     *                          if {@code validateValue} is called
-     * @param traversableProperty the traversable property.
+     * @param traversableObject object hosting {@code traversableProperty}
+     *        or {@code null} if {@code validateValue} is called
+     * @param traversableProperty the traversable property
      * @param rootBeanType type of the root object passed to the Validator
-     *        or hosting the method or constructor validated.
+     *        or hosting the method or constructor validated
      * @param pathToTraversableObject path from the root object to
      *        {@code traversableObject}
-     *        (using the path specification defined by Bean Validator).
-     * @param elementType either {@code FIELD} or {@code METHOD}.
-     *
+     *        (using the path specification defined by Bean Validator)
+     * @param elementType either {@code FIELD} or {@code METHOD}
      * @return {@code true} if the Bean Validation provider is allowed to
-     *         reach the property state, {@code false} otherwise.
+     *         reach the property state, {@code false} otherwise
      */
     boolean isReachable(Object traversableObject,
-                        Path.Node traversableProperty,
+                        Node traversableProperty,
                         Class&lt;?&gt; rootBeanType,
                         Path pathToTraversableObject,
                         ElementType elementType);
 
     /**
-     * Determine if the Bean Validation provider is allowed to cascade validation on
+     * Determines if the Bean Validation provider is allowed to cascade validation on
      * the bean instance returned by the property value
      * marked as {@code @Valid}.
-     * Note that this method is called only if {@code isReachable} returns true
-     * for the same set of arguments and if the property is marked as {@code @Valid}
+     * &lt;p/&gt;
+     * Note that this method is called only if
+     * {@link #isReachable(Object, javax.validation.Path.Node, Class, Path, java.lang.annotation.ElementType)}
+     * returns {@code true} for the same set of arguments and if the property
+     * is marked as {@link Valid}.
      *
-     * @param traversableObject object hosting {@code traversableProperty} or null
-     *                          if {@code validateValue} is called
-     * @param traversableProperty the traversable property.
+     * @param traversableObject object hosting {@code traversableProperty}
+     *        or null if {@code validateValue} is called
+     * @param traversableProperty the traversable property
      * @param rootBeanType type of the root object passed to the Validator
-     *        or hosting the method or constructor validated.
+     *        or hosting the method or constructor validated
      * @param pathToTraversableObject path from the root object to
      *        {@code traversableObject}
-     *        (using the path specification defined by Bean Validator).
-     * @param elementType either {@code FIELD} or {@code METHOD}.
-     *
+     *        (using the path specification defined by Bean Validator)
+     * @param elementType either {@code FIELD} or {@code METHOD}
      * @return {@code true} if the Bean Validation provider is allowed to
-     *         cascade validation, {@code false} otherwise.
+     *         cascade validation, {@code false} otherwise
      */
     boolean isCascadable(Object traversableObject,
-                         Path.Node traversableProperty,
+                         Node traversableProperty,
                          Class&lt;?&gt; rootBeanType,
                          Path pathToTraversableObject,
                          ElementType elementType);
