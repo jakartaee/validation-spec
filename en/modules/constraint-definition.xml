@@ -25,10 +25,56 @@
     <literal>javax.validation.Constraint</literal></phrase>.</para>
 
     <programlisting>/**
- * Link between a constraint annotation and its constraint validation implementations.
+ * Marks an annotation as being a Bean Validation constraint.
  * &lt;p/&gt;
- * A given constraint annotation should be annotated by a {@code @Constraint}
+ * A given constraint annotation must be annotated by a {@code @Constraint}
  * annotation which refers to its list of constraint validation implementations.
+ * &lt;p/&gt;
+ * Each constraint annotation must host the following attributes:
+ * &lt;ul&gt;
+ *     &lt;li&gt;{@code String message() default [...];} which should default to an error
+ *     message key made of the fully-qualified class name of the constraint followed by
+ *     {@code .message}. For example {@code "{com.acme.constraints.NotSafe.message}"}&lt;/li&gt;
+ *     &lt;li&gt;{@code Class&lt;?&gt;[] groups() default {};} for user to customize the targeted
+ *     groups&lt;/li&gt;
+ *     &lt;li&gt;{@code Class&lt;? extends Payload&gt;[] payload() default {};} for
+ *     extensibility purposes&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p/&gt;
+ * When building a constraint that is both generic and cross-parameter, the constraint
+ * annotation must host the {@code validationAppliesTo()} property.
+ * A constraint is generic if it targets the annotated element and is cross-parameter if
+ * it targets the array of parameters of a method or constructor.
+ * &lt;pre&gt;
+ *     ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
+ * &lt;/pre&gt;
+ * This property allows the constraint user to choose whether the constraint
+ * targets the return type of the executable or its array of parameters.
+ *
+ * A constraint is both generic and cross-parameter if
+ * &lt;ul&gt;
+ *     &lt;li&gt;two kinds of {@code ConstraintValidator}s are attached to the
+ *     constraint, one targeting {@link ValidationTarget.ANNOTATED_ELEMENT}
+ *     and one targeting {@link ValidationTarget.PARAMETERS},&lt;/li&gt;
+ *     &lt;li&gt;or if a {@code ConstraintValidator} targets both
+ *     {@code ANNOTATED_ELEMENT} and
+ *     {@code PARAMETERS}.&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * Such dual constraints are rare. See {@link SupportedValidationTarget} for more info.
+ * &lt;p/&gt;
+ * Here is an example of constraint definition:
+ * &lt;pre&gt;
+ * &amp;#64;Documented
+ * &amp;#64;Constraint(validatedBy = OrderNumberValidator.class)
+ * &amp;#64;Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+ * &amp;#64;Retention(RUNTIME)
+ * public &amp;#64;interface OrderNumber {
+ *     String message() default "{com.acme.constraint.OrderNumber.message}";
+ *     Class&lt;?&gt;[] groups() default {};
+ *     Class&lt;? extends Payload&gt;[] payload() default {};
+ * }
+ * &lt;/pre&gt;
  *
  * @author Emmanuel Bernard
  * @author Gavin King
