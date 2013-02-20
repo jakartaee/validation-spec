@@ -1390,7 +1390,24 @@ public class OrderService implements RetailOrderService, B2BOrderService {
             intention.</para>
           </tip></para>
 
-        <para role="tck-testable">Cross parameters constraints are validated
+        <para>It is not legal to declare a cross-parameter constraint on a
+        method or constructor which has no parameters. A
+        <classname>ConstraintDeclarationException</classname> is raised in
+        this case.</para>
+
+        <para>Some constraints can target both the return value and the array
+        of parameters of an executable. They are known to be both generic and
+        cross-parameter constraints. When using such constraint on an
+        executable to target the parameters, one must set
+        <methodname>validationAppliesTo</methodname> in case there is an
+        ambiguity. The set of ambiguities is described in <xref
+        linkend="constraintsdefinitionimplementation-constraintdefinition-validationappliesto"/>.
+        Even without ambiguity, it is recommended to explicitly set
+        <methodname>validationAppliesTo</methodname> to
+        <literal>ConstraintTarget.PARAMETERS</literal> as it improves
+        readability.</para>
+
+        <para role="tck-testable">Cross-parameters constraints are validated
         at the same time as parameter constraints.</para>
       </section>
 
@@ -1469,6 +1486,18 @@ public interface ParameterNameProvider {
       <para role="tck-testable">Return value constraints are declared by
       putting constraint annotations directly on a method or
       constructor.</para>
+
+      <para>Some constraints can target both the return value and the array of
+      parameters of an executable. They are known to be both generic and
+      cross-parameter constraints. When using such constraint on an executable
+      to target the return value, one must set
+      <methodname>validationAppliesTo</methodname> in case there is an
+      ambiguity. The set of ambiguities is described in <xref
+      linkend="constraintsdefinitionimplementation-constraintdefinition-validationappliesto"/>.
+      Even without ambiguity, it is recommended to explicitly set
+      <methodname>validationAppliesTo</methodname> to
+      <literal>ConstraintTarget.RETURN_VALUE</literal> as it improves
+      readability.</para>
 
       <example>
         <title>Declaring return value constraints</title>
