@@ -58,5 +58,83 @@ Recommended tools by decreasing order of preference:
 
 Make sure to not go beyond 80 columns per line.
 
+### Style rules
+
+- use `[...]` for omissions, prefer it on a dedicated line rather than inlined. For declaration, use a ; after `User user = [...];`
+- remove email in `@author`
+- use `@author` on classes or interfaces (non inner)
+- do not use `<programlisting role="JAVA" language="JAVA>` as we have not introduced the plumbing
+- use `{@link}` for method reference (the first in the JavaDoc of the element) except if it references external classes and if it references the class or element at bay.
+- reference methods with `()` but be careful that some `methodname` are actually annotation attributes and thus should not have `()`
+- in the spec use `<methodname>Foo.bar()</methodname>` and in the JavaDoc `{@link Foo#bar()}`
+- no import statement
+- add package statement
+- use `<p/>` to separate paragraphs but do not use `<p>blah blah</p>`
+- empty line between the `@param`, `@return`, `@throws` group and the other `@tag` elements
+- `@throws` does not use `{@link }` for the exception
+- import classes used by `{@link}` and `@throws` exceptions so that the unqualified name works
+- something is true but a method returns `<literal>true</literal>`
+- use `<ul>` for lists
+- `<li>` are indented by 4 spaces compared to `<ul>`
+- multiline `@param`, `@return` etc are indented to align with the beginning of the text of the element
+- the core of the JavaDoc uses capital letters and punctuation like in plain English
+- @tag attributes do not use capital letters for the beninning of a sentence nor use dots in the end, prefer ; to separate sentences in this situation
+- use verbs at the third person instead of the imperative tense (?!): `Returns foo` instead of `Return foo`.
+- use `<pre> </pre>` for multiline code example. `<pre>` elements should be on a separate line
+- use an empty line between a class / interface declaration and the first element in the block
+
+Here is an example
+
+    /**
+     * Returns the complementary elements related to {@link FooBar#baz()}.
+     * This allows to break things apart.
+     * <p/>
+     * Demolition mileage may vary depending on the robustness
+     * of {@code FooBar} when using {@code List}:
+     * <ul>
+     *     <li>This is a beginning</li>
+     *     <li>This is the end</li>
+     * </ul>
+     * <pre>
+     * Some code = new Some();
+     * if (size >12) {
+     *     code.doStuff();
+     * }
+     * </pre>
+     *
+     * @param test this is a long description that needs
+     *        to be done on several lines, yep
+     * @param foo this is another param
+     * @return the result
+     * @throws IllegalArgumentException when things happen
+     *
+     * @since 1.1
+     * @deprecated
+     */
+    public void someMethod() {
+        User user = [...];
+        [...]
+    }
+
+    /**
+     * Welcome to this element related to {@link FooBar}.
+     * This allowed to break things apart.
+     * <p/>
+     * Demolition mileage may vary depending on the robustness
+     * of {@code FooBar} when using {@code List}
+     *
+     * @author Emmanuel Bernard
+     * @since 1.1
+     * @deprecated
+     */
+    public class GoodStuff {
+
+        /**
+         * [...]
+         */
+        [...]
+    }
+
+
 For the API, in particular the JavaDoc, follow the conventions described at
 <https://community.jboss.org/wiki/ContributingToHibernateValidator#Coding_Guidelines>.
