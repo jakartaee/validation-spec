@@ -35,7 +35,7 @@
       <title>Validator interface (metadata request API)</title>
 
       <programlisting>/**
- * Validate bean instances. Implementations of this interface must be thread-safe.
+ * Validates bean instances. Implementations of this interface must be thread-safe.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
@@ -46,18 +46,17 @@ public interface Validator {
     [...] //See 5.1
 
     /**
-     * Return the descriptor object describing bean constraints.
+     * Returns the descriptor object describing bean constraints.
+     * &lt;p/&gt;
      * The returned object (and associated objects including
-     * {@code ConstraintDescriptor}s) are immutable.
+     * {@link ConstraintDescriptor}s) are immutable.
      *
      * @param clazz class or interface type evaluated
-     *
-     * @return the bean descriptor for the specified class.
-     *
+     * @return the bean descriptor for the specified class
      * @throws IllegalArgumentException if clazz is {@code null}
      * @throws ValidationException if a non recoverable error happens
-     *                             during the metadata discovery or if some
-     *                             constraints are invalid.
+     *         during the metadata discovery or if some
+     *         constraints are invalid.
      */
     BeanDescriptor getConstraintsForClass(Class&lt;?&gt; clazz);
 }</programlisting>
@@ -111,18 +110,18 @@ public interface Validator {
 public interface ElementDescriptor {
 
     /**
-     * @return Return {@code true} if at least one constraint declaration is present
-     *         for this element in the class hierarchy, {@code false} otherwise.
+     * @return returns {@code true} if at least one constraint declaration is present
+     *         for this element in the class hierarchy, {@code false} otherwise
      */
     boolean hasConstraints();
 
     /**
-     * @return Statically defined returned type.
+     * @return the statically defined returned type
      */
     Class&lt;?&gt; getElementClass();
 
     /**
-     * Return all constraint descriptors for this element in the class hierarchy
+     * Returns all constraint descriptors for this element in the class hierarchy
      * or an empty {@code Set} if none are present.
      *
      * @return {@code Set} of constraint descriptors for this element
@@ -130,54 +129,53 @@ public interface ElementDescriptor {
     Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
 
     /**
-     * Find constraints and potentially restricts them to certain criteria.
+     * Finds constraints and potentially restricts them to certain criteria.
      *
-     * @return ConstraintFinder object.
+     * @return {@code ConstraintFinder} object
      */
     ConstraintFinder findConstraints();
 
     /**
-     * Declare restrictions on retrieved constraints.
+     * Declares restrictions on retrieved constraints.
      * Restrictions are cumulative.
-     *
+     * &lt;p/&gt;
      * A {@code ConstraintFinder} is not thread-safe. The set of matching
-     * {@code ConstraintDescriptor} is.
+     * {@link ConstraintDescriptor} is.
      */
     interface ConstraintFinder {
+
         /**
-         * Restrict to the constraints matching a given set of groups for this element
-         *
+         * Restricts to the constraints matching a given set of groups for this element.
+         * &lt;p/&gt;
          * This method respects group conversion, group sequences
-         * and group inheritance (including class-level {@code Default} group
-         * overriding) but does not return {@code ConstraintDescriptor}s
+         * and group inheritance (including class-level {@link Default} group
+         * overriding) but does not return {@link ConstraintDescriptor}s
          * in any particular order.
          * Specifically, ordering of the group sequence is not respected.
          *
          * @param groups groups targeted
-         *
          * @return {@code this} following the chaining method pattern
          */
         ConstraintFinder unorderedAndMatchingGroups(Class&lt;?&gt;... groups);
 
         /**
-         * Restrict to the constraints matching the provided scope for this element.
+         * Restricts to the constraints matching the provided scope for this element.
          *
-         * Defaults to {@code Scope.HIERARCHY}
+         * Defaults to {@link Scope#HIERARCHY}
          *
          * @param scope expected scope
-         *
          * @return {@code this} following the chaining method pattern
          */
         ConstraintFinder lookingAt(Scope scope);
 
         /**
-         * Restrict to the constraints hosted on the listed {@code types}
+         * Restricts to the constraints hosted on the listed {@code types}
          * for a given element.
-         *
-         * Default to all possible types of the element.
-         *
+         * &lt;p/&gt;
+         * Defaults to all possible types of the element.
+         * &lt;p/&gt;
          * Typically used to restrict to fields ({@code FIELD})
-         * or getters ({@code METHOD})
+         * or getters ({@code METHOD}).
          *
          * @param types targeted types
          *
@@ -186,9 +184,9 @@ public interface ElementDescriptor {
         ConstraintFinder declaredOn(ElementType... types);
 
         /**
-         * Retrieve the constraint descriptors following the defined
+         * Retrieves the constraint descriptors following the defined
          * restrictions and hosted on the element described by
-         * {@code ElementDescriptor}
+         * {@link ElementDescriptor}.
          *
          * @return matching constraint descriptors
          */
@@ -199,7 +197,7 @@ public interface ElementDescriptor {
          * matching the restrictions is present on the element,
          * {@code false} otherwise.
          *
-         * @return is there any constraint
+         * @return {@code true} if there is at least one constraint
          */
         boolean hasConstraints();
     }
@@ -209,11 +207,12 @@ public interface ElementDescriptor {
     <programlisting>package javax.validation.metadata;
 
 /**
- * Scope looked at when discovering constraints
+ * Scope looked at when discovering constraints.
  *
  * @author Emmanuel Bernard
  */
 public enum Scope {
+
     /**
      * Look for constraints declared on the current class element
      * and ignore inheritance and elements with the same name in
@@ -264,8 +263,8 @@ public enum Scope {
     constraints declared on the given element.</para>
 
     <para role="tck-testable"><methodname>hasConstraints()</methodname>
-    returns true if the given element in the class hierarchy holds at least
-    one constraint declaration.</para>
+    returns <literal>true</literal> if the given element in the class
+    hierarchy holds at least one constraint declaration.</para>
 
     <para role="tck-testable">If you need to query the metadata API in a more
     fine grained way for example by restricting the constraints to the one
@@ -429,22 +428,24 @@ assert 1 == constructorDescriptor.getParameterDescriptors()
 /**
  * Describes a constrained Java Bean and the constraints associated to it. All
  * objects returned by the methods of this descriptor (and associated objects
- * including {@code ConstraintDescriptor}s) are immutable.
+ * including {@link ConstraintDescriptor}s) are immutable.
  *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
  */
 public interface BeanDescriptor extends ElementDescriptor {
+
     /**
      * Returns {@code true} if the bean involves validation:
      * &lt;ul&gt;
      *     &lt;li&gt;a constraint is hosted on the bean itself&lt;/li&gt;
      *     &lt;li&gt;a constraint is hosted on one of the bean properties&lt;/li&gt;
-     *     &lt;li&gt;or a bean property is marked for cascaded validation ({@code @Valid})&lt;/li&gt;
+     *     &lt;li&gt;or a bean property is marked for cascaded validation ({@link Valid})&lt;/li&gt;
      * &lt;/ul&gt;
+     * &lt;p/&gt;
      * Constrained methods and constructors are ignored.
      *
-     * @return {@code true} if the bean involves validation, {@code false} otherwise.
+     * @return {@code true} if the bean involves validation, {@code false} otherwise
      */
     boolean isBeanConstrained();
 
@@ -452,80 +453,81 @@ public interface BeanDescriptor extends ElementDescriptor {
      * Returns {@code true} if any of the bean constructors
      * or methods are constrained executables.
      *
-     * @return Whether or not the bean has constrained executables
+     * @return whether or not the bean has constrained executables
+     *
      * @since 1.1
      */
     boolean hasConstrainedExecutables();
 
     /**
-     * Return the property descriptor for a given property.
-     * Return {@code null} if the property does not exist or has no
-     * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()} )
-     * Properties of super types are considered.
+     * Returns the property descriptor for a given property.
      * &lt;p/&gt;
+     * Returns {@code null} if the property does not exist or has no
+     * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()})
+     * Properties of super types are considered.
      *
      * @param propertyName property evaluated
-     *
-     * @return the property descriptor for a given property.
-     *
-     * @throws IllegalArgumentException if propertyName is {@code null}
+     * @return the property descriptor for a given property
+     * @throws IllegalArgumentException if {@code propertyName} is {@code null}
      */
     PropertyDescriptor getConstraintsForProperty(String propertyName);
 
     /**
      * Returns a set of property descriptors having at least one constraint defined
-     * or marked as cascaded ({@code @Valid}). If not property matches,
-     * an empty set is returned.
+     * or marked as cascaded ({@link Valid}).
+     * &lt;p/&gt;
+     * If not property matches, an empty set is returned.
      * Properties of super types are considered.
      *
-     * @return Returns the set of {@code PropertyDescriptor}s for the constraint properties. If there are no
-     *         constraint properties the empty set is returned
+     * @return the set of {@link PropertyDescriptor}s for the constraint properties; if
+     *         there are no constraint properties, the empty set is returned
      */
     Set&lt;PropertyDescriptor&gt; getConstrainedProperties();
 
     /**
-     * Returns a method descriptor for the given method. Returns {@code null} if
-     * no method with the given name and parameter types exists or the specified
-     * method neither has parameter or return value constraints nor a parameter
+     * Returns a method descriptor for the given method.
+     * &lt;p/&gt;
+     * Returns {@code null} if no method with the given name and parameter types
+     * exists or the specified method neither has parameter or return value constraints nor a parameter
      * or return value marked for cascaded validation.
      * Methods of super types are considered.
      *
-     * @param methodName The name of the method.
-     * @param parameterTypes The parameter types of the method.
+     * @param methodName the name of the method
+     * @param parameterTypes the parameter types of the method
+     * @return a method descriptor for the given method
+     * @throws IllegalArgumentException if {@code methodName} is {@code null}
      *
-     * @return A method descriptor for the given method.
-     *
-     * @throws IllegalArgumentException if methodName is {@code null}
      * @since 1.1
      */
     MethodDescriptor getConstraintsForMethod(String methodName, Class&lt;?&gt;... parameterTypes);
 
     /**
      * Returns a set with descriptors for the constrained methods of the type
-     * represented by this descriptor. Constrained are all those methods which
-     * have at least one parameter or return value constraint or at least one
-     * parameter or return value marked for cascaded validation.
+     * represented by this descriptor.
+     * &lt;p/&gt;
+     * Constrained methods have at least one parameter or return value constraint
+     * or at least one parameter or return value marked for cascaded validation.
      * Methods of super types are considered.
      *
-     * @return A set with descriptors for the constrained methods of this type.
-     *         Will be empty if this type has no constrained methods but never
-     *         {@code null}.
+     * @return a set with descriptors for the constrained methods of this type;
+     *         will be empty if this type has no constrained methods but never
+     *         {@code null}
      *
      * @since 1.1
      */
     Set&lt;MethodDescriptor&gt; getConstrainedMethods();
 
     /**
-     * Returns a constructor descriptor for the given constructor. Returns
-     * {@code null} if no constructor with the given parameter types exists or
-     * the specified constructor neither has parameter or return value
+     * Returns a constructor descriptor for the given constructor.
+     * &lt;p/&gt;
+     * Returns {@code null} if no constructor with the given parameter types
+     * exists or the specified constructor neither has parameter or return value
      * constraints nor a parameter or return value marked for cascaded
      * validation.
      * Constructor of super types are considered.
      *
-     * @param parameterTypes The parameter types of the constructor.
-     *
-     * @return A constructor descriptor for the given constructor.
+     * @param parameterTypes the parameter types of the constructor
+     * @return a constructor descriptor for the given constructor
      *
      * @since 1.1
      */
@@ -533,13 +535,14 @@ public interface BeanDescriptor extends ElementDescriptor {
 
     /**
      * Returns a set with descriptors for the constrained constructors of the
-     * type represented by this descriptor. Constrained are all those
-     * constructors which have at least one parameter or return value constraint
+     * type represented by this descriptor.
+     * &lt;p/&gt;
+     * Constrained constructors have at least one parameter or return value constraint
      * or at least one parameter or return value marked for cascaded validation.
      *
-     * @return A set with descriptors for the constrained constructor of this
-     *         type. Will be empty if this type has no constrained constructor
-     *         but never {@code null}.
+     * @return a set with descriptors for the constrained constructor of this
+     *         type; will be empty if this type has no constrained constructor
+     *         but never {@code null}
      *
      * @since 1.1
      */
@@ -549,15 +552,16 @@ public interface BeanDescriptor extends ElementDescriptor {
 
     <para><phrase
     role="tck-testable"><methodname>isBeanConstrained()</methodname> returns
-    true if the given class (and superclasses and interfaces) has at least one
-    class-level or property-level constraint or validation cascade.</phrase>
-    If the method returns false, the Bean Validation engine can safely ignore
-    the bean as it will not be impacted by validation.</para>
+    <literal>true</literal> if the given class (and superclasses and
+    interfaces) has at least one class-level or property-level constraint or
+    validation cascade.</phrase> If the method returns false, the Bean
+    Validation engine can safely ignore the bean as it will not be impacted by
+    validation.</para>
 
     <para revisionflag="added"
     role="tck-testable"><methodname>hasConstrainedExecutables()</methodname>
-    returns true if the given class (and superclasses and interfaces) has at
-    least one constrained method or constructor.</para>
+    returns <literal>true</literal> if the given class (and superclasses and
+    interfaces) has at least one constrained method or constructor.</para>
 
     <para><phrase
     role="tck-testable"><methodname>getConstraintsForProperty()</methodname>
@@ -622,16 +626,16 @@ public interface CascadableDescriptor {
      * Whether this element is marked for cascaded validation or not.
      *
      * @return {@code true}, if this element is marked for cascaded validation,
-     *         {@code false} otherwise.
+     *         {@code false} otherwise
      */
     boolean isCascaded();
 
     /**
      * Returns the group conversions configured for this element.
      *
-     * @return A set containing this element's group conversions. An empty set
+     * @return a set containing this element's group conversions; an empty set
      *         may be returned if no conversions are configured but never
-     *         {@code null}.
+     *         {@code null}
      */
     Set&lt;GroupConversionDescriptor&gt; getGroupConversions();
 }</programlisting>
@@ -673,14 +677,14 @@ public interface GroupConversionDescriptor {
     /**
      * Returns the source group of this conversion rule.
      *
-     * @return The source group of this conversion rule.
+     * @return the source group of this conversion rule
      */
     Class&lt;?&gt; getFrom();
 
     /**
      * Returns the target group of this conversion rule.
      *
-     * @return The target group of this conversion rule.
+     * @return the target group of this conversion rule
      */
     Class&lt;?&gt; getTo();
 }</programlisting>
@@ -719,7 +723,7 @@ public interface PropertyDescriptor extends ElementDescriptor, CascadableDescrip
     /**
      * Name of the property according to the Java Bean specification.
      *
-     * @return property name.
+     * @return property name
      */
     String getPropertyName();
 }</programlisting>
@@ -739,7 +743,7 @@ public interface PropertyDescriptor extends ElementDescriptor, CascadableDescrip
     <programlisting>package javax.validation.metadata;
 
 /**
- * Provides common functionality of {@link MethodDescriptor} and
+ * Provides the common functionality of {@link MethodDescriptor} and
  * {@link ConstructorDescriptor}.
  *
  * @author Gunnar Morling
@@ -753,27 +757,27 @@ public interface ExecutableDescriptor extends ElementDescriptor {
      * the non-qualified name of the declaring class in case this descriptor
      * represents a constructor.
      *
-     * @return The name of the executable represented by this descriptor.
+     * @return the name of the executable represented by this descriptor
      */
     String getName();
 
     /**
-     * Returns a list with descriptors representing this executable's
-     * parameters, in order of their declaration, including synthetic
+     * Returns a list of descriptors representing this executable's
+     * parameters, in the order of their declaration, including synthetic
      * parameters.
      *
-     * @return A list with descriptors representing this executable's
-     *         parameters. An empty list will be returned if this executable has
-     *         no parameters, but never {@code null}.
+     * @return a list of descriptors representing this executable's
+     *         parameters; an empty list will be returned if this executable has
+     *         no parameters, but never {@code null}
      */
     List&lt;ParameterDescriptor&gt; getParameterDescriptors();
 
     /**
-     * Returns a descriptor containing cross-parameter constraints
+     * Returns a descriptor containing the cross-parameter constraints
      * of this executable.
      *
-     * @return A descriptor containing cross-parameter constraints of this
-     *         executable
+     * @return a descriptor containing the cross-parameter constraints of
+     *         this executable
      */
     CrossParameterDescriptor getCrossParameterDescriptor();
 
@@ -784,18 +788,19 @@ public interface ExecutableDescriptor extends ElementDescriptor {
      * representing {@code void}. This descriptor will have no constraint
      * associated.
      *
-     * @return A descriptor for this executable's return value
+     * @return a descriptor for this executable's return value
      */
     ReturnValueDescriptor getReturnValueDescriptor();
 
     /**
      * Returns {@code true} if the executable parameters are constrained either:
      * &lt;ul&gt;
-     * &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
-     * &lt;li&gt;because of a cascade on at least one of the parameters (via
-     * {@code @Valid})&lt;/li&gt;
-     * &lt;li&gt;because of at least one cross-parameter constraint&lt;/li&gt;
+     *     &lt;li&gt;because of a constraint on at least one of the parameters&lt;/li&gt;
+     *     &lt;li&gt;because of a cascade on at least one of the parameters (via
+     *     {@link Valid})&lt;/li&gt;
+     *     &lt;li&gt;because of at least one cross-parameter constraint&lt;/li&gt;
      * &lt;/ul&gt;
+     * &lt;p/&gt;
      * Also returns {@code false} if there is no parameter.
      *
      * @return {@code true} if the executable parameters are constrained
@@ -806,10 +811,11 @@ public interface ExecutableDescriptor extends ElementDescriptor {
      * Returns {@code true} if the executable return value is constrained
      * either:
      * &lt;ul&gt;
-     * &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
-     * &lt;li&gt;because validation is cascaded on the return value (via
-     * {@code @Valid})&lt;/li&gt;
+     *     &lt;li&gt;because of a constraint on the return value&lt;/li&gt;
+     *     &lt;li&gt;because validation is cascaded on the return value (via
+     *     {@link Valid})&lt;/li&gt;
      * &lt;/ul&gt;
+     * &lt;p/&gt;
      * Also returns {@code false} if there is no return value.
      *
      * @return {@code true} if the executable return value is constrained
@@ -835,7 +841,7 @@ public interface ExecutableDescriptor extends ElementDescriptor {
      * {@link #getParameterDescriptors()}, {@link #getCrossParameterDescriptor()}
      * and {@link #getReturnValueDescriptor()} to discover constraints.
      *
-     * @return An empty {@code Set}
+     * @return an empty {@code Set}
      */
     @Override
     Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getConstraintDescriptors();
@@ -847,7 +853,7 @@ public interface ExecutableDescriptor extends ElementDescriptor {
      * {@link #getParameterDescriptors()}, {@link #getCrossParameterDescriptor()}
      * and {@link #getReturnValueDescriptor()} to discover constraints.
      *
-     * @return Constraint finder object.
+     * @return {@code ConstraintFinder} object
      */
     @Override
     ConstraintFinder findConstraints();
@@ -975,7 +981,7 @@ public interface ParameterDescriptor extends ElementDescriptor, CascadableDescri
      * Returns this parameter's index within the parameter array of the method
      * or constructor holding it.
      *
-     * @return This parameter's index.
+     * @return this parameter's index
      */
     int getIndex();
 
@@ -983,7 +989,7 @@ public interface ParameterDescriptor extends ElementDescriptor, CascadableDescri
      * Returns this parameter's name as retrieved by the current parameter name
      * resolver.
      *
-     * @return This parameter's name.
+     * @return this parameter's name
      */
     String getName();
 }</programlisting>
@@ -1013,7 +1019,7 @@ public interface ParameterDescriptor extends ElementDescriptor, CascadableDescri
 /**
  * Describes an element holding cross-parameter constraints of a method or constructor
  *
- * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @author Emmanuel Bernard
  * @since 1.1
  */
 public interface CrossParameterDescriptor extends ElementDescriptor {
@@ -1058,18 +1064,20 @@ public interface ReturnValueDescriptor extends ElementDescriptor, CascadableDesc
 
 /**
  * Describes a single constraint and its composing constraints.
+ * &lt;p/&gt;
  * {@code T} is the constraint's annotation type.
  *
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  */
 public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
+
     /**
      * Returns the annotation describing the constraint declaration.
      * If a composing constraint, attribute values are reflecting
      * the overridden attributes of the composing constraint
      *
-     * @return the annotation for this constraint.
+     * @return the annotation for this constraint
      */
     T getAnnotation();
 
@@ -1082,17 +1090,17 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 
     /**
      * The set of groups the constraint is applied on.
-     * If the constraint declares no group, a set with only the {@code Default}
+     * If the constraint declares no group, a set with only the {@link Default}
      * group is returned.
      *
-     * @return The groups the constraint is applied on.
+     * @return the groups the constraint is applied on
      */
     Set&lt;Class&lt;?&gt;&gt; getGroups();
 
     /**
      * The set of payload the constraint hosts.
      *
-     * @return payload classes hosted on the constraint or an empty set if none.
+     * @return payload classes hosted on the constraint or an empty set if none
      */
     Set&lt;Class&lt;? extends Payload&gt;&gt; getPayload();
 
@@ -1107,34 +1115,35 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
     /**
      * List of the constraint validation implementation classes.
      *
-     * @return list of the constraint validation implementation classes.
+     * @return list of the constraint validation implementation classes
      */
     List&lt;Class&lt;? extends ConstraintValidator&lt;T, ?&gt;&gt;&gt; getConstraintValidatorClasses();
 
     /**
      * Returns a map containing the annotation attribute names as keys and the
      * annotation attribute values as value.
+     * &lt;p/&gt;
      * If this constraint is used as part of a composed constraint, attribute
      * values are reflecting the overridden attribute of the composing constraint.
      *
      * @return a map containing the annotation attribute names as keys
-     *         and the annotation attribute values as value.
+     *         and the annotation attribute values as value
      */
     Map&lt;String, Object&gt; getAttributes();
 
     /**
-     * Return a set of composing {@code ConstraintDescriptor}s where each
+     * Return a set of composing {@link ConstraintDescriptor}s where each
      * descriptor describes a composing constraint. {@code ConstraintDescriptor}
      * instances of composing constraints reflect overridden attribute values in
      * {@link #getAttributes()}  and {@link #getAnnotation()}.
      *
      * @return a set of {@code ConstraintDescriptor} objects or an empty set
-     *         in case there are no composing constraints.
+     *         in case there are no composing constraints
      */
     Set&lt;ConstraintDescriptor&lt;?&gt;&gt; getComposingConstraints();
 
     /**
-     * @return true if the constraint is annotated with {@code @ReportAsSingleViolation}
+     * @return true if the constraint is annotated with {@link ReportAsSingleViolation}
      */
     boolean isReportAsSingleViolation();
 }</programlisting>
@@ -1189,7 +1198,7 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 
     <para revisionflag="added"
     role="tck-testable"><methodname>isReportAsSingleViolation()</methodname>
-    returns true if the constraint is annotated with
+    returns <literal>true</literal> if the constraint is annotated with
     <classname>@ReportAsSingleViolation</classname>.</para>
 
     <para revisionflag="added"
