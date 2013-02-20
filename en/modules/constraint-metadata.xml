@@ -79,7 +79,7 @@ public interface Validator {
     <classname>ValidationException</classname> is raised.</phrase> This can be
     a subclass of <classname>ValidationException</classname> like
     <classname>ConstraintDefinitionException</classname>,
-    <classname>ConstraintDeclarationException</classname>,
+    <classname>ConstraintDeclarationException</classname> or
     <classname>UnexpectedTypeException</classname>.</para>
 
     <para revisionflag="added">All descriptor types accessible via
@@ -1177,11 +1177,7 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
   <section>
     <title>Example</title>
 
-    <para revisionflag="added"><remark>TODO: Extend example to cover method
-    constraints, too.</remark></para>
-
-    <para>Assuming the following <classname>@NotEmpty</classname>
-    definition</para>
+    <para>Assuming the following constraint definitions</para>
 
     <programlisting>package com.acme.constraint;
 
@@ -1193,8 +1189,9 @@ public interface ConstraintDescriptor&lt;T extends Annotation&gt; {
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{com.acme.constraint.NotEmpty.message}"
-    Class&lt;?&gt; groups() default {};
+    String message() default "{com.acme.constraint.NotEmpty.message}";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default { };
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
@@ -1204,10 +1201,50 @@ public @interface NotEmpty {
     }
 
     class NotEmptyValidator implements ConstraintValidator&lt;NotEmpty, String&gt; {
+        @Override
         public void initialize(NotEmpty constraintAnnotation) {}
 
+        @Override
         public boolean isValid(String value, ConstraintValidatorContext context) {
             return true;
+        }
+    }
+}
+
+@Documented
+@Constraint(validatedBy = ValidInterval.Validator.class)
+@Target({ METHOD, ANNOTATION_TYPE, CONSTRUCTOR })
+@Retention(RUNTIME)
+public @interface ValidInterval {
+    String message() default "{com.acme.constraint.ValidInterval.message}";
+    Class&lt;?&gt;[] groups() default {};
+    Class&lt;? extends Payload&gt;[] payload() default { };
+    int startParameter();
+    int endParameter();
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        ValidInterval[] value();
+    }
+
+    @SupportedValidationTarget(PARAMETERS)
+    class Validator implements ConstraintValidator&lt;ValidInterval, Object[]&gt; {
+        
+        private int start;
+        private int end;
+
+        @Override
+        public void initialize(ValidInterval constraintAnnotation) {
+            this.start = constraintAnnotation.startParameter();
+            this.end = constraintAnnotation.endParameter();
+        }
+
+        @Override
+        public boolean isValid(Object[] value, ConstraintValidatorContext context) {
+            return Integer.parseInt( String.valueOf( value[start] ) ) &lt; 
+                   Integer.parseInt( String.valueOf( value[end] ) );
         }
     }
 }</programlisting>
@@ -1245,6 +1282,10 @@ public @interface NotEmpty {
 }
 
 public class Book {
+
+    public interface FirstLevelCheck {}
+    public interface SecondLevelCheck {}
+    
     private String title;
     private String description;
 
@@ -1252,6 +1293,20 @@ public class Book {
     @NotNull
     private Author author;
 
+    @Valid
+    public Book(
+            String title, 
+            @Size(max=30) String description, 
+            @Valid
+            @ConvertGroup(from=Default.class, to=SecondLevelCheck.class)
+            Author author) {
+        [...]
+    }
+    
+    public Book() {
+        [...]
+    }
+     
     @NotEmpty(groups={FirstLevelCheck.class, Default.class})
     @Size(max=30)
     public String getTitle() {
@@ -1277,6 +1332,11 @@ public class Book {
     public void setAuthor(String description) {
         this.description = description;
     }
+    
+    @ValidInterval(startParameter=1, endParameter=2)
+    public void addChapter(String title, int startPage, int endPage) {
+        [...]
+    }
 }</programlisting>
 
     <para>The following assertions are true.</para>
@@ -1286,8 +1346,9 @@ public class Book {
 assert ! bookDescriptor.hasConstraints();
 
 assert bookDescriptor.isBeanConstrained();
+assert bookDescriptor.hasConstrainedExecutables();
 
-assert bookDescriptor.getConstraintDescriptors().size() == 0 //no bean-level constraint
+assert bookDescriptor.getConstraintDescriptors().size() == 0; //no bean-level constraint
 
 //more specifically "author" and "title"
 assert bookDescriptor.getConstrainedProperties().size() == 2;
@@ -1298,35 +1359,120 @@ assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null;
 //property with no constraint
 assert bookDescriptor.getConstraintsForProperty("description") == null; 
 
-ElementDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
-assert propertyDescriptor.getConstraintDescriptors().size() == 2
+PropertyDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
+assert propertyDescriptor.getConstraintDescriptors().size() == 2;
 assert "title".equals( propertyDescriptor.getPropertyName() );
 
 //assuming the implementation returns the @NotEmpty constraint first
 ConstraintDescriptor&lt;?&gt; constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
                                                               .iterator().next();
-assert constraintDescriptor.getAnnotation().getAnnotationType().equals( NotEmpty.class );
+assert constraintDescriptor.getAnnotation().annotationType().equals( NotEmpty.class );
 assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
 assert constraintDescriptor.getComposingConstraints().size() == 2;
-assert constraintDescriptor.isReportAsSingleViolation() == true
+assert constraintDescriptor.isReportAsSingleViolation() == true;
 
 //@NotEmpty cannot be null
 boolean notNullPresence = false;
 for ( ConstraintDescriptor&lt;?&gt; composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
-    if ( composingDescriptor.getAnnotation().getAnnotationType().equals( NotNull.class ) ) {
+    if ( composingDescriptor.getAnnotation().annotationType().equals( NotNull.class ) ) {
         notNullPresence = true;
     }
 }
 assert notNullPresence; 
 
 //assuming the implementation returns the Size constraint second
-constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next().next();
-assert constraintDescriptor.getAnnotation().getAnnotationType().equals( Size.class );
-assert constraintDescriptor.getAttributes().get("max") == 30; 
+constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
+assert constraintDescriptor.getAnnotation().annotationType().equals( Size.class );
+assert constraintDescriptor.getAttributes().get("max") == Integer.valueOf( 30 );
 assert constraintDescriptor.getGroups().size() == 1;
 
 propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
-assert propertyDescriptor.getConstraintDescriptors().size() == 1
-assert propertyDescriptor.isCascaded()</programlisting>
+assert propertyDescriptor.getConstraintDescriptors().size() == 1;
+assert propertyDescriptor.isCascaded();
+
+//getTitle() and addChapter()
+assert bookDescriptor.getConstrainedMethods().size() == 2;
+
+//the constructor accepting title, description and author
+assert bookDescriptor.getConstrainedConstructors().size() == 1;
+
+ConstructorDescriptor constructorDescriptor = bookDescriptor.getConstraintsForConstructor(
+    String.class, String.class, Author.class 
+);
+assert constructorDescriptor.getName().equals( "Book" );
+assert constructorDescriptor.getElementClass() == Book.class;
+assert constructorDescriptor.areParametersConstrained() == true;
+
+//return value is marked for cascaded validation
+assert constructorDescriptor.isReturnValueConstrained() == true;
+
+//constraints are retrieved via the sub-descriptors for parameters etc.
+assert constructorDescriptor.hasConstraints() == false;
+
+//one descriptor for each parameter
+assert constructorDescriptor.getParameterDescriptors().size() == 3;
+
+//"description" parameter
+ParameterDescriptor parameterDescriptor = constructorDescriptor.getParameterDescriptors().get( 1 );
+
+//Assuming the default parameter name provider
+assert parameterDescriptor.getName().equals( "arg1" );
+assert parameterDescriptor.getElementClass() == String.class;
+assert parameterDescriptor.getIndex() == 1;
+assert parameterDescriptor.hasConstraints() == true;
+
+Set&lt;ConstraintDescriptor&lt;?&gt;&gt; parameterConstraints = parameterDescriptor.getConstraintDescriptors();
+assert parameterConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
+
+//"author" parameter
+parameterDescriptor = constructorDescriptor.getParameterDescriptors().get( 2 );
+assert parameterDescriptor.hasConstraints() == false;
+assert parameterDescriptor.isCascaded() == true;
+
+//group conversion on "author" parameter
+GroupConversionDescriptor groupConversion =
+    parameterDescriptor.getGroupConversions().iterator().next();
+assert groupConversion.getFrom() == Default.class;
+assert groupConversion.getTo() == SecondLevelCheck.class;
+
+//constructor return value
+ReturnValueDescriptor returnValueDescriptor = constructorDescriptor.getReturnValueDescriptor();
+assert returnValueDescriptor.hasConstraints() == false;
+assert returnValueDescriptor.isCascaded() == true;
+
+//a getter is also a method which is constrained on its return value
+MethodDescriptor methodDescriptor = bookDescriptor.getConstraintsForMethod( "getTitle" );
+assert methodDescriptor.getName().equals( "getTitle" );
+assert methodDescriptor.getElementClass() == String.class;
+assert methodDescriptor.areParametersConstrained() == false;
+assert methodDescriptor.isReturnValueConstrained() == true;
+assert methodDescriptor.hasConstraints() == false;
+
+returnValueDescriptor = methodDescriptor.getReturnValueDescriptor();
+assert returnValueDescriptor.getElementClass() == String.class;
+assert returnValueDescriptor.getConstraintDescriptors().size() == 2;
+assert returnValueDescriptor.isCascaded() == false;
+
+//void method which has a cross-parameter constraint
+methodDescriptor = bookDescriptor.getConstraintsForMethod(
+    "addChapter", String.class, int.class, int.class
+);
+assert methodDescriptor.getElementClass() == void.class;
+assert methodDescriptor.areParametersConstrained() == true;
+assert methodDescriptor.isReturnValueConstrained() == false;
+
+//cross-parameter constraints accessible via separate descriptor
+assert methodDescriptor.hasConstraints() == false;
+
+assert methodDescriptor.getReturnValueDescriptor().getElementClass() == void.class;
+
+//cross-parameter descriptor
+CrossParameterDescriptor crossParameterDescriptor = methodDescriptor.getCrossParameterDescriptor();
+assert crossParameterDescriptor.getElementClass() == Object[].class;
+assert crossParameterDescriptor.hasConstraints() == true;
+
+ConstraintDescriptor&lt;?&gt; crossParameterConstraint =
+    crossParameterDescriptor.getConstraintDescriptors().iterator().next();
+assert crossParameterConstraint.getAnnotation().annotationType() == ValidInterval.class;</programlisting>
   </section>
 </chapter>
