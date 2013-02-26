@@ -272,9 +272,11 @@ public @interface Constraint {
       <section id="constraintsdefinitionimplementation-constraintdefinition-payload">
         <title>payload</title>
 
-        <para role="tck-testable">Constraint annotations must define a
-        <literal>payload</literal> element that specifies the payload with
-        which the the constraint declaration is associated.</para>
+        <para role="tck-testable tck-needs-update">Constraint annotations must
+        define a <literal>payload</literal> element that specifies the payload
+        with which the the constraint declaration is associated. The type of
+        the <literal>payload</literal> parameter is
+        <classname>Payload[]</classname>.</para>
 
         <programlisting>Class&lt;? extends Payload&gt;[] payload() default {};</programlisting>
 
@@ -346,12 +348,17 @@ public class Address {
         annotated element, the method return value or the method
         parameters).</para>
 
-        <para><phrase revision="tck-testable">The element
+        <para role="tck-testable">The element
         <literal>validationAppliesTo</literal> must only be present for
         constraints that are both generic and cross-parameter, it is mandatory
         in this situation. A
         <classname>ConstraintDefinitionException</classname> is raised if
-        these rules are violated.</phrase></para>
+        these rules are violated.</para>
+
+        <para revisionflag="added" role="tck-testable">The type of the
+        <literal>validationAppliesTo</literal> parameter is
+        <classname>ConstraintTarget</classname>. The default value must be
+        <classname>ConstraintTarget.IMPLICIT</classname>.</para>
 
         <example>
           <title>validationAppliesTo and ConstraintTarget</title>
@@ -407,18 +414,18 @@ public enum ConstraintTarget {
             detailed rules),</para>
           </listitem>
 
-          <listitem role="tck-testable">
-            <para>using <literal>PARAMETERS</literal> on a constructor or
-            method that has no parameter,</para>
+          <listitem>
+            <para role="tck-testable">using <literal>PARAMETERS</literal> on a
+            constructor or method that has no parameter,</para>
           </listitem>
 
-          <listitem role="tck-testable">
-            <para>using <literal>RETURN_VALUE</literal> on a method with no
-            return value,</para>
+          <listitem>
+            <para role="tck-testable">using <literal>RETURN_VALUE</literal> on
+            a method with no return value,</para>
           </listitem>
 
-          <listitem role="tck-testable">
-            <para>using <literal>PARAMETERS</literal> or
+          <listitem>
+            <para role="tck-testable">using <literal>PARAMETERS</literal> or
             <literal>RETURN_VALUE</literal> on a type - class or interface -
             or on a field.</para>
           </listitem>
@@ -621,8 +628,9 @@ public @interface Acceptable {
     annotations.</phrase> This means that each constraint specified in the
     <literal>value</literal> element is applied to the target. The annotation
     must have retention <literal>RUNTIME</literal> and can be applied on a
-    type, field, property or another annotation. It is recommended to use the
-    same set of targets as the initial constraint.</para>
+    type, field, property, executable parameter, executable return value,
+    executable cross-parameter or another annotation. It is recommended to use
+    the same set of targets as the initial constraint.</para>
 
     <para>Note to constraint designers: each constraint annotation should be
     coupled with its corresponding multi-valued annotation. The specification
@@ -762,9 +770,10 @@ public @interface FrenchZipcode {
     composed).</phrase> A constraint designer should ensure that such a type
     exists and lists in the JavaDoc all the compatible types.</para>
 
-    <para revisionflag="added">All composed and composing constraints must
-    have a constraint type in common. In particular, it is not legal to mix a
-    pure generic constraint and a pure cross-parameter constraint.</para>
+    <para revisionflag="added"><phrase role="tck-testable">All composed and
+    composing constraints must have a constraint type in common.</phrase> In
+    particular, it is not legal to mix a pure generic constraint and a pure
+    cross-parameter constraint.</para>
 
     <para>It is possible to ensure that composing annotations do not raise
     individual error reports. In this scenario, if one or more composing
@@ -825,10 +834,12 @@ public @interface ReportAsSingleViolation {
     report corresponding to the composed constraint is generated and
     returned.</para>
 
-    <para role="tck-testable">Composing annotations can define the value of
-    <literal>message</literal> and custom attributes (excluding
-    <methodname>groups</methodname> and <methodname>payload</methodname>) but
-    these are fixed in the composed constraint definition.</para>
+    <para role="tck-testable tck-needs-update">Composing annotations can
+    define the value of <literal>message</literal> and custom attributes
+    (excluding <methodname>groups</methodname>,
+    <methodname>payload</methodname> <phrase revisionflag="added">and
+    <methodname>validationAppliesTo</methodname></phrase>) but these are fixed
+    in the composed constraint definition.</para>
 
     <example>
       <title>Composing annotations can use attributes. They are fixed for a
@@ -1084,7 +1095,7 @@ public @interface OverridesAttribute {
         </listitem>
 
         <listitem>
-          <para revisionflag="added">A composing and composed constraint
+          <para revisionflag="added">a composing and composed constraint
           marked as different constraint types (i.e., generic and
           cross-parameter)</para>
         </listitem>
