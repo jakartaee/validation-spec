@@ -20,14 +20,14 @@ tests for validating the compliance of Bean Validation implementations with the 
 
 The tests of the TCK are based on assertions representing sentences and phrases in this
 specification. The `role` attribute is used to mark those text elements (`<para>`, `phrase` etc.)
-of the specification which shall lead to an assertion in the TCK. The following values are allowed:
+of the specification which leads to an assertion in the TCK. The following values are allowed:
 
-* `tck-testable`: The tagged element shall be represented by a testable assertion in the TCK
-* `tck-not-testable`: The tagged element shall be represented by a non-testable assertion in the
+* `tck-testable`: The tagged element must be represented by a testable assertion in the TCK
+* `tck-not-testable`: The tagged element must be represented by a non-testable assertion in the
 TCK (e.g. assertions regarding thread safety)
-* `tck-ignore`: The tagged element shall be excluded when creating a TCK assertion for an outer
+* `tck-ignore`: The tagged element must be excluded when creating a TCK assertion for an outer
 element. Can be used to exlude explanatory phrases contained in a `para` marked as `tck-testable`.
-* `tck-needs-update`: The tagged element shall be marked with a note in the TCK audit file saying
+* `tck-needs-update`: The tagged element must be mark with a note in the TCK audit file saying
 that the tests for this assertion need to be updated, e.g. due to a spec update. Can be used
 together with `tck-testable` and `tck-not-testable`: `<para role="tck-testable tck-needs-update">`.
 
