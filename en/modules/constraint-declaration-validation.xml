@@ -1595,8 +1595,8 @@ public interface ParameterNameProvider {
         </listitem>
 
         <listitem>
-          <para>Bean Validation providers must guarantee the prevention of
-          infinite loops during cascaded validation</para>
+          <para role="tck-testable">Bean Validation providers must guarantee
+          the prevention of infinite loops during cascaded validation</para>
         </listitem>
       </itemizedlist>
 
@@ -1743,9 +1743,10 @@ public interface ParameterNameProvider {
         </listitem>
       </itemizedlist>
 
-      <para>Out of the box, a conforming Bean Validation provider must throw a
+      <para><phrase role="tck-testable">Out of the box, a conforming Bean
+      Validation provider must throw a
       <classname>ConstraintDeclarationException</classname> when discovering
-      that any of these rules are violated. In addition providers may
+      that any of these rules are violated.</phrase> In addition providers may
       implement alternative, potentially more liberal, approaches for handling
       constrained methods in inheritance hierarchies. Possible means for
       activating such alternative behavior include provider-specific
@@ -1886,52 +1887,53 @@ public class SimpleOrderService extends OrderService {
   <section id="constraintdeclarationvalidationprocess-validationroutine">
     <title>Validation routine</title>
 
-    <para role="tck-not-testable">For a given group, the validation routine
+    <para role="tck-testable">For a given group, the validation routine
     applied on a given bean instance is expected to execute the following
-    constraint validations in no particular order:</para>
+    constraint validations <phrase role="tck-non-testable">in no particular
+    order</phrase>:<itemizedlist>
+        <listitem>
+          <para>for all <emphasis>reachable</emphasis> fields, execute all
+          field level validations (including the ones expressed on
+          superclasses) matching the targeted group unless the given
+          validation constraint has already been processed during this
+          validation routine for a given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          as part of a previous group match.</para>
+        </listitem>
 
-    <itemizedlist>
-      <listitem>
-        <para>for all <emphasis>reachable</emphasis> fields, execute all field
-        level validations (including the ones expressed on superclasses)
-        matching the targeted group unless the given validation constraint has
-        already been processed during this validation routine for a given
-        navigation path (see <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-        as part of a previous group match.</para>
-      </listitem>
+        <listitem>
+          <para>for all <emphasis>reachable</emphasis> getters, execute all
+          getter level validations (including the ones expressed on interfaces
+          and superclasses) matching the targeted group unless the given
+          validation constraint has already been processed during this
+          validation routine for a given navigation path (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          as part of a previous group match.</para>
+        </listitem>
 
-      <listitem>
-        <para>for all <emphasis>reachable</emphasis> getters, execute all
-        getter level validations (including the ones expressed on interfaces
-        and superclasses) matching the targeted group unless the given
-        validation constraint has already been processed during this
-        validation routine for a given navigation path (see <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-        as part of a previous group match.</para>
-      </listitem>
+        <listitem>
+          <para>execute all class level validations (including the ones
+          expressed on interfaces and superclasses) matching the targeted
+          group unless the given validation constraint has already been
+          processed during this validation routine for a given navigation path
+          (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          as part of a previous group match.</para>
+        </listitem>
 
-      <listitem>
-        <para>execute all class level validations (including the ones
-        expressed on interfaces and superclasses) matching the targeted group
-        unless the given validation constraint has already been processed
-        during this validation routine for a given navigation path (see <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-        as part of a previous group match.</para>
-      </listitem>
-
-      <listitem>
-        <para>for all <emphasis>reachable</emphasis> and
-        <emphasis>cascadable</emphasis> associations, execute all cascading
-        validations (see <xref
-        linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-        including the ones expressed on interfaces and superclasses (see <xref
-        linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
-        <phrase revisionflag="added">Note that group conversion can apply (see
-        <xref
-        linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</phrase></para>
-      </listitem>
-    </itemizedlist>
+        <listitem>
+          <para>for all <emphasis>reachable</emphasis> and
+          <emphasis>cascadable</emphasis> associations, execute all cascading
+          validations (see <xref
+          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+          including the ones expressed on interfaces and superclasses (see
+          <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
+          <phrase revisionflag="added">Note that group conversion can apply
+          (see <xref
+          linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</phrase></para>
+        </listitem>
+      </itemizedlist></para>
 
     <para>Reachable fields, getters and associations as well as cascadable
     associations are defined in <xref
@@ -1948,37 +1950,36 @@ public class SimpleOrderService extends OrderService {
     the validation routine can be run for several groups in the same
     pass.</para>
 
-    <para>The object validation routine is described as such. For each
-    constraint declaration:</para>
+    <para role="tck-testable">The object validation routine is described as
+    such. For each constraint declaration:<itemizedlist>
+        <listitem>
+          <para>determine for the constraint declaration, the appropriate
+          <classname>ConstraintValidator</classname> to use (see <xref
+          linkend="typevalidatorresolution"/>).</para>
+        </listitem>
 
-    <itemizedlist>
-      <listitem>
-        <para>determine for the constraint declaration, the appropriate
-        <classname>ConstraintValidator</classname> to use (see <xref
-        linkend="typevalidatorresolution"/>).</para>
-      </listitem>
+        <listitem>
+          <para>execute the <methodname>isValid</methodname> operation (from
+          the constraint validation implementation) on the appropriate data
+          (see <xref
+          linkend="constraintsdefinitionimplementation-validationimplementation"/>)</para>
+        </listitem>
 
-      <listitem>
-        <para>execute the <methodname>isValid</methodname> operation (from the
-        constraint validation implementation) on the appropriate data (see
-        <xref
-        linkend="constraintsdefinitionimplementation-validationimplementation"/>)</para>
-      </listitem>
+        <listitem>
+          <para>if <methodname>isValid()</methodname> returns
+          <literal>true</literal>, continue to the next constraint,</para>
+        </listitem>
 
-      <listitem>
-        <para>if <methodname>isValid()</methodname> returns
-        <literal>true</literal>, continue to the next constraint,</para>
-      </listitem>
-
-      <listitem>
-        <para>if <methodname>isValid()</methodname> returns
-        <literal>false</literal>, the Bean Validation provider populates
-        <classname>ConstraintViolation</classname> object(s) according to the
-        rules defined in <xref
-        linkend="constraintsdefinitionimplementation-validationimplementation"/>
-        and appends these objects to the list of constraint violations.</para>
-      </listitem>
-    </itemizedlist>
+        <listitem>
+          <para>if <methodname>isValid()</methodname> returns
+          <literal>false</literal>, the Bean Validation provider populates
+          <classname>ConstraintViolation</classname> object(s) according to
+          the rules defined in <xref
+          linkend="constraintsdefinitionimplementation-validationimplementation"/>
+          and appends these objects to the list of constraint
+          violations.</para>
+        </listitem>
+      </itemizedlist></para>
 
     <section id="constraintdeclarationvalidationprocess-validationroutine-graphvalidation">
       <title>Object graph validation</title>
@@ -2154,71 +2155,68 @@ assert violations.size() == 1;</programlisting>
 
       <para role="tck-testable">For a given group, the validation routine
       applied to validate parameters of a method or constructor is expected to
-      execute the following constraint validations in no particular
-      order:</para>
+      execute the following constraint validations <phrase
+      role="tck-not-testable">in no particular order</phrase>:<itemizedlist>
+          <listitem>
+            <para>execute all parameter validations (in case of overriding
+            method validation, including the ones expressed on overridden
+            methods of the interfaces and superclasses) matching the targeted
+            group unless the given validation constraint has already been
+            processed during this validation routine for a given navigation
+            path (see <xref
+            linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+            as part of a previous group match.</para>
+          </listitem>
 
-      <itemizedlist>
-        <listitem>
-          <para>execute all parameter validations (in case of overriding
-          method validation, including the ones expressed on overridden
-          methods of the interfaces and superclasses) matching the targeted
-          group unless the given validation constraint has already been
-          processed during this validation routine for a given navigation path
-          (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-          as part of a previous group match.</para>
-        </listitem>
+          <listitem>
+            <para>execute all cross parameter validations (in case of
+            overriding method validation, including the ones expressed on
+            overridden methods of the interfaces and superclasses) matching
+            the targeted group unless the given validation constraint has
+            already been processed during this validation routine for a given
+            navigation path (see <xref
+            linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+            as part of a previous group match.</para>
+          </listitem>
 
-        <listitem>
-          <para>execute all cross parameter validations (in case of overriding
-          method validation, including the ones expressed on overridden
-          methods of the interfaces and superclasses) matching the targeted
-          group unless the given validation constraint has already been
-          processed during this validation routine for a given navigation path
-          (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-          as part of a previous group match.</para>
-        </listitem>
-
-        <listitem>
-          <para>for all parameters marked for cascaded validation, execute all
-          cascading validations (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>),
-          in case of overriding method validation including the ones expressed
-          on overridden methods of the interfaces and superclasses (see <xref
-          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
-          Note that group conversion can apply (see <xref
-          linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
-        </listitem>
-      </itemizedlist>
+          <listitem>
+            <para>for all parameters marked for cascaded validation, execute
+            all cascading validations (see <xref
+            linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>),
+            in case of overriding method validation including the ones
+            expressed on overridden methods of the interfaces and superclasses
+            (see <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
+            Note that group conversion can apply (see <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
+          </listitem>
+        </itemizedlist></para>
 
       <para role="tck-testable">For a given group, the validation routine
       applied to validate the return value of a method or constructor is
       expected to execute the following constraint validations in no
-      particular order:</para>
+      particular order:<itemizedlist>
+          <listitem>
+            <para>execute all return value validations (including the ones
+            expressed on interfaces and superclasses) matching the targeted
+            group unless the given validation constraint has already been
+            processed during this validation routine for a given navigation
+            path (see <xref
+            linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+            as part of a previous group match.</para>
+          </listitem>
 
-      <itemizedlist>
-        <listitem>
-          <para>execute all return value validations (including the ones
-          expressed on interfaces and superclasses) matching the targeted
-          group unless the given validation constraint has already been
-          processed during this validation routine for a given navigation path
-          (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-          as part of a previous group match.</para>
-        </listitem>
-
-        <listitem>
-          <para>if the return value is marked for cascaded validation, execute
-          all cascading validations (see <xref
-          linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
-          including the ones expressed on interfaces and superclasses (see
-          <xref
-          linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
-          Note that group conversion can apply (see <xref
-          linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
-        </listitem>
-      </itemizedlist>
+          <listitem>
+            <para>if the return value is marked for cascaded validation,
+            execute all cascading validations (see <xref
+            linkend="constraintdeclarationvalidationprocess-validationroutine-graphvalidation"/>)
+            including the ones expressed on interfaces and superclasses (see
+            <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-formaldefinition"/>).
+            Note that group conversion can apply (see <xref
+            linkend="constraintdeclarationvalidationprocess-groupsequence-groupconversion"/>).</para>
+          </listitem>
+        </itemizedlist></para>
 
       <para>Note that this implies that a given validation constraint will not
       be processed more than once per validation per path. Some
@@ -2226,10 +2224,10 @@ assert violations.size() == 1;</programlisting>
       paths provided that they return the expected set of
       <classname>ConstraintViolation</classname>.</para>
 
-      <para><phrase role="tck-testable">Unless ordered by group sequences,
-      groups can be validated in no particular order.</phrase> This implies
-      that the validation routine can be run for several groups in the same
-      pass.</para>
+      <para><phrase role="tck-not-testable"><phrase role="tck-testable">Unless
+      ordered by group sequences, groups can be validated in no particular
+      order.</phrase></phrase> This implies that the validation routine can be
+      run for several groups in the same pass.</para>
 
       <para>The object validation routine is as defined in described in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine"/>.</para>
@@ -2335,24 +2333,25 @@ public interface TraversableResolver {
         <methodname>isCascadable()</methodname> for a given property.</para>
       </note>
 
-      <para><literal>traversableObject</literal> is the object instance being
-      evaluated. <literal>null</literal> if the check is triggered as part of
-      a <methodname>validateValue()</methodname> call.</para>
+      <para role="tck-testable"><literal>traversableObject</literal> is the
+      object instance being evaluated. <literal>null</literal> if the check is
+      triggered as part of a <methodname>validateValue()</methodname>
+      call.</para>
 
-      <para><literal>traversableProperty</literal> is the
+      <para role="tck-testable"><literal>traversableProperty</literal> is the
       <classname>Node</classname> representing the property hosted by the
       <methodname>traversableObject</methodname> being considered for
       traversal. The name of a property is defined in <xref
       linkend="constraintdeclarationvalidationprocess-requirements-property"/>.</para>
 
-      <para><literal>rootBeanType</literal> is the class of the root being
-      validated, <phrase revisionflag="changed">i.e. either the type of the
-      object passed to the <methodname>validate</methodname> method or the
-      type declaring the validated method/constructor in case of method
-      validation).</phrase></para>
+      <para role="tck-testable"><literal>rootBeanType</literal> is the class
+      of the root being validated, <phrase revisionflag="changed">i.e. either
+      the type of the object passed to the <methodname>validate</methodname>
+      method or the type declaring the validated method/constructor in case of
+      method validation).</phrase></para>
 
-      <para><literal>pathToTraversableObject</literal> is the
-      <classname>Path</classname> from the
+      <para role="tck-testable"><literal>pathToTraversableObject</literal> is
+      the <classname>Path</classname> from the
       <methodname>rootBeanType</methodname> down to the
       <methodname>traversableObject</methodname>. If the root object is
       <classname>traversableObject</classname>,
@@ -2362,7 +2361,7 @@ public interface TraversableResolver {
       linkend="validationapi-constraintviolation"/>
       (<methodname>getPropertyPath</methodname>).</para>
 
-      <para><literal>elementType</literal> is the
+      <para role="tck-testable"><literal>elementType</literal> is the
       <classname>java.lang.annotation.ElementType</classname> the annotation
       is placed on. It can be either <literal>FIELD</literal> or
       <literal>METHOD</literal>. Any other value is not expected.</para>
@@ -2424,8 +2423,8 @@ public interface TraversableResolver {
         </listitem>
       </itemizedlist>
 
-      <para revisionflag="added">An examplary implementation of such a
-      resolver is shown in <xref
+      <para revisionflag="added">An example implementation of such a resolver
+      is shown in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver"/>.</para>
 
       <example id="constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver">
