@@ -138,3 +138,12 @@ Here is an example
 
 For the API, in particular the JavaDoc, follow the conventions described at
 <https://community.jboss.org/wiki/ContributingToHibernateValidator#Coding_Guidelines>.
+
+## Showing tck assertion coverage
+
+You can update the CSS file to show what is covered and what is not covered by
+the TCK assertion coverage.
+
+    .tck-testable, .tck-testable tt { color: blue; }
+    .tck-not-testable, .tck-not-testable tt { color: BlueViolet; }
+    .tck-ignore, .tck-ignore tt { color: black; }
