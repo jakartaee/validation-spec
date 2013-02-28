@@ -21,7 +21,7 @@
     to leave the caching of <classname>Validator</classname> instances to the
     <classname>ValidatorFactory</classname>. <phrase
     role="tck-not-testable"><classname>Validator</classname> implementations
-    are thread-safe.</phrase></para>
+    must be thread-safe.</phrase></para>
 
     <example revisionflag="changed">
       <title>Validator interface</title>
@@ -648,7 +648,7 @@ public class SampleMethodInterceptor {
       to validate method/constructor constraints (see <xref
       linkend="validationapi-validatorapi-methodlevelvalidationmethods"/>).
       <phrase role="tck-testable">All constraints belonging to the targeted
-      group are applied during the <xref
+      group(s) are applied during the <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine"/>.</phrase>
       <phrase role="tck-testable">If no group is passed, the
       <literal><classname>Default</classname></literal> group is
@@ -1257,9 +1257,9 @@ public enum ElementKind {
     the following methods:</para>
 
     <para><itemizedlist revisionflag="added">
-        <listitem role="tck-testable">
-          <para><methodname>getName()</methodname> returns the name of the
-          element which the node represents:</para>
+        <listitem>
+          <para role="tck-testable"><methodname>getName()</methodname> returns
+          the name of the element which the node represents:</para>
 
           <itemizedlist>
             <listitem>
@@ -1334,7 +1334,9 @@ public enum ElementKind {
         <listitem revisionflag="added">
           <para role="tck-testable"><methodname>as(Class&lt;? extends
           Node&gt;)</methodname> returns the node instance narrowed to the
-          type passed as a parameter.</para>
+          type passed as a parameter or
+          <classname>ClassCastException</classname> is the type and node don't
+          match.</para>
         </listitem>
       </itemizedlist></para>
 
@@ -1475,8 +1477,22 @@ case PROPERTY:
         </itemizedlist>
       </listitem>
 
-      <listitem role="tck-testable tck-needs-update">
-        <para>For a property level constraint (field and getter)</para>
+      <listitem>
+        <para role="tck-testable tck-needs-update">For a property level
+        constraint (field and getter)<itemizedlist>
+            <listitem>
+              <para>a <classname>PropertyNode</classname> object is added to
+              <classname>Path</classname> whose <literal>name</literal> equals
+              the name of the property (field name or Java Bean property
+              name). <phrase revisionflag="added">The
+              <classname>ElementKind</classname> of the is
+              <varname>ElementKind.PROPERTY</varname>.</phrase></para>
+            </listitem>
+
+            <listitem>
+              <para>the property path is considered complete</para>
+            </listitem>
+          </itemizedlist></para>
 
         <itemizedlist>
           <listitem>
@@ -1494,22 +1510,21 @@ case PROPERTY:
         </itemizedlist>
       </listitem>
 
-      <listitem role="tck-testable tck-needs-update">
-        <para>For a class level constraint:</para>
+      <listitem>
+        <para role="tck-testable tck-needs-update">For a class level
+        constraint:<itemizedlist>
+            <listitem>
+              <para>a <classname>BeanNode</classname> object is added to
+              <classname>Path</classname> whose <literal>name</literal> is
+              null. <phrase revisionflag="added">The
+              <classname>ElementKind</classname> of the node is
+              <varname>ElementKind.BEAN</varname>.</phrase></para>
+            </listitem>
 
-        <itemizedlist>
-          <listitem>
-            <para>a <classname>BeanNode</classname> object is added to
-            <classname>Path</classname> whose <literal>name</literal> is null.
-            <phrase revisionflag="added">The
-            <classname>ElementKind</classname> of the node is
-            <varname>ElementKind.BEAN</varname>.</phrase></para>
-          </listitem>
-
-          <listitem>
-            <para>the property path is considered complete</para>
-          </listitem>
-        </itemizedlist>
+            <listitem>
+              <para>the property path is considered complete</para>
+            </listitem>
+          </itemizedlist></para>
       </listitem>
 
       <listitem revisionflag="added">
@@ -1632,87 +1647,86 @@ case PROPERTY:
       </listitem>
     </itemizedlist>
 
-    <para revisionflag="added">If additional path nodes are added in a
-    constraint validator implementation using the node builder API (see <xref
+    <para revisionflag="added" role="tck-testable">If additional path nodes
+    are added in a constraint validator implementation using the node builder
+    API (see <xref
     linkend="constraintsdefinitionimplementation-validationimplementation"/>),
-    the following rules apply:</para>
+    the following rules apply:<itemizedlist revisionflag="added">
+        <listitem>
+          <para>if the default path ends with a
+          <classname>BeanNode</classname>, this node is removed and the first
+          added node (a <classname>PropertyNode</classname>) inherits its
+          <literal>inIterable</literal>, <literal>key</literal> and
+          <literal>index</literal> values. <literal>inIterable</literal>,
+          <literal>key</literal> and <literal>index</literal> value must not
+          be specified directly on this first node by the user.</para>
+        </listitem>
 
-    <itemizedlist revisionflag="added" role="tck-testable">
-      <listitem>
-        <para>if the default path ends with a <classname>BeanNode</classname>,
-        this node is removed and the first added node (a
-        <classname>PropertyNode</classname>) inherits its
-        <literal>inIterable</literal>, <literal>key</literal> and
-        <literal>index</literal> values. <literal>inIterable</literal>,
-        <literal>key</literal> and <literal>index</literal> value must not be
-        specified directly on this first node by the user.</para>
-      </listitem>
+        <listitem>
+          <para>if the default path ends with a
+          <classname>CrossParameterNode</classname>, this node is
+          removed.</para>
+        </listitem>
 
-      <listitem>
-        <para>if the default path ends with a
-        <classname>CrossParameterNode</classname>, this node is
-        removed.</para>
-      </listitem>
+        <listitem>
+          <para revisionflag="added">then the additional nodes are appended to
+          the (possibly amended) path generated by the Bean Validation engine
+          as previously described:<itemizedlist>
+              <listitem>
+                <para role="tck-testable">A
+                <classname>PropertyNode</classname> is appended in case
+                <methodname>addPropertyNode(String)</methodname> is invoked.
+                The node name is equal to the name provided. The
+                <classname>ElementKind</classname> of the node is
+                <literal>ElementKind.PROPERTY</literal>.</para>
+              </listitem>
 
-      <listitem>
-        <para revisionflag="added">then the additional nodes are appended to
-        the (possibly amended) path generated by the Bean Validation engine as
-        previously described:<itemizedlist>
-            <listitem>
-              <para role="tck-testable">A <classname>PropertyNode</classname>
-              is appended in case
-              <methodname>addPropertyNode(String)</methodname> is invoked. The
-              node name is equal to the name provided. The
-              <classname>ElementKind</classname> of the node is
-              <literal>ElementKind.PROPERTY</literal>.</para>
-            </listitem>
+              <listitem>
+                <para role="tck-testable">A <classname>BeanNode</classname> is
+                appended in case <methodname>addBeanNode()</methodname> is
+                invoked. The node name is <literal>null</literal>. The
+                <classname>ElementKind</classname> of the node is
+                <literal>ElementKind.BEAN</literal>.</para>
+              </listitem>
 
-            <listitem>
-              <para role="tck-testable">A <classname>BeanNode</classname> is
-              appended in case <methodname>addBeanNode()</methodname> is
-              invoked. The node name is <literal>null</literal>. The
-              <classname>ElementKind</classname> of the node is
-              <literal>ElementKind.BEAN</literal>.</para>
-            </listitem>
+              <listitem>
+                <para role="tck-testable">A
+                <classname>ParameterNode</classname> is appended in case
+                <methodname>addParameterNode(int)</methodname> is invoked. The
+                node name is equal to the parameter name at the provided
+                index. The name is determined by the current parameter name
+                provider. The <classname>ElementKind</classname> of the node
+                is <literal>ElementKind.PARAMETER</literal>. The previous node
+                (removed) must be a
+                <classname>CrossParameterNode</classname>.</para>
+              </listitem>
 
-            <listitem>
-              <para role="tck-testable">A <classname>ParameterNode</classname>
-              is appended in case
-              <methodname>addParameterNode(int)</methodname> is invoked. The
-              node name is equal to the parameter name at the provided index.
-              The name is determined by the current parameter name provider.
-              The <classname>ElementKind</classname> of the node is
-              <literal>ElementKind.PARAMETER</literal>. The previous node
-              (removed) must be a
-              <classname>CrossParameterNode</classname>.</para>
-            </listitem>
+              <listitem>
+                <para role="tck-testable">if
+                <methodname>inIterable()</methodname> is invoked, the node
+                returns <literal>true</literal> for
+                <methodname>isInIterable()</methodname>,
+                <literal>false</literal> otherwise.</para>
+              </listitem>
 
-            <listitem>
-              <para role="tck-testable">if
-              <methodname>inIterable()</methodname> is invoked, the node
-              returns <literal>true</literal> for
-              <methodname>isInIterable()</methodname>,
-              <literal>false</literal> otherwise.</para>
-            </listitem>
+              <listitem>
+                <para role="tck-testable">if
+                <methodname>atIndex(Integer)</methodname> is invoked, the node
+                returns the provided integer for
+                <methodname>getIndex()</methodname>, <literal>null</literal>
+                otherwise.</para>
+              </listitem>
 
-            <listitem>
-              <para role="tck-testable">if
-              <methodname>atIndex(Integer)</methodname> is invoked, the node
-              returns the provided integer for
-              <methodname>getIndex()</methodname>, <literal>null</literal>
-              otherwise.</para>
-            </listitem>
-
-            <listitem>
-              <para role="tck-testable">if
-              <methodname>atKey(Object)</methodname> is invoked, the node
-              returns the provided object for
-              <methodname>getKey()</methodname>, <literal>null</literal>
-              otherwise.</para>
-            </listitem>
-          </itemizedlist></para>
-      </listitem>
-    </itemizedlist>
+              <listitem>
+                <para role="tck-testable">if
+                <methodname>atKey(Object)</methodname> is invoked, the node
+                returns the provided object for
+                <methodname>getKey()</methodname>, <literal>null</literal>
+                otherwise.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
+      </itemizedlist></para>
 
     <note revisionflag="changed">
       <para>A given <classname>Node</classname> object derives its
@@ -2668,35 +2682,37 @@ assert false == nodeIter.hasNext();</programlisting>
         message descriptor</phrase>. The following properties and beans have
         to be made available in the EL context:</para>
 
-        <para><itemizedlist>
-            <listitem>
-              <para role="tck-testable">the attribute values of the constraint
-              declaration mapped to their attribute name</para>
-            </listitem>
+        <itemizedlist>
+          <listitem>
+            <para role="tck-testable">the attribute values of the constraint
+            declaration mapped to their attribute name</para>
+          </listitem>
 
-            <listitem>
-              <para role="tck-testable">the validated value mapped under the
-              name <constant>validatedValue</constant>.</para>
-            </listitem>
+          <listitem>
+            <para role="tck-testable">the validated value mapped under the
+            name <constant>validatedValue</constant>.</para>
+          </listitem>
 
-            <listitem>
-              <para role="tck-testable">a bean mapped to the name
-              <constant>formatter</constant> exposing the vararg method
-              <methodname>format(String format, Object... args)</methodname>.
-              This method must behave like
-              <methodname>java.util.Formatter.format(String format, Object...
-              args)</methodname>. The locale used for formatting is defined by
-              <xref linkend="message-interpolation-default-locale"/>. The
-              <constant>formatter</constant> bean allows to format property
-              values, for example in the case of the validated value being
-              98.12345678, <constant>${formatter.format('%1$.2f',
-              validatedValue)}</constant> would format it to 98.12 (two digits
-              after the decimal point, where the use of '.' vs ',' would be
-              locale specific).</para>
-            </listitem>
-          </itemizedlist>If an exception occurs during message interpolation,
-        e.g. due invalid expressions or references to an unknown property, the
-        message expression stays unchanged.</para>
+          <listitem>
+            <para role="tck-testable">a bean mapped to the name
+            <constant>formatter</constant> exposing the vararg method
+            <methodname>format(String format, Object... args)</methodname>.
+            This method must behave like
+            <methodname>java.util.Formatter.format(String format, Object...
+            args)</methodname>. The locale used for formatting is defined by
+            <xref linkend="message-interpolation-default-locale"/>. The
+            <constant>formatter</constant> bean allows to format property
+            values, for example in the case of the validated value being
+            98.12345678, <constant>${formatter.format('%1$.2f',
+            validatedValue)}</constant> would format it to 98.12 (two digits
+            after the decimal point, where the use of '.' vs ',' would be
+            locale specific).</para>
+          </listitem>
+        </itemizedlist>
+
+        <para role="tck-testable">If an exception occurs during message
+        interpolation, e.g. due invalid expressions or references to an
+        unknown property, the message expression stays unchanged.</para>
       </section>
     </section>
 
@@ -2774,21 +2790,22 @@ public interface MessageInterpolator {
     }
 }</programlisting>
 
-      <para><parameter>messageTemplate</parameter> is the value of the
-      <literal>message</literal> attribute of the constraint declaration or
-      provided to the <classname>ConstraintValidatorContext</classname>
-      methods.</para>
+      <para role="tck-testable"><parameter>messageTemplate</parameter> is the
+      value of the <literal>message</literal> attribute of the constraint
+      declaration or provided to the
+      <classname>ConstraintValidatorContext</classname> methods.</para>
 
       <para>The <classname>Context</classname> object contains contextual
       information related to the interpolation.</para>
 
-      <para><methodname>getConstraintDescriptor()</methodname> returns the
-      <classname>ConstraintDescriptor</classname> object representing the
-      metadata of the failing constraint (see <xref
+      <para
+      role="tck-testable"><methodname>getConstraintDescriptor()</methodname>
+      returns the <classname>ConstraintDescriptor</classname> object
+      representing the metadata of the failing constraint (see <xref
       linkend="constraintmetadata"/>).</para>
 
-      <para><methodname>getValidatedValue()</methodname> returns the value
-      being validated.</para>
+      <para role="tck-testable"><methodname>getValidatedValue()</methodname>
+      returns the value being validated.</para>
 
       <para><methodname>MessageInterpolator.interpolate(String,
       Context)</methodname> is invoked for each constraint violation report
@@ -2820,12 +2837,13 @@ public interface MessageInterpolator {
       <para>It is recommended that <classname>MessageInterpolator</classname>
       implementations delegate final interpolation to the Bean Validation
       default <classname>MessageInterpolator</classname> to ensure standard
-      Bean Validation interpolation rules are followed, The default
-      implementation is accessible through
-      <methodname>Configuration.getDefaultMessageInterpolator()</methodname>.</para>
+      Bean Validation interpolation rules are followed, <phrase
+      role="tck-testable">The default implementation is accessible through
+      <methodname>Configuration.getDefaultMessageInterpolator()</methodname>.</phrase></para>
 
-      <para>If the interpolation process leads to an exception, the exception
-      is wrapped into a <classname>ValidationException</classname>.</para>
+      <para role="tck-testable">If the interpolation process leads to an
+      exception, the exception is wrapped into a
+      <classname>ValidationException</classname>.</para>
     </section>
 
     <section id="validationapi-message-examples">
@@ -3004,43 +3022,42 @@ Validator validator = factory.getValidator();</programlisting>
     using approaches and techniques such as CDI/EJB interceptors,
     aspect-oriented programming or dynamic proxies.</para>
 
-    <para>The validation of method / constructor constraints comprises the
-    following steps:</para>
+    <para role="tck-testable">The validation of method / constructor
+    constraints comprises the following steps:<itemizedlist>
+        <listitem>
+          <para>Intercept the method call to be validated</para>
+        </listitem>
 
-    <itemizedlist>
-      <listitem>
-        <para>Intercept the method call to be validated</para>
-      </listitem>
+        <listitem>
+          <para>Validate the parameter values provided by the method caller
+          using
+          <methodname>ExecutableValidator.validateParameters()</methodname> or
+          <methodname>ExecutableValidator.validateConstructorParameters()</methodname>.</para>
+        </listitem>
 
-      <listitem>
-        <para>Validate the parameter values provided by the method caller
-        using
-        <methodname>ExecutableValidator.validateParameters()</methodname> or
-        <methodname>ExecutableValidator.validateConstructorParameters()</methodname>.</para>
-      </listitem>
+        <listitem>
+          <para>If this validation yields a non-empty set of constraint
+          violations, throw a
+          <classname>ConstraintViolationException</classname> wrapping the
+          violations. Otherwise proceed with the actual method
+          invocation.</para>
+        </listitem>
 
-      <listitem>
-        <para>If this validation yields a non-empty set of constraint
-        violations, throw a
-        <classname>ConstraintViolationException</classname> wrapping the
-        violations. Otherwise proceed with the actual method
-        invocation.</para>
-      </listitem>
+        <listitem>
+          <para>Validate the result returned by the invoked method using
+          <methodname>ExecutableValidator.validateReturnValue()</methodname>
+          or
+          <methodname>ExecutableValidator.validateConstructorReturnValue()</methodname>.</para>
+        </listitem>
 
-      <listitem>
-        <para>Validate the result returned by the invoked method using
-        <methodname>ExecutableValidator.validateReturnValue()</methodname> or
-        <methodname>ExecutableValidator.validateConstructorReturnValue()</methodname>.</para>
-      </listitem>
-
-      <listitem>
-        <para>If this validation yields a non-empty set of constraint
-        violations, throw a
-        <classname>ConstraintViolationException</classname> wrapping the
-        violations. Otherwise return the invocation result to the method
-        caller.</para>
-      </listitem>
-    </itemizedlist>
+        <listitem>
+          <para>If this validation yields a non-empty set of constraint
+          violations, throw a
+          <classname>ConstraintViolationException</classname> wrapping the
+          violations. Otherwise return the invocation result to the method
+          caller.</para>
+        </listitem>
+      </itemizedlist></para>
 
     <para>By throwing a <classname>ConstraintViolationException</classname> if
     either of the validation steps fails, it is ensured that the control
@@ -3058,11 +3075,12 @@ Validator validator = factory.getValidator();</programlisting>
       </listitem>
     </itemizedlist>
 
-    <para>By default, integrators should intercept and validate all methods
-    hosting either a constraint or being marked for cascaded validation
+    <para>By default, integrators intercept and validate methods hosting
+    either a constraint or being marked for cascaded validation
     (<classname>@Valid</classname>) whether it be on the method itself or on
-    any of its parameters. The <classname>Default</classname> group should be
-    used for validation out of the box.</para>
+    any of its parameters. <phrase role="tck-testable">The
+    <classname>Default</classname> group is used for validation out of the
+    box.</phrase></para>
 
     <para>Integrators are encouraged to use Bean Validation's metadata API to
     find whether or not a method or a constructor should be intercepted. This
@@ -3472,9 +3490,11 @@ Validator localizedValidator =
       calling the <methodname>close()</methodname> method) by its creator when
       no longer in use.</para>
 
-      <para><classname>ValidatorFactory</classname> implementations must be
-      thread-safe. <classname>ValidatorFactory</classname> implementations can
-      cache <classname>Validator</classname> instances if needed.</para>
+      <para><phrase
+      role="tck-not-testable"><classname>ValidatorFactory</classname>
+      implementations must be thread-safe.</phrase>
+      <classname>ValidatorFactory</classname> implementations can cache
+      <classname>Validator</classname> instances if needed.</para>
 
       <example revisionflag="changed">
         <title>ValidatorFactory interface</title>
@@ -3609,27 +3629,30 @@ acmeFactory.setSpecificConfiguration( [...] );</programlisting>
       <classname>MessageInterpolator</classname> wrapping the one from the
       <classname>ValidatorFactory</classname>.</para>
 
-      <para><methodname>getTraversableResolver()</methodname> returns the
-      <classname>TraversableResolver</classname> instance configured during
-      the initialization of the <classname>ValidatorFactory</classname>. It is
-      particularly useful to build a <classname>Validator</classname> specific
-      <classname>TraversableResolver</classname> wrapping the one from the
-      <classname>ValidatorFactory</classname>.</para>
-
-      <para><methodname>getConstraintValidatorFactory()</methodname> returns
-      the <classname>ConstraintValidatorFactory</classname> instance
-      configured during the initialization of the
-      <classname>ValidatorFactory</classname>. It is particularly useful to
-      build a <classname>Validator</classname> specific
-      <classname>ConstraintValidatorFactory</classname> wrapping the one from
-      the <classname>ValidatorFactory</classname>.</para>
-
-      <para revisionflag="added"><phrase
-      role="tck-testable"><methodname>getParameterNameProvider()</methodname>
-      returns the <classname>ParameterNameProvider</classname> instance
+      <para><phrase
+      role="tck-testable"><methodname>getTraversableResolver()</methodname>
+      returns the <classname>TraversableResolver</classname> instance
       configured during the initialization of the
       <classname>ValidatorFactory</classname>.</phrase> It is particularly
       useful to build a <classname>Validator</classname> specific
+      <classname>TraversableResolver</classname> wrapping the one from the
+      <classname>ValidatorFactory</classname>.</para>
+
+      <para><phrase
+      role="tck-testable"><methodname>getConstraintValidatorFactory()</methodname>
+      returns the <classname>ConstraintValidatorFactory</classname> instance
+      configured during the initialization of the
+      <classname>ValidatorFactory</classname>.</phrase> It is particularly
+      useful to build a <classname>Validator</classname> specific
+      <classname>ConstraintValidatorFactory</classname> wrapping the one from
+      the <classname>ValidatorFactory</classname>.</para>
+
+      <para revisionflag="added"><phrase role="tck-testable"><phrase
+      role="tck-testable"><methodname>getParameterNameProvider()</methodname>
+      returns the <classname>ParameterNameProvider</classname> instance
+      configured during the initialization of the
+      <classname>ValidatorFactory</classname>.</phrase></phrase> It is
+      particularly useful to build a <classname>Validator</classname> specific
       <classname>ParameterNameProvider</classname> wrapping the one from the
       <classname>ValidatorFactory</classname>.</para>
 
@@ -3638,7 +3661,8 @@ acmeFactory.setSpecificConfiguration( [...] );</programlisting>
       state in which the <classname>Validator</classname> must be initialized.
       This is used to customize the
       <classname>MessageInterpolator</classname>, the
-      <classname>TraversableResolver</classname> or the
+      <classname>TraversableResolver</classname>,
+      <classname>ParameterNameProvider</classname> or the
       <classname>ConstraintValidatorFactory</classname>.</para>
 
       <example revisionflag="changed">
@@ -3790,48 +3814,49 @@ Validator validatorUsingCustomTraversable = factory
         </listitem>
       </itemizedlist>
 
-      <para><classname>Configuration</classname> does provide a
-      <classname>MessageInterpolator</classname> implementation following the
-      default Bean Validation <classname>MessageInterpolator</classname> rules
-      as defined in <xref linkend="default-messageresolver"/>. You can access
-      it by calling <methodname>getDefaultMessageInterpolator()</methodname>.
-      Such an implementation is useful to let a custom
+      <para><phrase role="tck-testable"><classname>Configuration</classname>
+      does provide a <classname>MessageInterpolator</classname> implementation
+      following the default Bean Validation
+      <classname>MessageInterpolator</classname> rules as defined in <xref
+      linkend="default-messageresolver"/>. You can access it by calling
+      <methodname>getDefaultMessageInterpolator()</methodname>.</phrase> Such
+      an implementation is useful to let a custom
       <classname>MessageInterpolator</classname> delegate to the standard
       <classname>MessageInterpolator</classname> (see <xref
       linkend="custom-message-resolution"/> and an example making use of
       <methodname>getDefaultMessageInterpolator()</methodname> in <xref
       linkend="validationapi-message-examples-jsflocale"/>).</para>
 
-      <para><classname>Configuration</classname> does provide a
-      <classname>TraversableResolver</classname> implementation following the
-      default Bean Validation <classname>TraversableResolver</classname> rules
-      as defined in <xref
+      <para><phrase role="tck-testable"><classname>Configuration</classname>
+      does provide a <classname>TraversableResolver</classname> implementation
+      following the default Bean Validation
+      <classname>TraversableResolver</classname> rules as defined in <xref
       linkend="constraintdeclarationvalidationprocess-validationroutine-traversable"/>.
       You can access it by calling
-      <methodname>getDefaultTraversableResolver()</methodname>. Such an
-      implementation is useful to let a custom
+      <methodname>getDefaultTraversableResolver()</methodname>.</phrase> Such
+      an implementation is useful to let a custom
       <classname>TraversableResolver</classname> delegate to the standard
       <classname>TraversableResolver</classname>.</para>
 
-      <para><classname>Configuration</classname> does provide a
-      <classname>ConstraintValidatorFactory</classname> implementation
-      following the default Bean Validation
+      <para><phrase role="tck-testable"><classname>Configuration</classname>
+      does provide a <classname>ConstraintValidatorFactory</classname>
+      implementation following the default Bean Validation
       <classname>ConstraintValidatorFactory</classname> rules as defined in
       <xref linkend="constraintsdefinitionimplementation-constraintfactory"/>.
       You can access it by calling
-      <methodname>getDefaultConstraintValidatorFactory()</methodname>. Such an
-      implementation is useful to let a custom
+      <methodname>getDefaultConstraintValidatorFactory()</methodname>.</phrase>
+      Such an implementation is useful to let a custom
       <classname>ConstraintValidatorFactory</classname> delegate to the
       standard <classname>ConstraintValidatorFactory</classname>.</para>
 
-      <para revisionflag="added"><phrase
+      <para revisionflag="added"><phrase role="tck-testable"><phrase
       role="tck-testable"><classname>Configuration</classname> does provide a
       <classname>ParameterNameProvider</classname> implementation following
       the default Bean Validation <classname>ParameterNameProvider</classname>
       rules as defined in <xref
       linkend="constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters"/>.
       You can access it by calling
-      <methodname>getDefaultParameterNameProvider()</methodname></phrase>.
+      <methodname>getDefaultParameterNameProvider()</methodname></phrase>.</phrase>
       Such an implementation is useful to let a custom
       <classname>ParameterNameProvider</classname> delegate to the standard
       <classname>ParameterNameProvider</classname>.</para>
@@ -4402,31 +4427,30 @@ public interface ConfigurationState {
 }</programlisting>
       </example>
 
-      <para>The requested provider implementation is resolved according to the
-      following rules in the following order:</para>
-
+      <para role="tck-testable">The requested provider implementation is
+      resolved according to the following rules in the following order:
       <itemizedlist>
-        <listitem>
-          <para>Use the provider implementation requested if
-          <classname>Configuration</classname> has been created from
-          <classname>Validation.byProvider(Class)</classname>.</para>
-        </listitem>
+          <listitem>
+            <para>Use the provider implementation requested if
+            <classname>Configuration</classname> has been created from
+            <classname>Validation.byProvider(Class)</classname>.</para>
+          </listitem>
 
-        <listitem>
-          <para>Use the provider implementation described in the XML
-          configuration (under
-          <literal>validation-config.default-provider</literal> see <xref
-          linkend="xml-config"/>) if defined: the value of this element is the
-          fully qualified class name of the
-          <classname>ValidationProvider</classname> implementation uniquely
-          identifying the provider.</para>
-        </listitem>
+          <listitem>
+            <para>Use the provider implementation described in the XML
+            configuration (under
+            <literal>validation-config.default-provider</literal> see <xref
+            linkend="xml-config"/>) if defined: the value of this element is
+            the fully qualified class name of the
+            <classname>ValidationProvider</classname> implementation uniquely
+            identifying the provider.</para>
+          </listitem>
 
-        <listitem>
-          <para>Use the first provider implementation returned by
-          <classname>validationProviderResolver.getValidationProviders()</classname>.</para>
-        </listitem>
-      </itemizedlist>
+          <listitem>
+            <para>Use the first provider implementation returned by
+            <classname>validationProviderResolver.getValidationProviders()</classname>.</para>
+          </listitem>
+        </itemizedlist></para>
 
       <para>The <classname>ValidationProviderResolver</classname> is specified
       when <classname>Configuration</classname> instances are created (see
@@ -4441,10 +4465,10 @@ public interface ConfigurationState {
       methods. <classname>Configuration</classname> instances are created by
       <classname>ValidationProvider</classname>.</para>
 
-      <para>If a problem occurs while building the
-      <classname>ValidatorFactory</classname>, a
-      <classname>ValidationException</classname> is raised. This can be due to
-      various reasons including:</para>
+      <para><phrase revision="tck-testable">If a problem occurs while building
+      the <classname>ValidatorFactory</classname>, a
+      <classname>ValidationException</classname> is raised.</phrase> This can
+      be due to various reasons including:</para>
 
       <itemizedlist>
         <listitem>
@@ -4574,8 +4598,8 @@ public interface ValidationProviderResolver {
         service provider configuration file by creating a text file
         <filename>javax.validation.spi.ValidationProvider</filename> and
         placing it in the <filename>META-INF/services</filename> directory of
-        one of its jar files.</phrase> The content of the file should contain
-        the name of the provider implementation class of the
+        one of its jar files.</phrase> The content of the file contains the
+        name of the provider implementation class of the
         <classname>javax.validation.spi.ValidationProvider</classname>
         interface.</para>
 
@@ -4731,13 +4755,13 @@ public interface BootstrapState {
         this provider.</para>
 
         <para>A <classname>ValidationProvider</classname> implementation is
-        linked (via it's generic parameter) to a specific sub interface of
+        linked (via its generic parameter) to a specific sub interface of
         <classname>Configuration</classname>. The Bean Validation bootstrap
-        API makes use of this link to return the specific Configuration
-        subinterface implementation in a type-safe way when a specific
-        provider is requested. The sub interface does not have to add any new
-        method but is the natural holder for provider specific configuration
-        methods.</para>
+        API makes use of this link to return the specific
+        <classname>Configuration</classname> subinterface implementation in a
+        type-safe way when a specific provider is requested. The sub interface
+        does not have to add any new method but is the natural holder for
+        provider specific configuration methods.</para>
 
         <example>
           <title>Example of provider specific Configuration sub
@@ -5166,9 +5190,9 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       classpath, a <classname>ValidationException</classname> is
       raised.</phrase></para>
 
-      <para revisionflag="added">Implementations supporting Bean Validation
-      1.1 must properly parse deployment descriptors of Bean Validation 1.0
-      and 1.1.</para>
+      <para revisionflag="added" role="tck-testable">Implementations
+      supporting Bean Validation 1.1 must properly parse deployment
+      descriptors of Bean Validation 1.0 and 1.1.</para>
 
       <para><phrase role="tck-testable">Unless stated otherwise, XML based
       configuration settings are overridden by values explicitly set via the
