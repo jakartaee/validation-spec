@@ -31,6 +31,11 @@ element. Can be used to exlude explanatory phrases contained in a `para` marked 
 that the tests for this assertion need to be updated, e.g. due to a spec update. Can be used
 together with `tck-testable` and `tck-not-testable`: `<para role="tck-testable tck-needs-update">`.
 
+Prefer hosting `tck-testable` on the inner `<para/>` rather that on the `<listitem/>` or `<itemizedlist/>`
+as they will not properly render in HTML otherwise. If the `tck-testable` is applied on a `<para/>` and
+its following `<itemizedlist/>`, put `<itemizedlist/>` within the `<para/>` to make it a single
+assertion.
+
 ### Updating the TCK audit file
 
 The TCK audit file is an XML file containing all assertions of the TCK. This file is generated with
