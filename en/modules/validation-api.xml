@@ -365,6 +365,7 @@ public interface ExecutableValidator {
      * @return a set with the constraint violations caused by this validation;
      *         will be empty if no error occurs, but never {@code null}
      * @throws IllegalArgumentException if {@code null} is passed for any of the parameters
+     *         or if parameters don't match with each other
      * @throws ValidationException if a non recoverable error happens during the
      *         validation process
      */
@@ -385,7 +386,7 @@ public interface ExecutableValidator {
      * @return a set with the constraint violations caused by this validation;
      *         will be empty if no error occurs, but never {@code null}
      * @throws IllegalArgumentException if {@code null} is passed for any of the object,
-     *         method or groups parameters
+     *         method or groups parameters or if parameters don't match with each other
      * @throws ValidationException if a non recoverable error happens during the
      *         validation process
      */
@@ -406,6 +407,7 @@ public interface ExecutableValidator {
      * @return a set with the constraint violations caused by this validation;
      *         Will be empty if no error occurs, but never {@code null}
      * @throws IllegalArgumentException if {@code null} is passed for any of the parameters
+     *         or if parameters don't match with each other
      * @throws ValidationException if a non recoverable error happens during the
      *         validation process
      */
@@ -424,13 +426,15 @@ public interface ExecutableValidator {
      * @return a set with the constraint violations caused by this validation;
      *         will be empty, if no error occurs, but never {@code null}
      * @throws IllegalArgumentException if {@code null} is passed for any of the parameters
+     *         or if parameters don't match with each other
      * @throws ValidationException if a non recoverable error happens during the
      *         validation process
      */
     &lt;T&gt; Set&lt;ConstraintViolation&lt;T&gt;&gt; validateConstructorReturnValue(Constructor&lt;? extends T&gt; constructor,
                                                                    T createdObject,
                                                                    Class&lt;?&gt;... groups);
-}</programlisting>
+}
+</programlisting>
       </example>
 
       <para><phrase role="tck-testable tck-needs-update"><methodname>&lt;T&gt;
@@ -443,9 +447,13 @@ public interface ExecutableValidator {
       containing all <classname>ConstraintViolation</classname> objects
       representing the failing constraints is returned, an empty set is
       returned if no constraint violation occurred. </phrase><phrase
-      role="tck-testable">An <classname>IllegalArgumentException</classname>
-      will be thrown if null is passed for any of the
-      parameters.</phrase></para>
+      role="tck-testable tck-needs-update">An
+      <classname>IllegalArgumentException</classname> will be thrown if null
+      is passed for any of the parameters or if the parameters don't match
+      with each other (i.e. <literal>object</literal> and
+      <literal>method</literal> don't match,
+      <literal>parameterValues</literal> and <literal>method</literal> don't
+      match).</phrase></para>
 
       <para><phrase role="tck-testable"><methodname>&lt;T&gt;
       Set&lt;ConstraintViolation&lt;T&gt;&gt; validateReturnValue(T object,
@@ -456,10 +464,14 @@ public interface ExecutableValidator {
       containing all <classname>ConstraintViolation</classname> objects
       representing the failing constraints is returned, an empty set is
       returned if no constraint violation occurred.</phrase><phrase
-      role="tck-testable"> An <classname>IllegalArgumentException</classname>
-      will be thrown if null is passed for any of the parameters
-      <varname>object</varname>, <varname>method</varname> and
-      <varname>groups</varname>.</phrase></para>
+      role="tck-testable tck-needs-update"> An
+      <classname>IllegalArgumentException</classname> will be thrown if null
+      is passed for any of the parameters <varname>object</varname>,
+      <varname>method</varname> and <varname>groups</varname> or if the
+      parameters don't match with each other (i.e. <literal>object</literal>
+      and <literal>method</literal> don't match,
+      <literal>returnValue</literal> and <literal>method</literal> don't
+      match).</phrase></para>
 
       <para><phrase role="tck-testable tck-needs-update"><methodname>&lt;T&gt;
       Set&lt;ConstraintViolation&lt;T&gt;&gt;
@@ -473,7 +485,9 @@ public interface ExecutableValidator {
       failing constraints is returned, an empty set is returned if no
       constraint violation occurred.</phrase> <phrase role="tck-testable">An
       <classname>IllegalArgumentException</classname> will be thrown if null
-      is passed for any of the parameters.</phrase></para>
+      is passed for any of the parameters or if the parameters don't match
+      with each other (i.e. <literal>parameterValues</literal> and
+      <literal>constructor</literal> don't match).</phrase></para>
 
       <para><phrase role="tck-testable"><methodname>&lt;T&gt;
       Set&lt;ConstraintViolation&lt;T&gt;&gt;
@@ -486,7 +500,9 @@ public interface ExecutableValidator {
       failing constraints is returned, an empty set is returned if no
       constraint violation occurred.</phrase><phrase role="tck-testable"> An
       <classname>IllegalArgumentException</classname> will be thrown if null
-      is passed for any of the parameters.</phrase></para>
+      is passed for any of the parameters or if the parameters don't match
+      with each other (i.e. <literal>createdObject</literal> and
+      <literal>constructor</literal> don't match).</phrase></para>
 
       <para role="tck-testable">None of those methods honor the XML
       configuration <literal>&lt;default-validated-executables/&gt;</literal>
