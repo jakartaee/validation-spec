@@ -97,10 +97,6 @@
         <methodname>getValidator()</methodname> from the default
         <classname>ValidatorFactory</classname>.</para>
       </important>
-
-      <para revisionflag="added" role="tck-testable">A user is free to
-      explicitly use the bootstrap API to customize the
-      <classname>ValidatorFactory</classname> as needed.</para>
     </section>
 
     <section id="integration-general-executable" revisionflag="added">
@@ -133,8 +129,8 @@
 
       <itemizedlist>
         <listitem>
-          <para>via the <classname>@ValidateExecutable</classname> annotation
-          (see <xref linkend="example-validateexecutable"/>)</para>
+          <para>via the <classname>@ValidateOnExecution</classname> annotation
+          (see <xref linkend="example-validateonexecution"/>)</para>
         </listitem>
 
         <listitem>
@@ -149,7 +145,7 @@
         <para>Integration layers can read the list of validated executable
         types defined in the global configuration via the
         <classname>Configuration</classname> object:
-        <code>configuration.getBootstrapConfiguration().getValidatedExecutableTypes()</code>.
+        <code>configuration.getBootstrapConfiguration().getDefaultValidatedExecutableTypes()</code>.
         This list is extracted from
         <filename>validation.xml</filename>.</para>
       </note>
@@ -159,19 +155,24 @@
 
       <itemizedlist>
         <listitem>
-          <para role="tck-testable">if it is annotated with
-          <classname>@ValidateExecutable</classname> and the
-          <methodname>value</methodname> attribute contains the executable
-          type. If the <methodname>value</methodname> attribute does not
-          contain the executable type, the executable is not validated.</para>
+          <para role="tck-testable tcck-needs-update">if it is annotated with
+          <classname>@ValidateOnExecution</classname> and the
+          <methodname>type</methodname> attribute contains the executable type
+          or <literal>IMPLICIT</literal>. If the <methodname>type</methodname>
+          attribute does not contain the executable type, the executable is
+          not validated.</para>
         </listitem>
 
         <listitem>
           <para role="tck-testable">otherwise if the type (class, interface)
           on which the executable is defined is annotated with
-          <classname>@ValidateExecutable</classname> and the
-          <methodname>value</methodname> attribute contains the executable
-          type. If the <methodname>value</methodname> attribute does not
+          <classname>@ValidateOnExecution</classname> and the
+          <methodname>type</methodname> attribute contains the executable
+          type. If the <literal>type</literal> attribute contains
+          <literal>IMPLICIT</literal>, then this rule is ignored and the
+          behavior is equivalent to
+          <classname>@ValidateOnExecution</classname> not being present.
+          Otherwise if the <methodname>type</methodname> attribute does not
           contain the executable type, the executable is not validated.</para>
         </listitem>
 
@@ -240,10 +241,37 @@
           containing <literal>ALL</literal> and other types of executables is
           equivalent to a list containing only <literal>ALL</literal>.</para>
         </listitem>
+
+        <listitem>
+          <para role="tck-testable"><literal>IMPLICIT</literal>: if
+          <classname>@ValidateOnExecution</classname> is on a type (class or
+          interface), then it is equivalent to
+          <classname>@ValidateOnExecution</classname> not being present; if
+          <classname>@ValidateOnExecution</classname> is on a an executable,
+          the following applies:<itemizedlist>
+              <listitem>
+                <para>if on a constructor, it is equivalent to
+                <literal>CONSTRUCTORS</literal>.</para>
+              </listitem>
+
+              <listitem>
+                <para>if on a non-getter method, it is equivalent to
+                <literal>NON_GETTER_METHODS</literal>.</para>
+              </listitem>
+
+              <listitem>
+                <para>if on a getter, it is equivalent to
+                <literal>GETTER_METHODS</literal>.</para>
+              </listitem>
+            </itemizedlist></para>
+        </listitem>
       </itemizedlist>
 
-      <example id="example-validateexecutable" lang="JAVA" role="JAVA">
-        <title>@ValidateExecutable annotation</title>
+      <para role="tck-not-testable">Mixing <literal>IMPLICIT</literal> and
+      other executable types is illegal.</para>
+
+      <example id="example-validateonexecution" lang="JAVA" role="JAVA">
+        <title>@ValidateOnExecution annotation</title>
 
         <programlisting>package javax.validation.executable;
 
@@ -254,14 +282,16 @@
  * The settings for a given executable is resolved as followed.
  * A given executable is validated upon execution:
  * &lt;ul&gt;
- *     &lt;li&gt;if it is annotated with {@code @ValidateExecutable} and the {@code value} attribute
- *     contains the executable type. If the {@code value} attribute does not contain the
+ *     &lt;li&gt;if it is annotated with {@code @ValidateOnExecution} and the {@code type} attribute
+ *     contains the executable type. If the {@code type} attribute does not contain the
  *     executable type, the executable is not validated.&lt;/li&gt;
- *     &lt;li&gt;otherwise if,
- *     the type (class, interface) on which the executable is defined
- *     is annotated with {@code @ValidateExecutable} and the {@code value} attribute
- *     contains the executable type. If the {@code value} attribute does not contain the
- *     executable type, the executable is not validated.&lt;/li&gt;
+ *     &lt;li&gt;otherwise if, the type (class, interface) on which the executable is defined
+ *     is annotated with {@code @ValidateOnExecution} and the {@code type} attribute
+ *     contains the executable type. If the {@code type} attribute contains
+ *     {@link ExecutableType.IMPLICIT}, then this rule is ignored and the behavior is
+ *     equivalent to {@code ValidateOnExecution} not being present. Otherwise if the
+ *     {@code type} attribute does not contain the executable type, the executable is not
+ *     validated.&lt;/li&gt;
  *     &lt;li&gt;otherwise if the global executable validation setting contains the executable
  *     type. If the global setting does not contain the executable type, the executable
  *     is not validated.&lt;/li&gt;
@@ -275,13 +305,13 @@
  */
 @Target({ CONSTRUCTOR, METHOD, TYPE, PACKAGE })
 @Retention(RUNTIME)
-public @interface ValidateExecutable {
+public @interface ValidateOnExecution {
 
     /**
      * List of executable types to be validated when called.
-     * Defaults to validating all types.
+     * Defaults to the types discovered implicitly (see {@link ExecutableType#IMPLICIT}).
      */
-    ExecutableType[] value() default {ExecutableType.ALL};
+    ExecutableType[] type() default {ExecutableType.IMPLICIT};
 }</programlisting>
 
         <programlisting>package javax.validation.executable;
@@ -293,6 +323,18 @@ public @interface ValidateExecutable {
  * @since 1.1
  */
 public enum ExecutableType {
+
+    /**
+     * If the annotation using {@code ExecutableType} is on a type (class or interface),
+     * the behavior is equivalent to the annotation not being present.
+     * &lt;p/&gt;
+     * If on a constructor, it is equivalent to {@link #CONSTRUCTORS}.
+     * &lt;p/&gt;
+     * If on a non-getter method, it is equivalent to {@link #NON_GETTER_METHODS}.
+     * &lt;p/&gt;
+     * If on a getter method, it is equivalent to {@link #GETTER_METHODS}.
+     */
+    IMPLICIT,
 
     /**
      * None of the executables.
@@ -340,16 +382,22 @@ public enum ExecutableType {
       method originally defined in several parallel types of the hierarchy
       (e.g. two interfaces not extending each other, or a class and an
       interface not implemented by said class),
-      <classname>@ValidatedExecutable</classname> cannot be placed in the
+      <classname>@ValidateOnExecution</classname> cannot be placed in the
       parallel types of the hierarchy.</phrase> This is to avoid an unexpected
       altering of the post conditions to be guaranteed to the caller.</para>
+
+      <para><code>@ValidateOnExecution(type=IMPLICIT)</code> on a type (class
+      or interface) is useful to mark a class as being involved in executable
+      validation without affecting the behavior. This is used when the
+      integration technology needs a little help to find the classes and
+      interfaces involved.</para>
 
       <note>
         <para>The proper selection of the validated executables is the
         responsibility of the integration between the interception technology
         and Bean Validation. Bean Validation engines ignore the
         <literal>default-validated-executables</literal> and
-        <classname>@ValidatedExecutable</classname> when validating
+        <classname>@ValidateOnExecution</classname> when validating
         executables and when providing metadata.</para>
       </note>
 
@@ -358,25 +406,26 @@ public enum ExecutableType {
 
         <para>The following example shows some of the way you can refine
         executable validation with
-        <classname>@ValidateExecutable</classname>.</para>
+        <classname>@ValidateOnExecution</classname>.</para>
 
         <example>
           <title>Method validation configurations</title>
 
-          <programlisting language="JAVA" role="JAVA">public class OrderService {
+          <programlisting language="JAVA" role="JAVA">//optional: @ValidateOnExecution
+public class OrderService {
 
     boolean isValidCustomer(@NotNull String customerCode) { [...] }
 
-    @ValidateExecutable
+    @ValidateOnExecution
     @Min(0)
     Integer getBacklog() { [...] }
 
-    @ValidateExecutable(NONE)
+    @ValidateOnExecution(type=NONE)
     Order placeOrder(@NotNull String customerCode, @Valid Item item, int quantity) { [...] }
 
 }
 
-@ValidateExecutable({GETTER_METHODS, NON_GETTER_METHODS})
+@ValidateOnExecution(type={GETTER_METHODS, NON_GETTER_METHODS})
 public class SimpleOrderService extends OrderService {
 
     public SimpleOrderService(@NotNull ServiceProvider provider) { [...] }
@@ -386,6 +435,7 @@ public class SimpleOrderService extends OrderService {
 
 }
 
+//optional: @ValidateOnExecution
 public class ComplexOrderService extends SimpleOrderService {
     public ComplexOrderService(@NotNull ServiceProvider provider) { [...] }
 }</programlisting>
@@ -397,15 +447,16 @@ public class ComplexOrderService extends SimpleOrderService {
         <methodname>isValidCustomer()</methodname> is validated as this method
         is not a getter (it has a parameter).
         <methodname>getBacklog()</methodname> is a getter but is validated
-        thanks to <classname>@ValidateExecutable</classname> defaulting to
-        <literal>ALL</literal>. <methodname>placeOrder()</methodname> is not
-        validated as <classname>@ValidateExecutable</classname> is set to
+        thanks to <classname>@ValidateOnExecution</classname> defaulting to
+        <literal>GETTER_METHODS</literal>.
+        <methodname>placeOrder()</methodname> is not validated as
+        <classname>@ValidateOnExecution</classname> is set to
         <literal>NONE</literal>.</para>
 
         <para>All getter and non-getter methods of
         <classname>SimpleOrderService</classname> are validated upon execution
         by default due to the presence of
-        <classname>@ValidateExecutable</classname> on the class. The
+        <classname>@ValidateOnExecution</classname> on the class. The
         <classname>SimpleOrderService</classname> constructor is thus not
         validated. <classname>SimpleOrderService.placeOrder()</classname> is
         not validated either because it overrides
@@ -418,6 +469,12 @@ public class ComplexOrderService extends SimpleOrderService {
         <classname>SimpleOrderService</classname> are not inherited. This
         means that the <classname>ComplexOrderService</classname> constructor
         is validated.</para>
+
+        <para><classname>@ValidateOnExecution</classname> can be optionally
+        set on <classname>OrderService</classname> and
+        <classname>ComplexOrderService</classname> without altering the
+        semantic. This marker is necessary for some integration technology in
+        some situations.</para>
       </section>
     </section>
   </section>
@@ -556,6 +613,18 @@ public class ComplexOrderService extends SimpleOrderService {
       <code>Interceptor.Priority.PLATFORM_AFTER+800</code>, in other words
       priority of <literal>4800</literal>.</para>
 
+      <para role="tck-testable">For maximum portability, it is recommended to
+      mark CDI bean interfaces and classes involved in executable validation
+      with <classname>@ValidateOnExecution</classname> (defaults to
+      <literal>IMPLICIT</literal>). This helps some implementations to be more
+      efficient. Most CDI - Bean Validation integration implementations do not
+      need such marker. In particular this marker should not be needed on
+      validated beans annotated with constraint annotations,
+      <classname>@Valid</classname> or
+      <classname>@ValidateOnExecution</classname> anywhere in the class. Such
+      limitation will be removed in a future version of this
+      specification.</para>
+
       <note>
         <title>Discussion on possible implementations</title>
 
@@ -572,7 +641,7 @@ public class ComplexOrderService extends SimpleOrderService {
         linkend="validationapi-triggeringmethodvalidation"/> gives examples
         how the metadata API can be used to determine whether or not a method
         is constrained (regardless of the filtering rules of
-        <classname>@ValidateExecutable</classname>).</para>
+        <classname>@ValidateOnExecution</classname>).</para>
       </note>
     </section>
   </section>
