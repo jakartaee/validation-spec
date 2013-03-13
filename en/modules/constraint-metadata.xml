@@ -450,16 +450,6 @@ public interface BeanDescriptor extends ElementDescriptor {
     boolean isBeanConstrained();
 
     /**
-     * Returns {@code true} if any of the bean constructors
-     * or methods are constrained executables.
-     *
-     * @return whether or not the bean has constrained executables
-     *
-     * @since 1.1
-     */
-    boolean hasConstrainedExecutables();
-
-    /**
      * Returns the property descriptor for a given property.
      * &lt;p/&gt;
      * Returns {@code null} if the property does not exist or has no
@@ -508,14 +498,17 @@ public interface BeanDescriptor extends ElementDescriptor {
      * Constrained methods have at least one parameter or return value constraint
      * or at least one parameter or return value marked for cascaded validation.
      * Methods of super types are considered.
+     * &lt;p/&gt;
+     * Only method types passed to the {@code methodType} parameter are considered.
      *
+     * @param methodType the list of method types to consider
      * @return a set with descriptors for the constrained methods of this type;
      *         will be empty if this type has no constrained methods but never
      *         {@code null}
      *
      * @since 1.1
      */
-    Set&lt;MethodDescriptor&gt; getConstrainedMethods();
+    Set&lt;MethodDescriptor&gt; getConstrainedMethods(MethodType... methodType);
 
     /**
      * Returns a constructor descriptor for the given constructor.
@@ -550,6 +543,41 @@ public interface BeanDescriptor extends ElementDescriptor {
 }</programlisting>
     </example>
 
+    <example revisionflag="added">
+      <title>MethodType</title>
+
+      <programlisting>package javax.validation.metadata;
+
+/**
+ * Represents the type of a method: getter or non getter.
+ *
+ * @author Emmanuel Bernard &lt;emmanuel@hibernate.org&gt;
+ * @since 1.1
+ */
+public enum MethodType {
+
+    /**
+     * A method following the getter pattern. A getter according to the
+     * JavaBeans specification is a method whose:
+     * &lt;ul&gt;
+     *     &lt;li&gt;name starts with get, has a return type but no parameter&lt;/li&gt;
+     *     &lt;li&gt;name starts with is, has a return type and is returning {@code Boolean}.&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    GETTER,
+
+    /**
+     * A method that does not follow the getter pattern. A getter according to the
+     * JavaBeans specification is a method whose:
+     * &lt;ul&gt;
+     *     &lt;li&gt;name starts with get, has a return type but no parameter&lt;/li&gt;
+     *     &lt;li&gt;name starts with is, has a return type and is returning {@code Boolean}.&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    NON_GETTER
+}</programlisting>
+    </example>
+
     <para><phrase
     role="tck-testable"><methodname>isBeanConstrained()</methodname> returns
     <literal>true</literal> if the given class (and superclasses and
@@ -557,11 +585,6 @@ public interface BeanDescriptor extends ElementDescriptor {
     validation cascade.</phrase> If the method returns false, the Bean
     Validation engine can safely ignore the bean as it will not be impacted by
     validation.</para>
-
-    <para revisionflag="added"
-    role="tck-testable"><methodname>hasConstrainedExecutables()</methodname>
-    returns <literal>true</literal> if the given class (and superclasses and
-    interfaces) has at least one constrained method or constructor.</para>
 
     <para><phrase
     role="tck-testable"><methodname>getConstraintsForProperty()</methodname>
@@ -587,9 +610,11 @@ public interface BeanDescriptor extends ElementDescriptor {
     by its name and the types of its parameters.</para>
 
     <para revisionflag="added"
-    role="tck-testable"><methodname>getConstrainedMethods()</methodname>
-    returns the <classname>MethodDescriptor</classname>s of the methods having
-    at least one constraint or cascaded parameter or return value.</para>
+    role="tck-testable tck-needs-update"><methodname>getConstrainedMethods()</methodname>
+    returns the <classname>MethodDescriptor</classname>s of the methods
+    matching the <classname>MethodType</classname>s provided as parameter and
+    having at least one constraint or cascaded parameter or return
+    value.</para>
 
     <para revisionflag="added"
     role="tck-testable"><methodname>getConstraintsForConstructor()</methodname>
@@ -945,8 +970,8 @@ public interface ConstructorDescriptor extends ExecutableDescriptor {
     <para><classname>MethodDescriptor</classname> objects are returned by
     <methodname>BeanDescriptor.getConstraintsForMethod(String,
     Class&lt;?&gt;...)</methodname> and
-    <methodname>BeanDescriptor.getConstrainedMethods()</methodname>, while
-    <classname>ConstructorDescriptor</classname> objects are returned by
+    <methodname>BeanDescriptor.getConstrainedMethods(MethodType...)</methodname>,
+    while <classname>ConstructorDescriptor</classname> objects are returned by
     <methodname>BeanDescriptor.getConstraintsForConstructor(Class&lt;?&gt;...)</methodname>
     and
     <methodname>BeanDescriptor.getConstrainedConstructors()</methodname>.</para>
@@ -1392,7 +1417,8 @@ public class Book {
 assert ! bookDescriptor.hasConstraints();
 
 assert bookDescriptor.isBeanConstrained();
-assert bookDescriptor.hasConstrainedExecutables();
+assert bookDescriptor.getConstrainedMethods( MethodType.NON_GETTER ).size() &gt; 0;
+
 
 assert bookDescriptor.getConstraintDescriptors().size() == 0; //no bean-level constraint
 
@@ -1437,7 +1463,7 @@ assert propertyDescriptor.getConstraintDescriptors().size() == 1;
 assert propertyDescriptor.isCascaded();
 
 //getTitle() and addChapter()
-assert bookDescriptor.getConstrainedMethods().size() == 2;
+assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() == 2;
 
 //the constructor accepting title, description and author
 assert bookDescriptor.getConstrainedConstructors().size() == 1;
