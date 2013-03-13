@@ -505,10 +505,10 @@ public interface ExecutableValidator {
       <literal>constructor</literal> don't match).</phrase></para>
 
       <para role="tck-testable">None of those methods honor the XML
-      configuration <literal>&lt;default-validated-executables/&gt;</literal>
-      nor the presence of <classname>@ValidateOnExecution</classname>. In
-      other words, elements will be validated regardless of these settings
-      when explicitly calling the validation methods.</para>
+      configuration around executable validation nor the presence of
+      <classname>@ValidateOnExecution</classname>. In other words, elements
+      will be validated regardless of these settings when explicitly calling
+      the validation methods.</para>
 
       <section>
         <title>Examples</title>
@@ -3897,7 +3897,9 @@ Validator validatorUsingCustomTraversable = factory
 
       <note>
         <para><methodname>BootstrapConfiguration.getDefaultValidatedExecutableTypes()</methodname>
-        is not used by the Bean Validation engine but exposed here for
+        and
+        <methodname>BootstrapConfiguration.isValidationExecutionDisabled()</methodname>
+        are not used by the Bean Validation engine but exposed here for
         interception technologies - see <xref
         linkend="integration-general-executable"/>.</para>
       </note>
@@ -4227,6 +4229,13 @@ public interface BootstrapConfiguration {
      * @return set of constraint mapping resource paths
      */
     Set&lt;String&gt; getConstraintMappingResourcePaths();
+
+    /**
+     * Returns true if the validation execution is explicitly marked as disabled.
+     *
+     * @return whether validation execution is globally disabled
+     */
+    boolean isValidationExecutionDisabled();
 
     /**
      * Returns the set of executable types that should be considered
@@ -5258,16 +5267,25 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
       constructor.</para>
 
       <para revisionflag="added"
-      role="tck-testable"><literal>default-validated-executables</literal>:
-      contains the list of <literal>executable-type</literal> that are
-      considered by default by the integration technology validating
-      executables upon execution.</para>
+      role="tck-testable"><literal>executable-validation</literal>: allows to
+      disable executable validation entirely via its attribute
+      <code>disabled="true"</code> and optionally contains
+      <literal>default-validated-executable-types</literal>.</para>
+
+      <para revisionflag="added"
+      role="tck-testable"><literal>default-validated-executable-types</literal>:
+      declared under <literal>executable-validation</literal>, contains the
+      list of <literal>executable-type</literal> that are considered by
+      default by the integration technology validating executables upon
+      execution.</para>
 
       <para revisionflag="added"
       role="tck-testable tck-needs-update"><literal>message-interpolator</literal>,
       <literal>traversable-resolver, constraint-validator-factory</literal>,
-      <literal>parameter-name-provider</literal> and
-      <literal>default-validated-executables</literal> are optional.</para>
+      <literal>parameter-name-provider</literal>,
+      <literal>executable-validation</literal> and
+      <literal>default-validated-executable-types</literal> are
+      optional.</para>
 
       <para><phrase role="tck-testable"><literal>constraint-mapping</literal>:
       represents the resource path of an XML mapping file.</phrase> <phrase
@@ -5313,9 +5331,11 @@ public interface ProviderSpecificBootstrap&lt;T extends Configuration&lt;T&gt;&g
     &lt;default-provider&gt;com.acme.ACMEProvider&lt;/default-provider&gt;
     &lt;message-interpolator&gt;com.acme.ACMEAwareMessageInterpolator&lt;/message-interpolator&gt;
 
-    &lt;default-validated-executables&gt;
-        &lt;executable-type&gt;NONE&lt;/executable-type&gt;
-    &lt;/default-validated-executables&gt;
+    &lt;executable-validation&gt;
+        &lt;default-validated-executable-types&gt;
+            &lt;executable-type&gt;NONE&lt;/executable-type&gt;
+        &lt;/default-validated-executable-types&gt;
+    &lt;/executable-validation&gt;
 
     &lt;constraint-mapping&gt;META-INF/validation/order-constraints.xml&lt;/constraint-mapping&gt;
     &lt;constraint-mapping&gt;META-INF/validation/catalog-constraints.xml&lt;/constraint-mapping&gt;

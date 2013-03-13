@@ -142,17 +142,21 @@
         <listitem>
           <para>via a global configuration defined in
           <filename>validation.xml</filename>:
-          <literal>default-validated-executables</literal>. See <xref
+          <literal>executable-validation</literal> and
+          <literal>default-validated-executable-types</literal>. See <xref
           linkend="xml-config"/> for more details.</para>
         </listitem>
       </itemizedlist>
 
       <note>
         <para>Integration layers can read the list of validated executable
-        types defined in the global configuration via the
+        types defined in the global configuration as well as read whether or
+        not executable validation is disabled via the
         <classname>Configuration</classname> object:
-        <code>configuration.getBootstrapConfiguration().getDefaultValidatedExecutableTypes()</code>.
-        This list is extracted from
+        <code>configuration.getBootstrapConfiguration().getDefaultValidatedExecutableTypes()</code>
+        and
+        <code>configuration.getBootstrapConfiguration().isValidationExecutionDisabled()</code>
+        respectively. This list is extracted from
         <filename>validation.xml</filename>.</para>
       </note>
 
@@ -404,6 +408,37 @@ public enum ExecutableType {
       parallel types of the hierarchy.</phrase> This is to avoid an unexpected
       altering of the post conditions to be guaranteed to the caller.</para>
 
+      <para revisionflag="added" role="tck-testable">You can globally disable
+      executable validation by using <code>&lt;executable-validation
+      disabled="true"/&gt;</code>, in this case,
+      <code>&lt;default-validated-executable-types/&gt;</code> and
+      <classname>@ValidateOnExecution</classname> are ignored.</para>
+
+      <example revisionflag="added">
+        <title>validation.xml disabling executable validation</title>
+
+        <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;validation-config
+        xmlns="http://jboss.org/xml/ns/javax/validation/configuration"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation=
+            "http://jboss.org/xml/ns/javax/validation/configuration validation-configuration-1.1.xsd"
+        version="1.1"&gt;
+    &lt;default-provider&gt;com.acme.ACMEProvider&lt;/default-provider&gt;
+    &lt;message-interpolator&gt;com.acme.ACMEAwareMessageInterpolator&lt;/message-interpolator&gt;
+
+    &lt;executable-validation disabled=true"/&gt;
+
+    &lt;constraint-mapping&gt;META-INF/validation/order-constraints.xml&lt;/constraint-mapping&gt;
+    &lt;constraint-mapping&gt;META-INF/validation/catalog-constraints.xml&lt;/constraint-mapping&gt;
+    &lt;constraint-mapping&gt;META-INF/validation/customer-constraints.xml&lt;/constraint-mapping&gt;
+
+    &lt;property name="com.acme.validation.logging"&gt;WARN&lt;/property&gt;
+    &lt;property name="com.acme.validation.safetyChecking"&gt;failOnError&lt;/property&gt;
+
+&lt;/validation-config&gt;</programlisting>
+      </example>
+
       <para><code>@ValidateOnExecution(type=IMPLICIT)</code> on a type (class
       or interface) is useful to mark a class as being involved in executable
       validation without affecting the behavior. This is used when the
@@ -413,8 +448,8 @@ public enum ExecutableType {
       <note>
         <para>The proper selection of the validated executables is the
         responsibility of the integration between the interception technology
-        and Bean Validation. Bean Validation engines ignore the
-        <literal>default-validated-executables</literal> and
+        and Bean Validation. Bean Validation engines ignore the XML
+        configuration around executable validation and
         <classname>@ValidateOnExecution</classname> when validating
         executables and when providing metadata.</para>
       </note>
