@@ -53,6 +53,9 @@ adapted as well since they reference the section numbers in the `@SpecAssertion`
 
 ## Contributing to the specification
 
+By submitting a "pull request" or otherwise contributing to this repository, you agree to license your
+contribution under the [Apache Software License 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
+
 The recommended approach to contribute to the spec is via GitHub pull requests. 
 More on contribution at <http://beanvalidation.org/contribute/>
 
