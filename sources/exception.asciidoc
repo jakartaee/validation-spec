@@ -1,0 +1,134 @@
+[[exception]]
+
+== Exception model
+
+Illegal arguments passed to the Bean Validation APIs generally lead to an [classname]+IllegalArgumentException+ (see the JavaDoc for specific details). Other exceptions raised by Bean Validation are or inherit from the runtime exception [classname]+javax.validation.ValidationException+. Exception cases are described in their respective sections but include (non exhaustive list):
+
+* invalid constraint definitions (missing mandatory elements, illegal composition cycle, illegal attribute overriding, etc)
+* invalid constraint declarations ( [classname]+ConstraintValidator+ implementation matching failure, etc)
+* invalid group definition (circularity)
+* invalid [classname]+Default+ group redefinition for classes (missing class group etc)
+* invalid group conversion definitions
+* error when retrieving, initializing, executing [classname]++ConstraintValidator++ s
+* error when parsing the XML configuration or mappings
+* multiple XML configuration files found
+* missing expected provider or no default provider found
+* missing no-arg constructor on extension implementations described in XML configuration files
+* same entity described more than once across the XML mapping files
+* same property or field described more than once for a given entity in the XML mapping files
+* class, field or getter declared in XML mapping files but not found
+* illegal XML constraint definition
+* illegal XML constraint declaration
+* exception raised either at initialization time or execution time by any of the extension interfaces
+
+
+Each of these error cases lead to a [classname]+ValidationException+ or a subclass of [classname]+ValidationException+ (see following subsections).
+
+[tck-testable]#Every (runtime) exception raised either at initialization time or execution time by any of the extension interfaces ( [classname]+ConstraintValidator+, [classname]+ConstraintValidatorFactory+, [classname]+MessageInterpolator+, [classname]+TraversableResolver+, [classname]+ValidationProviderResolver+, [classname]+ParameterNameProvider+) is wrapped in a [classname]+ValidationException+.#
+
+If a constraint definition or constraint declaration is invalid for a given class, the metadata API should raise the according exception.
+
+=== Error report: [classname]+ConstraintViolationException+
+
+Some frameworks or applications need to convey the result of a validation by raising an exception if the validation returns constraint violations.
+
+Bean Validation provides a reference exception for such cases. Frameworks and applications are encouraged to use [classname]+ConstraintViolationException+ as opposed to a custom exception to increase consistency of the Java platform. The exception can be raised directly or wrapped into the framework or application specific parent exception.
+
+.ConstraintViolationException
+====
+
+[source, JAVA]
+----
+/**
+ * Reports the result of constraint violations.
+ *
+ * @author Emmanuel Bernard
+ * @author Gunnar Morling
+ */
+public class ConstraintViolationException extends ValidationException {
+    [...]
+
+    /**
+     * Creates a constraint violation report.
+     *
+     * @param message error message
+     * @param constraintViolations {@code Set} of {@link ConstraintViolation}
+     */
+    public ConstraintViolationException(String message,
+                                        Set<? extends ConstraintViolation<?>> constraintViolations) {
+        [...]
+    }
+
+    /**
+     * Creates a constraint violation report.
+     *
+     * @param constraintViolations {@code Set} of {@link ConstraintViolation}
+     */
+    public ConstraintViolationException(Set<? extends ConstraintViolation<?>> constraintViolations) {
+        [...]
+    }
+
+    /**
+     * Set of constraint violations reported during a validation.
+     *
+     * @return {@code Set} of {@link ConstraintViolation}
+     */
+    public Set<ConstraintViolation<?>> getConstraintViolations() {
+        [...]
+    }
+}
+----
+
+====
+
+The [classname]+ConstraintViolationException+ carries a [classname]+Set+ of [classname]+ConstraintViolation+.
+
+[NOTE]
+====
+Bean Validation never raises this exception itself. Other frameworks like Java Persistence 2 or interception framework wiring method validation do.
+====
+
+[NOTE]
+====
+If this exception is meant to be send remotely, [classname]+ConstraintViolation+ objects should be [classname]+Serializable+ as defined an explained in <<validationapi-constraintviolation>>.
+====
+
+=== Constraint definition: [classname]+ConstraintDefinitionException+
+
+[tck-testable]#If a constraint definition does not respect the Bean Validation rules or is inconsistent, a [classname]+ConstraintDefinitionException+ is raised.# [classname]+ConstraintDefinitionException+ is a subclass of [classname]+ValidationException+.
+
+This exception can be raised during validation or when the metadata model for the class hosting this constraint is requested.
+
+[NOTE]
+====
+These exception cases can be determined at compile time by a tool such as an annotation processor.
+====
+
+=== Constraint declaration: [classname]+ConstraintDeclarationException+ and [classname]+UnexpectedTypeException+
+
+[tck-not-testable]#When a constraint declaration is illegal, [classname]+ConstraintDeclarationException+ is raised.# This includes amongst other things incorrect group conversion rules (definition or positioning) and illegal method constraint declarations (e.g. inheritance rules, cross-parameter constraint used in an illegal situation, improper use of [methodname]+validationAppliesTo+).
+
+[classname]+ConstraintDeclarationException+ is a subclass of [classname]+ValidationException+.
+
+[tck-testable]#When the return type of a property cannot be processed for a given constraint an [classname]+UnexpectedTypeException+ is raised.# This problem typically arise when either no [classname]+ConstraintValidator+ or too many [classname]++ConstraintValidator++ s match the return type (see <<typevalidatorresolution>>).
+
+[classname]+UnexpectedTypeException+ is a subclass of [classname]+ConstraintDeclarationException+.
+
+This exception can be raised during validation or when the metadata model for the class hosting this constraint is requested.
+
+[NOTE]
+====
+These exception cases can be determined at compile time by a tool such as an annotation processor.
+====
+
+=== Group definition: [classname]+GroupDefinitionException+
+
+[tck-testable]#When a group definition is illegal, [classname]+GroupDefinitionException+ is raised.# This typically arises when a cyclic group dependency is discovered, an illegal attribute overriding is defined etc.
+
+[classname]+GroupDefinitionException+ is a subclass of [classname]+ValidationException+.
+
+[NOTE]
+====
+These exception cases can be determined at compile time by a tool such as an annotation processor.
+====
+
