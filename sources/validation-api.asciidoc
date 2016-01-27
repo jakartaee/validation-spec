@@ -175,7 +175,8 @@ However, constraints hosted on the most specific (hierarchy wise) element type a
 
 All the examples will be based on the following class definition, constraint declarations and address instance.
 
-++++++++++++++++++++++++++++++++++++++
+[source, JAVA]
+----
 public class Address {
     @NotNull @Size(max=30)
     private String addressline1;
@@ -226,7 +227,7 @@ address.setAddressline1( null );
 address.setAddressline2( null );
 address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 //town in North Wales
-++++++++++++++++++++++++++++++++++++++
+----
 
 The following code will return two [classname]+ConstraintViolation+ objects. One for +addressline1+ violating +@NotNull+ and one for +city+ violating +@Size+.
 
@@ -358,11 +359,11 @@ public interface ExecutableValidator {
 
 ====
 
-[tck-testable]#[methodname]+<T> Set<ConstraintViolation<T>> validateParameters(T object, Method method, Object\[\] parameterValues, Class<?>... groups)+ validates the arguments (as given in [varname]+parameterValues+) for the parameters of a given method (identified by [varname]+method+). Cross-parameter constraints are also validated.# [tck-testable]#A set containing all [classname]+ConstraintViolation+ objects representing the failing constraints is returned, an empty set is returned if no constraint violation occurred.# [tck-testable]#An [classname]+IllegalArgumentException+ will be thrown if null is passed for any of the parameters or if the parameters don't match with each other (i.e. +object+ and +method+ don't match, +parameterValues+ and +method+ don't match).#
+[tck-testable]#[methodname]+<T> Set<ConstraintViolation<T>> validateParameters(T object, Method method, Object[] parameterValues, Class<?>... groups)+ validates the arguments (as given in [varname]+parameterValues+) for the parameters of a given method (identified by [varname]+method+). Cross-parameter constraints are also validated.# [tck-testable]#A set containing all [classname]+ConstraintViolation+ objects representing the failing constraints is returned, an empty set is returned if no constraint violation occurred.# [tck-testable]#An [classname]+IllegalArgumentException+ will be thrown if null is passed for any of the parameters or if the parameters don't match with each other (i.e. +object+ and +method+ don't match, +parameterValues+ and +method+ don't match).#
 
 [tck-testable]#[methodname]+<T> Set<ConstraintViolation<T>> validateReturnValue(T object, Method method, Object returnValue, Class<?>... groups)+ validates the return value (specified by [varname]+returnValue+) of a given method (identified by [varname]+method+).# [tck-testable]#A set containing all [classname]+ConstraintViolation+ objects representing the failing constraints is returned, an empty set is returned if no constraint violation occurred.# [tck-testable]#An [classname]+IllegalArgumentException+ will be thrown if null is passed for any of the parameters [varname]+object+, [varname]+method+ and [varname]+groups+ or if the parameters don't match with each other (i.e. +object+ and +method+ don't match, +returnValue+ and +method+ don't match).#
 
-[tck-testable]#[methodname]+<T> Set<ConstraintViolation<T>> validateConstructorParameters(Constructor<T> constructor, Object\[\] parameterValues, Class<?>... groups)+ validates the arguments (as given in [varname]+parameterValues+) for the parameters of a given constructor (identified by [varname]+constructor+). Cross-parameter constraints are also validated.# [tck-testable]#A set containing all [classname]+ConstraintViolation+ objects representing the failing constraints is returned, an empty set is returned if no constraint violation occurred.# [tck-testable]#An [classname]+IllegalArgumentException+ will be thrown if null is passed for any of the parameters or if the parameters don't match with each other (i.e. +parameterValues+ and +constructor+ don't match).#
+[tck-testable]#[methodname]+<T> Set<ConstraintViolation<T>> validateConstructorParameters(Constructor<T> constructor, Object[] parameterValues, Class<?>... groups)+ validates the arguments (as given in [varname]+parameterValues+) for the parameters of a given constructor (identified by [varname]+constructor+). Cross-parameter constraints are also validated.# [tck-testable]#A set containing all [classname]+ConstraintViolation+ objects representing the failing constraints is returned, an empty set is returned if no constraint violation occurred.# [tck-testable]#An [classname]+IllegalArgumentException+ will be thrown if null is passed for any of the parameters or if the parameters don't match with each other (i.e. +parameterValues+ and +constructor+ don't match).#
 
 [tck-testable]#[methodname]+<T> Set<ConstraintViolation<T>> validateConstructorReturnValue(Constructor<T> constructor, T createdObject, Class<?>... groups)+ validates the object (specified by [varname]+createdObject+) of a given constructor (identified by [varname]+constructor+).# [tck-testable]#A set containing all [classname]+ConstraintViolation+ objects representing the failing constraints is returned, an empty set is returned if no constraint violation occurred.# [tck-testable]#An [classname]+IllegalArgumentException+ will be thrown if null is passed for any of the parameters or if the parameters don't match with each other (i.e. +createdObject+ and +constructor+ don't match).#
 
@@ -530,7 +531,7 @@ public class Address {
     @NotEmpty(groups = Minimal.class)
     @Size(max=50)
     private String street1;
-    
+
     @NotEmpty
     private String city;
 
@@ -572,7 +573,7 @@ public class Address {
     @NotEmpty(groups = Minimal.class)
     @Size(max=50, groups=FirstStep.class)
     private String street1;
-    
+
     @NotEmpty(groups=SecondStep.class)
     private String city;
 
@@ -584,7 +585,7 @@ public class Address {
     public interface FirstStep {}
 
     public interface SecondStep {}
-    
+
     @GroupSequence({Firststep.class, SecondStep.class})
     public interface Total {}
 }
@@ -760,7 +761,9 @@ public interface ConstraintViolation<T> {
 
 [tck-testable]#The [methodname]+getRootBeanClass()+ method returns the class of the root bean being validated. For method validation, this is the object class the method is executed on. For constructor validation, this is the class the constructor is declared on.#
 
-[tck-testable]#The [methodname]+getLeafBean()+ method returns the following object: 
+[tck-testable]
+--
+The [methodname]+getLeafBean()+ method returns the following object:
 
 * If a bean constraint, the bean instance the constraint is applied on.
 * If a property constraint, the bean instance hosting the property the constraint is applied on.
@@ -768,15 +771,13 @@ public interface ConstraintViolation<T> {
 * If a method parameter, cross-parameter or return value constraint, the object the method is executed on.
 * If a constructor parameter or cross-parameter constraint, +null+.
 * If a constructor return value constraint, the object the constructor has created.
-
-
-#
+--
 
 [tck-testable]#The [methodname]+getExecutableParameters()+ returns the parameters provided to the method or constructor invocation or +null+ if not validating the method or constructor parameters.#
 
 [tck-testable]#The [methodname]+getExecutableReturnValue()+ returns the return value of the method or constructor invocation or +null+ if the method has no return value or if not validating the method or constructor return value.#
 
-[tck-testable]#The [methodname]+getInvalidValue()+ method returns the value (field, property, method/constructor parameter, method/constructor return value or validated object) being passed to [methodname]+isValid()+.# [tck-testable]#For a cross-parameter constraint failure, an [code]+Object\[\]+ representing the method/constructor invocation arguments is returned.#
+[tck-testable]#The [methodname]+getInvalidValue()+ method returns the value (field, property, method/constructor parameter, method/constructor return value or validated object) being passed to [methodname]+isValid()+.# [tck-testable]#For a cross-parameter constraint failure, an [code]+Object[]+ representing the method/constructor invocation arguments is returned.#
 
 [tck-testable]#[methodname]+getConstraintDescriptor()+ provides access to the failing constraint metadata# (see <<constraintmetadata-constraintdescriptor>>).
 
@@ -1067,13 +1068,13 @@ switch ( node.getKind() ) {
 case METHOD:
     MethodNode methodNode = node.as(MethodNode.class);
     methodName = methodNode.getName();
-    params = methodNode.getParameterTypes().toArray( 
+    params = methodNode.getParameterTypes().toArray(
         new Class<?>[methodNode.getParameterTypes().size()] );
     break;
 case CONSTRUCTOR:
     ConstructorNode constructorNode = node.as(ConstructorNode.class);
     methodName = constructorNode.getName();
-    params = constructorNode.getParameterTypes().toArray( 
+    params = constructorNode.getParameterTypes().toArray(
         new Class<?>[constructorNode.getParameterTypes().size()] );
     break;
 case PARAMETER:
@@ -1102,27 +1103,28 @@ case PROPERTY:
 ** [tck-testable]#a [classname]+PropertyNode+ object whose +name+ equals the name of the association property (field name or Java Bean property name) is added to [classname]+Path+. The [classname]+ElementKind+ of the node is [varname]+ElementKind.PROPERTY+.#
 ** [tck-testable]#if the association is a [classname]+List+ or an array, the following [classname]+Node+ object added contains the index value in [methodname]+getIndex()+.#
 ** [tck-testable]#if the association is a [classname]+Map+, the following [classname]+Node+ object added (representing a given map entry) contains the key value in [methodname]+getKey()+#
-** [tck-testable]#for all [classname]+Iterable+ or [classname]+Map+, the following [classname]+Node+ object added is marked as +inIterable+ ( [methodname]+isInIterable()+)#
+** [tck-testable]#for all [classname]+Iterable+ or [classname]+Map+, the following [classname]+Node+ object added is marked as +inIterable+ ([methodname]+isInIterable()+)#
 
 
-* [tck-testable]#For a property level constraint (field and getter) 
+[tck-testable]
+--
+* For a property level constraint (field and getter)
+
+** a [classname]+PropertyNode+ object is added to [classname]+Path+ whose +name+ equals the name of the property (field name or Java Bean property name). The [classname]+ElementKind+ of the is [varname]+ElementKind.PROPERTY+.
+** the property path is considered complete
+--
 
 ** a [classname]+PropertyNode+ object is added to [classname]+Path+ whose +name+ equals the name of the property (field name or Java Bean property name). The [classname]+ElementKind+ of the is [varname]+ElementKind.PROPERTY+.
 ** the property path is considered complete
 
-
-#
-** a [classname]+PropertyNode+ object is added to [classname]+Path+ whose +name+ equals the name of the property (field name or Java Bean property name). The [classname]+ElementKind+ of the is [varname]+ElementKind.PROPERTY+.
-** the property path is considered complete
-
-
-* [tck-testable]#For a class level constraint: 
+[tck-testable]
+--
+* For a class level constraint:
 
 ** a [classname]+BeanNode+ object is added to [classname]+Path+ whose +name+ is null. The [classname]+ElementKind+ of the node is [varname]+ElementKind.BEAN+.
 ** the property path is considered complete
+--
 
-
-#
 * For a method/constructor constraint (parameter, cross-parameter or return value constraint on a method or constructor):
 ** [tck-testable]#a [classname]+MethodNode+ respectively a [classname]+ConstructorNode+ object is added to the [classname]+Path+ which represents the validated method respectively constructor. The +name+ of the node equals the validated method name or the validated constructor's unqualified class name, the [classname]+ElementKind+ of the node is [varname]+ElementKind.METHOD+ respectively [varname]+ElementKind.CONSTRUCTOR+.#
 ** [tck-testable]#if the constraint is on a parameter, a [classname]+ParameterNode+ object is added to the [classname]+Path+ which represents the validated parameter. The +name+ of the node equals the parameter name as determined by the current parameter name provider (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>). The [classname]+ElementKind+ of the node is [varname]+elementKind.PARAMETER+.#
@@ -1137,16 +1139,18 @@ case PROPERTY:
 ** [tck-testable]#if a return value is traversed, a [classname]+ReturnValueNode+ object is added to the [classname]+Path+ which represents the traversed return value. The +name+ of the node has the constant value +<return value>+. The [classname]+ElementKind+ of the node is [varname]+ElementKind.RETURN_VALUE.+#
 ** [tck-testable]#if the parameter/return value is a [classname]+List+ or an array, the following [classname]+Node+ object added contains the index value in [methodname]+getIndex()+.#
 ** [tck-testable]#if the parameter/return value is a [classname]+Map+, the following [classname]+Node+ object added (representing a given map entry) contains the key value in [methodname]+getKey()+.#
-** [tck-testable]#for all [classname]+Iterable+ or [classname]+Map+, the following [classname]+Node+ object added is marked as +inIterable+ ( [methodname]+isInIterable()+).#
+** [tck-testable]#for all [classname]+Iterable+ or [classname]+Map+, the following [classname]+Node+ object added is marked as +inIterable+ ([methodname]+isInIterable()+).#
 
 
 
 
-[tck-testable]#If additional path nodes are added in a constraint validator implementation using the node builder API (see <<constraintsdefinitionimplementation-validationimplementation>>), the following rules apply: 
+[tck-testable]
+--
+If additional path nodes are added in a constraint validator implementation using the node builder API (see <<constraintsdefinitionimplementation-validationimplementation>>), the following rules apply:
 
 * if the default path ends with a [classname]+BeanNode+, this node is removed and the first added node (a [classname]+PropertyNode+) inherits its +inIterable+, +key+ and +index+ values. +inIterable+, +key+ and +index+ value must not be specified directly on this first node by the user.
 * if the default path ends with a [classname]+CrossParameterNode+, this node is removed.
-* then the additional nodes are appended to the (possibly amended) path generated by the Bean Validation engine as previously described: 
+* then the additional nodes are appended to the (possibly amended) path generated by the Bean Validation engine as previously described:
 
 ** [tck-testable]#A [classname]+PropertyNode+ is appended in case [methodname]+addPropertyNode(String)+ is invoked. The node name is equal to the name provided. The [classname]+ElementKind+ of the node is +ElementKind.PROPERTY+.#
 ** [tck-testable]#A [classname]+BeanNode+ is appended in case [methodname]+addBeanNode()+ is invoked. The node name is +null+. The [classname]+ElementKind+ of the node is +ElementKind.BEAN+.#
@@ -1154,12 +1158,7 @@ case PROPERTY:
 ** [tck-testable]#if [methodname]+inIterable()+ is invoked, the node returns +true+ for [methodname]+isInIterable()+, +false+ otherwise.#
 ** [tck-testable]#if [methodname]+atIndex(Integer)+ is invoked, the node returns the provided integer for [methodname]+getIndex()+, +null+ otherwise.#
 ** [tck-testable]#if [methodname]+atKey(Object)+ is invoked, the node returns the provided object for [methodname]+getKey()+, +null+ otherwise.#
-
-
-
-
-
-#
+--
 
 [NOTE]
 ====
@@ -1186,7 +1185,7 @@ Let there be the following object definitions:
 @SecurityChecking
 public class Author {
     private String firstName;
-    
+
     @NotEmpty(message="lastname must not be null")
     private String lastName;
 
@@ -1295,7 +1294,7 @@ Assuming the constructor and methods of the [classname]+Library+ class are subje
 |[classname]+@NotNull+  on the [varname]+location+ parameter of the constructor|ConstructorNode(name=Library, inIterable=false, index=null, key=null, kind=ElementKind.CONSTRUCTOR, parameterTypes=[String.class,String.class])
 
 ParameterNode(name=arg1, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=1)
-|[classname]+@NotNull+ on the [varname]+book+ parameter of the [methodname]+addBook()+ 
+|[classname]+@NotNull+ on the [varname]+book+ parameter of the [methodname]+addBook()+
               method|MethodNode(name=addBook, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[Book.class])
 
 ParameterNode(name=arg0, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
@@ -1327,7 +1326,7 @@ ReturnValueNode(name=<return value>, inIterable=false, index=null, key=null, kin
 PropertyNode(name=title,inIterable=true, index=null, key=Author(firstName=John, lastName=Doe), kind=ElementKind.PROPERTY)
 |[classname]+@OldAndNewPasswordsDifferent+  when
               executing [methodname]+Author.renewPassword()+  with
-              +oldPassword+, +newPassword+ 
+              +oldPassword+, +newPassword+
               and +retypedNewPassword+  set to "foo".
               [classname]+@OldAndNewPasswordsDifferent+  is a
               cross-parameter constraint.|MethodNode(name=renewPassword, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[String.class, String.class, String.class])
@@ -1370,7 +1369,7 @@ package com.acme.constraint;
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{com.acme.constraint.NotEmpty.message}"
+    String message() default "{com.acme.constraint.NotEmpty.message}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
@@ -1397,7 +1396,7 @@ and the following class definitions
 ----
 public class Author {
     private String firstName;
-    
+
     @NotEmpty(message="lastname must not be null")
     private String lastName;
 
@@ -1787,7 +1786,7 @@ A message interpolator is responsible for transforming the so called message des
 * [tck-testable]#Messages can be overridden at constraint declaration time by setting the [methodname]+message+ property on the constraint.#
 
 
-[tck-testable]#The message descriptor is a string literal and may contain one or more message parameters or expressions. Message parameters and expressions are string literals enclosed in {}or ${}respectively.# The following character escaping rules apply:
+[tck-testable]#The message descriptor is a string literal and may contain one or more message parameters or expressions. Message parameters and expressions are string literals enclosed in +{}+ or +${}+ respectively.# The following character escaping rules apply:
 
 * [tck-testable]#[code]+\{+ is considered as the literal +{+ instead of being considered as the beginning of a message parameter#
 * [tck-testable]#[code]+\}+ is considered as the literal +}+ instead of being considered as the end of a message parameter#
@@ -1832,7 +1831,7 @@ The default message interpolator uses the following steps:
 . [tck-not-testable]#If step 2 triggers a replacement, then step 1 is applied again.# Otherwise step 4 is performed.
 
 
-. [tck-testable]#Message parameters are extracted from the message string. Those matching the name of an attribute of the constraint are replaced by the value of that attribute in the constraint declaration. Parameter interpolation has precedence over message expressions. For example for the message descriptor ${value}, trying to evaluate {value}as message parameter has precedence over evaluating ${value} as message expression.#
+. [tck-testable]#Message parameters are extracted from the message string. Those matching the name of an attribute of the constraint are replaced by the value of that attribute in the constraint declaration. Parameter interpolation has precedence over message expressions. For example for the message descriptor ${value}, trying to evaluate {value} as message parameter has precedence over evaluating ${value} as message expression.#
 
 
 . [tck-testable]#Message expressions are extracted from the message string and evaluated using Expression Language. See also <<message-expressions>>.#
@@ -1852,7 +1851,7 @@ The precedence of message parameter over expression interpolation ensures backwa
 
 ===== Locale for default message interpolation
 
-The locale to be used for message interpolation is defined as following: 
+The locale to be used for message interpolation is defined as following:
 
 * [tck-testable]#if the locale is passed explicitly to the interpolator method via [methodname]+interpolate(String, Context, Locale)+, this provided instance is used.#
 * [tck-testable]#otherwise, the default [classname]+Locale+ as provided by [methodname]+Locale.getDefault()+ is used.#
@@ -2020,10 +2019,10 @@ public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
     /**
      * enforces the locale passed to the interpolator
      */
-    public String interpolate(String message, 
+    public String interpolate(String message,
                               Context context) {
-        return defaultInterpolator.interpolate(message, 
-                                               context, 
+        return defaultInterpolator.interpolate(message,
+                                               context,
                                                this.defaultLocale);
     }
 
@@ -2060,8 +2059,8 @@ Most of the time, however, the relevant [classname]+Locale+ will be provided by 
 public class ContextualMessageInterpolator implements MessageInterpolator {
     private final MessageInterpolator delegate;
 
-    public ContextualMessageInterpolator(MessageInterpolator delegate) { 
-        this.delegate = delegate; 
+    public ContextualMessageInterpolator(MessageInterpolator delegate) {
+        this.delegate = delegate;
     }
 
     public String interpolate(String message, Context context) {
@@ -2079,8 +2078,8 @@ public class ContextualMessageInterpolator implements MessageInterpolator {
 //Build the ValidatorFactory
 Configuration<?> configuration = Validation.byDefaultProvider().configure();
 ValidatorFactory factory = configuration
-    .messageInterpolator( 
-        new ContextualMessageInterpolator( 
+    .messageInterpolator(
+        new ContextualMessageInterpolator(
                 configuration.getDefaultMessageInterpolator() ) )
     .buildValidatorFactory();
 
@@ -2098,16 +2097,16 @@ Bean Validation itself doesn't trigger the evaluation of method constraints. Tha
 
 Instead method constraints must be validated by invoking the appropriate methods on [classname]+javax.validation.executable.ExecutableValidator+. Typically this won't happen by manually calling these methods but rather automatically upon invocation of the constrained methods or constructors, using approaches and techniques such as CDI/EJB interceptors, aspect-oriented programming or dynamic proxies.
 
-[tck-testable]#The validation of method / constructor constraints comprises the following steps: 
+[tck-testable]
+--
+The validation of method / constructor constraints comprises the following steps:
 
 * Intercept the method call to be validated
 * Validate the parameter values provided by the method caller using [methodname]+ExecutableValidator.validateParameters()+ or [methodname]+ExecutableValidator.validateConstructorParameters()+.
 * If this validation yields a non-empty set of constraint violations, throw a [classname]+ConstraintViolationException+ wrapping the violations. Otherwise proceed with the actual method invocation.
 * Validate the result returned by the invoked method using [methodname]+ExecutableValidator.validateReturnValue()+ or [methodname]+ExecutableValidator.validateConstructorReturnValue()+.
 * If this validation yields a non-empty set of constraint violations, throw a [classname]+ConstraintViolationException+ wrapping the violations. Otherwise return the invocation result to the method caller.
-
-
-#
+--
 
 By throwing a [classname]+ConstraintViolationException+ if either of the validation steps fails, it is ensured that the control flow
 
@@ -2115,7 +2114,7 @@ By throwing a [classname]+ConstraintViolationException+ if either of the validat
 * only returns to the method caller if the method's postconditions are guaranteed.
 
 
-By default, integrators intercept and validate methods hosting either a constraint or being marked for cascaded validation ( [classname]+@Valid+) whether it be on the method itself or on any of its parameters. [tck-testable]#The [classname]+Default+ group is used for validation out of the box.#
+By default, integrators intercept and validate methods hosting either a constraint or being marked for cascaded validation ([classname]+@Valid+) whether it be on the method itself or on any of its parameters. [tck-testable]#The [classname]+Default+ group is used for validation out of the box.#
 
 Integrators are encouraged to use Bean Validation's metadata API to find whether or not a method or a constructor should be intercepted. This guarantees that XML descriptors as well as future mapping strategies are taken into account. Note that the metadata API does not take into account the fact that a method or constructor validation has been enabled or disabled by the techniques described in <<integration-general-executable>>.
 
@@ -2209,7 +2208,7 @@ public <T> boolean requiresParametersValidation(Class<T> type, Constructor<T> ct
 public <T> boolean requiresReturnValueValidation(Class<T> type, Constructor<T> ctor) {
     BeanDescriptor bean = validator.getConstraintsForClass( type );
     ConstructorDescriptor constructorDescriptor = bean.getConstraintsForConstructor(
-        ctor.getName(), 
+        ctor.getName(),
         ctor.getParameterTypes()
     );
     if ( constructorDescriptor != null ) {
@@ -2377,13 +2376,13 @@ public interface ACMEConfiguration extends Configuration<ACMEConfiguration> {
     /**
      * Programmatically add constraints. Specific to the ACME provider.
      */
-    ACMEConfiguration addConstraint(Class<?> entity, 
+    ACMEConfiguration addConstraint(Class<?> entity,
                                     ACMEConstraintDescriptor constraintDescriptor);
 }
 
 /**
  * ACME validation provider
- * Note how ACMEConfiguration and ACMEProvider are linked together 
+ * Note how ACMEConfiguration and ACMEProvider are linked together
  * via the generic parameter.
  */
 public class ACMEProvider implements ValidationProvider<ACMEConfiguration> {
@@ -2402,11 +2401,11 @@ The last example shows how a [classname]+Validator+ can use a specific [classnam
 ----
 ValidatorFactory factory = [...];
 MessageInterpolator customInterpolator = new LocaleSpecificMessageInterpolator(
-    locale, 
+    locale,
     factory.getMessageInterpolator()
 );
 
-Validator localizedValidator = 
+Validator localizedValidator =
     factory.usingContext()
                    .messageInterpolator(customInterpolator)
                    .getValidator();
@@ -2553,7 +2552,7 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [tck-testable]#[methodname]+getConstraintValidatorFactory()+ returns the [classname]+ConstraintValidatorFactory+ instance configured during the initialization of the [classname]+ValidatorFactory+.# It is particularly useful to build a [classname]+Validator+ specific [classname]+ConstraintValidatorFactory+ wrapping the one from the [classname]+ValidatorFactory+.
 
-[tck-testable]#[tck-testable]#[methodname]+getParameterNameProvider()+ returns the [classname]+ParameterNameProvider+ instance configured during the initialization of the [classname]+ValidatorFactory+.## It is particularly useful to build a [classname]+Validator+ specific [classname]+ParameterNameProvider+ wrapping the one from the [classname]+ValidatorFactory+.
+[tck-testable]#[methodname]+getParameterNameProvider()+ returns the [classname]+ParameterNameProvider+ instance configured during the initialization of the [classname]+ValidatorFactory+.# It is particularly useful to build a [classname]+Validator+ specific [classname]+ParameterNameProvider+ wrapping the one from the [classname]+ValidatorFactory+.
 
 [classname]+ValidatorContext+ returned by [methodname]+usingContext()+ can be used to customize the state in which the [classname]+Validator+ must be initialized. This is used to customize the [classname]+MessageInterpolator+, the [classname]+TraversableResolver+, [classname]+ParameterNameProvider+ or the [classname]+ConstraintValidatorFactory+.
 
@@ -2676,7 +2675,7 @@ The responsibility of the [classname]+Configuration+ is to collect configuration
 
 [tck-testable]#[classname]+Configuration+ does provide a [classname]+ConstraintValidatorFactory+ implementation following the default Bean Validation [classname]+ConstraintValidatorFactory+ rules as defined in <<constraintsdefinitionimplementation-constraintfactory>>. You can access it by calling [methodname]+getDefaultConstraintValidatorFactory()+.# Such an implementation is useful to let a custom [classname]+ConstraintValidatorFactory+ delegate to the standard [classname]+ConstraintValidatorFactory+.
 
-[tck-testable]#[tck-testable]#[classname]+Configuration+ does provide a [classname]+ParameterNameProvider+ implementation following the default Bean Validation [classname]+ParameterNameProvider+ rules as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>. You can access it by calling [methodname]+getDefaultParameterNameProvider()+# .# Such an implementation is useful to let a custom [classname]+ParameterNameProvider+ delegate to the standard [classname]+ParameterNameProvider+.
+[tck-testable]#[classname]+Configuration+ does provide a [classname]+ParameterNameProvider+ implementation following the default Bean Validation [classname]+ParameterNameProvider+ rules as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>. You can access it by calling [methodname]+getDefaultParameterNameProvider()+#. Such an implementation is useful to let a custom [classname]+ParameterNameProvider+ delegate to the standard [classname]+ParameterNameProvider+.
 
 [tck-testable]#Via [classname]+getBootstrapConfiguration()+, [classname]+Configuration+ also exposes data stored in [classname]+META-INF/validation.xml+# (see <<xml-config>>). This is particularly useful for containers wishing to control the instance creation and life cycle (more information at <<bootstrapping-usageandcontainerexpectation>>).
 
@@ -3044,7 +3043,7 @@ To facilitate the use of provider specific configuration methods, [classname]+Co
  * Unique identifier of the ACME provider
  * also hosts some provider specific configuration methods
  */
-public interface ACMEConfiguration 
+public interface ACMEConfiguration
     extends Configuration<ACMEConfiguration> {
 
     /**
@@ -3208,14 +3207,14 @@ public interface ConfigurationState {
 
 ====
 
-[tck-testable]#The requested provider implementation is resolved according to the following rules in the following order: 
+[tck-testable]
+--
+The requested provider implementation is resolved according to the following rules in the following order:
 
 * Use the provider implementation requested if [classname]+Configuration+ has been created from [classname]+Validation.byProvider(Class)+.
 * Use the provider implementation described in the XML configuration (under +validation-config.default-provider+ see <<xml-config>>) if defined: the value of this element is the fully qualified class name of the [classname]+ValidationProvider+ implementation uniquely identifying the provider.
 * Use the first provider implementation returned by [classname]+validationProviderResolver.getValidationProviders()+.
-
-
-#
+--
 
 The [classname]+ValidationProviderResolver+ is specified when [classname]+Configuration+ instances are created (see [classname]+ValidationProvider+). [tck-not-testable]#If no [classname]+ValidationProviderResolver+ instance has been specified, the default [classname]+ValidationProviderResolver+ is used.#
 
@@ -3407,7 +3406,7 @@ package javax.validation.spi;
  * Defines the state used to bootstrap the {@link Configuration}.
  *
  * @author Emmanuel Bernard
- * @author Sebastian Thomschke 
+ * @author Sebastian Thomschke
  */
 public interface BootstrapState {
 
@@ -3422,7 +3421,7 @@ public interface BootstrapState {
     /**
      * Specification default {@code ValidationProviderResolver}
      * strategy instance.
-     * 
+     *
      * @return default implementation of ValidationProviderResolver
      */
     ValidationProviderResolver getDefaultValidationProviderResolver();
@@ -3444,7 +3443,7 @@ A [classname]+ValidationProvider+ implementation is linked (via its generic para
  * Unique identifier of the ACME provider
  * also hosts some provider specific configuration methods
  */
-public interface ACMEConfiguration 
+public interface ACMEConfiguration
     extends Configuration<ACMEConfiguration> {
 
     /**
@@ -3457,7 +3456,7 @@ public interface ACMEConfiguration
 
 /**
  * ACME validation provider
- * Note how ACMEConfiguration and ACMEProvider are linked together 
+ * Note how ACMEConfiguration and ACMEProvider are linked together
  * via the generic parameter.
  */
 public class ACMEProvider implements ValidationProvider<ACMEConfiguration> {
@@ -3472,13 +3471,13 @@ public class ACMEProvider implements ValidationProvider<ACMEConfiguration> {
 [classname]+Configuration+ references itself in the generic definition. Methods of [classname]+Configuration+ will return the [classname]+ACMEConfiguration+ making the API easy to use even for vendor specific extensions.
 ====
 
-[tck-testable]#The provider discovery mechanism uses the following algorithm: 
+[tck-testable]
+--
+The provider discovery mechanism uses the following algorithm:
 
 * Retrieve available providers using [methodname]+ValidationProviderResolver.getValidationProviders()+.
 * The first [classname]+ValidationProvider+ matching the requested provider is returned. Providers are evaluated in the order they are returned by [classname]+ValidationProviderResolver+. A provider instance is considered matching if it is assignable to the requested provider class.
-
-
-#
+--
 
 [tck-testable]#When the default Bean Validation provider is requested, the first [classname]+ValidationProvider+ returned by the [classname]+ValidationProviderResolver+ strategy is returned.#
 
@@ -3741,7 +3740,7 @@ public interface ProviderSpecificBootstrap<T extends Configuration<T>> {
 
 ====
 
-[methodname]+ProviderSpecificBootstrap.configure()+ must return the result of [methodname]+ValidationProvider.createSpecializedConfiguration(BootstrapState state)+. The state parameter holds the [classname]+ValidationProviderResolver+ passed to [classname]+ProviderSpecificBootstrap+. The validation provider instance used is the one assignable to the type passed as a parameter in [methodname]+Validation.byProvider(Class)+. The validation provider is selected according to the algorithm described in ( <<id-bootstrap-validationprovider>>).
+[methodname]+ProviderSpecificBootstrap.configure()+ must return the result of [methodname]+ValidationProvider.createSpecializedConfiguration(BootstrapState state)+. The state parameter holds the [classname]+ValidationProviderResolver+ passed to [classname]+ProviderSpecificBootstrap+. The validation provider instance used is the one assignable to the type passed as a parameter in [methodname]+Validation.byProvider(Class)+. The validation provider is selected according to the algorithm described in (<<id-bootstrap-validationprovider>>).
 
 [tck-testable]#The [classname]+Validation+ implementation must not contain any non private attribute or method aside from the three public static bootstrap methods:#
 
@@ -3830,5 +3829,3 @@ The Bean Validation bootstrap API can be used directly by any application or mad
 * [tck-not-testable]#[classname]+ValidatorFactory+ is a thread-safe object that should be built once per deployment unit#
 * [classname]+ValidatorFactory+ should be closed when it is no longer needed (e.g. when the unit is undeployed or the server stopped).
 * [tck-not-testable]#[classname]+Validator+ is a thread-safe and lightweight object which can be cached by the [classname]+ValidatorFactory+ instance.#
-
-

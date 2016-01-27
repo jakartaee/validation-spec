@@ -196,15 +196,15 @@ public enum Scope {
 }
 ----
 
-[tck-testable]#[methodname]+getElementClass()+ returns 
+[tck-testable]
+--
+[methodname]+getElementClass()+ returns
 
 * the object type when invoked on [classname]+BeanDescriptor+,
 * the type of a property or parameter when invoked on [classname]+PropertyDescriptor+ or [classname]+ParameterDescriptor+ respectively,
-* +Object\[\].class+ when invoked on [classname]+CrossParameterDescriptor+,
+* +Object[].class+ when invoked on [classname]+CrossParameterDescriptor+,
 * the return type when invoked on [classname]+ConstructorDescriptor+, [classname]+MethodDescriptor+ or [classname]+ReturnValueDescriptor+.
-
-
-#
+--
 
 [tck-testable]#[classname]+getConstraintDescriptors()+ returns all the [classname]++ConstraintDescriptor++ s (see <<constraintmetadata-constraintdescriptor>>) hosted on the given element in the class hierarchy, each [classname]+ConstraintDescriptor+ describing one of the constraints declared on the given element.#
 
@@ -214,9 +214,9 @@ public enum Scope {
 
 [tck-testable]#[classname]+unorderedAndMatchingGroups()+ restricts the results to the [classname]++ConstraintDescriptor++ s (see <<constraintmetadata-constraintdescriptor>>) matching the given groups. Order is not respected but group inheritance and inheritance via sequence (including the [classname]+Default+ group overriding at the class level) are honored.#
 
-[tck-testable]#[methodname]+declaredOn()+ lets you restrict the list of element types constraints are hosted on.# This is particularly useful to retrieve property constraints only hosted on fields ( [classname]+ElementType.FIELD+) or only hosted on getters ( [classname]+ElementType.METHOD+).
+[tck-testable]#[methodname]+declaredOn()+ lets you restrict the list of element types constraints are hosted on.# This is particularly useful to retrieve property constraints only hosted on fields ([classname]+ElementType.FIELD+) or only hosted on getters ([classname]+ElementType.METHOD+).
 
-[tck-testable]#[methodname]+lookingAt()+ lets you restrict which constraints are considered. Either constraints belonging to the element but hosted on the class represented by the given descriptor ( [classname]+Scope.LOCAL_ELEMENT+), or constraints belonging to the element but hosted anywhere in the class hierarchy ( [classname]+Scope.HIERARCHY+).#
+[tck-testable]#[methodname]+lookingAt()+ lets you restrict which constraints are considered. Either constraints belonging to the element but hosted on the class represented by the given descriptor ([classname]+Scope.LOCAL_ELEMENT+), or constraints belonging to the element but hosted anywhere in the class hierarchy ([classname]+Scope.HIERARCHY+).#
 
 Here is an example restricting the list of constraints on getters, matching the default group and declared physically on the +name+ getter of [classname]+Customer+ (and not any of the getters on the super classes).
 
@@ -227,7 +227,7 @@ Here is an example restricting the list of constraints on getters, matching the 
 ----
 public class User {
 
-    @Size(max=50) 
+    @Size(max=50)
     String getName() {
         [...]
     }
@@ -243,9 +243,9 @@ public class Customer extends User {
     }
 }
 
-PropertyDescriptor pd = 
+PropertyDescriptor pd =
     validator.getConstraintsForClass(Customer.class).getConstraintsForProperty("name");
-Set<ConstraintDescriptor<?>> constraints = 
+Set<ConstraintDescriptor<?>> constraints =
     pd.findConstraints()
         .declaredOn(ElementType.METHOD)
         .unorderedAndMatchingGroups(Default.class)
@@ -512,7 +512,7 @@ public enum MethodType {
 
 [tck-testable]#[methodname]+getConstraintsForProperty()+ returns a [classname]+PropertyDescriptor+ object describing the property level constraints (See <<constraintdeclarationvalidationprocess-requirements-property>>). The property is uniquely identified by its name as per the JavaBeans convention: field level and getter level constraints of the given name are all returned.# [tck-testable]#An [classname]+IllegalArgumentException+ is raised if the [varname]+propertyName+ parameter is null.#
 
-[tck-testable]#[methodname]+getConstrainedProperties()+ returns the [classname]++PropertyDescriptor++ s of the bean properties having at least one constraint or being cascaded ( [classname]+@Valid+ annotation).#
+[tck-testable]#[methodname]+getConstrainedProperties()+ returns the [classname]++PropertyDescriptor++ s of the bean properties having at least one constraint or being cascaded ([classname]+@Valid+ annotation).#
 
 [tck-testable]#[methodname]+getConstraintsForMethod()+ returns a [classname]+MethodDescriptor+ object describing the method constraints of the given method. The method is uniquely identified by its name and the types of its parameters.#
 
@@ -559,7 +559,7 @@ public interface CascadableDescriptor {
 
 [tck-testable]#The [methodname]+isCascaded()+ method returns +true+ if the element is marked for cascaded validation.#
 
-[tck-testable]#[tck-testable]#The method [methodname]+getGroupConversions()+ returns a set with the group conversions declared for the cascadable element.# [tck-testable]#An empty set will be returned if no group conversions are configured.##
+[tck-testable]#The method [methodname]+getGroupConversions()+ returns a set with the group conversions declared for the cascadable element.# [tck-testable]#An empty set will be returned if no group conversions are configured.#
 
 === GroupConversionDescriptor
 
@@ -873,7 +873,7 @@ public interface CrossParameterDescriptor extends ElementDescriptor {
 }
 ----
 
-[tck-testable]#[methodname]+getElementClass()+ returns [classname]+Object\[\]+.#
+[tck-testable]#[methodname]+getElementClass()+ returns [classname]+Object[]+.#
 
 === ReturnValueDescriptor
 
@@ -1072,7 +1072,7 @@ public @interface ValidInterval {
 
     @SupportedValidationTarget(PARAMETERS)
     class Validator implements ConstraintValidator<ValidInterval, Object[]> {
-        
+
         private int start;
         private int end;
 
@@ -1084,7 +1084,7 @@ public @interface ValidInterval {
 
         @Override
         public boolean isValid(Object[] value, ConstraintValidatorContext context) {
-            return Integer.parseInt( String.valueOf( value[start] ) ) < 
+            return Integer.parseInt( String.valueOf( value[start] ) ) <
                    Integer.parseInt( String.valueOf( value[end] ) );
         }
     }
@@ -1097,7 +1097,7 @@ and the following class definitions
 ----
 public class Author {
     private String firstName;
-    
+
     @NotEmpty(message="lastname must not be null")
     private String lastName;
 
@@ -1129,7 +1129,7 @@ public class Book {
 
     public interface FirstLevelCheck {}
     public interface SecondLevelCheck {}
-    
+
     private String title;
     private String description;
 
@@ -1139,18 +1139,18 @@ public class Book {
 
     @Valid
     public Book(
-            String title, 
-            @Size(max=30) String description, 
+            String title,
+            @Size(max=30) String description,
             @Valid
             @ConvertGroup(from=Default.class, to=SecondLevelCheck.class)
             Author author) {
         [...]
     }
-    
+
     public Book() {
         [...]
     }
-     
+
     @NotEmpty(groups={FirstLevelCheck.class, Default.class})
     @Size(max=30)
     public String getTitle() {
@@ -1176,7 +1176,7 @@ public class Book {
     public void setAuthor(String description) {
         this.description = description;
     }
-    
+
     @ValidInterval(startParameter=1, endParameter=2)
     public void addChapter(String title, int startPage, int endPage) {
         [...]
@@ -1202,10 +1202,10 @@ assert bookDescriptor.getConstraintDescriptors().size() == 0; //no bean-level co
 assert bookDescriptor.getConstrainedProperties().size() == 2;
 
 //not a property
-assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null; 
+assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null;
 
 //property with no constraint
-assert bookDescriptor.getConstraintsForProperty("description") == null; 
+assert bookDescriptor.getConstraintsForProperty("description") == null;
 
 PropertyDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
 assert propertyDescriptor.getConstraintDescriptors().size() == 2;
@@ -1226,7 +1226,7 @@ for ( ConstraintDescriptor<?> composingDescriptor : constraintDescriptor.getComp
         notNullPresence = true;
     }
 }
-assert notNullPresence; 
+assert notNullPresence;
 
 //assuming the implementation returns the Size constraint second
 constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
@@ -1245,7 +1245,7 @@ assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_G
 assert bookDescriptor.getConstrainedConstructors().size() == 1;
 
 ConstructorDescriptor constructorDescriptor = bookDescriptor.getConstraintsForConstructor(
-    String.class, String.class, Author.class 
+    String.class, String.class, Author.class
 );
 assert constructorDescriptor.getName().equals( "Book" );
 assert constructorDescriptor.getElementClass() == Book.class;
@@ -1323,4 +1323,3 @@ ConstraintDescriptor<?> crossParameterConstraint =
     crossParameterDescriptor.getConstraintDescriptors().iterator().next();
 assert crossParameterConstraint.getAnnotation().annotationType() == ValidInterval.class;
 ----
-

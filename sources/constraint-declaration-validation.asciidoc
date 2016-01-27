@@ -20,22 +20,23 @@ Objects hosting constraints and expecting to be validated by Bean Validation pro
 [NOTE]
 .What is a getter?
 ====
-[tck-testable]#The JavaBeans specification specifies that a getter is a method whose
+[tck-testable]
+--
+The JavaBeans specification specifies that a getter is a method whose
 
 * name starts with +get+ and has a return type but no parameter
 * name starts with +is+, has no parameter and is returning [classname]+boolean+
+--
 
-
-#
 ====
 
-[tck-testable]#The target of an annotation definition can be a field, property, type, constructor or method return value, constructor or method parameter or constructor or method cross-parameter provided that: 
+[tck-testable]
+--
+The target of an annotation definition can be a field, property, type, constructor or method return value, constructor or method parameter or constructor or method cross-parameter provided that:
 
-* the constraint definition supports the specified target ( [classname]+java.lang.annotation.Target+)
+* the constraint definition supports the specified target ([classname]+java.lang.annotation.Target+)
 * one of the [classname]++ConstraintValidator++ s declared on the constraint supports the declared type of the target or in the case of cross-parameter, one cross-parameter [classname]+ConstraintValidator+ is present (see <<typevalidatorresolution>> to learn about [classname]+ConstraintValidator+ resolution).
-
-
-#
+--
 
 [[constraintdeclarationvalidationprocess-requirements-object]]
 
@@ -205,7 +206,6 @@ public interface Default {
 ----
 
 [[constraintdeclarationvalidationprocess-groupsequence-groupinheritance]]
-
 ==== Group inheritance
 
 In some situations, a group is a superset of one or more groups. This can be described by Bean Validation. [tck-testable]#A group may inherit one or more groups by using interface inheritance.#
@@ -258,7 +258,6 @@ validating the group [classname]+BuyInOneClick+ will lead to the following const
 because [classname]+Default+ and [classname]+Billable+ are superinterfaces of [classname]+BuyInOneClick+.
 
 [[constraintdeclarationvalidationprocess-groupsequence-groupsequence]]
-
 ==== Group sequence
 
 [tck-not-testable]#By default, constraints are evaluated in no particular order regardless of which groups they belong to.# It is however useful in some situations to control the order of constraints evaluation. There are often scenarios where a preliminary set of constraints should be evaluated prior to other constraints. Here are two examples:
@@ -271,13 +270,13 @@ To implement such ordering, a group can be defined as a sequence of other groups
 
 Processing a group is defined in <<constraintdeclarationvalidationprocess-validationroutine>> ; [tck-testable]#if one of the groups processed in the sequence generates one or more constraint violations, the groups following in the sequence must not be processed.# This ensures that a set of constraint is evaluated only if another set of constraint is valid.
 
-[tck-testable]#Groups defining a sequence and groups composing a sequence must not be involved in a cyclic dependency: 
+[tck-testable]
+--
+Groups defining a sequence and groups composing a sequence must not be involved in a cyclic dependency:
 
 * either directly or indirectly
 * either through cascaded sequence definitions or group inheritance
-
-
-#
+--
 
 [tck-testable]#If a group containing such a circularity is evaluated, a [classname]+GroupDefinitionException+ is raised.#
 
@@ -353,7 +352,6 @@ In <<example-groupsequence>>, when the [classname]+Address.Complete+ group is va
 ====
 
 [[constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup]]
-
 ==== Redefining the Default group for a class
 
 In <<example-groupsequence>>, validating the [classname]+Default+ group does not validate [classname]+HighLevelCoherence+ constraints. To ensure a complete validation, a user must use the [classname]+Complete+ group. This breaks some of the encapsulation you could expect. You can work around this by redefining what the [classname]+Default+ group means for a given class. [tck-testable]#To redefine [classname]+Default+ for a class, place a [classname]+@GroupSequence+ annotation on the class; this sequence expresses the sequence of groups that does substitute [classname]+Default+ for this class.#
@@ -394,7 +392,6 @@ Since sequences cannot have circular dependencies, using [classname]+Default+ in
 [tck-testable]#A sequence defined on a class [classname]+A+ (i.e. redefining the [classname]+Default+ groups for the class) must contain the group [classname]+A+.# In other words, the default constraints hosted on a class must be part of the sequence definition. [tck-testable]#If a [classname]+@GroupSequence+ redefining the [classname]+Default+ group for a class [classname]+A+ does not contain the group [classname]+A+, a [classname]+GroupDefinitionException+ is raised when the class is validated or when its metadata is requested.#
 
 [[constraintdeclarationvalidationprocess-groupsequence-implicitgrouping]]
-
 ==== Implicit grouping
 
 It is possible to implicitly group several constraints in the same group without explicitly listing such a group in the constraint declaration. [tck-testable]#Every constraint hosted on an interface [classname]+Z+ and part of the [classname]+Default+ group (implicitly or explicitly) belongs to the group [classname]+Z+.# This is useful to validate the partial state of an object based on a role represented by an interface.
@@ -639,9 +636,10 @@ For every class [classname]+X+:
 . For each superclass [classname]+Y+ of [classname]+X+, the group [classname]+Y+ contains all constraints of the group [classname]+Y+ of [classname]+Y+
 _this rule prepares formal concepts for recursive discovery_
 
-
-. [tck-testable]#The group [classname]+X+ contains the following constraints:
-[tck-ignore]#_group X is a group used on sequences redefining the default group on a class (see )_#
+[tck-testable]
+--
+. The group [classname]+X+ contains the following constraints:
+[tck-ignore]#group X is a group used on sequences redefining the default group on a class (see <<constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup>>)#
 .. every constraint declared by the class [classname]+X+ which does not declare a group or does declare the group [classname]+Default+ explicitly.
 [tck-ignore]#_all Default constraints hosted on X_#
 
@@ -652,36 +650,32 @@ _this rule prepares formal concepts for recursive discovery_
 
 .. if [classname]+X+ has a direct superclass [classname]+Y+, every constraint in the group [classname]+Y+
 [tck-ignore]#_all Default constraints hosted on the superclasses of X: constraints are inherited by the class hierarchy_#
+--
 
-
-#
-
-. [tck-testable]#If [classname]+X+ has no [classname]+@GroupSequence+ annotation, the group [classname]+Default+ contains the following constraints:
+[tck-testable]
+--
+. If [classname]+X+ has no [classname]+@GroupSequence+ annotation, the group [classname]+Default+ contains the following constraints:
 [tck-ignore]#_this rule defines which constraints are evaluated when validating Default on X._#
 .. every constraint in the group [classname]+X+
 
-
 .. if [classname]+X+ has a direct superclass [classname]+Y+, every constraint in the group [classname]+Default+ of [classname]+Y+
 [tck-ignore]#_this rule is necessary in case Y redefines the group Default_#
-
-
-#
+--
 
 . [tck-testable]#If [classname]+X+ does have a [classname]+@GroupSequence+ annotation, the group [classname]+Default+ contains every constraint belonging to every group declared by the [classname]+@GroupSequence+ annotation.#
-_this rule describes how a class can redefine the group Default for itself (see )_
+_this rule describes how a class can redefine the group Default for itself (see <<constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup>>)_
 ** [tck-testable]#the [classname]+@GroupSequence+ annotation must declare the group [classname]+X+#
 
-
-
-
-. [tck-testable]#For every interface [classname]+Z+, the group [classname]+Z+ contains the following constraints:
+[tck-testable]
+--
+. For every interface [classname]+Z+, the group [classname]+Z+ contains the following constraints:
 [tck-ignore]#_this rule defines how non Default groups are defined_#
 .. every constraint declared by the interface [classname]+Z+ which does not explicitly declare a group or does declare the group [classname]+Default+ explicitly.
-[tck-ignore]#_all Default constraints hosted on Z: this rule formally defines implicit grouping per interface (see )_#
+[tck-ignore]#_all Default constraints hosted on Z: this rule formally defines implicit grouping per interface (see <<constraintdeclarationvalidationprocess-groupsequence-implicitgrouping>>)_#
 
 
 .. every constraint (which does not explicitly declare a group) declared by any superinterface not annotated [classname]+@GroupSequence+ of the interface [classname]+Z+
-[tck-ignore]#_all Default constraints hosted on interfaces of Z: groups can be inherited (see )_#
+[tck-ignore]#_all Default constraints hosted on interfaces of Z: groups can be inherited (see <<constraintdeclarationvalidationprocess-groupsequence-groupinheritance>>)_#
 
 
 .. every constraint declared by the class [classname]+X+ which explicitly declares the group [classname]+Z+
@@ -694,15 +688,15 @@ _this rule describes how a class can redefine the group Default for itself (see 
 
 .. if [classname]+X+ has a direct superclass [classname]+Y+, every constraint in the group [classname]+Z+ of [classname]+Y+
 [tck-ignore]#_every constraint hosted by any superclass of X and marked as belonging to the group Z_#
-
-
-#
+--
 
 . [tck-testable]#For every interface [classname]+Z+ annotated [classname]+@GroupSequence+, the group [classname]+Z+ contains every constraint belonging to every group declared by the [classname]+@GroupSequence+ annotation.#
-_defines the composition side of group sequence but does not define the ordering behavior of sequence (see )_
+_defines the composition side of group sequence but does not define the ordering behavior of sequence (see <<constraintdeclarationvalidationprocess-groupsequence-groupsequence>>)_
 
 
-[tck-testable]#When a given group [classname]+G+ (represented by an interface [classname]+G+) is requested for the validation of a class [classname]+X+: 
+[tck-testable]
+--
+When a given group [classname]+G+ (represented by an interface [classname]+G+) is requested for the validation of a class [classname]+X+:
 
 * constraints belonging to the group [classname]+G+ are evaluated
 * if the interface [classname]+G+ is not annotated [classname]+@GroupSequence+, every group represented by the super interface of [classname]+G+ are requested for validation
@@ -710,22 +704,17 @@ _defines the composition side of group sequence but does not define the ordering
 ** the validation of groups declared to the [classname]+@GroupSequence+ must happen in the sequencing order declared by [classname]+@GroupSequence+: the sequencing order is propagated to the groups composing the sequenced group (via inheritance or group sequence)
 ** if a group validation triggers the failure of one or more constraints, groups following in the sequence must not be evaluated.
 
-
 * if the group [classname]+G+ represents the [classname]+Default+ group of [classname]+X+ overridden by [classname]+@GroupSequence+, operations are equivalent
+--
 
-
-#
-
-[tck-testable]#When the [classname]+Default+ group of a given class [classname]+X+ is overridden via [classname]+@GroupSequence+, its validation is as followed: 
+[tck-testable]
+--
+When the [classname]+Default+ group of a given class [classname]+X+ is overridden via [classname]+@GroupSequence+, its validation is as followed:
 
 * every group represented by the interfaces declared by the [classname]+@GroupSequence+ annotation are requested for validation
 ** the validation of groups declared to the [classname]+@GroupSequence+ must happen in the sequencing order declared by [classname]+@GroupSequence+: the sequencing order is propagated to the groups composing the sequenced group (via inheritance or group sequence)
 ** if a group validation triggers the failure of one or more constraints, groups following in the sequence must not be evaluated.
-
-
-
-
-#
+--
 
 [tck-not-testable]#Unless defined by a [classname]+@GroupSequence+, evaluation ordering is not constrained. In particular, several groups can be validated in the same pass.# [tck-testable]#If a group definition leads to a circular sequencing order between groups, a [classname]+GroupDefinitionException+ is raised.#
 
@@ -818,7 +807,7 @@ public class CalendarService {
 
 ====
 
-The cross-parameter constraint annotation expresses here that the given start date must be before the passed end date in order to legally invoke the [methodname]+createEvent()+ method. The example also shows that it is often useful to combine constraints directly placed on individual parameters ( [classname]+e.g. @NotNull+) and cross-parameter constraints.
+The cross-parameter constraint annotation expresses here that the given start date must be before the passed end date in order to legally invoke the [methodname]+createEvent()+ method. The example also shows that it is often useful to combine constraints directly placed on individual parameters ([classname]+e.g. @NotNull+) and cross-parameter constraints.
 
 [TIP]
 ====
@@ -1127,15 +1116,16 @@ The return value constraints in [classname]+DefaultOrderService+ are legal, as t
 
 === Validation routine
 
-[tck-testable]#For a given group, the validation routine applied on a given bean instance is expected to execute the following constraint validations in no particular order: 
+[tck-testable]
+--
+For a given group, the validation routine applied on a given bean instance is expected to execute the following constraint validations in no particular order:
 
 * for all _reachable_ fields, execute all field level validations (including the ones expressed on superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
 * for all _reachable_ getters, execute all getter level validations (including the ones expressed on interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
 * execute all class level validations (including the ones expressed on interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
 * for all _reachable_ and _cascadable_ associations, execute all cascading validations (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) including the ones expressed on interfaces and superclasses (see <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>). Note that group conversion can apply (see <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>).
 
-
-#
+--
 
 Reachable fields, getters and associations as well as cascadable associations are defined in <<constraintdeclarationvalidationprocess-validationroutine-traversable>>.
 
@@ -1143,15 +1133,15 @@ Note that this implies that a given validation constraint will not be processed 
 
 [tck-not-testable]#Unless ordered by group sequences, groups can be validated in no particular order.# This implies that the validation routine can be run for several groups in the same pass.
 
-[tck-testable]#The object validation routine is described as such. For each constraint declaration: 
+[tck-testable]
+--
+The object validation routine is described as such. For each constraint declaration:
 
 * determine for the constraint declaration, the appropriate [classname]+ConstraintValidator+ to use (see <<typevalidatorresolution>>).
 * execute the [methodname]+isValid+ operation (from the constraint validation implementation) on the appropriate data (see <<constraintsdefinitionimplementation-validationimplementation>>)
 * if [methodname]+isValid()+ returns +true+, continue to the next constraint,
 * if [methodname]+isValid()+ returns +false+, the Bean Validation provider populates [classname]+ConstraintViolation+ object(s) according to the rules defined in <<constraintsdefinitionimplementation-validationimplementation>> and appends these objects to the list of constraint violations.
-
-
-#
+--
 
 [[constraintdeclarationvalidationprocess-validationroutine-graphvalidation]]
 
@@ -1191,7 +1181,7 @@ User -(addresses)-> Address2
 
 #validation branches are as followed
 Order -(lines)-> Orderline1
-  - order is ignored: Order is already present in the branch 
+  - order is ignored: Order is already present in the branch
 
 Order -(lines)-> Orderline2
   - order is ignored: Order is already present in the branch
@@ -1202,13 +1192,13 @@ Order -(customer)-> User -(addresses)-> Address1
 Order -(customer)-> User -(addresses)-> Address2
   - inhabitant is ignored: User is already present in the branch
 
-Order -(shippingAddress)-> Address1 -(inhabitant)-> User 
+Order -(shippingAddress)-> Address1 -(inhabitant)-> User
   - addresses to Address1 is ignored: Address1 is already present in the branch
 
 Order -(shippingAddress)-> Address1 -(inhabitant)-> User -(addresses)-> Address2
   - inhabitant is ignored: User is already present in the branch
 
-Order -(billingAddress)-> Address2 -(inhabitant)-> User 
+Order -(billingAddress)-> Address2 -(inhabitant)-> User
   - addresses to Address2 is ignored: Address2 is already present in the branch
 
 Order -(billingAddress)-> Address2 -(inhabitant)-> User -(addresses)-> Address1
@@ -1304,22 +1294,24 @@ In the second call to [methodname]+validate+ the group [classname]+SequencedGrou
 
 ==== Method and constructor validation
 
-[tck-testable]#For a given group, the validation routine applied to validate parameters of a method or constructor is expected to execute the following constraint validations [tck-not-testable]#in no particular order# : 
+[tck-testable]#For a given group, the validation routine applied to validate parameters of a method or constructor is expected to execute the following constraint validations#.
+
+[tck-not-testable]
+--
+In no particular order:
 
 * execute all parameter validations (in case of overriding method validation, including the ones expressed on overridden methods of the interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
 * execute all cross parameter validations (in case of overriding method validation, including the ones expressed on overridden methods of the interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
 * for all parameters marked for cascaded validation, execute all cascading validations (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>), in case of overriding method validation including the ones expressed on overridden methods of the interfaces and superclasses (see <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>). Note that group conversion can apply (see <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>).
+--
 
-
-#
-
-[tck-testable]#For a given group, the validation routine applied to validate the return value of a method or constructor is expected to execute the following constraint validations in no particular order: 
+[tck-testable]
+--
+For a given group, the validation routine applied to validate the return value of a method or constructor is expected to execute the following constraint validations in no particular order:
 
 * execute all return value validations (including the ones expressed on interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
 * if the return value is marked for cascaded validation, execute all cascading validations (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) including the ones expressed on interfaces and superclasses (see <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>). Note that group conversion can apply (see <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>).
-
-
-#
+--
 
 Note that this implies that a given validation constraint will not be processed more than once per validation per path. Some implementations might even process a single constraint only once across paths provided that they return the expected set of [classname]+ConstraintViolation+.
 
@@ -1414,7 +1406,7 @@ public interface TraversableResolver {
 
 [tck-testable]#+rootBeanType+ is the class of the root being validated, i.e. either the type of the object passed to the [methodname]+validate+ method or the type declaring the validated method/constructor in case of method validation).#
 
-[tck-testable]#+pathToTraversableObject+ is the [classname]+Path+ from the [methodname]+rootBeanType+ down to the [methodname]+traversableObject+. If the root object is [classname]+traversableObject+, [classname]+pathToTraversableObject+ is composed of a single Node whose name is +null+. The path is described following the conventions described in <<validationapi-constraintviolation>> ( [methodname]+getPropertyPath+).#
+[tck-testable]#+pathToTraversableObject+ is the [classname]+Path+ from the [methodname]+rootBeanType+ down to the [methodname]+traversableObject+. If the root object is [classname]+traversableObject+, [classname]+pathToTraversableObject+ is composed of a single Node whose name is +null+. The path is described following the conventions described in <<validationapi-constraintviolation>> ([methodname]+getPropertyPath+).#
 
 [tck-testable]#+elementType+ is the [classname]+java.lang.annotation.ElementType+ the annotation is placed on. It can be either +FIELD+ or +METHOD+. Any other value is not expected.#
 
@@ -1422,14 +1414,14 @@ public interface TraversableResolver {
 
 [tck-testable]#If an exception occurs when the [classname]+TraversableResolver+ is called, the exception is wrapped into a [classname]+ValidationException+.#
 
-[tck-testable]#The following elements are not passed through the traversable resolver filter: 
+[tck-testable]
+--
+The following elements are not passed through the traversable resolver filter:
 
 * the bean instance validated
 * the method and constructor parameter values being validated
 * the method and constructor return value being validated
-
-
-#
+--
 
 [tck-testable]#But the properties of these elements (if validated) are. In this case the complete path is provided via +pathToTraversableObject+.#
 
@@ -1585,7 +1577,7 @@ When the Bean Validation provider is about to check constraints of +ISO3Code+, i
 * +elementType+: [classname]+ElementType.FIELD+. The ISO3Code property is annotated on its field.
 
 
-When the Bean Validation provider is about to cascade validation on +country+ ( [classname]+Address+ object), it calls the [classname]+TraversableResolver.isReachable()+ method to ensure that the +country+ property is reachable and if this method returns +true+, it calls [classname]+TraversableResolver.isCascadable()+ with the following parameter values:
+When the Bean Validation provider is about to cascade validation on +country+ ([classname]+Address+ object), it calls the [classname]+TraversableResolver.isReachable()+ method to ensure that the +country+ property is reachable and if this method returns +true+, it calls [classname]+TraversableResolver.isCascadable()+ with the following parameter values:
 
 * +traversableObject+: address. The address instance.
 * +traversableProperty+: a [classname]+PropertyNode+ whose name is "country". Represents the property of +traversableObject+ being verified.
@@ -1646,12 +1638,12 @@ The rules written below describe formally the following statement: [tck-testable
 
 When validating a generic constraint A placed on a target declaring the type [classname]+T+, the following resolution rules apply:
 
-* [tck-testable]#Only [classname]+ConstraintValidator+ implementations targeting annotated elements are considered.
-#* [tck-testable]#Primitive types are considered equivalent to their respective primitive wrapper class.
-#* A [classname]+ConstraintValidator<A, U>+ is said to be _compliant_ with [classname]+T+ if [classname]+T+ is a subtype of [classname]+U+ (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]). Note that [classname]+T+ is a subtype of [classname]+U+ if [classname]+T+ = [classname]+U+.
-* [tck-testable]#[tck-testable]#If no [classname]+ConstraintValidator+ compliant with [classname]+T+ is found amongst the [classname]++ConstraintValidator++ s listed by the constraint [classname]+A+, an [classname]+UnexpectedTypeException+ is raised.#
-#* [tck-testable]#A [classname]+ConstraintValidator<A, U>+ compliant with [classname]+T+ is considered _strictly more specific_ than a [classname]+ConstraintValidator<A, V>+ compliant with [classname]+T+ if [classname]+U+ is a strict subtype of [classname]+V+. [classname]+U+ is a strict subtype of [classname]+V+ if [classname]+U+ is a subtype of [classname]+V+ and [classname]+U+ != [classname]+V+ (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]).
-#* A [classname]+ConstraintValidator<A, U>+ compliant with [classname]+T+ is considered maximally specific if no other [classname]+ConstraintValidator<A, V>+ compliant with [classname]+T+ is strictly more specific than [classname]+ConstraintValidator<A, U>+.
+* [tck-testable]#Only [classname]+ConstraintValidator+ implementations targeting annotated elements are considered.#
+* [tck-testable]#Primitive types are considered equivalent to their respective primitive wrapper class.#
+* A [classname]+ConstraintValidator<A, U>+ is said to be _compliant_ with [classname]+T+ if [classname]+T+ is a subtype of [classname]+U+ (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]). Note that [classname]+T+ is a subtype of [classname]+U+ if [classname]+T+ = [classname]+U+.
+* [tck-testable]#If no [classname]+ConstraintValidator+ compliant with [classname]+T+ is found amongst the [classname]++ConstraintValidator++ s listed by the constraint [classname]+A+, an [classname]+UnexpectedTypeException+ is raised.#
+* [tck-testable]#A [classname]+ConstraintValidator<A, U>+ compliant with [classname]+T+ is considered _strictly more specific_ than a [classname]+ConstraintValidator<A, V>+ compliant with [classname]+T+ if [classname]+U+ is a strict subtype of [classname]+V+. [classname]+U+ is a strict subtype of [classname]+V+ if [classname]+U+ is a subtype of [classname]+V+ and [classname]+U+ != [classname]+V+ (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]).#
+* A [classname]+ConstraintValidator<A, U>+ compliant with [classname]+T+ is considered maximally specific if no other [classname]+ConstraintValidator<A, V>+ compliant with [classname]+T+ is strictly more specific than [classname]+ConstraintValidator<A, U>+.
 * [tck-testable]#If more than one maximally specific [classname]+ConstraintValidator+ is found, an [classname]+UnexpectedTypeException+ is raised.#
 
 
@@ -1700,27 +1692,27 @@ The resolutions shown in <<table-constraintvalidator-resolution>> occur.
 [options="header"]
 |===============
 |Declaration|Resolution
-|[code]+@Size Collection getAddresses() { \[...\] }+|[classname]+SizeValidatorForCollection+: direct
+|[code]+@Size Collection getAddresses() { [...] }+|[classname]+SizeValidatorForCollection+: direct
               match
-|[code]+@Size Collection<?> getAddresses() { \[...\] }+|[classname]+SizeValidatorForCollection+:
+|[code]+@Size Collection<?> getAddresses() { [...] }+|[classname]+SizeValidatorForCollection+:
               [classname]+Collection+  is a direct supertype of
               [classname]+Collection<?>+
-|[code]+@Size Collection<Address> getAddresses() { \[...\] }+|[classname]+SizeValidatorForCollection+:
+|[code]+@Size Collection<Address> getAddresses() { [...] }+|[classname]+SizeValidatorForCollection+:
               [classname]+Collection+  is a direct supertype of
               [classname]+Collection<Address>+
-|[code]+@Size Set<Address> getAddresses() { \[...\] }+|[classname]+SizeValidatorForSet+: direct
+|[code]+@Size Set<Address> getAddresses() { [...] }+|[classname]+SizeValidatorForSet+: direct
               supertype of [classname]+Set<Address>+
-|[code]+@Size SortedSet<Address> getAddresses() { \[...\] }+|[classname]+SizeValidatorForSet+:
+|[code]+@Size SortedSet<Address> getAddresses() { [...] }+|[classname]+SizeValidatorForSet+:
               [classname]+Set+  is the closest supertype of
               [classname]+SortedSet<Address>+
-|[code]+@Size SerializableCollection getAddresses() { \[...\] }+|[classname]+UnexpectedTypeException+:
+|[code]+@Size SerializableCollection getAddresses() { [...] }+|[classname]+UnexpectedTypeException+:
               [classname]+SerializableCollection+  is a subtype of
               both [classname]+Collection+  and
               [classname]+Serializable+  and neither
               [classname]+Collection+  nor
               [classname]+Serializable+  are subtypes of each
               other.
-|[code]+@Size String getName() { \[...\] }+|[classname]+UnexpectedTypeException+: none of
+|[code]+@Size String getName() { [...] }+|[classname]+UnexpectedTypeException+: none of
               the [classname]+ConstraintValidator+  types are
               supertypes of [classname]+String+.
 |===============
@@ -1793,8 +1785,12 @@ During the validation routine execution on an [classname]+Address+ object,
 
 The second example demonstrates object graph validation
 
-++++++++++++++++++++++++++++++++++++++
-Define object graph validationpublic class Country {
+.Define object graph validation
+====
+
+[source, JAVA]
+----
+public class Country {
     @NotNull
     private String name;
     @Size(max=2) private String ISO2Code;
@@ -1878,7 +1874,7 @@ public class Address {
         this.country = country;
     }
 }
-++++++++++++++++++++++++++++++++++++++
+----
 
 During the validation routine execution on an [classname]+Address+ object, constraints on [methodname]+addressLine1+, [methodname]+addressLine2+, [methodname]+zipCode+, [classname]+getCity+ and [methodname]+country+ are processed as well as the validation of the [classname]+Country+ object itself, more specifically [methodname]+country.name+ is checked for [classname]+@NotNull+, [methodname]+ISO2Code+ and [methodname]+ISO3Code+ are checked for [classname]+@Size+.
 
@@ -1896,7 +1892,7 @@ package com.acme.constraint;
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
-    String message() default "{com.acme.constraint.NotEmpty.message}"
+    String message() default "{com.acme.constraint.NotEmpty.message}";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
@@ -1905,7 +1901,7 @@ public @interface NotEmpty {
     @Documented
     @interface List {
         NotEmpty[] value();
-    }    
+    }
 
     class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
         public void initialize(NotEmpty constraintAnnotation) {}
@@ -1929,7 +1925,7 @@ public interface Person {
     String getFirstName();
 
     String getMiddleName();
-    
+
     @NotEmpty
     String getLastName();
 }
@@ -2019,9 +2015,12 @@ When validating [classname]+CommonGuest+, the following constraints are processe
 
 The fourth example demonstrates the influence of group sequence.
 
-++++++++++++++++++++++++++++++++++++++
-Use groups and group sequence to define constraint
-      ordering@GroupSequence({First.class, Second.class, Last.class})
+.Use groups and group sequence to define constraint ordering
+====
+
+[source, JAVA]
+----
+@GroupSequence({First.class, Second.class, Last.class})
 public interface Complete {}
 
 public class Book {
@@ -2063,7 +2062,7 @@ public class Book {
 public class Author {
     @NotEmpty(groups=Last.class)
     private String firstName;
-    
+
     @NotEmpty(groups=First.class)
     private String lastName;
 
@@ -2094,7 +2093,7 @@ public class Author {
         this.company = company;
     }
 }
-++++++++++++++++++++++++++++++++++++++
+----
 
 Assuming the validation of the [classname]+Complete+ group on the following book instance:
 
@@ -2127,4 +2126,3 @@ the validation routine will return the following failures:
 
 
 As the [classname]+First+ and [classname]+Second+ groups pass without failure, the [classname]+Last+ group is going through validation.
-

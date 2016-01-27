@@ -92,7 +92,9 @@ public @interface Constraint {
 
 A constraint is said to be generic if it has at least one constraint validator targeting the element annotated i.e. targeting the (returned) element annotated by the constraint (a bean, a field, a getter, a method/constructor return value or a method/constructor parameter). A constraint is said to be cross-parameter if it has one constraint validator targeting the array of parameters of a method or constructor (to validate the consistency of several method/constructor parameters). A Bean Validation constraint is most of the time either a generic constraint or a cross-parameter constraint. In rare situations, a constraint can be both.
 
-[tck-not-testable]#Generic constraint annotations can target any of the following [classname]++ElementType++ s: 
+[tck-not-testable]
+--
+Generic constraint annotations can target any of the following [classname]++ElementType++ s:
 
 * +FIELD+ for constrained attributes
 * +METHOD+ for constrained getters and constrained method return values
@@ -100,18 +102,16 @@ A constraint is said to be generic if it has at least one constraint validator t
 * [classname]+PARAMETER+ for constrained method and constructor parameters
 * +TYPE+ for constrained beans
 * +ANNOTATION_TYPE+ for constraints composing other constraints
+--
 
-
-#
-
-[tck-not-testable]#Cross-parameter constraint annotations can target any of the following [classname]++ElementType++ s: 
+[tck-not-testable]
+--
+Cross-parameter constraint annotations can target any of the following [classname]++ElementType++ s:
 
 * +METHOD+
 * +CONSTRUCTOR+
 * +ANNOTATION_TYPE+ for cross-parameter constraints composing other cross-parameter constraints
-
-
-#
+--
 
 [tck-not-testable]#A constraint annotation that is both can target the union of the generic and cross-parameter constraint annotations targets.#
 
@@ -153,7 +153,7 @@ Built-in Bean Validation constraints follow this convention.
 
 ===== groups
 
-[tck-testable]#Every constraint annotation must define a +groups+ element that specifies the processing groups with which the constraint declaration is associated.# [tck-testable]#The type of the +groups+ parameter is [classname]+Class<?>\[\]+.#
+[tck-testable]#Every constraint annotation must define a +groups+ element that specifies the processing groups with which the constraint declaration is associated.# [tck-testable]#The type of the +groups+ parameter is [classname]+Class<?>[]+.#
 
 [source, JAVA]
 ----
@@ -172,7 +172,7 @@ Groups are typically used to control the order in which constraints are evaluate
 
 ===== payload
 
-[tck-testable]#Constraint annotations must define a +payload+ element that specifies the payload with which the constraint declaration is associated. The type of the +payload+ parameter is [classname]+Payload\[\]+.#
+[tck-testable]#Constraint annotations must define a +payload+ element that specifies the payload with which the constraint declaration is associated. The type of the +payload+ parameter is [classname]+Payload[]+.#
 
 [source, JAVA]
 ----
@@ -223,7 +223,7 @@ public class Address {
     @NotNull(message="would be nice if we had one", payload=Severity.Info.class)
     public String getZipCode() { [...] }
 
-    @NotNull(message="the city is mandatory", payload=Severity.Error.class) 
+    @NotNull(message="the city is mandatory", payload=Severity.Error.class)
     String getCity() { [...] }
 }
 ----
@@ -401,7 +401,7 @@ public @interface ELAssert {
 ----
 @ELAssert(
     message="Please check that your passwords match and try again.",
-    expression="param[1]==param[2]", 
+    expression="param[1]==param[2]",
     validationAppliesTo=ConstraintType.PARAMETERS
 )
 public User createUser(String email, String password, String repeatPassword) { [...] }
@@ -492,7 +492,7 @@ Note to constraint designers: each constraint annotation should be coupled with 
 [source, JAVA]
 ----
 /**
- * Validate a zipcode for a given country 
+ * Validate a zipcode for a given country
  * The only supported type is String
  */
 @Documented
@@ -518,7 +518,7 @@ public @interface ZipCode {
     @Documented
     @interface List {
         ZipCode[] value();
-    }    
+    }
 }
 ----
 
@@ -587,7 +587,7 @@ public @interface FrenchZipcode {
 
 ====
 
-Annotating an element with [classname]+@FrenchZipcode+ (the composed annotation) is equivalent to annotating it with [classname]+@Pattern(regexp="\[0-9\]\*")+, [classname]+@Size(min=5, max=5)+ (the composing annotations) and [classname]+@FrenchZipcode+. [tck-testable]#More formally, each constraint annotation hosted on a constraint annotation is applied to the target element and this is done recursively.# [tck-testable]#Note that the main annotation and its constraint validation implementation is also applied.# [tck-testable]#By default, each failing constraint generates an error report.# [tck-testable]#Groups from the main constraint annotation are inherited by the composing annotations.# [tck-testable]#Any [methodname]+groups+ definition on a composing annotation is ignored.# [tck-testable]#Payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]+payload+ definition on a composing annotation is ignored.# [tck-testable]#The constraint target from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]+validationAppliesTo+ definition on a composing annotation is ignored.#
+Annotating an element with [classname]+@FrenchZipcode+ (the composed annotation) is equivalent to annotating it with [classname]+@Pattern(regexp="[0-9]*")+, [classname]+@Size(min=5, max=5)+ (the composing annotations) and [classname]+@FrenchZipcode+. [tck-testable]#More formally, each constraint annotation hosted on a constraint annotation is applied to the target element and this is done recursively.# [tck-testable]#Note that the main annotation and its constraint validation implementation is also applied.# [tck-testable]#By default, each failing constraint generates an error report.# [tck-testable]#Groups from the main constraint annotation are inherited by the composing annotations.# [tck-testable]#Any [methodname]+groups+ definition on a composing annotation is ignored.# [tck-testable]#Payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]+payload+ definition on a composing annotation is ignored.# [tck-testable]#The constraint target from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]+validationAppliesTo+ definition on a composing annotation is ignored.#
 
 [tck-testable]#The type upon which composed constraint is placed must be compatible with all constraints (composing and composed).# A constraint designer should ensure that such a type exists and lists in the JavaDoc all the compatible types.
 
@@ -717,7 +717,7 @@ public @interface FrenchZipcode {
 
 ====
 
-The value of the composed constraint attribute annotated with [classname]+@OverridesAttribute+ ( [methodname]+@FrenchZipcode.sizeMessage+) is applied to the composing constraint attribute named after [methodname]+OverridesAttribute.name+ and hosted on the composing constraint of type [methodname]+OverridesAttribute.constraint+ ( [methodname]+@Size.message+). Similarly, [classname]+@FrenchZipcode.numberMessage+ value is mapped to [classname]+@Pattern.message+.
+The value of the composed constraint attribute annotated with [classname]+@OverridesAttribute+ ([methodname]+@FrenchZipcode.sizeMessage+) is applied to the composing constraint attribute named after [methodname]+OverridesAttribute.name+ and hosted on the composing constraint of type [methodname]+OverridesAttribute.constraint+ ([methodname]+@Size.message+). Similarly, [classname]+@FrenchZipcode.numberMessage+ value is mapped to [classname]+@Pattern.message+.
 
 If left undefined, the default value for [methodname]+@OverridesAttribute.name+ is the name of the composed constraint attribute hosting the [classname]+@OverridesAttribute+ annotation.
 
@@ -867,7 +867,9 @@ The following elements uniquely identify an overridden constraint attribute:
 * [methodname]+OverridesAttribute.constraintIndex+
 
 
-[tck-testable]#If the composition is invalid, e.g. 
+[tck-testable]
+--
+If the composition is invalid, e.g.
 
 * infinitely recursive composition
 * wrong attribute overriding
@@ -875,8 +877,8 @@ The following elements uniquely identify an overridden constraint attribute:
 * a composing and composed constraint marked as different constraint types (i.e., generic and cross-parameter)
 * etc.
 
-
-a [classname]+ConstraintDefinitionException+ is raised either at validation time or when the metadata is requested.#
+a [classname]+ConstraintDefinitionException+ is raised either at validation time or when the metadata is requested.
+--
 
 Constraint designers are encouraged to make use of composition (recursively or not) based on the built-in constraints defined by the specification. The composing constraints are exposed through the Bean Validation metadata API ( <<constraintmetadata-constraintdescriptor>>). This metadata is particularly useful for third-party metadata consumers like persistence frameworks generating database schemas (such as Java Persistence) or presentation frameworks.
 
@@ -938,13 +940,14 @@ public interface ConstraintValidator<A extends Annotation, T> {
 }
 ----
 
-[tck-not-testable]#Some restrictions apply on the generic type [classname]+T+ (used in the [methodname]+isValid()+ method). [classname]+T+ must 
+[tck-not-testable]
+--
+Some restrictions apply on the generic type [classname]+T+ (used in the [methodname]+isValid()+ method). [classname]+T+ must
 
 * resolve to a non parameterized type (i.e. because the type is not using generics or because the raw type is used instead of the generic version)
 * or generic parameters of [classname]+T+ must be unbounded wildcard types (i.e. +<?>+).
 
-
-#
+--
 
 [NOTE]
 ====
@@ -1014,7 +1017,7 @@ public enum ValidationTarget {
 
 [tck-testable]#A [classname]+ConstraintValidator+ implementation can target both annotated elements and array of parameters.#
 
-[tck-testable]#If a [classname]+ConstraintValidator+ targets array of parameters (cross-parameter), [classname]+T+ must resolve to [classname]+Object\[\]+ (or [classname]+Object+) in order to have the array of parameter values passed to the [methodname]+isValid()+ method. A [classname]+ConstraintDefinitionException+ is raised otherwise.#
+[tck-testable]#If a [classname]+ConstraintValidator+ targets array of parameters (cross-parameter), [classname]+T+ must resolve to [classname]+Object[]+ (or [classname]+Object+) in order to have the array of parameter values passed to the [methodname]+isValid()+ method. A [classname]+ConstraintDefinitionException+ is raised otherwise.#
 
 .Example of cross parameter ConstraintValidator
 ====
@@ -1063,7 +1066,7 @@ public class SizeValidatorForCollection implements ConstraintValidator<Size, Col
 
 //Validator for cross-parameter constraint
 @SupportedValidationTarget(ValidationTarget.PARAMETERS)
-public class DateParametersConsistentValidator 
+public class DateParametersConsistentValidator
     implements ConstraintValidator<DateParametersConsistent, Object[]> {
     [...]
 }
@@ -1389,7 +1392,7 @@ public interface ConstraintValidatorContext {
 
             /**
              * Marks the node as being in an {@code Iterable} or a {@code Map}.
-             * 
+             *
              * @return a builder representing iterable details
              */
             LeafNodeContextBuilder inIterable();
@@ -1591,7 +1594,7 @@ public interface ConstraintValidatorContext {
           * be added).
          */
         interface NodeContextBuilder {
-            
+
             /**
              * Defines the key the object is into the {@code Map}.
              *
@@ -1791,7 +1794,7 @@ public class SyntaxValidator implements ConstraintValidator<Syntax, String> {
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if ( value == null ) return true;
 
-        return allowedFormats.size() == 0 
+        return allowedFormats.size() == 0
             || (! Collections.disjoint( guessFormat(value), allowedFormats ) );
     }
 
@@ -1908,7 +1911,7 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator<Syntax, S
                        .addConstraintViolation();
             return false;
         }
-        if ( allowedFormats.size() != 0 
+        if ( allowedFormats.size() != 0
             && Collections.disjoint( guessedFormats, allowedFormats ) ) {
 
             String unauthorized = "{com.acme.constraint.Syntax.unauthorized}";
@@ -1982,4 +1985,3 @@ public interface ConstraintValidatorFactory {
 [classname]+ConstraintValidatorFactory+ should not cache instances as the state of each instance can be altered in the [methodname]+initialize()+ method.
 
 [tck-testable]#If an exception occurs in the factory while retrieving the [classname]+ConstraintValidator+ instance, the runtime exception is wrapped in a [classname]+ValidationException+.# [tck-testable]#If the instance returned by the factory is null, a [classname]+ValidationException+ is raised.#
-
