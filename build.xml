@@ -53,13 +53,17 @@
 		<attribute name="outputdirectory" />
 		<attribute name="backend" />
 		<sequential>
-			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar"/>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar:target/asciidocextensions"/>
 			<asciidoctor:convert
 				sourceDocumentName="master.asciidoc"
 				sourceDirectory="sources"
 				sourceHighlighter="highlightjs"
 				outputDirectory="@{outputdirectory}"
-				backend="@{backend}"/>
+				backend="@{backend}">
+					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+			</asciidoctor:convert>
 		</sequential>
 	</macrodef>
 
