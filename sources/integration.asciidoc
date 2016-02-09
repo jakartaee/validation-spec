@@ -14,17 +14,17 @@ This section covers general requirements that should be followed by any containe
 
 Generally speaking, containers and frameworks controlling the life cycle of objects (such as Java EE, dependency injection frameworks or component frameworks) should:
 
-* [tck-testable]#build and bootstrap the [classname]+ValidatorFactory+ instance for an application.#
-* [tck-testable]#provide access to the [classname]+ValidatorFactory+ instance as well as [classname]+Validator+ instances in their default configuration using the paradigm of the container: for example, such instances would be injectable in other objects via a dependency injection framework.#
-* [tck-testable]#configure [classname]+ValidatorFactory+ with a custom [classname]+ConstraintValidatorFactory+ instance that returns managed [classname]+ConstraintValidator+ instances, unless a custom [classname]+ConstraintValidatorFactory+ is requested by the user. The scope of [classname]+ConstraintValidator+ instances is still fully controlled by the Bean Validation provider as described in <<constraintsdefinitionimplementation-constraintfactory>>, but as managed beans they can receive expected services like injection of other objects.#
-* [tck-testable]#configure [classname]+ValidatorFactory+ with managed instances of [classname]+ConstraintValidatorFactory+, [classname]+MessageInterpolator+, [classname]+ParameterNameProvider+ and [classname]+TraversableResolver+, if such instances are defined in the XML deployment descriptor. Services provided by the container (like dependency injection) should thus be available to these instances.#
-* [tck-not-testable]#invoke [methodname]+ValidatorFactory.close()+ when the [classname]+ValidatorFactory+ instance is no longer needed.#
-* [tck-not-testable]#dispose of managed instances provided to the Bean Validation bootstrap process after [methodname]+ValidatorFactory.close()+ has been invoked.#
+* [tck-testable]#build and bootstrap the [classname]`ValidatorFactory` instance for an application.#
+* [tck-testable]#provide access to the [classname]`ValidatorFactory` instance as well as [classname]`Validator` instances in their default configuration using the paradigm of the container: for example, such instances would be injectable in other objects via a dependency injection framework.#
+* [tck-testable]#configure [classname]`ValidatorFactory` with a custom [classname]`ConstraintValidatorFactory` instance that returns managed [classname]`ConstraintValidator` instances, unless a custom [classname]`ConstraintValidatorFactory` is requested by the user. The scope of [classname]`ConstraintValidator` instances is still fully controlled by the Bean Validation provider as described in <<constraintsdefinitionimplementation-constraintfactory>>, but as managed beans they can receive expected services like injection of other objects.#
+* [tck-testable]#configure [classname]`ValidatorFactory` with managed instances of [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider` and [classname]`TraversableResolver`, if such instances are defined in the XML deployment descriptor. Services provided by the container (like dependency injection) should thus be available to these instances.#
+* [tck-not-testable]#invoke [methodname]`ValidatorFactory.close()` when the [classname]`ValidatorFactory` instance is no longer needed.#
+* [tck-not-testable]#dispose of managed instances provided to the Bean Validation bootstrap process after [methodname]`ValidatorFactory.close()` has been invoked.#
 
 
 [IMPORTANT]
 ====
-In this context, a default [classname]+ValidatorFactory+ is a factory configured like the factory returned by [classname]+Validation.buildDefaultValidatorFactory+ (see also <<boostrapping-validation>>) except for the enhancements described above. A default [classname]+Validator+ instance is a [classname]+Validator+ instance retrieved via [methodname]+getValidator()+ from the default [classname]+ValidatorFactory+.
+In this context, a default [classname]`ValidatorFactory` is a factory configured like the factory returned by [classname]`Validation.buildDefaultValidatorFactory` (see also <<boostrapping-validation>>) except for the enhancements described above. A default [classname]`Validator` instance is a [classname]`Validator` instance retrieved via [methodname]`getValidator()` from the default [classname]`ValidatorFactory`.
 ====
 
 [[integration-general-executable]]
@@ -39,42 +39,42 @@ This section expresses the behavior that integration with interception framework
 
 Bean Validation - via the interception technology - offers a way to customize whether or not a constructor, method or getter is validated when executed. This is achieved:
 
-* via the [classname]+@ValidateOnExecution+ annotation on the executable (see <<example-validateonexecution>>)
-* via the [classname]+@ValidateOnExecution+ annotation on the type declaring the executable
-* via a global configuration defined in [filename]+validation.xml+: +executable-validation+ and +default-validated-executable-types+. See <<xml-config>> for more details.
+* via the [classname]`@ValidateOnExecution` annotation on the executable (see <<example-validateonexecution>>)
+* via the [classname]`@ValidateOnExecution` annotation on the type declaring the executable
+* via a global configuration defined in [filename]`validation.xml`: `executable-validation` and `default-validated-executable-types`. See <<xml-config>> for more details.
 
 
 [NOTE]
 ====
-Integration layers can read the list of validated executable types defined in the global configuration as well as read whether or not executable validation is disabled via the [classname]+Configuration+ object: [code]+configuration.getBootstrapConfiguration().getDefaultValidatedExecutableTypes()+ and [code]+configuration.getBootstrapConfiguration().isExecutableValidationEnabled()+ respectively. This list is extracted from [filename]+validation.xml+.
+Integration layers can read the list of validated executable types defined in the global configuration as well as read whether or not executable validation is disabled via the [classname]`Configuration` object: [code]`configuration.getBootstrapConfiguration().getDefaultValidatedExecutableTypes()` and [code]`configuration.getBootstrapConfiguration().isExecutableValidationEnabled()` respectively. This list is extracted from [filename]`validation.xml`.
 ====
 
 More formally, a given executable (constructor or method) is validated upon execution according to the following rules in decreasing order:
 
-* [tck-testable tcck-needs-update]#the executable is validated if it is annotated with [classname]+@ValidateOnExecution+ and the [methodname]+type+ attribute contains the executable type or +IMPLICIT+. If the [methodname]+type+ attribute does neither contain the executable type nor +IMPLICIT+, the executable is not validated.#
-* [tck-testable]#otherwise the executable is validated if the type (class, interface) on which it is declared is annotated with [classname]+@ValidateOnExecution+ and the [methodname]+type+ attribute contains the executable type. If the +type+ attribute contains +IMPLICIT+, then this rule is ignored and the behavior is equivalent to [classname]+@ValidateOnExecution+ not being present. If the [methodname]+type+ attribute does not contain the executable type, the executable is not validated.#
+* [tck-testable tcck-needs-update]#the executable is validated if it is annotated with [classname]`@ValidateOnExecution` and the [methodname]`type` attribute contains the executable type or `IMPLICIT`. If the [methodname]`type` attribute does neither contain the executable type nor `IMPLICIT`, the executable is not validated.#
+* [tck-testable]#otherwise the executable is validated if the type (class, interface) on which it is declared is annotated with [classname]`@ValidateOnExecution` and the [methodname]`type` attribute contains the executable type. If the `type` attribute contains `IMPLICIT`, then this rule is ignored and the behavior is equivalent to [classname]`@ValidateOnExecution` not being present. If the [methodname]`type` attribute does not contain the executable type, the executable is not validated.#
 * [tck-testable]#otherwise the executable is validated if the global executable validation setting contains the executable type. If the global setting does not contain the executable type, the executable is not validated.#
-* [tck-testable]#The rules above do not apply to methods overriding a superclass method or implementing an interface method. In this case, the method inherits the behavior of the method it overrides / implements. Out of the box, a conforming integration implementation raises a [classname]+ValidationException+ if the overriding / implementing method hosts the [classname]+@ValidateOnExecution+ annotation.#
+* [tck-testable]#The rules above do not apply to methods overriding a superclass method or implementing an interface method. In this case, the method inherits the behavior of the method it overrides / implements. Out of the box, a conforming integration implementation raises a [classname]`ValidationException` if the overriding / implementing method hosts the [classname]`@ValidateOnExecution` annotation.#
 
 The last point is present to enforce the Liskov substitution principle (more info at <<constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance>>) In addition, providers may implement alternative, potentially more liberal, approaches for handling validated methods in inheritance hierarchies. Possible means for activating such alternative behavior include provider-specific configuration properties or annotations. Note that client code relying on such alternative behavior is not portable.
 
 The following executable types are available:
 
-* [tck-testable]#+NONE+: parameters and return values are not validated upon execution. This option is equivalent to an empty list of executable types and is present to improve readability. A list containing +NONE+ and other types of executables is equivalent to a list containing the types of executables without +NONE+.#
-* [tck-testable]#+CONSTRUCTORS+: parameters and return values are validated provided the executable is a constructor.#
-* [tck-testable]#+NON_GETTER_METHODS+: parameters and return values are validated provided the executable is a method but not a getter.#
-* [tck-testable]#+GETTER_METHODS+: return values are validated provided the executable is a getter method.#
-* [tck-testable]#+ALL+: parameters and return values are validated for all executables (getters, non getters and constructors). This option is equivalent to a list of all executable types and is present to improve readability. A list containing +ALL+ and other types of executables is equivalent to a list containing only +ALL+.#
+* [tck-testable]#`NONE`: parameters and return values are not validated upon execution. This option is equivalent to an empty list of executable types and is present to improve readability. A list containing `NONE` and other types of executables is equivalent to a list containing the types of executables without `NONE`.#
+* [tck-testable]#`CONSTRUCTORS`: parameters and return values are validated provided the executable is a constructor.#
+* [tck-testable]#`NON_GETTER_METHODS`: parameters and return values are validated provided the executable is a method but not a getter.#
+* [tck-testable]#`GETTER_METHODS`: return values are validated provided the executable is a getter method.#
+* [tck-testable]#`ALL`: parameters and return values are validated for all executables (getters, non getters and constructors). This option is equivalent to a list of all executable types and is present to improve readability. A list containing `ALL` and other types of executables is equivalent to a list containing only `ALL`.#
 [tck-testable]
 --
-* +IMPLICIT+: if [classname]+@ValidateOnExecution+ is on a type (class or interface), then it is equivalent to [classname]+@ValidateOnExecution+ not being present; if [classname]+@ValidateOnExecution+ is on a an executable, the following applies:
+* `IMPLICIT`: if [classname]`@ValidateOnExecution` is on a type (class or interface), then it is equivalent to [classname]`@ValidateOnExecution` not being present; if [classname]`@ValidateOnExecution` is on a an executable, the following applies:
 
-** if on a constructor, it is equivalent to +CONSTRUCTORS+.
-** if on a non-getter method, it is equivalent to +NON_GETTER_METHODS+.
-** if on a getter, it is equivalent to +GETTER_METHODS+.
+** if on a constructor, it is equivalent to `CONSTRUCTORS`.
+** if on a non-getter method, it is equivalent to `NON_GETTER_METHODS`.
+** if on a getter, it is equivalent to `GETTER_METHODS`.
 --
 
-[tck-not-testable]#Mixing +IMPLICIT+ and other executable types is illegal.#
+[tck-not-testable]#Mixing `IMPLICIT` and other executable types is illegal.#
 
 [[example-validateonexecution]]
 
@@ -205,9 +205,9 @@ public enum ExecutableType {
 
 ====
 
-[tck-not-testable]#If a sub type overrides/implements a method originally defined in several parallel types of the hierarchy (e.g. two interfaces not extending each other, or a class and an interface not implemented by said class), [classname]+@ValidateOnExecution+ cannot be placed in the parallel types of the hierarchy.# This is to avoid an unexpected altering of the post conditions to be guaranteed to the caller.
+[tck-not-testable]#If a sub type overrides/implements a method originally defined in several parallel types of the hierarchy (e.g. two interfaces not extending each other, or a class and an interface not implemented by said class), [classname]`@ValidateOnExecution` cannot be placed in the parallel types of the hierarchy.# This is to avoid an unexpected altering of the post conditions to be guaranteed to the caller.
 
-[tck-testable]#You can globally disable executable validation by using [code]+<executable-validation enabled="false"/>+, in this case, [code]+<default-validated-executable-types/>+ and [classname]+@ValidateOnExecution+ are ignored.#
+[tck-testable]#You can globally disable executable validation by using [code]`<executable-validation enabled="false"/>`, in this case, [code]`<default-validated-executable-types/>` and [classname]`@ValidateOnExecution` are ignored.#
 
 .validation.xml disabling executable validation
 ====
@@ -238,16 +238,16 @@ public enum ExecutableType {
 
 ====
 
-[code]+@ValidateOnExecution(type=IMPLICIT)+ on a type (class or interface) is useful to mark a class as being involved in executable validation without affecting the behavior. This is used when the integration technology needs a little help to find the classes and interfaces involved.
+[code]`@ValidateOnExecution(type=IMPLICIT)` on a type (class or interface) is useful to mark a class as being involved in executable validation without affecting the behavior. This is used when the integration technology needs a little help to find the classes and interfaces involved.
 
 [NOTE]
 ====
-The proper selection of the validated executables is the responsibility of the integration between the interception technology and Bean Validation. Bean Validation engines ignore the XML configuration around executable validation and [classname]+@ValidateOnExecution+ when validating executables and when providing metadata.
+The proper selection of the validated executables is the responsibility of the integration between the interception technology and Bean Validation. Bean Validation engines ignore the XML configuration around executable validation and [classname]`@ValidateOnExecution` when validating executables and when providing metadata.
 ====
 
 ===== Examples
 
-The following example shows some of the way you can refine executable validation with [classname]+@ValidateOnExecution+.
+The following example shows some of the way you can refine executable validation with [classname]`@ValidateOnExecution`.
 
 .Method validation configurations
 ====
@@ -287,13 +287,13 @@ public class ComplexOrderService extends SimpleOrderService {
 
 ====
 
-All constructors and non-getter methods of [classname]+OrderService+ are validated upon execution as this is the default setting. [methodname]+isValidCustomer()+ is validated as this method is not a getter (it has a parameter). [methodname]+getBacklog()+ is a getter but is validated thanks to [classname]+@ValidateOnExecution+ defaulting to +GETTER_METHODS+. [methodname]+placeOrder()+ is not validated as [classname]+@ValidateOnExecution+ is set to +NONE+.
+All constructors and non-getter methods of [classname]`OrderService` are validated upon execution as this is the default setting. [methodname]`isValidCustomer()` is validated as this method is not a getter (it has a parameter). [methodname]`getBacklog()` is a getter but is validated thanks to [classname]`@ValidateOnExecution` defaulting to `GETTER_METHODS`. [methodname]`placeOrder()` is not validated as [classname]`@ValidateOnExecution` is set to `NONE`.
 
-All getter and non-getter methods of [classname]+SimpleOrderService+ are validated upon execution by default due to the presence of [classname]+@ValidateOnExecution+ on the class. The [classname]+SimpleOrderService+ constructor is thus not validated. [classname]+SimpleOrderService.placeOrder()+ is not validated either because it overrides [classname]+OrderService.placeOrder()+ and thus inherits its settings.
+All getter and non-getter methods of [classname]`SimpleOrderService` are validated upon execution by default due to the presence of [classname]`@ValidateOnExecution` on the class. The [classname]`SimpleOrderService` constructor is thus not validated. [classname]`SimpleOrderService.placeOrder()` is not validated either because it overrides [classname]`OrderService.placeOrder()` and thus inherits its settings.
 
-All constructors and non-getter methods of [classname]+ComplexOrderService+ are validated upon execution as this is the default settings - the type level settings of [classname]+SimpleOrderService+ are not inherited. This means that the [classname]+ComplexOrderService+ constructor is validated.
+All constructors and non-getter methods of [classname]`ComplexOrderService` are validated upon execution as this is the default settings - the type level settings of [classname]`SimpleOrderService` are not inherited. This means that the [classname]`ComplexOrderService` constructor is validated.
 
-[classname]+@ValidateOnExecution+ can be optionally set on [classname]+OrderService+ and [classname]+ComplexOrderService+ without altering the semantic. This marker is necessary for some integration technology in some situations.
+[classname]`@ValidateOnExecution` can be optionally set on [classname]`OrderService` and [classname]`ComplexOrderService` without altering the semantic. This marker is necessary for some integration technology in some situations.
 
 [[integration-javaee]]
 
@@ -303,11 +303,11 @@ All constructors and non-getter methods of [classname]+ComplexOrderService+ are 
 --
 Java EE must obey the rules defined above and make the following instances available under JNDI:
 
-* [classname]+ValidatorFactory+ under java:comp/ValidatorFactory
-* [classname]+Validator+ under java:comp/Validator
+* [classname]`ValidatorFactory` under java:comp/ValidatorFactory
+* [classname]`Validator` under java:comp/Validator
 --
 
-[tck-testable]#Instead of looking the instances up via JNDI, the user can request them to be injected via the [classname]+Resource+ annotation:#
+[tck-testable]#Instead of looking the instances up via JNDI, the user can request them to be injected via the [classname]`Resource` annotation:#
 
 [source, JAVA]
 ----
@@ -315,7 +315,7 @@ Java EE must obey the rules defined above and make the following instances avail
 @Resource Validator validator;
 ----
 
-[tck-testable]#When the application is CDI enabled, the [classname]+ValidatorFactory+ and [classname]+Validator+ instances returned by JNDI or [classname]+@Resource+ injection are CDI enhanced as defined in <<integration-cdi>>.# In particular, dependency injection is available to Bean Validation components.
+[tck-testable]#When the application is CDI enabled, the [classname]`ValidatorFactory` and [classname]`Validator` instances returned by JNDI or [classname]`@Resource` injection are CDI enhanced as defined in <<integration-cdi>>.# In particular, dependency injection is available to Bean Validation components.
 
 [[integration-cdi]]
 
@@ -323,9 +323,9 @@ Java EE must obey the rules defined above and make the following instances avail
 
 There are several integrations points between Bean Validation and CDI. If a Bean Validation provider integrates with CDI, it must follow the rules laid out in this section. In a Java EE container, a [tck-testable]#Bean Validation provider must integrate with CDI# .
 
-==== [classname]+ValidatorFactory+ and [classname]+Validator+
+==== [classname]`ValidatorFactory` and [classname]`Validator`
 
-[tck-testable]#Similar to the Java EE integration via [classname]+@Resource+ (see <<integration-javaee>>), a CDI container must support injection of built-in default [classname]+ValidatorFactory+ and [classname]+Validator+ beans via [classname]+@Inject+. These default beans are injectable via the [classname]+@Default+ qualifier.#
+[tck-testable]#Similar to the Java EE integration via [classname]`@Resource` (see <<integration-javaee>>), a CDI container must support injection of built-in default [classname]`ValidatorFactory` and [classname]`Validator` beans via [classname]`@Inject`. These default beans are injectable via the [classname]`@Default` qualifier.#
 
 [source, JAVA]
 ----
@@ -333,7 +333,7 @@ There are several integrations points between Bean Validation and CDI. If a Bean
 @Inject Validator;
 ----
 
-Optionally, the CDI container can support injection of provider specific - as defined by [code]+Validation.byProvider()+ - [classname]+ValidatorFactory+ and [classname]+Validator+ beans via [classname]+@Inject+. These beans must be registered with a custom qualifier, for example [classname]+@ACME+. Using the product name or brand for the qualifier is considered good practice.
+Optionally, the CDI container can support injection of provider specific - as defined by [code]`Validation.byProvider()` - [classname]`ValidatorFactory` and [classname]`Validator` beans via [classname]`@Inject`. These beans must be registered with a custom qualifier, for example [classname]`@ACME`. Using the product name or brand for the qualifier is considered good practice.
 
 [source, JAVA]
 ----
@@ -347,32 +347,32 @@ Optionally, the CDI container can support injection of provider specific - as de
 Registration of the built-in default beans and the provider specific beans may be achieved using the CDI portable extension SPI or a vendor specific SPI.
 ====
 
-==== [classname]+ConstraintValidatorFactory+, [classname]+MessageInterpolator+, [classname]+ParameterNameProvider+ and [classname]+TraversableResolver+
+==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider` and [classname]`TraversableResolver`
 
-[tck-testable]#If a custom [classname]+ConstraintValidatorFactory+, [classname]+MessageInterpolator+, [classname]+ParameterNameProvider+ or [classname]+TraversableResolver+ class is defined in the XML deployment descriptor (see <<xml-config>>), the [classname]+ValidatorFactory+ must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
+[tck-testable]#If a custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider` or [classname]`TraversableResolver` class is defined in the XML deployment descriptor (see <<xml-config>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
 
 [tck-testable]
 --
-If no custom [classname]+ConstraintValidatorFactory+ is requested by the user, the [classname]+ValidatorFactory+ must be configured with a custom [classname]+ConstraintValidatorFactory+ instance that returns CDI managed beans representing the requested [classname]+ConstraintValidator+ types. The factory
+If no custom [classname]`ConstraintValidatorFactory` is requested by the user, the [classname]`ValidatorFactory` must be configured with a custom [classname]`ConstraintValidatorFactory` instance that returns CDI managed beans representing the requested [classname]`ConstraintValidator` types. The factory
 
-* creates non-contextual [classname]+ConstraintValidator+ instances for each [methodname]+ConstraintValidatorFactory.getInstance()+ call. To inject dependencies into the [classname]+ConstraintValidator+ instance, the CDI [classname]+InjectionTarget+ API should be used. Before returning the instance the following calls should be made: [classname]+InjectionTarget.produce()+, [classname]+InjectionTarget.inject()+ and [classname]+InjectionTarget.postConstruct()+.
-* calls [classname]+InjectionTarget.preDestroy()+ and [classname]+InjectionTarget.dispose()+ upon [classname]+ConstraintValidatorFactory.releaseInstance+ (see also <<constraintsdefinitionimplementation-constraintfactory>> for more information about the life cycle of a [classname]+ConstraintValidator+).
+* creates non-contextual [classname]`ConstraintValidator` instances for each [methodname]`ConstraintValidatorFactory.getInstance()` call. To inject dependencies into the [classname]`ConstraintValidator` instance, the CDI [classname]`InjectionTarget` API should be used. Before returning the instance the following calls should be made: [classname]`InjectionTarget.produce()`, [classname]`InjectionTarget.inject()` and [classname]`InjectionTarget.postConstruct()`.
+* calls [classname]`InjectionTarget.preDestroy()` and [classname]`InjectionTarget.dispose()` upon [classname]`ConstraintValidatorFactory.releaseInstance` (see also <<constraintsdefinitionimplementation-constraintfactory>> for more information about the life cycle of a [classname]`ConstraintValidator`).
 --
 
-[tck-not-testable]#Using directly or indirectly a JPA [classname]+EntityManager+ that might call back Bean Validation for validation is not allowed in the Bean Validation extension points and in [classname]+ConstraintValidator+ instances. This would lead to infinite flush or unexpected behavior.#
+[tck-not-testable]#Using directly or indirectly a JPA [classname]`EntityManager` that might call back Bean Validation for validation is not allowed in the Bean Validation extension points and in [classname]`ConstraintValidator` instances. This would lead to infinite flush or unexpected behavior.#
 
 ==== Method and constructor validation
 
-[tck-testable]#Bean Validation requires that CDI beans support constructor and method validation as defined in <<integration-general-executable>>. Validation must happen at the equivalent time an interceptor occurs when having priority [code]+$$Interceptor.Priority.PLATFORM_AFTER+800$$+, in other words priority of +4800+.#
+[tck-testable]#Bean Validation requires that CDI beans support constructor and method validation as defined in <<integration-general-executable>>. Validation must happen at the equivalent time an interceptor occurs when having priority [code]`$$Interceptor.Priority.PLATFORM_AFTER`800$$`, in other words priority of `4800+.#
 
-[tck-not-testable]#For maximum portability, it is recommended to mark CDI bean interfaces and classes involved in executable validation with [classname]+@ValidateOnExecution+ (defaults to +IMPLICIT+). This helps some implementations to be more efficient. Most CDI - Bean Validation integration implementations do not need such marker. In particular this marker should not be needed on validated beans annotated with constraint annotations, [classname]+@Valid+ or [classname]+@ValidateOnExecution+ anywhere in the class. Such limitation will be removed in a future version of this specification.#
+[tck-not-testable]#For maximum portability, it is recommended to mark CDI bean interfaces and classes involved in executable validation with [classname]`@ValidateOnExecution` (defaults to `IMPLICIT`). This helps some implementations to be more efficient. Most CDI - Bean Validation integration implementations do not need such marker. In particular this marker should not be needed on validated beans annotated with constraint annotations, [classname]`@Valid` or [classname]`@ValidateOnExecution` anywhere in the class. Such limitation will be removed in a future version of this specification.#
 
 [NOTE]
 .Discussion on possible implementations
 ====
 The CDI interceptor binding facility does not directly support this, but the effect may be achieved using the CDI portable extension SPI, or vendor specific SPIs. For example, an interceptor with the expected priority can be programmatically bound to the constructors and methods expected to be validated according to the rules at <<integration-general-executable>>.
 
-It is recommended to only intercept methods and constructors that are both constrained and validated according to the rules defined at <<integration-general-executable>>. <<validationapi-triggeringmethodvalidation>> gives examples how the metadata API can be used to determine whether or not a method is constrained (regardless of the filtering rules of [classname]+@ValidateOnExecution+).
+It is recommended to only intercept methods and constructors that are both constrained and validated according to the rules defined at <<integration-general-executable>>. <<validationapi-triggeringmethodvalidation>> gives examples how the metadata API can be used to determine whether or not a method is constrained (regardless of the filtering rules of [classname]`@ValidateOnExecution`).
 ====
 
 === Java Persistence 2.0 integration
