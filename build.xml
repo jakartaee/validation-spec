@@ -1,4 +1,4 @@
-<project name="Documentation" default="build" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
+<project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
@@ -8,7 +8,7 @@
 	<property name="browser" location="/usr/bin/google-chrome"/>
 
 
-	<target name="clean" description="Delete all generated documentation" depends="clean-htmloutput, clean-pdfoutput, clean-docbookoutput">
+	<target name="clean" description="Delete all generated documentation" depends="clean-htmloutput, clean-pdfoutput, clean-docbookoutput, java-build-dir-clean">
 		<delete dir="target" />
 	</target>
 	<target name="clean-htmloutput">
@@ -79,21 +79,13 @@
 		<renderer outputdirectory="target/pdf" backend="pdf" />
 	</target>
 
-	<target name="build" depends="render-html,render-pdf,render-docbook" description="Builds the specification documents in all formats" />
+	<target name="all.doc" depends="render-html,render-pdf,render-docbook" description="Builds the specification documents in all formats" />
 
 	<target name="preview" depends="render-html" description="Build and opens the HTML version of the specification in your browser">
 		<property name="outputDirectory" location="target"/>
 		<exec executable="${browser}" spawn="true">
 			<arg value="${outputDirectory}/html/master.html"/>
 		</exec>
-	</target>
-
-	<target name="all.doc" depends="clean">
-		<antcall target="lang.all">
-			<param name="lang" value="en"/>
-			<param name="basedir" value="${document.basedir}"/>
-			<param name="styles.dir" value="${spec.styles.dir}"/>
-		</antcall>
 	</target>
 
 	<target name="compile-asciidoc-extensions" depends="java-build-dir-clean, java-build-dir-exists, have-asciidoctor">
