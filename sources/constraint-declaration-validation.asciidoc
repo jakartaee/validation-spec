@@ -1,0 +1,2138 @@
+// Bean Validation
+//
+// License: Apache License, Version 2.0
+// See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+
+[[constraintdeclarationvalidationprocess]]
+
+== Constraint declaration and validation process
+
+The Bean Validation specification defines a framework for declaring constraints on JavaBean classes, fields and properties. Constraints are declared on types and evaluated against instances or graphs of instances.
+
+Bean Validation also offers a way to declare constructor and method constraints where parameters and return values are the constrained elements. We will discuss method constraints declaration in detail in <<constraintdeclarationvalidationprocess-methodlevelconstraints>>.
+
+[[constraintdeclarationvalidationprocess-requirements]]
+
+=== Requirements on classes to be validated
+
+Objects hosting constraints and expecting to be validated by Bean Validation providers must fulfill the following requirements:
+
+* [tck-testable]#Properties to be validated must follow the method signature conventions for JavaBeans read properties, as defined by the link:$$http://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/$$[JavaBeans specification]. These properties are commonly referred as getters.#
+* [tck-not-testable]#Static fields and static methods are excluded from validation.#
+* [tck-testable]#Constraints can be applied to interfaces and superclasses.#
+
+
+[NOTE]
+.What is a getter?
+====
+[tck-testable]
+--
+The JavaBeans specification specifies that a getter is a method whose
+
+* name starts with `get` and has a return type but no parameter
+* name starts with `is`, has no parameter and is returning [classname]`boolean`
+--
+
+====
+
+[tck-testable]
+--
+The target of an annotation definition can be a field, property, type, constructor or method return value, constructor or method parameter or constructor or method cross-parameter provided that:
+
+* the constraint definition supports the specified target ([classname]`java.lang.annotation.Target`)
+* one of the [classname]``ConstraintValidator``s declared on the constraint supports the declared type of the target or in the case of cross-parameter, one cross-parameter [classname]`ConstraintValidator` is present (see <<typevalidatorresolution>> to learn about [classname]`ConstraintValidator` resolution).
+--
+
+[[constraintdeclarationvalidationprocess-requirements-object]]
+
+==== Object validation
+
+[tck-testable]#Constraint declarations can be applied to a class or an interface.# [tck-testable]#Applying a constraint to a class or interface expresses a validation over the state of the class or the class implementing the interface.#
+
+[[constraintdeclarationvalidationprocess-requirements-property]]
+
+==== Field and property validation
+
+[tck-testable]#Constraint declarations can be applied on both fields and properties for the same object type.# [tck-testable]#The same constraint should however not be duplicated between a field and its associated property (the constraint validation would be applied twice).# It is recommended for objects holding constraint declarations to adhere to a single state access strategy (either annotated fields or properties).
+
+[NOTE]
+.Java Persistence and Bean Validation
+====
+For maximum portability, persistent properties hosting Bean Validation constraints should use the same access strategy used in Java Persistence. In other words, place your Bean Validation constraint annotations on the same element (field or getter) as your Java Persistence annotations.
+====
+
+[tck-testable]#When a field is annotated with a constraint declaration, field access strategy is used to access the state validated by such constraint.#
+
+[tck-testable]#When a property is annotated with a constraint declaration, property access strategy is used to access the state validated by such constraint.#
+
+When using field access strategy, the bean validation provider accesses the instance variable directly. When using the property access strategy, the bean validation provider accesses the state via the property accessor method. It is required that the class follows the method signature conventions for JavaBeans read properties (as defined by the JavaBeans [classname]`Introspector` class) for constrained properties when constrained properties are used. In this case, for every constraint property of type [classname]`T`, there is a getter method named [methodname]`get<Property-name>`. The method must have no parameters. For [code]`boolean` properties, [methodname]`is<Property-name>` is an alternative name for the getter method. Specifically, if [methodname]`getX` is the name of the getter method, where [classname]`X` is a string, the name of the persistent property is defined by the result of [code]`java.beans.Introspector.decapitalize(X)`.
+
+[tck-testable]#The fields or methods visibility are not constrained.#
+
+[[constraintdeclarationvalidationprocess-requirements-graphvalidation]]
+
+==== Graph validation
+
+In addition to supporting instance validation, validation of graphs of object is also supported. The result of a graph validation is returned as a unified set of constraint violations. [classname]`@Valid` is used to express validation traversal of an association.
+
+.[classname]`@Valid` annotation
+
+====
+[source, JAVA]
+----
+/**
+ * Marks a property, method parameter or method return type for validation cascading.
+ * <p/>
+ * Constraints defined on the object and its properties are be validated when the
+ * property, method parameter or method return type is validated.
+ * <p/>
+ * This behavior is applied recursively.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface Valid {
+}
+----
+
+====
+
+
+
+[tck-testable]#Consider the situation where bean [classname]`X` contains a field of type [classname]`Y`. By annotating field [classname]`Y` with the [classname]`@Valid` annotation, the Validator will validate [classname]`Y` (and its properties) when [classname]`X` is validated.# [tck-testable]#The exact type [classname]`Z` of the value contained in the field declared of type [classname]`Y` (subclass, implementation) is determined at runtime. The constraint definitions of [classname]`Z` are used.# This ensures proper polymorphic behavior for associations marked [classname]`@Valid`.
+
+Collection-valued, array-valued and generally [classname]`Iterable` fields and properties may also be decorated with the [classname]`@Valid` annotation. This causes the contents of the iterator to be validated. [tck-testable]#Any object implementing [classname]`java.lang.Iterable` is supported.# This includes specifically:
+
+* [tck-testable]#arrays of objects#
+* [tck-testable]#[classname]`java.util.Collection`#
+* [tck-testable]#[classname]`java.util.Set`#
+* [tck-testable]#[classname]`java.util.List`#
+* [tck-testable]#[classname]`java.util.Map`# (special treatment see below)
+
+
+[tck-testable]#Each object provided by the iterator is validated.# [tck-testable]#For [classname]`Map`, the value (retrieved by [methodname]`getValue`) of each [classname]`Map.Entry` is validated (the key is not validated).#
+
+[tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
+
+[tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
+
+=== Constraint declaration
+
+Constraint declarations are placed on classes or interfaces primarily through annotations. A constraint annotation (see <<constraintsdefinitionimplementation-constraintdefinition>>), can be applied to a type, on any of the type's fields or on any of the JavaBeans-compliant properties.
+
+[tck-testable]#When a constraint is defined on a class, the class instance being validated is passed to the [classname]`ConstraintValidator`. When a constraint is defined on a field, the value of the field is passed to the [classname]`ConstraintValidator`. When a constraint is defined on a getter, the result of the getter invocation is passed to the [classname]`ConstraintValidator`.#
+
+<<constraintdeclarationvalidationprocess-methodlevelconstraints>> discusses in detail constraints on methods and constructors.
+
+[[constraintdeclarationvalidationprocess-inheritance]]
+
+=== Inheritance (interface and superclass)
+
+[tck-testable]#A constraint declaration can be placed on an interface.# [tck-testable]#For a given class, constraint declarations held on superclasses as well as interfaces are evaluated by the Bean Validation provider.# Rules are formally described in <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>.
+
+[tck-testable]#The effect of constraint declarations is cumulative. Constraints declared on a superclass getter will be validated along with any constraints defined on an overridden version of the getter according to the Java Language Specification visibility rules.#
+
+[[constraintdeclarationvalidationprocess-groupsequence]]
+
+=== Group and group sequence
+
+A group defines a subset of constraints. Instead of validating all constraints for a given object graph, only a subset is validated. This subset is defined by the group or groups targeted. Each constraint declaration defines the list of groups it belongs to. [tck-testable]#If no group is explicitly declared, a constraint belongs to the [classname]`Default` group.#
+
+[tck-testable]#Groups are represented by interfaces.#
+
+.Definition of groups
+====
+
+[source, JAVA]
+----
+/**
+ * Validation group verifing that a user is billable
+ */
+public interface Billable {}
+
+/**
+ * Customer can buy without any harrassing checking process
+ */
+public interface BuyInOneClick {
+}
+----
+
+====
+
+[tck-testable]#A constraint can belong to one or more groups.#
+
+[[example-assigngrouptoconstraints]]
+
+.Assign groups to constraints
+====
+
+[source, JAVA]
+----
+/**
+ * User representation
+ */
+public class User {
+    @NotNull
+    private String firstname;
+
+    @NotNull(groups = Default.class)
+    private String lastname;
+
+    @NotNull(groups = {Billable.class, BuyInOneClick.class})
+    private CreditCard defaultCreditCard;
+}
+----
+
+====
+
+[tck-testable]#During the validation call, one or more groups are validated. All the constraints belonging to this set of group is evaluated on the object graph.# In <<example-assigngrouptoconstraints>>, [classname]`@NotNull` is checked on `defaultCreditCard` when either the [classname]`Billable` or [classname]`BuyInOneClick` group is validated. [classname]`@NotNull` on `firstname` and `lastname` are validated when the [classname]`Default` group is validated. Reminder: constraints held on superclasses and interfaces are considered.
+
+[classname]`Default` is a group predefined by the specification
+
+[source, JAVA]
+----
+package javax.validation.groups;
+
+/**
+ * Default Bean Validation group.
+ * <p/>
+ * Unless a list of groups is explicitly defined:
+ * <ul>
+ *     <li>constraints belong to the {@code Default} group</li>
+ *     <li>validation applies to the {@code Default} group</li>
+ * </ul>
+ * Most structural constraints should belong to the default group.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface Default {
+}
+----
+
+[[constraintdeclarationvalidationprocess-groupsequence-groupinheritance]]
+==== Group inheritance
+
+In some situations, a group is a superset of one or more groups. This can be described by Bean Validation. [tck-testable]#A group may inherit one or more groups by using interface inheritance.#
+
+.Groups can inherit other groups
+====
+
+[source, JAVA]
+----
+/**
+ * Customer can buy without harrassing checking process
+ */
+public interface BuyInOneClick extends Default, Billable {}
+----
+
+====
+
+[tck-testable]#For a given interface [classname]`Z`, constraints marked as belonging to the group [classname]`Z` (i.e. where the annotation element [methodname]`groups` contains the interface [classname]`Z`) or any of the super interfaces of [classname]`Z` (inherited groups) are considered part of the group [classname]`Z`.#
+
+In the following example:
+
+.Use of a inherited group
+====
+
+[source, JAVA]
+----
+/**
+ * User representation
+ */
+public class User {
+    @NotNull
+    private String firstname;
+
+    @NotNull(groups = Default.class)
+    private String lastname;
+
+    @NotNull(groups = Billable.class)
+    private CreditCard defaultCreditCard;
+}
+----
+
+====
+
+validating the group [classname]`BuyInOneClick` will lead to the following constraints checking:
+
+* [classname]`@NotNull` on `firstname` and `lastname`
+* [classname]`@NotNull` on `defaultCreditCard`
+
+
+because [classname]`Default` and [classname]`Billable` are superinterfaces of [classname]`BuyInOneClick`.
+
+[[constraintdeclarationvalidationprocess-groupsequence-groupsequence]]
+==== Group sequence
+
+[tck-not-testable]#By default, constraints are evaluated in no particular order regardless of which groups they belong to.# It is however useful in some situations to control the order of constraints evaluation. There are often scenarios where a preliminary set of constraints should be evaluated prior to other constraints. Here are two examples:
+
+* The second group depends on a stable state to run properly. This stable state is verified by the first group.
+* The second group is a heavy consumer of time, CPU or memory and its evaluation should be avoided if possible.
+
+
+To implement such ordering, a group can be defined as a sequence of other groups. [tck-testable]#Each group in a group sequence must be processed sequentially in the order defined by [methodname]`@GroupSequence.value` when the group defined as a sequence is requested.# [tck-testable]#Note that a group member of a sequence can itself be composed of several groups via inheritance or sequence definition. In this case, each composed group must respect the sequence order as well.#
+
+Processing a group is defined in <<constraintdeclarationvalidationprocess-validationroutine>> ; [tck-testable]#if one of the groups processed in the sequence generates one or more constraint violations, the groups following in the sequence must not be processed.# This ensures that a set of constraint is evaluated only if another set of constraint is valid.
+
+[tck-testable]
+--
+Groups defining a sequence and groups composing a sequence must not be involved in a cyclic dependency:
+
+* either directly or indirectly
+* either through cascaded sequence definitions or group inheritance
+--
+
+[tck-testable]#If a group containing such a circularity is evaluated, a [classname]`GroupDefinitionException` is raised.#
+
+[tck-not-testable]#Groups defining a sequence should not directly inherit other groups. In other words, the interface hosting the group sequence should not have any super interface.#
+
+[tck-not-testable]#Groups defining a sequence should not be used directly in constraint declarations.# In other words, the interface hosting the group sequence should not be used in a constraint declaration.
+
+[tck-testable]#To define a group as a sequence, the interface must be annotated with the [classname]`@GroupSequence` annotation.#
+
+[source, JAVA]
+----
+/**
+ * Defines group sequence.
+ * <p/>
+ * The interface hosting {@code @GroupSequence} is representing
+ * the group sequence.
+ * When hosted on a class, represents the {@link Default} group
+ * for that class.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+@Target({ TYPE })
+@Retention(RUNTIME)
+public @interface GroupSequence {
+
+    Class<?>[] value();
+}
+----
+
+Here is a usage example:
+
+[[example-groupsequence]]
+
+.Make use of group sequence
+====
+
+[source, JAVA]
+----
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+    @NotNull @Size(max = 50)
+    private String street1;
+
+    @NotNull @ZipCode
+    private String zipcode;
+
+    @NotNull @Size(max = 30)
+    private String city;
+
+    /**
+     * check coherence on the overall object
+     * Needs basic checking to be green first
+     */
+    public interface HighLevelCoherence {}
+
+    /**
+     * check both basic constraints and high level ones.
+     * high level constraints are not checked if basic constraints fail
+     */
+    @GroupSequence({Default.class, HighLevelCoherence.class})
+    public interface Complete {}
+}
+----
+
+====
+
+In <<example-groupsequence>>, when the [classname]`Address.Complete` group is validated, all constraints belonging to the [classname]`Default` group are validated. If any of them fail, the validation skips the [classname]`HighLevelCoherence` group. If all [classname]`Default` constraints pass, [classname]`HighLevelCoherence` constraints are evaluated.
+
+[NOTE]
+====
+[tck-testable]#A given constraint can belong to two or more groups ordered by a sequence. In this case, the constraint is evaluated as part of the first group and ignored in the subsequent group(s).# See <<constraintdeclarationvalidationprocess-validationroutine>> for more information.
+====
+
+[[constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup]]
+==== Redefining the Default group for a class
+
+In <<example-groupsequence>>, validating the [classname]`Default` group does not validate [classname]`HighLevelCoherence` constraints. To ensure a complete validation, a user must use the [classname]`Complete` group. This breaks some of the encapsulation you could expect. You can work around this by redefining what the [classname]`Default` group means for a given class. [tck-testable]#To redefine [classname]`Default` for a class, place a [classname]`@GroupSequence` annotation on the class; this sequence expresses the sequence of groups that does substitute [classname]`Default` for this class.#
+
+[[example-overridedefaultgroup]]
+
+.Redefining Default group for Address
+====
+
+[source, JAVA]
+----
+@GroupSequence({Address.class, HighLevelCoherence.class})
+@ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
+public class Address {
+    @NotNull @Size(max = 50)
+    private String street1;
+
+    @NotNull @ZipCode
+    private String zipcode;
+
+    @NotNull @Size(max = 30)
+    private String city;
+
+    /**
+     * check coherence on the overall object
+     * Needs basic checking to be green first
+     */
+    public interface HighLevelCoherence {}
+}
+----
+
+====
+
+In <<example-overridedefaultgroup>>, when an address object is validated for the group [classname]`Default`, all constraints belonging to the group [classname]`Default` and hosted on [classname]`Address` are evaluated. If none fails, all [classname]`HighLevelCoherence` constraints present on [classname]`Address` are evaluated. In other words, when validating the [classname]`Default` group for [classname]`Address`, the group sequence defined on the [classname]`Address` class is used.
+
+Since sequences cannot have circular dependencies, using [classname]`Default` in the declaration of a sequence is not an option. [tck-not-testable]#Constraints hosted on a class [classname]`A` and belonging to the [classname]`Default` group (by default or explicitly) implicitly belong to the group [classname]`A`.#
+
+[tck-testable]#A sequence defined on a class [classname]`A` (i.e. redefining the [classname]`Default` groups for the class) must contain the group [classname]`A`.# In other words, the default constraints hosted on a class must be part of the sequence definition. [tck-testable]#If a [classname]`@GroupSequence` redefining the [classname]`Default` group for a class [classname]`A` does not contain the group [classname]`A`, a [classname]`GroupDefinitionException` is raised when the class is validated or when its metadata is requested.#
+
+[[constraintdeclarationvalidationprocess-groupsequence-implicitgrouping]]
+==== Implicit grouping
+
+It is possible to implicitly group several constraints in the same group without explicitly listing such a group in the constraint declaration. [tck-testable]#Every constraint hosted on an interface [classname]`Z` and part of the [classname]`Default` group (implicitly or explicitly) belongs to the group [classname]`Z`.# This is useful to validate the partial state of an object based on a role represented by an interface.
+
+.Example of interface / group hosting constraints
+====
+
+[source, JAVA]
+----
+/**
+ * Auditable object contract
+ */
+public interface Auditable {
+    @NotNull String getCreationDate();
+    @NotNull String getLastUpdate();
+    @NotNull String getLastModifier();
+    @NotNull String getLastReader();
+}
+
+/**
+ * Represents an order in the system
+ */
+public class Order implements Auditable {
+    private String creationDate;
+    private String lastUpdate;
+    private String lastModifier;
+    private String lastReader;
+
+    private String orderNumber;
+
+    public String getCreationDate() {
+        return this.creationDate;
+    }
+
+    public String getLastUpdate() {
+        return this.lastUpdate;
+    }
+
+    public String getLastModifier() {
+        return this.lastModifier;
+    }
+
+    public String getLastReader() {
+        return this.lastReader;
+    }
+
+    @NotNull @Size(min=10, max=10)
+    public String getOrderNumber() {
+        return this.orderNumber;
+    }
+}
+----
+
+====
+
+When an [classname]`Order` object is validated on the [classname]`Default` group, the following constraints are validated: [classname]`@NotNull` on [methodname]`getCreationDate`, [methodname]`getLastUpdate`, [methodname]`getLastModifier`, [methodname]`getLastReader`, [methodname]`getOrderNumber` and [classname]`@Size` on [methodname]`getOrderNumber` as all belong to the [classname]`Default` group.
+
+When an [classname]`Order` object is validated on the [classname]`Auditable` group, the following constraints are validated: [classname]`@NotNull` on [methodname]`getCreationDate`, [methodname]`getLastUpdate`, [methodname]`getLastModifier`, [methodname]`getLastReader`. Only the constraints present on [classname]`Auditable` (and any of its super interfaces) and belonging to the [classname]`Default` group are validated when the group [classname]`Auditable` is requested. It allows the caller to validate that a given object can be safely audited even if the object state itself is not valid.
+
+[[constraintdeclarationvalidationprocess-groupsequence-groupconversion]]
+
+==== Group conversion
+
+When performing cascading validation, it is possible to use a different group than the one originally requested using the group conversion feature. Group conversions are declared by using the [classname]`@ConvertGroup` annotation.
+
+.@ConvertGroup annotation
+====
+
+
+[source, JAVA]
+----
+package javax.validation.groups;
+
+/**
+ * Converts group {@code from} to group {@code to} during cascading.
+ * <p/>
+ * Can be used everywhere {@link Valid} is used and must be on an element
+ * annotated with {@code Valid}.
+ *
+ * @author Emmanuel Bernard
+ * @since 1.1
+ */
+@Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+@Documented
+public @interface ConvertGroup {
+
+    Class<?> from();
+
+    Class<?> to();
+
+    /**
+     * Defines several {@link ConvertGroup} annotations
+     * on the same element.
+     */
+    @Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    public @interface List {
+
+        ConvertGroup[] value();
+    }
+}
+----
+
+====
+
+[tck-testable]#[classname]`@ConvertGroup` and [classname]`@ConvertGroup.List` can be used everywhere [classname]`@Valid` can be used (associations, method/constructor parameters and return value). If these annotations are used without [classname]`@Valid`, a [classname]`ConstraintDeclarationException` is raised.#
+
+When an element is annotated with [classname]`@Valid`, validation is propagated. [tck-testable]#Groups are passed as is to the nested elements unless the [classname]`@ConvertGroup` annotation is used.#
+
+[tck-testable]#If the group expected to be passed to the nested element validation is defined as the `from` attribute of a [classname]`@ConvertGroup` annotation, the group used to effectively validate the nested element is the corresponding group defined in the `to` attribute.#
+
+[tck-testable]#Rules are not executed recursively.# If a rule is found matching, subsequent rules are no longer evaluated. In particular, if a set of [classname]`@ConvertGroup` declaration chains group `A` to `B` and `B` to `C`, the group `A` will be converted to `B` and not to `C`. This both makes rules clearer and let you switch two groups.
+
+[tck-testable]#It is not legal to have more than one conversion rule containing the same `from` value. In this case, a [classname]`ConstraintDeclarationException` is raised.#
+
+[tck-testable]#Like regular constraint declarations, the `from` attribute cannot refer to a group sequence. A [classname]`ConstraintDeclarationException` is raised in this situation.# [tck-testable]#The `to` attribute can. The group sequence will then be expanded before validating the associated object.#
+
+[NOTE]
+====
+When validation is done, group sequences are expanded before validating the object and its cascaded objects with the expected groups. Group conversion on an associated object happens on the already expanded groups.
+
+The group referred to in [methodname]`@ConvertGroup.from` works on expanded groups (i.e., after the group sequence has been expanded), not necessarily groups passed to the various [methodname]`validate` methods.
+
+The group referred to in [methodname]`@ConvertGroup.to` will be expanded before validating the cascaded object just like a call to the various [methodname]`validate` method would have done.
+====
+
+[NOTE]
+====
+Like most Bean Validation error cases, an illegal set of rules can be discovered statically (at compile time). For example, an annotation processor could detect such errors.
+====
+
+[NOTE]
+====
+Group circularity in a group conversion are not problematic because:
+
+* only one rule is applied for a given cascade (rules are not applied recursively)
+* validation cascading is stopped when the same instance / property is validated with the same group in a given path (existing rule)
+
+
+
+====
+
+[tck-testable]#[classname]`@ConvertGroup` and [classname]`@ConvertGroup.List` can only be placed where [classname]`@Valid` is present to ensure proper respect of the Liskov substitution principle:# if rules were to be defined on an overriding method of a method marked as cascading validation, the rules could end up altering the list of constraints validated by the super type and thus violating the Liskov substitution principle.
+
+[tck-testable]#Likewise, if a sub type overrides/implements a method originally defined in several parallel types of the hierarchy (e.g. two interfaces not extending each other, or a class and an interface not implemented by said class) and if that method's return value has been marked for cascading validation in one of the parallel types, no group conversion rule may be declared for that method's return value in the parallel types of the hierarchy.# This again is to avoid an unexpected altering of the post conditions to be guaranteed to the caller.
+
+[tck-testable]#If any of these rules is violated, a [classname]`ConstraintDeclarationException` is raised by default as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance>>.#
+
+Group conversion is quite useful to facilitate object graph reuse without spreading the validation group definitions across several layers. Let's look at an example.
+
+===== Group conversion examples
+
+In this example we will reuse the [classname]`Address` group split and match it to the [classname]`User` group split.
+
+.Example of group conversion
+====
+
+
+[source, JAVA]
+----
+public interface Complete extends Default {}
+public interface BasicPostal {}
+public interface FullPostal extends BasicPostal {}
+
+public class Address {
+    @NotNull(groups=BasicPostal.class)
+    String street1;
+
+    String street2;
+
+    @ZipCode(groups=BasicPostal.class)
+    String zipCode;
+
+    @CodeChecker(groups=FullPostal.class)
+    String doorCode;
+}
+
+public class User {
+    @Valid
+    @ConvertGroup.List( {
+        @ConvertGroup(from=Default.class, to=BasicPostal.class),
+        @ConvertGroup(from=Complete.class, to=FullPostal.class)
+    } )
+    Set<Address> getAddresses() { [...] }
+}
+----
+
+====
+
+When validating an instance of [classname]`User` with the [classname]`Default` group, the associated addresses are validated with the [classname]`BasicPostal` group. When validating an instance of [classname]`User` with the [classname]`Complete` group, the associated addresses are validated with the [classname]`FullPostal` group.
+
+The following example shows an illegal declaration of a group conversion rule on a method's return value:
+
+.Example of an illegal group conversion
+====
+
+
+[source, JAVA]
+----
+public interface BasicPostal {}
+
+public class Order { [...] }
+
+public interface RetailOrderService {
+
+    @Valid
+    Order placeOrder(String itemNo, int quantity);
+}
+
+public interface B2BOrderService {
+
+    @Valid
+    @ConvertGroup(from=Default.class, to=BasicPostal.class)
+    Order placeOrder(String itemNo, int quantity);
+}
+
+public class OrderService implements RetailOrderService, B2BOrderService {
+
+    @Override
+    public Order placeOrder(String itemNo, int quantity) {
+        [...]
+    }
+}
+----
+
+====
+
+Here the class [classname]`OrderService` implements the two unrelated interfaces [classname]`RetailOrderService` and [classname]`B2BOrderService`, which both define a method [methodname]`placeOrder()`, marking the return value as cascaded.
+
+The group conversion declared in [classname]`B2BOrderService` is illegal as per the rules defined in the previous section, since the set of applied validation groups might be altered unexpectedly for a client of the [classname]`RetailOrderService` interface.
+
+[[constraintdeclarationvalidationprocess-groupsequence-formaldefinition]]
+
+==== Formal group definitions
+
+The formal rules defining groups are as followed. _Text in italic are comments about the rules._
+
+For every class [classname]`X`:
+
+[start=1]
+. For each superclass [classname]`Y` of [classname]`X`, the group [classname]`Y` contains all constraints of the group [classname]`Y` of [classname]`Y`
+_this rule prepares formal concepts for recursive discovery_
+
+[tck-testable]
+--
+[start=2]
+. The group [classname]`X` contains the following constraints:
+[tck-ignore]#group X is a group used on sequences redefining the default group on a class (see <<constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup>>)#
+.. every constraint declared by the class [classname]`X` which does not declare a group or does declare the group [classname]`Default` explicitly.
+[tck-ignore]#_all Default constraints hosted on X_#
+
+
+.. every constraint declared by any interface implemented by [classname]`X` and not annotated [classname]`@GroupSequence` which does not explicitly declare a group or does declare the group [classname]`Default` explicitly.
+[tck-ignore]#_all Default constraints hosted on interfaces of X: constraints are inherited by the class hierarchy. Interfaces marked as @GroupSequence are ignored._#
+
+
+.. if [classname]`X` has a direct superclass [classname]`Y`, every constraint in the group [classname]`Y`
+[tck-ignore]#_all Default constraints hosted on the superclasses of X: constraints are inherited by the class hierarchy_#
+--
+
+[tck-testable]
+--
+[start=3]
+. If [classname]`X` has no [classname]`@GroupSequence` annotation, the group [classname]`Default` contains the following constraints:
+[tck-ignore]#_this rule defines which constraints are evaluated when validating Default on X._#
+.. every constraint in the group [classname]`X`
+
+.. if [classname]`X` has a direct superclass [classname]`Y`, every constraint in the group [classname]`Default` of [classname]`Y`
+[tck-ignore]#_this rule is necessary in case Y redefines the group Default_#
+--
+
+[start=4]
+. [tck-testable]#If [classname]`X` does have a [classname]`@GroupSequence` annotation, the group [classname]`Default` contains every constraint belonging to every group declared by the [classname]`@GroupSequence` annotation.#
+_this rule describes how a class can redefine the group Default for itself (see <<constraintdeclarationvalidationprocess-groupsequence-redefiningdefaultgroup>>)_
+** [tck-testable]#the [classname]`@GroupSequence` annotation must declare the group [classname]`X`#
+
+[tck-testable]
+--
+[start=5]
+. For every interface [classname]`Z`, the group [classname]`Z` contains the following constraints:
+[tck-ignore]#_this rule defines how non Default groups are defined_#
+.. every constraint declared by the interface [classname]`Z` which does not explicitly declare a group or does declare the group [classname]`Default` explicitly.
+[tck-ignore]#_all Default constraints hosted on Z: this rule formally defines implicit grouping per interface (see <<constraintdeclarationvalidationprocess-groupsequence-implicitgrouping>>)_#
+
+
+.. every constraint (which does not explicitly declare a group) declared by any superinterface not annotated [classname]`@GroupSequence` of the interface [classname]`Z`
+[tck-ignore]#_all Default constraints hosted on interfaces of Z: groups can be inherited (see <<constraintdeclarationvalidationprocess-groupsequence-groupinheritance>>)_#
+
+
+.. every constraint declared by the class [classname]`X` which explicitly declares the group [classname]`Z`
+[tck-ignore]#_every constraint hosted by X and marked as belonging to the group Z_#
+
+
+.. every constraint declared by any interface implemented by [classname]`X` and not annotated [classname]`@GroupSequence` which explicitly declares the group [classname]`Z`
+[tck-ignore]#_every constraint hosted by any interface of X and marked as belonging to the group Z_#
+
+
+.. if [classname]`X` has a direct superclass [classname]`Y`, every constraint in the group [classname]`Z` of [classname]`Y`
+[tck-ignore]#_every constraint hosted by any superclass of X and marked as belonging to the group Z_#
+--
+
+[start=6]
+. [tck-testable]#For every interface [classname]`Z` annotated [classname]`@GroupSequence`, the group [classname]`Z` contains every constraint belonging to every group declared by the [classname]`@GroupSequence` annotation.#
+_defines the composition side of group sequence but does not define the ordering behavior of sequence (see <<constraintdeclarationvalidationprocess-groupsequence-groupsequence>>)_
+
+
+[tck-testable]
+--
+When a given group [classname]`G` (represented by an interface [classname]`G`) is requested for the validation of a class [classname]`X`:
+
+* constraints belonging to the group [classname]`G` are evaluated
+* if the interface [classname]`G` is not annotated [classname]`@GroupSequence`, every group represented by the super interface of [classname]`G` are requested for validation
+* if the interface [classname]`G` is annotated with [classname]`@GroupSequence`, every group represented by the interfaces declared by the [classname]`@GroupSequence` annotation are requested for validation
+** the validation of groups declared to the [classname]`@GroupSequence` must happen in the sequencing order declared by [classname]`@GroupSequence`: the sequencing order is propagated to the groups composing the sequenced group (via inheritance or group sequence)
+** if a group validation triggers the failure of one or more constraints, groups following in the sequence must not be evaluated.
+
+* if the group [classname]`G` represents the [classname]`Default` group of [classname]`X` overridden by [classname]`@GroupSequence`, operations are equivalent
+--
+
+[tck-testable]
+--
+When the [classname]`Default` group of a given class [classname]`X` is overridden via [classname]`@GroupSequence`, its validation is as followed:
+
+* every group represented by the interfaces declared by the [classname]`@GroupSequence` annotation are requested for validation
+** the validation of groups declared to the [classname]`@GroupSequence` must happen in the sequencing order declared by [classname]`@GroupSequence`: the sequencing order is propagated to the groups composing the sequenced group (via inheritance or group sequence)
+** if a group validation triggers the failure of one or more constraints, groups following in the sequence must not be evaluated.
+--
+
+[tck-not-testable]#Unless defined by a [classname]`@GroupSequence`, evaluation ordering is not constrained. In particular, several groups can be validated in the same pass.# [tck-testable]#If a group definition leads to a circular sequencing order between groups, a [classname]`GroupDefinitionException` is raised.#
+
+[NOTE]
+====
+A group [classname]`G` sequenced (directly or indirectly) to be executed before itself is not considered a circular reference.
+====
+
+[[constraintdeclarationvalidationprocess-methodlevelconstraints]]
+
+=== Method and constructor constraints
+
+[NOTE]
+====
+In the following, the term "method constraint" refers to constraints declared on methods as well as constructors.
+====
+
+Method constraints are declared by adding constraint annotations directly to methods or constructors and/or their parameters. In the former case, all the parameters of an executable (cross-parameter constraint) or the return value is constrained, in the latter individual parameters are constrained. As with bean constraints, this can be done using either actual Java annotations or using an XML constraint mapping file (see <<xml-mapping-constraintdeclarationinxml-methodleveloverriding>>). Bean Validation providers are free to provide additional means of defining method constraints such as an API-based approach.
+
+Getters are not considered constrained methods by default (see <<integration-general-executable>>).
+
+==== Requirements on methods to be validated
+
+[tck-not-testable]#Static methods are ignored by validation. Putting constraints on a static method is not portable.# No other restrictions exist from the perspective of this specification, however it is possible that technologies integrating with method validation impose further restrictions to methods for which a validation shall be applied. For instance certain integration technologies might require that methods to be validated must have [methodname]`public` visibility and/or must not be final.
+
+==== Declaring parameter constraints
+
+[tck-testable]#Parameter constraints are declared by putting constraint annotations on method or constructor parameters.#
+
+.Declaring parameter constraints
+====
+
+[source, JAVA]
+----
+public class OrderService {
+
+    public OrderService(@NotNull CreditCardProcessor creditCardProcessor) {
+        [...]
+    }
+
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity) {
+        [...]
+    }
+}
+----
+
+====
+
+Using constraint annotations, several preconditions are defined here. These preconditions which must be satisfied in order to legally invoke the methods of [classname]`OrderService` are:
+
+* The [classname]`CreditCardProcessor` passed to the constructor must not be null.
+* The customer code passed to the [methodname]`placeOrder()` method must not be null and must be between 3 and 20 characters long.
+* The [classname]`Item` passed to the [methodname]`placeOrder()` method must not be null.
+* The quantity value passed to the [methodname]`placeOrder()` method must be 1 at least.
+
+
+Note that declaring these constraints does not automatically cause their validation when the concerned methods are invoked. It's the responsibility of an integration layer to trigger the validation of the constraints using a method interceptor, dynamic proxy or similar. See section <<validationapi-triggeringmethodvalidation>> for more details.
+
+[TIP]
+====
+In order to use constraint annotations for method or constructor parameters, their element type must be [varname]`ElementType.PARAMETER`. In order to use constraint annotations for cross-parameter validation or on the return values of methods or constructors (see the following sections), their element type must be [varname]`ElementType.METHOD` respectively [varname]`ElementType.CONSTRUCTOR`. All built-in constraints support these element types and it is considered a best practice to do the same for custom constraints.
+====
+
+[[constraintdeclarationvalidationprocess-crossparameterconstraints]]
+
+===== Cross-parameter constraints
+
+Cross-parameter constraints allow to express constraints based on the value of several method parameters, similar to class-level constraints which are based on several properties of a given class. [tck-testable]#Cross-parameter constraints are declared by putting cross-parameter constraint annotations on methods or constructors# as shown in the following example.
+
+.Declaring cross-parameter constraints
+====
+
+
+[source, JAVA]
+----
+public class CalendarService {
+
+    @ConsistentDateParameters
+    public void createEvent(
+        String title,
+        @NotNull Date startDate,
+        @NotNull Date endDate) {
+        [...]
+    }
+}
+----
+
+====
+
+The cross-parameter constraint annotation expresses here that the given start date must be before the passed end date in order to legally invoke the [methodname]`createEvent()` method. The example also shows that it is often useful to combine constraints directly placed on individual parameters ([classname]`e.g. @NotNull`) and cross-parameter constraints.
+
+[TIP]
+====
+Cross-parameter constraints as well as return value constraints are declared directly on a method or a constructor. To make it obvious for a reader that an annotation refers to the parameters of a method or constructor and not its return value, it is recommended to chose a name which clearly expresses this intention.
+====
+
+
+
+[tck-testable]#It is not legal to declare a cross-parameter constraint on a method or constructor which has no parameters. A [classname]`ConstraintDeclarationException` is raised in this case.#
+
+Some constraints can target an executable's return value as well as its array of parameters. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such a constraint on an executable to target the parameters, one must set [methodname]`validationAppliesTo` if there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.PARAMETERS` as it improves readability.
+
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters]]
+
+===== Naming parameters
+
+In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). As of version 7, Java doesn't provide a portable way to retrieve parameter names. Bean Validation therefore defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
+
+
+[source, JAVA]
+----
+/**
+ * Provides names for method and constructor parameters.
+ * <p/>
+ * Used by the Bean Validation runtime when creating constraint violation
+ * objects for violated method constraints.
+ * <p/>
+ * Implementations must be thread-safe.
+ *
+ * @author Gunnar Morling
+ * @since 1.1
+ */
+public interface ParameterNameProvider {
+
+    /**
+     * Returns the names of the parameters of the given constructor.
+     *
+     * @param constructor the constructor for which the parameter names shall be
+     *        retrieved; never {@code null}
+     * @return a list containing the names of the parameters of the given
+     *         constructor; may be empty but never {@code null}
+     */
+    List<String> getParameterNames(Constructor<?> constructor);
+
+    /**
+     * Returns the names of the parameters of the given method.
+     *
+     * @param method the method for which the parameter names shall be retrieved;
+     *        never {@code null}
+     * @return a list containing the names of the parameters of the given method;
+     *         may be empty but never {@code null}
+     */
+    List<String> getParameterNames(Method method);
+}
+----
+
+[tck-testable]#A conforming Bean Validation implementation provides a default [classname]`ParameterNameProvider` implementation which returns parameter names in the form arg``PARAMETER_INDEX``, where `PARAMETER_INDEX` starts at 0 for the first parameter, e.g. [varname]`arg0`, [varname]`arg1` etc.#
+
+Bean Validation providers and integrators are free to provide additional implementations (e.g. based on annotations specifying parameter names, debug symbols etc.). If a user wishes to use another parameter name provider than the default implementation, she may specify the provider to use with help of the bootstrap API (see <<bootstrapping>>) or the XML configuration (see <<xml-config>>).
+
+[tck-testable]#If an exception occurs during invocation of the [methodname]`getParameterNames()` methods, this exception is wrapped into a [classname]`ValidationException` by the Bean Validation engine.#
+
+==== Declaring return value constraints
+
+[tck-testable]#Return value constraints are declared by putting constraint annotations directly on a method or constructor.#
+
+Some constraints can target both the return value and the array of parameters of an executable. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such constraint on an executable to target the return value, one must set [methodname]`validationAppliesTo` in case there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.RETURN_VALUE` as it improves readability.
+
+.Declaring return value constraints
+====
+
+
+[source, JAVA]
+----
+public class OrderService {
+
+    private CreditCardProcessor creditCardProcessor;
+
+    @ValidOnlineOrderService
+    public OrderService(OnlineCreditCardProcessor creditCardProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+    }
+
+    @ValidBatchOrderService
+    public OrderService(BatchCreditCardProcessor creditCardProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+    }
+
+    @NotNull
+    @Size(min=1)
+    public Set<CreditCardProcessor> getCreditCardProcessors() { [...] }
+
+    @NotNull
+    @Future
+    public Date getNextAvailableDeliveryDate() { [...] }
+}
+----
+
+====
+
+Here the following postconditions are defined which are guaranteed to the caller of the methods and constructors of the [classname]`OrderService` class:
+
+* The newly created [classname]`OrderService` object returned by the first constructor satisfies the conditions of the custom [classname]`@ValidOnlineOrderService` constraint.
+* The newly created [classname]`OrderService` object returned by the second constructor satisfies the conditions of the custom [classname]`@ValidBatchOrderService` constraint.
+* The set of [classname]`CreditCardProcessor` objects returned by [methodname]`getCreditCardProcessors()` will neither be null nor be empty.
+* The [classname]`Date` object returned by [methodname]`getNextAvailableDeliveryDate()` will not be null and will be in the future.
+
+
+Like parameter constraints, these return value constraints are not per-se validated upon method invocation, but instead an integration layer invoking the validation is required.
+
+==== Marking parameters and return values for cascaded validation
+
+[tck-testable]#The [classname]`@Valid` annotation is used to declare that a cascaded validation of the given method/constructor parameters or return values is performed by the Bean Validation provider. When marked, the parameter or return value is considered a bean object to validate.# The same rules as for standard object graph validation (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) apply, in particular
+
+* [tck-testable]#null arguments and null return values are ignored#
+* [tck-testable]#The validation is recursive; that is, if validated parameter or return value objects have references marked with [classname]`@Valid` themselves, these references will also be validated#
+* [tck-not-testable]#Bean Validation providers must guarantee the prevention of infinite loops during cascaded validation#
+
+
+.Marking parameters and return values for cascaded validation
+====
+
+
+[source, JAVA]
+----
+public class OrderService {
+
+    @NotNull @Valid
+    private CreditCardProcessor creditCardProcessor;
+
+    @Valid
+    public OrderService(@NotNull @Valid CreditCardProcessor creditCardProcessor) {
+        this.creditCardProcessor = creditCardProcessor;
+    }
+
+    @NotNull @Valid
+    public Order getOrderByPk(@NotNull @Valid OrderPK orderPk) { [...] }
+
+    @NotNull @Valid
+    public Set<Order> getOrdersByCustomer(@NotNull @Valid CustomerPK customerPk) { [...] }
+}
+----
+
+====
+
+Here the following recursive validations will happen when validating the methods of the [classname]`OrderService` class:
+
+* Validation of the constraints on the object passed for the [varname]`creditCardProcessor` parameter of the constructor
+* Validation of the constraints on the newly created [classname]`OrderService` instance returned by the constructor, i.e. the [classname]`@NotNull` constraint on the field [varname]`creditCardProcessor` and the constraints on the referenced [classname]`CreditCardProcessor` instance (as the field is annotated with [classname]`@Valid`).
+* Validation of the constraints on the object passed for the [varname]`orderPk` parameter and the returned [classname]`Order` object of the [methodname]`getOrderByPk()` method
+* Validation of the constraints on the object passed for the [varname]`customerPk` parameter and the constraints on each object contained within the returned [varname]`Set<Order>` of the [methodname]`getOrdersByCustomer()` method
+
+
+Again, solely marking parameters and return values for cascaded validation does not trigger the actual validation.
+
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance]]
+
+==== Method constraints in inheritance hierarchies
+
+When defining method constraints within inheritance hierarchies (that is, class inheritance by extending base classes and interface inheritance by implementing or extending interfaces) one has to obey the link:$$http://en.wikipedia.org/wiki/Liskov_substitution_principle$$[Liskov substitution] principle which mandates that:
+
+* a method's preconditions (as represented by parameter constraints) must not be strengthened in sub types
+* a method's postconditions (as represented by return value constraints) must not be weakened in sub types
+
+
+[TIP]
+====
+Very informally speaking, the Liskov substitution principle says that where a given type T is used, it should be possible to replace T with a sub-type S of T ("Behavioral subtyping"). If S overrides/implements a method from T and S would strengthen the method's preconditions (e.g. by adding parameter constraints) this principle would be violated as client code working correctly against T might fail when working against S. Also if S overrides/implements a method from T and S weakens the method's postconditions this principle would be violated. However S may strengthen the method's postconditions (by adding return value constraints), as client code working against T still will work against S.
+====
+
+Therefore the following rules with respect to the definition of method level constraints in inheritance hierarchies apply:
+
+* [tck-testable]#In sub types (be it sub classes/interfaces or interface implementations), no parameter constraints may be declared on overridden or implemented methods, nor may parameters be marked for cascaded validation. This would pose a strengthening of preconditions to be fulfilled by the caller.#
+* [tck-testable]#If a sub type overrides/implements a method originally defined in several parallel types of the hierarchy (e.g. two interfaces not extending each other, or a class and an interface not implemented by said class), no parameter constraints may be declared for that method at all nor parameters be marked for cascaded validation. This again is to avoid an unexpected strengthening of preconditions to be fulfilled by the caller.#
+* [tck-testable]#In sub types (be it sub classes/interfaces or interface implementations), return value constraints may be declared on overridden or implemented methods and the return value may be marked for cascaded validation. Upon validation, all return value constraints of the method in question are validated, wherever they are declared in the hierarchy. This only poses possibly a strengthening but no weakening of the method's postconditions guaranteed to the caller.#
+* [tck-testable]#One must not mark a method return value for cascaded validation more than once in a line of a class hierarchy. In other words, overriding methods on sub types (be it sub classes/interfaces or interface implementations) cannot mark the return value for cascaded validation if the return value has already been marked on the overridden method of the super type or interface.#
+
+
+[tck-testable]#Out of the box, a conforming Bean Validation provider must throw a [classname]`ConstraintDeclarationException` when discovering that any of these rules are violated.# In addition providers may implement alternative, potentially more liberal, approaches for handling constrained methods in inheritance hierarchies. Possible means for activating such alternative behavior include provider-specific configuration properties or annotations. Note that client code relying on such alternative behavior is not portable between Bean Validation providers.
+
+[tck-testable]#The above rules do not apply when validating constructor constraints as constructors do not override one another. Parameter and return value constraints can be applied to any constructor in the type hierarchy, but only the constraints defined directly on the validated constructor are evaluated.#
+
+===== Examples
+
+This sections provides some examples of illegal constraint definitions which violate the rules stated above in one way or another.
+
+.Illegally declared parameter constraints on interface implementation
+====
+
+
+[source, JAVA]
+----
+public interface OrderService {
+
+    void placeOrder(String customerCode, Item item, int quantity);
+}
+
+public class SimpleOrderService implements OrderService {
+
+    @Override
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity) {
+        [...]
+    }
+}
+----
+
+====
+
+The constraints in [classname]`SimpleOrderService` are illegal, as they strengthen the preconditions of the [methodname]`placeOrder()` method as constituted by the interface [classname]`OrderService`.
+
+.Illegally declared parameter constraints on sub class
+====
+
+
+[source, JAVA]
+----
+public class OrderService {
+
+    void placeOrder(String customerCode, Item item, int quantity) { [...] }
+}
+
+public class SimpleOrderService extends OrderService {
+
+    @Override
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity) {
+        [...]
+    }
+}
+----
+
+====
+
+
+
+The constraints in [classname]`SimpleOrderService` are illegal, as they strengthen the preconditions of the [methodname]`placeOrder()` method as constituted by the super class [classname]`OrderService`.
+
+[[illegal_constraints_in_parallel_types]]
+
+.Illegally declared parameter constraints on parallel types
+====
+
+
+[source, JAVA]
+----
+public interface OrderService {
+
+    void placeOrder(String customerCode, Item item, int quantity);
+}
+
+public interface OrderPlacementService {
+
+    public void placeOrder(
+        @NotNull @Size(min=3, max=20) String customerCode,
+        @NotNull Item item,
+        @Min(1) int quantity);
+}
+
+public class SimpleOrderService implements OrderService, OrderPlacementService {
+
+    @Override
+    public void placeOrder(String customerCode, Item item, int quantity) {
+        [...]
+    }
+}
+----
+
+====
+
+Here the class [classname]`SimpleOrderService` implements the interfaces [classname]`OrderService` and [classname]`OrderPlacementService`, which themselves are unrelated to each other but both define a method [methodname]`placeOrder()` with an identical signature. This hierarchy is illegal with respect to the parameter constraints as a client of [classname]`SimpleOrderService` would have to fulfill the constraints defined on the interface [classname]`OrderPlacementService` even if the client only expects [classname]`OrderService`.
+
+.Correctly declared return value constraints on sub class
+====
+
+
+[source, JAVA]
+----
+public class OrderService {
+
+    Order placeOrder(String customerCode, Item item, int quantity) {
+        [...]
+    }
+}
+
+public class SimpleOrderService extends OrderService {
+
+    @Override
+    @NotNull
+    @Valid
+    public Order placeOrder(String customerCode, Item item, int quantity) {
+        [...]
+    }
+}
+----
+
+====
+
+The return value constraints in [classname]`DefaultOrderService` are legal, as they strengthen the postconditions of the [methodname]`placeOrder()` method as constituted by the super class [classname]`OrderService` but don't weaken them.
+
+[[constraintdeclarationvalidationprocess-validationroutine]]
+
+=== Validation routine
+
+[tck-testable]
+--
+For a given group, the validation routine applied on a given bean instance is expected to execute the following constraint validations in no particular order:
+
+* for all _reachable_ fields, execute all field level validations (including the ones expressed on superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
+* for all _reachable_ getters, execute all getter level validations (including the ones expressed on interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
+* execute all class level validations (including the ones expressed on interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
+* for all _reachable_ and _cascadable_ associations, execute all cascading validations (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) including the ones expressed on interfaces and superclasses (see <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>). Note that group conversion can apply (see <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>).
+
+--
+
+Reachable fields, getters and associations as well as cascadable associations are defined in <<constraintdeclarationvalidationprocess-validationroutine-traversable>>.
+
+Note that this implies that a given validation constraint will not be processed more than once per validation per path. Some implementations might even process a single constraint only once across paths provided that they return the expected set of [classname]`ConstraintViolation`.
+
+[tck-not-testable]#Unless ordered by group sequences, groups can be validated in no particular order.# This implies that the validation routine can be run for several groups in the same pass.
+
+[tck-testable]
+--
+The object validation routine is described as such. For each constraint declaration:
+
+* determine for the constraint declaration, the appropriate [classname]`ConstraintValidator` to use (see <<typevalidatorresolution>>).
+* execute the [methodname]`isValid` operation (from the constraint validation implementation) on the appropriate data (see <<constraintsdefinitionimplementation-validationimplementation>>)
+* if [methodname]`isValid()` returns `true`, continue to the next constraint,
+* if [methodname]`isValid()` returns `false`, the Bean Validation provider populates [classname]`ConstraintViolation` object(s) according to the rules defined in <<constraintsdefinitionimplementation-validationimplementation>> and appends these objects to the list of constraint violations.
+--
+
+[[constraintdeclarationvalidationprocess-validationroutine-graphvalidation]]
+
+==== Object graph validation
+
+[tck-testable]#The [classname]`@Valid` annotation on a given association (i.e. object reference or collection, array, [classname]`Iterable` of objects), dictates the Bean Validator implementation to apply recursively the Bean Validation routine on (each of) the associated object(s).# [tck-testable]#This mechanism is recursive: an associated object can itself contain cascaded references.#
+
+[tck-testable]#Null references are ignored.#
+
+[tck-testable]#To prevent infinite loops, the Bean Validation implementation must ignore the cascading operation if the associated object instance has already been validated in the current navigation path (starting from the root object).# See <<example-oglimit>> for an example. A navigation path is defined as a set of [classname]`@Valid` associations starting from the root object instance and reaching the associated instance. A given navigation path cannot contain the same instance multiple times (the complete validated object graph can though). See <<example-oglimit>> for an example.
+
+[NOTE]
+====
+This object graph navigation can lead to multiple validations of the same constraint and the same object instance but the set of constraint validation is deterministic and the algorithm prevents infinite loops.
+====
+
+[[example-oglimit]]
+
+.Object graph limits
+====
+
+[source,subs="verbatim,specialchars,specialcharacters,normal"]
+----
+#assuming the following object graph
+
+Order -(lines)-> Orderline1
+Order -(lines)-> Orderline2
+Orderline1 -(order)-> Order
+Orderline2 -(order)-> Order
+Order -(customer)-> User
+Order -(shippingAddress)-> Address1
+Order -(billingAddress)-> Address2
+Address1 -(inhabitant)-> User
+Address2 -(inhabitant)-> User
+User -(addresses)-> Address1
+User -(addresses)-> Address2
+
+#validation branches are as followed
+Order -(lines)-> Orderline1
+  - order is ignored: Order is already present in the branch
+
+Order -(lines)-> Orderline2
+  - order is ignored: Order is already present in the branch
+
+Order -(customer)-> User -(addresses)-> Address1
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(customer)-> User -(addresses)-> Address2
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(shippingAddress)-> Address1 -(inhabitant)-> User
+  - addresses to Address1 is ignored: Address1 is already present in the branch
+
+Order -(shippingAddress)-> Address1 -(inhabitant)-> User -(addresses)-> Address2
+  - inhabitant is ignored: User is already present in the branch
+
+Order -(billingAddress)-> Address2 -(inhabitant)-> User
+  - addresses to Address2 is ignored: Address2 is already present in the branch
+
+Order -(billingAddress)-> Address2 -(inhabitant)-> User -(addresses)-> Address1
+  - inhabitant is ignored: User is already present in the branch
+----
+
+====
+
+The [classname]`ConstraintViolation` objects are built when a failing constraint on an associated object is found. They reflect the path to reach the object from the root validated object (See <<validationapi-constraintviolation>>).
+
+[tck-testable]#[classname]`@Valid` is an orthogonal concept to the notion of group. If two groups are in sequence, the first group must pass for all associated objects before the second group is evaluated.# Note however that the [classname]`Default` group sequence overriding is local to the class it is defined on and is not propagated to the associated objects. The following example illustrates this:
+
+.Class Driver with redefined default group
+====
+
+[source, JAVA]
+----
+@GroupSequence({ Minimal.class, Driver.class })
+public class Driver {
+  @Min(value = 18, groups = Minimal.class)
+  int age;
+
+  @AssertTrue
+  Boolean passedDrivingTest;
+
+  @Valid
+  Car car;
+
+  // setter/getters
+}
+----
+
+====
+
+.Class Car with redefined default group
+====
+
+[source, JAVA]
+----
+@GroupSequence({ Car.class, Later.class })
+public class Car {
+  @NotNull
+  String type;
+
+  @AssertTrue(groups = Later.class)
+  Boolean roadWorthy;
+
+  // setter/getters
+}
+----
+
+====
+
+.Defining a group sequence
+====
+
+[source, JAVA]
+----
+@GroupSequence({ Minimal.class, Later.class })
+public interface SequencedGroups {
+}
+----
+
+====
+
+.Group sequence overriding is not propagated to associated objects
+====
+
+[source, JAVA]
+----
+Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
+Driver driver = new Driver();
+driver.setAge(16);
+Car porsche = new Car();
+driver.setCar(porsche);
+
+
+Set<ConstraintViolation<Driver>> violations = validator.validate( driver );
+
+assert violations.size() == 2;
+
+violations = validator.validate( driver, SequencedGroups.class );
+
+assert violations.size() == 1;
+----
+
+====
+
+The default group sequence is redefined for the [classname]`Driver` as well as [classname]`Car`. When the default group is requested via [methodname]`validator.validate( driver )` the group [classname]`Minimal` gets validated in class [classname]`Driver`. The constraint will fail since the driver's age in the example is only 16. The constraint on [property]`passedDrivingTest` will not be evaluated due to the redefined default sequence of [classname]`Driver`. However, there is one more constraint violation, namely the [classname]`@NotNull` on [property]`Car.type`. The reason for this is that the group [classname]`Default` gets propagated to [classname]`Car` (not [classname]`Minimal`). Class [classname]`Driver` defines its own group sequence which means that [classname]`only @NotNull` on [property]`type` gets evaluated.
+
+In the second call to [methodname]`validate` the group [classname]`SequencedGroups` is requested which defines a sequence of [classname]`Minimal` followed by [classname]`Later`. In this case there is only one constraint violation. Again [classname]`@Min` on [property]`age` fails, but in this case the group [classname]`Minimal` gets propagated to [classname]`Car` which does not have any constraints defined against this group. Constraints belonging to the group [classname]`Later` won't get validated until all constraints belonging to [classname]`Minimal` pass.
+
+==== Method and constructor validation
+
+[tck-testable]
+--
+For a given group, the validation routine applied to validate parameters of a method or constructor is expected to execute the following constraint validations in no particular order:
+
+* execute all parameter validations (in case of overriding method validation, including the ones expressed on overridden methods of the interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
+* execute all cross parameter validations (in case of overriding method validation, including the ones expressed on overridden methods of the interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
+* for all parameters marked for cascaded validation, execute all cascading validations (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>), in case of overriding method validation including the ones expressed on overridden methods of the interfaces and superclasses (see <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>). Note that group conversion can apply (see <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>).
+--
+
+[tck-testable]
+--
+For a given group, the validation routine applied to validate the return value of a method or constructor is expected to execute the following constraint validations in no particular order:
+
+* execute all return value validations (including the ones expressed on interfaces and superclasses) matching the targeted group unless the given validation constraint has already been processed during this validation routine for a given navigation path (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) as part of a previous group match.
+* if the return value is marked for cascaded validation, execute all cascading validations (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) including the ones expressed on interfaces and superclasses (see <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>). Note that group conversion can apply (see <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>).
+--
+
+Note that this implies that a given validation constraint will not be processed more than once per validation per path. Some implementations might even process a single constraint only once across paths provided that they return the expected set of [classname]`ConstraintViolation`.
+
+[tck-not-testable]#Unless ordered by group sequences, groups can be validated in no particular order.# This implies that the validation routine can be run for several groups in the same pass.
+
+The object validation routine is as defined in described in <<constraintdeclarationvalidationprocess-validationroutine>>.
+
+[[constraintdeclarationvalidationprocess-validationroutine-traversable]]
+
+==== Traversable property
+
+In some cases, the state of some properties should not be accessed. For example, if a property loaded by a Java Persistence provider is a lazy property or a lazy association, accessing its state would trigger a load from the database. An undesired behavior.
+
+Bean Validation offers a way to control which property can and cannot be accessed via the [classname]`TraversableResolver.isReachable`() contract.
+
+Likewise, it is sometimes undesirable to cascade validation despite the use of [classname]`@Valid`. Java Persistence 2 for example does not cascade to associated entities during flush. You can control this behavior by implementing [methodname]`Traversable.isCascadable()`.
+
+[source, JAVA]
+----
+/**
+ * Contract determining if a property can be accessed by the Bean Validation provider.
+ * This contract is called for each property that is being either validated or cascaded.
+ * <p/>
+ * A traversable resolver implementation must be thread-safe.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface TraversableResolver {
+    /**
+     * Determines if the Bean Validation provider is allowed to reach the property state.
+     *
+     * @param traversableObject object hosting {@code traversableProperty}
+     *        or {@code null} if {@code validateValue} is called
+     * @param traversableProperty the traversable property
+     * @param rootBeanType type of the root object passed to the Validator
+     *        or hosting the method or constructor validated
+     * @param pathToTraversableObject path from the root object to
+     *        {@code traversableObject}
+     *        (using the path specification defined by Bean Validator)
+     * @param elementType either {@code FIELD} or {@code METHOD}
+     * @return {@code true} if the Bean Validation provider is allowed to
+     *         reach the property state, {@code false} otherwise
+     */
+    boolean isReachable(Object traversableObject,
+                        Node traversableProperty,
+                        Class<?> rootBeanType,
+                        Path pathToTraversableObject,
+                        ElementType elementType);
+
+    /**
+     * Determines if the Bean Validation provider is allowed to cascade validation on
+     * the bean instance returned by the property value
+     * marked as {@code @Valid}.
+     * <p/>
+     * Note that this method is called only if
+     * {@link #isReachable(Object, javax.validation.Path.Node, Class, Path, java.lang.annotation.ElementType)}
+     * returns {@code true} for the same set of arguments and if the property
+     * is marked as {@link Valid}.
+     *
+     * @param traversableObject object hosting {@code traversableProperty}
+     *        or {@code null} if {@code validateValue} is called
+     * @param traversableProperty the traversable property
+     * @param rootBeanType type of the root object passed to the Validator
+     *        or hosting the method or constructor validated
+     * @param pathToTraversableObject path from the root object to
+     *        {@code traversableObject}
+     *        (using the path specification defined by Bean Validator)
+     * @param elementType either {@code FIELD} or {@code METHOD}
+     * @return {@code true} if the Bean Validation provider is allowed to
+     *         cascade validation, {@code false} otherwise
+     */
+    boolean isCascadable(Object traversableObject,
+                         Node traversableProperty,
+                         Class<?> rootBeanType,
+                         Path pathToTraversableObject,
+                         ElementType elementType);
+}
+----
+
+[tck-testable]#[methodname]`isReachable()` is called for every property about to be accessed either for validation or for cascading.# A property is _reachable_ if this method returns `true`.
+
+[tck-testable]#[methodname]`isCascadable()` is called for every property about to be cascaded (i.e. marked as [classname]`@Valid`).# A property is _cascadable_ if it is reachable and if the [methodname]`isCascadable` method returns `true`.
+
+[NOTE]
+====
+[tck-testable]#[methodname]`isCascadable()` for a given property is only called if [methodname]`isReachable()` returns `true`. In other words, [methodname]`isReachable()` is always called before [methodname]`isCascadable()` for a given property.#
+====
+
+[tck-testable]#`traversableObject` is the object instance being evaluated. `null` if the check is triggered as part of a [methodname]`validateValue()` call.#
+
+[tck-testable]#`traversableProperty` is the [classname]`Node` representing the property hosted by the [methodname]`traversableObject` being considered for traversal. The name of a property is defined in <<constraintdeclarationvalidationprocess-requirements-property>>.#
+
+[tck-testable]#`rootBeanType` is the class of the root being validated, i.e. either the type of the object passed to the [methodname]`validate` method or the type declaring the validated method/constructor in case of method validation).#
+
+[tck-testable]#`pathToTraversableObject` is the [classname]`Path` from the [methodname]`rootBeanType` down to the [methodname]`traversableObject`. If the root object is [classname]`traversableObject`, [classname]`pathToTraversableObject` is composed of a single Node whose name is `null`. The path is described following the conventions described in <<validationapi-constraintviolation>> ([methodname]`getPropertyPath`).#
+
+[tck-testable]#`elementType` is the [classname]`java.lang.annotation.ElementType` the annotation is placed on. It can be either `FIELD` or `METHOD`. Any other value is not expected.#
+
+[tck-testable]#The Bean Validation provider must not access the state of a property, nor validate its constraints if the property is not traversable. A property is traversable if [classname]`TraversableResolver` returns `true` for this property.#
+
+[tck-testable]#If an exception occurs when the [classname]`TraversableResolver` is called, the exception is wrapped into a [classname]`ValidationException`.#
+
+[tck-testable]
+--
+The following elements are not passed through the traversable resolver filter:
+
+* the bean instance validated
+* the method and constructor parameter values being validated
+* the method and constructor return value being validated
+--
+
+[tck-testable]#But the properties of these elements (if validated) are. In this case the complete path is provided via `pathToTraversableObject`.#
+
+The traversable resolver used by default by a Bean Validation provider behaves as followed:
+
+* [tck-not-testable]#if Java Persistence is available in the runtime environment, a property is considered reachable if Java Persistence considers the property as loaded.# A typical implementation will use [code]`Persistence.getPersistenceUtil().isLoaded(Object, String)` to implement such contract.
+* [tck-not-testable]#if Java Persistence is not available in the runtime environment, all properties are considered reachable.#
+* [tck-not-testable]#all properties are considered cascadable.#
+
+
+An example implementation of such a resolver is shown in <<constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver>>.
+
+[[constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver]]
+
+.Java Persistence aware TraversableResolver
+====
+
+[source, JAVA]
+----
+public class JPATraversableResolver implements TraversableResolver {
+
+    public boolean isReachable(Object traversableObject,
+                               Path.Node traversableProperty,
+                               Class<?> rootBeanType,
+                               Path pathToTraversableObject,
+                               ElementType elementType) {
+        return traversableObject == null ||
+                Persistence.getPersistenceUtil().isLoaded(
+                        traversableObject,
+                        traversableProperty.getName() );
+    }
+
+    public boolean isCascadable(Object traversableObject,
+                               Path.Node traversableProperty,
+                               Class<?> rootBeanType,
+                               Path pathToTraversableObject,
+                               ElementType elementType) {
+        return true;
+    }
+}
+----
+
+====
+
+See <<bootstrapping>> to how to pass a custom [classname]`TraversableResolver`.
+
+[[constraintdeclarationvalidationprocess-validationroutine-traversable-examples]]
+
+===== Examples
+
+The following example assumes the object graph defined in <<example-ognav-definitions>> and assumes the validation operation is applied on an address object.
+
+[[example-ognav-definitions]]
+
+.Definitions used in the example
+====
+
+[source, JAVA]
+----
+public class Country {
+    @NotNull private String name;
+    @Size(max=2) private String ISO2Code;
+    @Size(max=3) private String ISO3Code;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getISO2Code() {
+        return ISO2Code;
+    }
+
+    public void setISO2Code(String ISO2Code) {
+        this.ISO2Code = ISO2Code;
+    }
+
+    public String getISO3Code() {
+        return ISO3Code;
+    }
+
+    public void setISO3Code(String ISO3Code) {
+        this.ISO3Code = ISO3Code;
+    }
+}
+
+public class Address {
+    @NotNull @Size(max=30)
+    private String addressline1;
+    @Size(max=30)
+    private String addressline2;
+    @Size(max=11)
+    private String zipCode;
+    @Valid
+    private Country country;
+
+    private String city;
+
+    public String getAddressline1() {
+        return addressline1;
+    }
+
+    public void setAddressline1(String addressline1) {
+        this.addressline1 = addressline1;
+    }
+
+    public String getAddressline2() {
+        return addressline2;
+    }
+
+    public void setAddressline2(String addressline2) {
+        this.addressline2 = addressline2;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    @Size(max=30) @NotNull
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public Country getCountry() {
+        return country;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+}
+----
+
+====
+
+When the Bean Validation provider is about to check constraints of `ISO3Code`, it calls the [classname]`TraversableResolver.isReachable()` method to ensure that the `ISO3Code` property is reachable with the following parameter values:
+
+* `traversableObject`: country. The instance returned by [code]`address.getCountry()`.
+* `traversableProperty`: a [classname]`PropertyNode` whose name is "ISO3Code". Represents the property of `traversableObject` being verified.
+* [methodname]`rootBeanType`: [classname]`Address.class`. The type of the root object being validated.
+* `pathtoTraversableObject`: a [classname]`Path` containing a single [classname]`PropertyNode` whose name is "country". The path from address to the country instance.
+* `elementType`: [classname]`ElementType.FIELD`. The ISO3Code property is annotated on its field.
+
+
+When the Bean Validation provider is about to cascade validation on `country` ([classname]`Address` object), it calls the [classname]`TraversableResolver.isReachable()` method to ensure that the `country` property is reachable and if this method returns `true`, it calls [classname]`TraversableResolver.isCascadable()` with the following parameter values:
+
+* `traversableObject`: address. The address instance.
+* `traversableProperty`: a [classname]`PropertyNode` whose name is "country". Represents the property of `traversableObject` being verified.
+* [methodname]`rootBeanType`: [classname]`Address.class`. The type of the root object being validated.
+* `pathtoTraversableObject`: a [classname]`Path` containing a single [classname]`BeanNode` whose name is `null`.
+* `elementType`: [classname]`ElementType.FIELD`. The country property is annotated on its field.
+
+
+The following example shows invocations of the [classname]`TraversableResolver` as to be performed by the Bean Validation provider during method validation. The example is based on the object graph defined in <<example-ognav-definitions>> and the [classname]`AddressService` class shown in <<example-ognav-definitions-methodvalidation>>. It assumes that a call of [methodname]`persistAddress()` is subject to method parameter validation.
+
+[[example-ognav-definitions-methodvalidation]]
+
+.Examplary class [classname]`AddressService`
+====
+
+[source, JAVA]
+----
+public class AddressService {
+    public void persistAddress(@NotNull @Valid Address address) {
+        [...]
+    }
+}
+----
+
+====
+
+When the Bean Validation provider is about to validate the [classname]`@NotNull` constraint on the [varname]`address` parameter, no call to [methodname]`isReachable()` is expected, since parameters are assumed to always be reachable. Similarly, no call to [methodname]`isCascable()` is expected when performing cascaded validation of the [varname]`address` parameter, since parameters are assumed to always be cascadable.
+
+When the Bean Validation provider is about to validate constraints on the field [varname]`addressline1` of the passed [classname]`Address` object, it calls the [methodname]`isReachable()` method to ensure that the property is reachable with the following parameter values:
+
+* `traversableObject`: address. The instance passed to [methodname]`persistAddress()`.
+* `traversableProperty`: a [classname]`PropertyNode` whose name is "addressline1". Represents the property of `traversableObject` being verified.
+* [methodname]`rootBeanType`: [classname]`AddressService.class`. The type of the root object being validated.
+* `pathtoTraversableObject`: a [classname]`Path` comprising a [classname]`MethodNode` (named "persistService") and a [classname]`ParameterNode` (with parameter index 0). The path from [classname]`AddressService` to the [classname]`Address` instance.
+* `elementType`: [classname]`ElementType.FIELD`. The [varname]`addressline1` property is annotated on its field.
+
+
+When the Bean Validation provider is about to perform a cascaded validation of the [varname]`country` property of the passed [classname]`Address` object, it calls the [methodname]`isReachable()` method to ensure that the property is reachable. If this method returns `true`, it calls [classname]`TraversableResolver.isCascadable()` with the following parameter values:
+
+* `traversableObject`: address. The instance passed to [methodname]`persistAddress()`.
+* `traversableProperty`: a [classname]`PropertyNode` whose name is "country". Represents the property of `traversableObject` being verified.
+* [methodname]`rootBeanType`: [classname]`AddressService.class`. The type of the root object being validated.
+* `pathtoTraversableObject`: a [classname]`Path` comprising a [classname]`MethodNode` (named "persistService") and a [classname]`ParameterNode` (with parameter index 0). The path from [classname]`AddressService` to the [classname]`Address` instance.
+* `elementType`: [classname]`ElementType.FIELD`. The [varname]`country` property is annotated on its field.
+
+
+[[typevalidatorresolution]]
+
+==== ConstraintValidator resolution algorithm
+
+A constraint is associated to one or more [classname]`ConstraintValidator` implementations. Each [classname]`ConstraintValidator<A, T>` accepts the type [classname]`T`. The [classname]`ConstraintValidator` executed depends on the type hosting the constraint. For a given constraint evaluation, a single [classname]`ConstraintValidator` is considered.
+
+[tck-testable]#The list of [classname]``ConstraintValidator``s can contain at most one which targets cross-parameter. If the constraint targets the parameters of an executable either implicitly or by the use of [methodname]`validationAppliesTo` in the constraint - see <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>, then the cross-parameter [classname]`ConstraintValidator` is used. If none is present, a [classname]`ConstraintDefinitionException` is raised. If more than one cross-parameter [classname]`ConstraintValidator` is present, a [classname]`ConstraintDefinitionException` is raised.#
+
+[tck-testable]#If the constraint is a generic constraint, the following rules apply. If the constraint declaration is hosted on a class or an interface, the targeted type is the class or the interface.# [tck-testable]#If the constraint is hosted on a class attribute, the type of the attribute is the targeted type.# [tck-testable]#If the constraint is hosted on a getter, the return type of the getter is the targeted type.# In other words, the resolution algorithm considers the type as defined in the method signature and not the runtime type of the value.
+
+The rules written below describe formally the following statement: [tck-testable]#the [classname]`ConstraintValidator` chosen to validate the generic constraint on a declared type [classname]`T` is the one where the [classname]`ConstraintValidator` targets the annotated element, where the type supported by the [classname]`ConstraintValidator` is a supertype of [classname]`T` and where there is no other [classname]`ConstraintValidator` whose supported type is a supertype of [classname]`T` and not a supertype of the chosen [classname]`ConstraintValidator` supported type.#
+
+When validating a generic constraint A placed on a target declaring the type [classname]`T`, the following resolution rules apply:
+
+* [tck-testable]#Only [classname]`ConstraintValidator` implementations targeting annotated elements are considered.#
+* [tck-testable]#Primitive types are considered equivalent to their respective primitive wrapper class.#
+* A [classname]`ConstraintValidator<A, U>` is said to be _compliant_ with [classname]`T` if [classname]`T` is a subtype of [classname]`U` (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]). Note that [classname]`T` is a subtype of [classname]`U` if [classname]`T` = [classname]`U`.
+* [tck-testable]#If no [classname]`ConstraintValidator` compliant with [classname]`T` is found amongst the [classname]``ConstraintValidator``s listed by the constraint [classname]`A`, an [classname]`UnexpectedTypeException` is raised.#
+* [tck-testable]#A [classname]`ConstraintValidator<A, U>` compliant with [classname]`T` is considered _strictly more specific_ than a [classname]`ConstraintValidator<A, V>` compliant with [classname]`T` if [classname]`U` is a strict subtype of [classname]`V`. [classname]`U` is a strict subtype of [classname]`V` if [classname]`U` is a subtype of [classname]`V` and [classname]`U` != [classname]`V` (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]).#
+* A [classname]`ConstraintValidator<A, U>` compliant with [classname]`T` is considered maximally specific if no other [classname]`ConstraintValidator<A, V>` compliant with [classname]`T` is strictly more specific than [classname]`ConstraintValidator<A, U>`.
+* [tck-testable]#If more than one maximally specific [classname]`ConstraintValidator` is found, an [classname]`UnexpectedTypeException` is raised.#
+
+
+[NOTE]
+====
+While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or a Java 6 annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages Bean Validation providers to provide such a tool to their users.
+====
+
+Let's see a couple of declarations and their respective [classname]`ConstraintValidator` resolution. Assuming the definitions shown in <<example-constraintvalidator-resolution>>:
+
+[[example-constraintvalidator-resolution]]
+
+.ConstraintValidator and type resolution
+====
+
+[source, JAVA]
+----
+[...]
+@Constraint(validatedBy={
+    SizeValidatorForCollection.class,
+    SizeValidatorForSet.class,
+    SizeValidatorForSerializable.class })
+public @interface Size { [...] }
+
+public class SizeValidatorForCollection implements ConstraintValidator<Size, Collection> {
+    [...]
+}
+public class SizeValidatorForSet implements ConstraintValidator<Size, Set> {
+    [...]
+}
+public class SizeValidatorForSerializable implements ConstraintValidator<Size, Serializable> {
+    [...]
+}
+
+public interface SerializableCollection extends Serializable, Collection {
+}
+----
+
+====
+
+The resolutions shown in <<table-constraintvalidator-resolution>> occur.
+
+[[table-constraintvalidator-resolution]]
+
+.Resolution of ConstraintValidator for various constraints declarations
+[options="header"]
+|===============
+|Declaration|Resolution
+|[code]`@Size Collection getAddresses() { [...] }`|[classname]`SizeValidatorForCollection`: direct
+              match
+|[code]`@Size Collection<?> getAddresses() { [...] }`|[classname]`SizeValidatorForCollection`:
+              [classname]`Collection`  is a direct supertype of
+              [classname]`Collection<?>`
+|[code]`@Size Collection<Address> getAddresses() { [...] }`|[classname]`SizeValidatorForCollection`:
+              [classname]`Collection`  is a direct supertype of
+              [classname]`Collection<Address>`
+|[code]`@Size Set<Address> getAddresses() { [...] }`|[classname]`SizeValidatorForSet`: direct
+              supertype of [classname]`Set<Address>`
+|[code]`@Size SortedSet<Address> getAddresses() { [...] }`|[classname]`SizeValidatorForSet`:
+              [classname]`Set`  is the closest supertype of
+              [classname]`SortedSet<Address>`
+|[code]`@Size SerializableCollection getAddresses() { [...] }`|[classname]`UnexpectedTypeException`:
+              [classname]`SerializableCollection`  is a subtype of
+              both [classname]`Collection`  and
+              [classname]`Serializable`  and neither
+              [classname]`Collection`  nor
+              [classname]`Serializable`  are subtypes of each
+              other.
+|[code]`@Size String getName() { [...] }`|[classname]`UnexpectedTypeException`: none of
+              the [classname]`ConstraintValidator`  types are
+              supertypes of [classname]`String`.
+|===============
+
+=== Examples
+
+The first example demonstrates how beans, fields and getters are annotated to express some constraints.
+
+.Place constraint declarations on the element to validate
+====
+
+[source, JAVA]
+----
+@ZipCodeCityCoherenceChecker
+public class Address {
+    @NotNull @Size(max=30)
+    private String addressline1;
+
+    @Size(max=30)
+    private String addressline2;
+
+    private String zipCode;
+
+    private String city;
+
+    public String getAddressline1() {
+        return addressline1;
+    }
+
+    public void setAddressline1(String addressline1) {
+        this.addressline1 = addressline1;
+    }
+
+    public String getAddressline2() {
+        return addressline2;
+    }
+
+    public void setAddressline2(String addressline2) {
+        this.addressline2 = addressline2;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    @Size(max=30) @NotNull
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+}
+----
+
+====
+
+During the validation routine execution on an [classname]`Address` object,
+
+* [methodname]`addressline1` field value is passed to the [classname]`@NotNull` as well as [classname]`@Size` constraint validation implementation.
+* [methodname]`addressline2` field value is passed to the [classname]`@Size` constraint validation implementation.
+* [methodname]`getCity` value is passed to the [classname]`@Size` and [classname]`@NotNull` constraint validation implementations
+* [classname]`@ZipCodeCoherenceChecker` is a constraint whose validation implementation's [methodname]`isValid` method receives the [classname]`Address` object
+
+
+The second example demonstrates object graph validation
+
+.Define object graph validation
+====
+
+[source, JAVA]
+----
+public class Country {
+    @NotNull
+    private String name;
+    @Size(max=2) private String ISO2Code;
+    @Size(max=3) private String ISO3Code;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getISO2Code() {
+        return ISO2Code;
+    }
+
+    public void setISO2Code(String ISO2Code) {
+        this.ISO2Code = ISO2Code;
+    }
+
+    public String getISO3Code() {
+        return ISO3Code;
+    }
+
+    public void setISO3Code(String ISO3Code) {
+        this.ISO3Code = ISO3Code;
+    }
+}
+
+public class Address {
+    @NotNull @Size(max=30)
+    private String addressline1;
+    @Size(max=30)
+    private String addressline2;
+    @Size(max=11)
+    private String zipCode;
+    @NotNull @Valid
+    private Country country;
+
+    private String city;
+
+    public String getAddressline1() {
+        return addressline1;
+    }
+
+    public void setAddressline1(String addressline1) {
+        this.addressline1 = addressline1;
+    }
+
+    public String getAddressline2() {
+        return addressline2;
+    }
+
+    public void setAddressline2(String addressline2) {
+        this.addressline2 = addressline2;
+    }
+
+    public String getZipCode() {
+        return zipCode;
+    }
+
+    public void setZipCode(String zipCode) {
+        this.zipCode = zipCode;
+    }
+
+    @Size(max=30) @NotNull
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public Country getCountry() {
+        return country;
+    }
+
+    public void setCountry(Country country) {
+        this.country = country;
+    }
+}
+----
+
+During the validation routine execution on an [classname]`Address` object, constraints on [methodname]`addressLine1`, [methodname]`addressLine2`, [methodname]`zipCode`, [classname]`getCity` and [methodname]`country` are processed as well as the validation of the [classname]`Country` object itself, more specifically [methodname]`country.name` is checked for [classname]`@NotNull`, [methodname]`ISO2Code` and [methodname]`ISO3Code` are checked for [classname]`@Size`.
+
+Assuming that [classname]`@NotEmpty` is defined as such
+
+[source, JAVA]
+----
+package com.acme.constraint;
+
+@Documented
+@NotNull
+@Size(min=1)
+@ReportAsSingleViolation
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface NotEmpty {
+    String message() default "{com.acme.constraint.NotEmpty.message}";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        NotEmpty[] value();
+    }
+
+    class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
+        public void initialize(NotEmpty constraintAnnotation) {}
+
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            return true;
+        }
+    }
+}
+----
+
+The third example demonstrates superclass, inheritance and composite constraints.
+
+.Use inheritance, constraints on superclasses and composite constraints
+====
+
+[source, JAVA]
+----
+public interface Person {
+    @NotEmpty
+    String getFirstName();
+
+    String getMiddleName();
+
+    @NotEmpty
+    String getLastName();
+}
+
+public class Customer implements Person {
+    private String firstName;
+    private String middleName;
+    private String lastName;
+    @NotNull
+    private String customerId;
+    @Password(robustness=5)
+    private String password;
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getMiddleName() {
+        return middleName;
+    }
+
+    public void setMiddleName(String middleName) {
+        this.middleName = middleName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+
+public class PreferredGuest extends Customer {
+    @CreditCard
+    private String guestCreditCardNumber;
+
+    public String getGuestCreditCardNumber() {
+        return guestCreditCardNumber;
+    }
+
+    public void setGuestCreditCardNumber(String guestCreditCardNumber) {
+        this.guestCreditCardNumber = guestCreditCardNumber;
+    }
+}
+
+public class CommonGuest extends customer {}
+----
+
+====
+
+When validating a [classname]`PreferredGuest` the following constraints are processed:
+
+* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`firstName`
+* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`lastName`
+* [classname]`@NotNull` on [methodname]`customerId`, [classname]`@Password` on [methodname]`password`
+* [classname]`@CreditCard` on [methodname]`guestCreditCardNumber`
+
+
+When validating [classname]`CommonGuest`, the following constraints are processed:
+
+* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`firstName`
+* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`lastName`
+* [classname]`@NotNull` on [methodname]`customerId`, [classname]`@Password` on [methodname]`password`
+
+
+The fourth example demonstrates the influence of group sequence.
+
+.Use groups and group sequence to define constraint ordering
+====
+
+[source, JAVA]
+----
+@GroupSequence({First.class, Second.class, Last.class})
+public interface Complete {}
+
+public class Book {
+    @NotEmpty(groups=First.class)
+    private String title;
+
+    @Size(max=30, groups=Second.class)
+    private String subtitle;
+
+    @Valid
+    @NotNull(groups=First.class)
+    private Author author;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getSubtitle() {
+        return subtitle;
+    }
+
+    public void setSubtitle(String subtitle) {
+        this.subtitle = subtitle;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
+}
+
+public class Author {
+    @NotEmpty(groups=Last.class)
+    private String firstName;
+
+    @NotEmpty(groups=First.class)
+    private String lastName;
+
+    @Size(max=30, groups=Last.class)
+    private String company;
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+}
+----
+
+Assuming the validation of the [classname]`Complete` group on the following book instance:
+
+[source, JAVA]
+----
+Author author = new Author();
+author.setLastName( "Baudelaire" );
+author.setFirstName( "" );
+Book book = new Book();
+book.setAuthor( author );
+----
+
+the validation routine will return the following failure:
+
+* [classname]`@NotNull` failure (from [classname]`@NotEmpty`) on the `title` field
+
+
+As both [methodname]`title` and [methodname]`author.lastname` are checked as part of the `First` group. If the instance is updated:
+
+[source, JAVA]
+----
+book.setTitle( "Les fleurs du mal" );
+author.setCompany("Some random publisher with a very very very long name");
+----
+
+the validation routine will return the following failures:
+
+* [methodname]`author.firstName` fails to pass the [classname]`@Size(min=1)` (from [classname]`@NotEmpty`) constraint
+* [methodname]`author.company` fails to pass the [classname]`@Size` constraint
+
+
+As the [classname]`First` and [classname]`Second` groups pass without failure, the [classname]`Last` group is going through validation.

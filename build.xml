@@ -1,35 +1,117 @@
-<project name="Documentation" default="all.doc" >
-   <property name="pdf.name" value="bean-validation-specification.pdf"/>
-   <property name="spec.styles.dir" value="${basedir}/styles"/>
-   <property name="document.basedir" value="${basedir}"/>
+<project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
+	<property name="pdf.name" value="bean-validation-specification.pdf"/>
+	<property name="spec.styles.dir" value="${basedir}/styles"/>
+	<property name="document.basedir" value="${basedir}"/>
+	<property name="asciidoctor-version" value="1.5.3" />
+
+	<!-- Needed for the quick preview only -->
+	<property name="browser" location="/usr/bin/google-chrome"/>
 
 
-   <import file="${document.basedir}/docbook-support/support.xml"/>
+	<target name="clean" description="Delete all generated documentation" depends="clean-htmloutput, clean-pdfoutput, clean-docbookoutput, java-build-dir-clean">
+		<delete dir="target" />
+	</target>
+	<target name="clean-htmloutput">
+		<delete dir="target/html" />
+	</target>
+	<target name="clean-pdfoutput">
+		<delete dir="target/pdf" />
+	</target>
+	<target name="clean-docbookoutput">
+		<delete dir="target/docbook" />
+	</target>
+	<target name="java-build-dir-clean">
+		<delete dir="target/asciidocextensions" />
+	</target>
+	<target name="deep-clean" description="Delete all generated documentation and downloaded libraries" depends="clean">
+		<delete dir="lib" />
+	</target>
 
-   <target name="all.doc" depends="clean">
-      <antcall target="lang.all">
-         <param name="lang" value="en"/>
-         <param name="basedir" value="${document.basedir}"/>
-         <param name="styles.dir" value="${spec.styles.dir}"/>
-      </antcall>
-   </target>
+	<target name="lib-dir-exists">
+		<mkdir dir="lib" />
+	</target>
+	<target name="pdf-output-dir-exists">
+		<mkdir dir="target/pdf" />
+	</target>
+	<target name="docbook-output-dir-exists">
+		<mkdir dir="target/docbook" />
+	</target>
+	<target name="html-output-dir-exists">
+		<mkdir dir="target/html" />
+	</target>
+	<target name="java-build-dir-exists">
+		<mkdir dir="target/asciidocextensions" />
+	</target>
 
-   <target name="clean">
-      <delete dir="${document.basedir}/build" />
-   </target>
+	<target name="have-asciidoctor" depends="lib-dir-exists">
+		<get src="http://repo1.maven.org/maven2/org/asciidoctor/asciidoctor-ant/${asciidoctor-version}/asciidoctor-ant-${asciidoctor-version}.jar"
+			dest="lib/asciidoctor-ant-${asciidoctor-version}.jar"
+			skipexisting="true"/>
+	</target>
 
-   <target name="createTckAuditFile">
+	<macrodef name="renderer">
+		<attribute name="outputdirectory" />
+		<attribute name="backend" />
+		<sequential>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar:target/asciidocextensions"/>
+			<asciidoctor:convert
+				sourceDocumentName="master.asciidoc"
+				sourceDirectory="sources"
+				sourceHighlighter="coderay"
+				outputDirectory="@{outputdirectory}"
+				backend="@{backend}">
+					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+			</asciidoctor:convert>
+		</sequential>
+	</macrodef>
 
-      <tstamp>
-         <format property="NOW" pattern="yyyy-MM-dd HH:mm" locale="en"/>
-      </tstamp>
+	<target name="render-html" depends="clean-htmloutput, have-asciidoctor, html-output-dir-exists, compile-asciidoc-extensions">
+		<renderer outputdirectory="target/html" backend="html" />
+	</target>
 
-      <xslt
-         in="${document.basedir}/en/master.xml"
-         out="build/tck-audit.xml"
-         force="true"
-         style="tck-audit.xsl">
-         <param name="currentDate" expression="${NOW}"/>
-      </xslt>
-   </target>
+	<target name="render-docbook" depends="clean-docbookoutput, have-asciidoctor, docbook-output-dir-exists, compile-asciidoc-extensions">
+		<renderer outputdirectory="target/docbook" backend="docbook" />
+	</target>
+
+	<target name="render-pdf" depends="clean-pdfoutput, have-asciidoctor, pdf-output-dir-exists, compile-asciidoc-extensions">
+		<renderer outputdirectory="target/pdf" backend="pdf" />
+	</target>
+
+	<target name="all.doc" depends="render-html,render-pdf" description="Builds the specification documents in all formats" />
+
+	<target name="preview" depends="render-html" description="Build and opens the HTML version of the specification in your browser">
+		<property name="outputDirectory" location="target"/>
+		<exec executable="${browser}" spawn="true">
+			<arg value="${outputDirectory}/html/master.html"/>
+		</exec>
+	</target>
+
+	<target name="compile-asciidoc-extensions" depends="java-build-dir-clean, java-build-dir-exists, have-asciidoctor">
+		<javac srcdir="asciidoc-extensions/src/main/java"
+			destdir="target/asciidocextensions"
+			classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar"
+			source="1.8"
+			target="1.8"
+			debug="true"
+			includeantruntime="false"/>
+	</target>
+
+	<!-- Creates the tck-audit.xml file; Run after updates to the spec and copy+commit to the beanvalidation-tck repository -->
+	<!-- Converts the spec to DocBook before as that's the input format for the audit file creation -->
+	<target name="createTckAuditFile" depends="render-docbook">
+		<tstamp>
+			<format property="NOW" pattern="yyyy-MM-dd HH:mm" locale="en"/>
+		</tstamp>
+
+		<xslt
+			in="${basedir}/target/docbook/master.xml"
+			out="target/tck-audit.xml"
+			force="true"
+			style="tck-audit.xsl">
+			<param name="currentDate" expression="${NOW}"/>
+		</xslt>
+	</target>
+
 </project>

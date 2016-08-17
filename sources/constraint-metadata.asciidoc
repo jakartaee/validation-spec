@@ -1,0 +1,1330 @@
+// Bean Validation
+//
+// License: Apache License, Version 2.0
+// See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+
+[[constraintmetadata]]
+
+== Constraint metadata request APIs
+
+The Bean Validation specification provides a way to query the constraint repository. This API is expected to be used for tooling support as well as integration with other frameworks, libraries and JSRs. The Bean Validation specification aims to provide both a validation engine and a metadata repository for object constraints. Frameworks (EE or SE) in need for constraint definition, validation and metadata will be able to rely on the Bean Validation specification for these services avoiding any unnecessary duplication work from an application and infrastructure point of view.
+
+=== Validator
+
+The main API to access all metadata related to a given object is [classname]`Validator` (see <<bootstrapping>> for more information on how to retrieve a [classname]`Validator` instance).
+
+A [classname]`Validator` instance hosts the method to access to the metadata repository for a given class. It is recommended to leave the caching of [classname]`Validator` instances to the [classname]`ValidatorFactory`. [classname]`Validator` implementations are thread-safe.
+
+.Validator interface (metadata request API)
+====
+
+[source, JAVA]
+----
+/**
+ * Validates bean instances. Implementations of this interface must be thread-safe.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ * @author Gunnar Morling
+ */
+public interface Validator {
+
+    [...] //See 5.1
+
+    /**
+     * Returns the descriptor object describing bean constraints.
+     * <p/>
+     * The returned object (and associated objects including
+     * {@link ConstraintDescriptor}s) are immutable.
+     *
+     * @param clazz class or interface type evaluated
+     * @return the bean descriptor for the specified class
+     * @throws IllegalArgumentException if clazz is {@code null}
+     * @throws ValidationException if a non recoverable error happens
+     *         during the metadata discovery or if some
+     *         constraints are invalid.
+     */
+    BeanDescriptor getConstraintsForClass(Class<?> clazz);
+}
+----
+
+====
+
+[tck-testable]#[methodname]`getConstraintsForClass()` returns a [classname]`BeanDescriptor` object describing the bean level constraints (see <<constraintdeclarationvalidationprocess-requirements-object>>) and providing access to the property level constraints metadata.# [tck-testable]#An [classname]`IllegalArgumentException` is raised if the [varname]`clazz` parameter is null.#
+
+[tck-testable]#If a constraint definition or declaration hosted by the requested class (or any of it's superclasses and interfaces according to the constraint propagation rules) is invalid, a [classname]`ValidationException` is raised.# This can be a subclass of [classname]`ValidationException` like [classname]`ConstraintDefinitionException`, [classname]`ConstraintDeclarationException` or [classname]`UnexpectedTypeException`.
+
+All descriptor types accessible via [methodname]`getConstraintsForClass()` and introduced in the following sections are located in the package [classname]`javax.validation.metadata`.
+
+[[constraintmetadata-elementdescriptor]]
+
+=== ElementDescriptor
+
+[classname]`ElementDescriptor` is the root interface describing elements hosting constraints. It is used to describe the list of constraints for a given element (whether it be a class, property, method etc.).
+
+.ElementDescriptor interface
+====
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a validated element (class, property, method etc.).
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ * @author Gunnar Morling
+ */
+public interface ElementDescriptor {
+
+    /**
+     * @return returns {@code true} if at least one constraint declaration is present
+     *         for this element in the class hierarchy, {@code false} otherwise
+     */
+    boolean hasConstraints();
+
+    /**
+     * @return the statically defined returned type
+     */
+    Class<?> getElementClass();
+
+    /**
+     * Returns all constraint descriptors for this element in the class hierarchy
+     * or an empty {@code Set} if none are present.
+     *
+     * @return {@code Set} of constraint descriptors for this element
+     */
+    Set<ConstraintDescriptor<?>> getConstraintDescriptors();
+
+    /**
+     * Finds constraints and potentially restricts them to certain criteria.
+     *
+     * @return {@code ConstraintFinder} object
+     */
+    ConstraintFinder findConstraints();
+
+    /**
+     * Declares restrictions on retrieved constraints.
+     * Restrictions are cumulative.
+     * <p/>
+     * A {@code ConstraintFinder} is not thread-safe. The set of matching
+     * {@link ConstraintDescriptor} is.
+     */
+    interface ConstraintFinder {
+
+        /**
+         * Restricts to the constraints matching a given set of groups for this element.
+         * <p/>
+         * This method respects group conversion, group sequences
+         * and group inheritance (including class-level {@link Default} group
+         * overriding) but does not return {@link ConstraintDescriptor}s
+         * in any particular order.
+         * Specifically, ordering of the group sequence is not respected.
+         *
+         * @param groups groups targeted
+         * @return {@code this} following the chaining method pattern
+         */
+        ConstraintFinder unorderedAndMatchingGroups(Class<?>... groups);
+
+        /**
+         * Restricts to the constraints matching the provided scope for this element.
+         *
+         * Defaults to {@link Scope#HIERARCHY}
+         *
+         * @param scope expected scope
+         * @return {@code this} following the chaining method pattern
+         */
+        ConstraintFinder lookingAt(Scope scope);
+
+        /**
+         * Restricts to the constraints hosted on the listed {@code types}
+         * for a given element.
+         * <p/>
+         * Defaults to all possible types of the element.
+         * <p/>
+         * Typically used to restrict to fields ({@code FIELD})
+         * or getters ({@code METHOD}).
+         *
+         * @param types targeted types
+         *
+         * @return {@code this} following the chaining method pattern
+         */
+        ConstraintFinder declaredOn(ElementType... types);
+
+        /**
+         * Retrieves the constraint descriptors following the defined
+         * restrictions and hosted on the element described by
+         * {@link ElementDescriptor}.
+         *
+         * @return matching constraint descriptors
+         */
+        Set<ConstraintDescriptor<?>> getConstraintDescriptors();
+
+        /**
+         * Returns {@code true} if at least one constraint declaration
+         * matching the restrictions is present on the element,
+         * {@code false} otherwise.
+         *
+         * @return {@code true} if there is at least one constraint
+         */
+        boolean hasConstraints();
+    }
+}
+----
+
+====
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Scope looked at when discovering constraints.
+ *
+ * @author Emmanuel Bernard
+ */
+public enum Scope {
+
+    /**
+     * Look for constraints declared on the current class element
+     * and ignore inheritance and elements with the same name in
+     * the class hierarchy.
+     */
+    LOCAL_ELEMENT,
+
+    /**
+     * Look for constraints declared on all elements of the class hierarchy
+     * with the same name.
+     */
+    HIERARCHY
+}
+----
+
+[tck-testable]
+--
+[methodname]`getElementClass()` returns
+
+* the object type when invoked on [classname]`BeanDescriptor`,
+* the type of a property or parameter when invoked on [classname]`PropertyDescriptor` or [classname]`ParameterDescriptor` respectively,
+* `Object[].class` when invoked on [classname]`CrossParameterDescriptor`,
+* the return type when invoked on [classname]`ConstructorDescriptor`, [classname]`MethodDescriptor` or [classname]`ReturnValueDescriptor`.
+--
+
+[tck-testable]#[classname]`getConstraintDescriptors()` returns all the [classname]``ConstraintDescriptor``s (see <<constraintmetadata-constraintdescriptor>>) hosted on the given element in the class hierarchy, each [classname]`ConstraintDescriptor` describing one of the constraints declared on the given element.#
+
+[tck-testable]#[methodname]`hasConstraints()` returns `true` if the given element in the class hierarchy holds at least one constraint declaration.#
+
+[tck-testable]#If you need to query the metadata API in a more fine grained way for example by restricting the constraints to the one described on fields or on getters or by restricting to a given set of groups, you can use the [classname]`ConstraintFinder` fluent API by calling [methodname]`findConstraints()`.#
+
+[tck-testable]#[classname]`unorderedAndMatchingGroups()` restricts the results to the [classname]``ConstraintDescriptor``s (see <<constraintmetadata-constraintdescriptor>>) matching the given groups. Order is not respected but group inheritance and inheritance via sequence (including the [classname]`Default` group overriding at the class level) are honored.#
+
+[tck-testable]#[methodname]`declaredOn()` lets you restrict the list of element types constraints are hosted on.# This is particularly useful to retrieve property constraints only hosted on fields ([classname]`ElementType.FIELD`) or only hosted on getters ([classname]`ElementType.METHOD`).
+
+[tck-testable]#[methodname]`lookingAt()` lets you restrict which constraints are considered. Either constraints belonging to the element but hosted on the class represented by the given descriptor ([classname]`Scope.LOCAL_ELEMENT`), or constraints belonging to the element but hosted anywhere in the class hierarchy ([classname]`Scope.HIERARCHY`).#
+
+Here is an example restricting the list of constraints on getters, matching the default group and declared physically on the `name` getter of [classname]`Customer` (and not any of the getters on the super classes).
+
+.Using the fluent API to restrict matching constraints
+====
+
+[source, JAVA]
+----
+public class User {
+
+    @Size(max=50)
+    String getName() {
+        [...]
+    }
+
+    [...]
+}
+
+public class Customer extends User {
+
+    @NotNull
+    String getName() {
+        [...]
+    }
+}
+
+PropertyDescriptor pd =
+    validator.getConstraintsForClass(Customer.class).getConstraintsForProperty("name");
+Set<ConstraintDescriptor<?>> constraints =
+    pd.findConstraints()
+        .declaredOn(ElementType.METHOD)
+        .unorderedAndMatchingGroups(Default.class)
+        .lookingAt(Scope.LOCAL_ELEMENT)
+        .getConstraintDescriptors();
+
+assert 1 == constraints.size();
+
+constraints = pd.getConstraintDescriptors();
+//equivalent to pd.findConstraints().getConstraintDescriptors();
+assert 2 == constraints.size();
+----
+
+====
+
+The following example shows how the fluent API is used to retrieve parameter, cross-parameter and return value constraints, taking into account locally declared constraints as well as constraints declared in the inheritance hierarchy.
+
+.Using the fluent API to select method and constructor constraints
+====
+
+[source, JAVA]
+----
+public class User {
+
+    public User(@Size(max=50) String name) {
+        [...]
+    }
+
+    @PasswordParametersMatch
+    @NotNull
+    public String resetPassword(
+        @NotNull @Size(min=8) String password,
+        @NotNull @Size(min=8) String confirmation) {
+        [...]
+    }
+}
+
+public class Customer extends User {
+
+    public Customer(@NotNull String name) {
+        [...]
+    }
+
+    @Size(min=8)
+    public String resetPassword(String password, String confirmation) {
+        [...]
+    }
+}
+
+MethodDescriptor methodDescriptor = validator
+    .getConstraintsForClass( Customer.class )
+    .getConstraintsForMethod( "resetPassword", String.class, String.class );
+
+//one cross-parameter constraint
+assert 1 == methodDescriptor.getCrossParameterDescriptor().getConstraintDescriptors().size();
+
+//one local return value constraint
+assert 1 == methodDescriptor.getReturnValueDescriptor()
+    .findConstraints()
+    .lookingAt( Scope.LOCAL_ELEMENT )
+    .getConstraintDescriptors()
+    .size();
+
+//two return value constraints in the complete hierarchy
+assert 2 == methodDescriptor.getReturnValueDescriptor()
+    .findConstraints()
+    .lookingAt( Scope.HIERARCHY )
+    .getConstraintDescriptors()
+    .size();
+
+//two parameter constraints, defined on overridden method
+assert 2 == methodDescriptor.getParameterDescriptors()
+    .get( 0 )
+    .getConstraintDescriptors()
+    .size();
+
+ConstructorDescriptor constructorDescriptor = validator
+    .getConstraintsForClass( Customer.class )
+    .getConstraintsForConstructor( String.class );
+
+//one parameter constraint; constraints from super constructor don't apply
+assert 1 == constructorDescriptor.getParameterDescriptors()
+    .get( 0 )
+    .findConstraints()
+    .lookingAt( Scope.HIERARCHY )
+    .getConstraintDescriptors()
+    .size();
+----
+
+====
+
+=== BeanDescriptor
+
+The [classname]`BeanDescriptor` interface describes a constrained Java Bean. This interface is returned by [methodname]`Validator.getConstraintsForClass(Class<?>)`.
+
+.BeanDescriptor interface
+====
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a constrained Java Bean and the constraints associated to it. All
+ * objects returned by the methods of this descriptor (and associated objects
+ * including {@link ConstraintDescriptor}s) are immutable.
+ *
+ * @author Emmanuel Bernard
+ * @author Gunnar Morling
+ */
+public interface BeanDescriptor extends ElementDescriptor {
+
+    /**
+     * Returns {@code true} if the bean involves validation:
+     * <ul>
+     *     <li>a constraint is hosted on the bean itself</li>
+     *     <li>a constraint is hosted on one of the bean properties</li>
+     *     <li>or a bean property is marked for cascaded validation ({@link Valid})</li>
+     * </ul>
+     * <p/>
+     * Constrained methods and constructors are ignored.
+     *
+     * @return {@code true} if the bean involves validation, {@code false} otherwise
+     */
+    boolean isBeanConstrained();
+
+    /**
+     * Returns the property descriptor for a given property.
+     * <p/>
+     * Returns {@code null} if the property does not exist or has no
+     * constraint nor is marked as cascaded (see {@link #getConstrainedProperties()})
+     * Properties of super types are considered.
+     *
+     * @param propertyName property evaluated
+     * @return the property descriptor for a given property
+     * @throws IllegalArgumentException if {@code propertyName} is {@code null}
+     */
+    PropertyDescriptor getConstraintsForProperty(String propertyName);
+
+    /**
+     * Returns a set of property descriptors having at least one constraint defined
+     * or marked as cascaded ({@link Valid}).
+     * <p/>
+     * If not property matches, an empty set is returned.
+     * Properties of super types are considered.
+     *
+     * @return the set of {@link PropertyDescriptor}s for the constraint properties; if
+     *         there are no constraint properties, the empty set is returned
+     */
+    Set<PropertyDescriptor> getConstrainedProperties();
+
+    /**
+     * Returns a method descriptor for the given method.
+     * <p/>
+     * Returns {@code null} if no method with the given name and parameter types
+     * exists or the specified method neither has parameter or return value constraints nor a parameter
+     * or return value marked for cascaded validation.
+     * Methods of super types are considered.
+     *
+     * @param methodName the name of the method
+     * @param parameterTypes the parameter types of the method
+     * @return a method descriptor for the given method
+     * @throws IllegalArgumentException if {@code methodName} is {@code null}
+     *
+     * @since 1.1
+     */
+    MethodDescriptor getConstraintsForMethod(String methodName, Class<?>... parameterTypes);
+
+    /**
+     * Returns a set with descriptors for the constrained methods of the bean
+     * represented by this descriptor.
+     * <p/>
+     * Constrained methods have at least one parameter or return value constraint
+     * or at least one parameter or return value marked for cascaded validation.
+     * Methods of super types are considered.
+     * <p/>
+     * Only methods matching the given method type(s) are considered.
+     *
+     * @param methodType method type to consider
+     * @param methodTypes remaining optional method types to consider
+     * @return a set with descriptors for the constrained methods of this bean;
+     *         will be empty if this bean has no constrained methods of the considered
+     *         method type(s) but never {@code null}
+     *
+     * @since 1.1
+     */
+    Set<MethodDescriptor> getConstrainedMethods(MethodType methodType, MethodType... methodTypes);
+
+    /**
+     * Returns a constructor descriptor for the given constructor.
+     * <p/>
+     * Returns {@code null} if no constructor with the given parameter types
+     * exists or the specified constructor neither has parameter or return value
+     * constraints nor a parameter or return value marked for cascaded
+     * validation.
+     * Constructor of super types are considered.
+     *
+     * @param parameterTypes the parameter types of the constructor
+     * @return a constructor descriptor for the given constructor
+     *
+     * @since 1.1
+     */
+    ConstructorDescriptor getConstraintsForConstructor(Class<?>... parameterTypes);
+
+    /**
+     * Returns a set with descriptors for the constrained constructors of the
+     * bean represented by this descriptor.
+     * <p/>
+     * Constrained constructors have at least one parameter or return value constraint
+     * or at least one parameter or return value marked for cascaded validation.
+     *
+     * @return a set with descriptors for the constrained constructor of this
+     *         bean; will be empty if this bea has no constrained constructor
+     *         but never {@code null}
+     *
+     * @since 1.1
+     */
+    Set<ConstructorDescriptor> getConstrainedConstructors();
+}
+----
+
+====
+
+.MethodType
+====
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Represents the type of a method: getter or non getter.
+ *
+ * @author Emmanuel Bernard <emmanuel@hibernate.org>
+ * @since 1.1
+ */
+public enum MethodType {
+
+    /**
+     * A method following the getter pattern. A getter according to the
+     * JavaBeans specification is a method whose:
+     * <ul>
+     *     <li>name starts with get, has a return type but no parameter</li>
+     *     <li>name starts with is, has a return type and is returning {@code boolean}.</li>
+     * </ul>
+     */
+    GETTER,
+
+    /**
+     * A method that does not follow the getter pattern. A getter according to the
+     * JavaBeans specification is a method whose:
+     * <ul>
+     *     <li>name starts with get, has a return type but no parameter</li>
+     *     <li>name starts with is, has a return type and is returning {@code boolean}.</li>
+     * </ul>
+     */
+    NON_GETTER
+}
+----
+
+====
+
+[tck-testable]#[methodname]`isBeanConstrained()` returns `true` if the given class (and superclasses and interfaces) has at least one class-level or property-level constraint or validation cascade.# If the method returns false, the Bean Validation engine can safely ignore the bean as it will not be impacted by validation.
+
+[tck-testable]#[methodname]`getConstraintsForProperty()` returns a [classname]`PropertyDescriptor` object describing the property level constraints (See <<constraintdeclarationvalidationprocess-requirements-property>>). The property is uniquely identified by its name as per the JavaBeans convention: field level and getter level constraints of the given name are all returned.# [tck-testable]#An [classname]`IllegalArgumentException` is raised if the [varname]`propertyName` parameter is null.#
+
+[tck-testable]#[methodname]`getConstrainedProperties()` returns the [classname]``PropertyDescriptor``s of the bean properties having at least one constraint or being cascaded ([classname]`@Valid` annotation).#
+
+[tck-testable]#[methodname]`getConstraintsForMethod()` returns a [classname]`MethodDescriptor` object describing the method constraints of the given method. The method is uniquely identified by its name and the types of its parameters.#
+
+[tck-testable]#[methodname]`getConstrainedMethods()` returns the [classname]``MethodDescriptor``s of the methods matching the [classname]``MethodType``s provided as parameter and having at least one constraint or cascaded parameter or return value.#
+
+[tck-testable]#[methodname]`getConstraintsForConstructor()` returns a [classname]`ConstructorDescriptor` object describing the method constraints of the given constructor. The constructor is uniquely identified by its name and the types of its parameters.#
+
+[tck-testable]#[methodname]`getConstrainedConstructors()` returns the [classname]``ConstructorDescriptor``s of the constructors having at least one constraint or cascaded parameter or return value.#
+
+=== CascadableDescriptor
+
+The [classname]`CascadableDescriptor` interface describes a cascadable element, i.e. an element which can be marked with [classname]`@Valid` in order to perform a cascaded validation of the element as described in <<constraintdeclarationvalidationprocess-requirements-graphvalidation>>.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Represents a cascadable element.
+ *
+ * @author Gunnar Morling
+ * @since 1.1
+ */
+public interface CascadableDescriptor {
+
+    /**
+     * Whether this element is marked for cascaded validation or not.
+     *
+     * @return {@code true}, if this element is marked for cascaded validation,
+     *         {@code false} otherwise
+     */
+    boolean isCascaded();
+
+    /**
+     * Returns the group conversions configured for this element.
+     *
+     * @return a set containing this element's group conversions; an empty set
+     *         may be returned if no conversions are configured but never
+     *         {@code null}
+     */
+    Set<GroupConversionDescriptor> getGroupConversions();
+}
+----
+
+[tck-testable]#The [methodname]`isCascaded()` method returns `true` if the element is marked for cascaded validation.#
+
+[tck-testable]#The method [methodname]`getGroupConversions()` returns a set with the group conversions declared for the cascadable element. An empty set will be returned if no group conversions are configured.#
+
+=== GroupConversionDescriptor
+
+The [classname]`GroupConversionDescriptor` interface describes a group conversion rule configured for a cascadable element as described in <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>. It is returned by [methodname]`CascadableDescriptor.getGroupConversions()`.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * A group conversion rule to be applied during cascaded validation. Two group
+ * conversion descriptors are considered equal if they have the same
+ * {@code from} and {@code to} group respectively.
+ *
+ * @author Gunnar Morling
+ * @see ConvertGroup
+ * @since 1.1
+ */
+public interface GroupConversionDescriptor {
+
+    /**
+     * Returns the source group of this conversion rule.
+     *
+     * @return the source group of this conversion rule
+     */
+    Class<?> getFrom();
+
+    /**
+     * Returns the target group of this conversion rule.
+     *
+     * @return the target group of this conversion rule
+     */
+    Class<?> getTo();
+}
+----
+
+[tck-testable]#The [methodname]`getFrom()` method returns the source of a group conversion rule.#
+
+[tck-testable]#The [methodname]`getTo()` method returns the target of a group conversion rule.#
+
+=== PropertyDescriptor
+
+The [classname]`PropertyDescriptor` interface describes a constrained property of a Java Bean.
+
+This interface is returned by [methodname]`BeanDescriptor.getConstraintsForProperty(String)` or [methodname]`BeanDescriptor.getConstrainedProperties()`. Constraints declared on the attribute and the getter of the same name according to the JavaBeans rules are returned by this descriptor.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a Java Bean property hosting validation constraints.
+ *
+ * Constraints placed on the attribute and the getter of a given property
+ * are all referenced.
+ *
+ * @author Emmanuel Bernard
+ */
+public interface PropertyDescriptor extends ElementDescriptor, CascadableDescriptor {
+
+    /**
+     * Name of the property according to the Java Bean specification.
+     *
+     * @return property name
+     */
+    String getPropertyName();
+}
+----
+
+[tck-testable]#[methodname]`getPropertyName()` returns the property name as described in <<validationapi-constraintviolation>>.#
+
+=== ExecutableDescriptor, MethodDescriptor and ConstructorDescriptor
+
+The [classname]`ExecutableDescriptor` interface describes a constrained method or constructor of a Java type.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Provides the common functionality of {@link MethodDescriptor} and
+ * {@link ConstructorDescriptor}.
+ *
+ * @author Gunnar Morling
+ *
+ * @since 1.1
+ */
+public interface ExecutableDescriptor extends ElementDescriptor {
+
+    /**
+     * Returns the method name in case this descriptor represents a method or
+     * the non-qualified name of the declaring class in case this descriptor
+     * represents a constructor.
+     *
+     * @return the name of the executable represented by this descriptor
+     */
+    String getName();
+
+    /**
+     * Returns a list of descriptors representing this executable's
+     * parameters, in the order of their declaration, including synthetic
+     * parameters.
+     *
+     * @return a list of descriptors representing this executable's
+     *         parameters; an empty list will be returned if this executable has
+     *         no parameters, but never {@code null}
+     */
+    List<ParameterDescriptor> getParameterDescriptors();
+
+    /**
+     * Returns a descriptor containing the cross-parameter constraints
+     * of this executable.
+     *
+     * @return a descriptor containing the cross-parameter constraints of
+     *         this executable
+     */
+    CrossParameterDescriptor getCrossParameterDescriptor();
+
+    /**
+     * Returns a descriptor for this executable's return value.
+     * <p/>
+     * An executable without return value will return a descriptor
+     * representing {@code void}. This descriptor will have no constraint
+     * associated.
+     *
+     * @return a descriptor for this executable's return value
+     */
+    ReturnValueDescriptor getReturnValueDescriptor();
+
+    /**
+     * Returns {@code true} if the executable parameters are constrained either:
+     * <ul>
+     *     <li>because of a constraint on at least one of the parameters</li>
+     *     <li>because of a cascade on at least one of the parameters (via
+     *     {@link Valid})</li>
+     *     <li>because of at least one cross-parameter constraint</li>
+     * </ul>
+     * <p/>
+     * Also returns {@code false} if there is no parameter.
+     *
+     * @return {@code true} if the executable parameters are constrained
+     */
+    boolean hasConstrainedParameters();
+
+    /**
+     * Returns {@code true} if the executable return value is constrained
+     * either:
+     * <ul>
+     *     <li>because of a constraint on the return value</li>
+     *     <li>because validation is cascaded on the return value (via
+     *     {@link Valid})</li>
+     * </ul>
+     * <p/>
+     * Also returns {@code false} if there is no return value.
+     *
+     * @return {@code true} if the executable return value is constrained
+     */
+    boolean hasConstrainedReturnValue();
+
+    /**
+     * Returns {@code false}.
+     * <p/>
+     * An executable per se does not host constraints, use
+     * {@link #getParameterDescriptors()}, {@link #getCrossParameterDescriptor()}
+     * and {@link #getReturnValueDescriptor()} to discover constraints.
+     *
+     * @return {@code false}
+     */
+    @Override
+    boolean hasConstraints();
+
+    /**
+     * Returns an empty {@code Set}.
+     * <p/>
+     * An executable per se does not host constraints, use
+     * {@link #getParameterDescriptors()}, {@link #getCrossParameterDescriptor()}
+     * and {@link #getReturnValueDescriptor()} to discover constraints.
+     *
+     * @return an empty {@code Set}
+     */
+    @Override
+    Set<ConstraintDescriptor<?>> getConstraintDescriptors();
+
+    /**
+     * Returns a finder that will always return an empty {@code Set}.
+     * <p/>
+     * An executable per se does not host constraints, use
+     * {@link #getParameterDescriptors()}, {@link #getCrossParameterDescriptor()}
+     * and {@link #getReturnValueDescriptor()} to discover constraints.
+     *
+     * @return {@code ConstraintFinder} object
+     */
+    @Override
+    ConstraintFinder findConstraints();
+}
+----
+
+[tck-testable]#[methodname]`getName()` returns the name of the represented method (e.g. "placeOrder") respectively the non-qualified name of the declaring class of the represented constructor (e.g. "OrderService").#
+
+[tck-testable]#[methodname]`getParameterDescriptors()` returns a list of [classname]``ParameterDescriptor``s representing the method's or constructor's parameters in order of their declaration, including synthetic parameters. An empty list will be returned in case the method or constructor has no parameters.#
+
+[tck-testable]#[methodname]`getCrossParameterDescriptor()` returns a descriptor containing cross-parameter constraints of the method or constructor. If no cross-parameter constraint is present, the descriptor will return an empty set of constraint descriptors.#
+
+[tck-testable]#[methodname]`getReturnValueDescriptor()` returns a descriptor for the method's or constructor's return value. A descriptor representing the special class [classname]`void`, without any constraint descriptors, will be returned for executables which have no return value.#
+
+[tck-testable]#[classname]`hasConstrainedParameters()` returns `true` if any of the parameters is constrained or cascaded or if the represented executable has at least one cross-parameter constraint. Returns `false` if there is no parameter.#
+
+[tck-testable]#[classname]`hasConstrainedReturnValue()` returns `true` if the return value is constrained or cascaded. Returns `false` if there is no return value.#
+
+[tck-testable]#The methods [methodname]`hasConstraints()`, [methodname]`getConstraintDescriptors()` and [methodname]`findConstraints()` defined on [classname]`ElementDescriptor` are redefined to clarify that executables do not host constraints directly and thus will always return `false` or an empty set of constraints, respectively. Constraint descriptors for individual parameters can be obtained from the corresponding [classname]`ParameterDescriptor` object, constraint descriptors for cross-parameter constraints can be obtained from the corresponding [classname]`CrossParameterDescriptor` object and constraint descriptors for the return value can be obtained from [classname]`ReturnValueDescriptor`.#
+
+The interfaces [classname]`MethodDescriptor` and [classname]`ConstructorDescriptor` are derived from [classname]`ExecutableDescriptor` and allow to distinguish between descriptors representing methods and descriptors representing constructors.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a validated method.
+ *
+ * @author Gunnar Morling
+ * @author Emmanuel Bernard
+ * @since 1.1
+ */
+public interface MethodDescriptor extends ExecutableDescriptor {
+}
+----
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a validated constructor.
+ *
+ * @author Gunnar Morling
+ * @author Emmanuel Bernard
+ * @since 1.1
+ */
+public interface ConstructorDescriptor extends ExecutableDescriptor {
+}
+----
+
+[classname]`MethodDescriptor` objects are returned by [methodname]`BeanDescriptor.getConstraintsForMethod(String, Class<?>...)` and [methodname]`BeanDescriptor.getConstrainedMethods(MethodType, MethodType...)`, while [classname]`ConstructorDescriptor` objects are returned by [methodname]`BeanDescriptor.getConstraintsForConstructor(Class<?>...)` and [methodname]`BeanDescriptor.getConstrainedConstructors()`.
+
+[tck-testable]#None of the metadata API methods honor the XML configuration around executable validation nor the presence of [classname]`@ValidateOnExecution`. In other words, all constrained methods and constructors will be returned by the metadata API regardless of these settings.#
+
+=== ParameterDescriptor
+
+The [classname]`ParameterDescriptor` interface describes a constrained parameter of a method or constructor.
+
+This interface is returned by [methodname]`MethodDescriptor.getParameterDescriptors()` and [methodname]`ConstructorDescriptor.getParameterDescriptors()`.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a validated method or constructor parameter.
+ *
+ * @author Gunnar Morling
+ * @since 1.1
+ */
+public interface ParameterDescriptor extends ElementDescriptor, CascadableDescriptor {
+
+    /**
+     * Returns this parameter's index within the parameter array of the method
+     * or constructor holding it.
+     *
+     * @return this parameter's index
+     */
+    int getIndex();
+
+    /**
+     * Returns this parameter's name as retrieved by the current parameter name
+     * resolver.
+     *
+     * @return this parameter's name
+     */
+    String getName();
+}
+----
+
+[tck-testable]#[methodname]`getIndex()` returns the index of the represented parameter within the parameter array of the method or constructor holding it.#
+
+[tck-testable]#[methodname]`getName()` returns the name of the represented parameter.#
+
+=== CrossParameterDescriptor
+
+The [classname]`CrossParameterDescriptor` interface describes a element containing all cross-parameter constraints of a method or constructor.
+
+This interface is returned by [methodname]`MethodDescriptor.getCrossParameterDescriptor()` and [methodname]`ConstructorDescriptor.getCrossParameterDescriptor()`.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes an element holding cross-parameter constraints of a method or constructor
+ *
+ * @author Emmanuel Bernard
+ * @since 1.1
+ */
+public interface CrossParameterDescriptor extends ElementDescriptor {
+
+    /**
+     * @return {@code Object[].class} - the type of the parameter array
+     */
+    @Override
+    Class<?> getElementClass();
+}
+----
+
+[tck-testable]#[methodname]`getElementClass()` returns [classname]`Object[]`.#
+
+=== ReturnValueDescriptor
+
+The [classname]`ReturnValueDescriptor` interface describes the return value of a method or constructor.
+
+This interface is returned by [methodname]`MethodDescriptor.getReturnValueDescriptor()` and [methodname]`ConstructorDescriptor.getReturnValueDescriptor()`.
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a validated return value of a method or constructor.
+ *
+ * @author Gunnar Morling
+ * @since 1.1
+ */
+public interface ReturnValueDescriptor extends ElementDescriptor, CascadableDescriptor {
+}
+----
+
+[[constraintmetadata-constraintdescriptor]]
+
+=== ConstraintDescriptor
+
+A [classname]`ConstraintDescriptor` object describes a given constraint declaration (i.e. a constraint annotation).
+
+[source, JAVA]
+----
+package javax.validation.metadata;
+
+/**
+ * Describes a single constraint and its composing constraints.
+ * <p/>
+ * {@code T} is the constraint's annotation type.
+ *
+ * @author Emmanuel Bernard
+ * @author Hardy Ferentschik
+ */
+public interface ConstraintDescriptor<T extends Annotation> {
+
+    /**
+     * Returns the annotation describing the constraint declaration.
+     * If a composing constraint, attribute values are reflecting
+     * the overridden attributes of the composing constraint
+     *
+     * @return the annotation for this constraint
+     */
+    T getAnnotation();
+
+    /**
+     * The non-interpolated error message
+     *
+     * @return the non-interpolated error message
+     *
+     * @since 1.1
+     */
+    String getMessageTemplate();
+
+    /**
+     * The set of groups the constraint is applied on.
+     * If the constraint declares no group, a set with only the {@link Default}
+     * group is returned.
+     *
+     * @return the groups the constraint is applied on
+     */
+    Set<Class<?>> getGroups();
+
+    /**
+     * The set of payload the constraint hosts.
+     *
+     * @return payload classes hosted on the constraint or an empty set if none
+     */
+    Set<Class<? extends Payload>> getPayload();
+
+    /**
+     * The {@link ConstraintTarget} value of {@code validationAppliesTo} if the constraint
+     * hosts it or {@code null} otherwise.
+     *
+     * @return the {@code ConstraintTarget} value or {@code null}
+     *
+     * @since 1.1
+     */
+    ConstraintTarget getValidationAppliesTo();
+
+    /**
+     * List of the constraint validation implementation classes.
+     *
+     * @return list of the constraint validation implementation classes
+     */
+    List<Class<? extends ConstraintValidator<T, ?>>> getConstraintValidatorClasses();
+
+    /**
+     * Returns a map containing the annotation attribute names as keys and the
+     * annotation attribute values as value.
+     * <p/>
+     * If this constraint is used as part of a composed constraint, attribute
+     * values are reflecting the overridden attribute of the composing constraint.
+     *
+     * @return a map containing the annotation attribute names as keys
+     *         and the annotation attribute values as value
+     */
+    Map<String, Object> getAttributes();
+
+    /**
+     * Return a set of composing {@link ConstraintDescriptor}s where each
+     * descriptor describes a composing constraint. {@code ConstraintDescriptor}
+     * instances of composing constraints reflect overridden attribute values in
+     * {@link #getAttributes()}  and {@link #getAnnotation()}.
+     *
+     * @return a set of {@code ConstraintDescriptor} objects or an empty set
+     *         in case there are no composing constraints
+     */
+    Set<ConstraintDescriptor<?>> getComposingConstraints();
+
+    /**
+     * @return {@code true} if the constraint is annotated with {@link ReportAsSingleViolation}
+     */
+    boolean isReportAsSingleViolation();
+}
+----
+
+[tck-testable]#[methodname]`getAnnotation()` returns the annotation instance (or an annotation instance representing the given constraint declaration).# [tck-testable]#If [classname]`ConstraintDescriptor` represents a composing annotation (see <<constraintsdefinitionimplementation-constraintcomposition>>), the returned annotation must reflect parameter overriding.# In other words, the annotation parameter values are the overridden values.
+
+[tck-testable]#[methodname]`getAttributes()` returns a map containing the annotation attribute names as a key, and the annotation attribute values as a value# (this API is anticipated to be simpler to use by tools than reflection over the annotation instance). [tck-testable]#If [classname]`ConstraintDescriptor()` represents a composing annotation (see <<constraintsdefinitionimplementation-constraintcomposition>>), the returned [classname]`Map` must reflect attribute overriding.#
+
+[tck-testable]#[methodname]`getMessageTemplate()` returns the non-interpolated error message.#
+
+[tck-testable]#[methodname]`getGroups()` returns the groups the constraint is supposed to be applied upon.# [tck-testable]#If no group is set on the constraint declaration, the [classname]`Default` group is returned.# [tck-testable]#The groups of a composing constraint are the groups of the composed constraint.#
+
+[tck-testable]#`getPayload()` returns the payloads associated to the constraint or an empty set if none.# [tck-testable]#The payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any payload definition on a composing annotation is ignored.#
+
+[tck-testable]#[methodname]`getValidationAppliesTo()` returns the [classname]`ConstraintTarget` returned by [methodname]`validationAppliesTo` if the constraint hosts the attribute or `null` otherwise. The constraint target from the main constraint annotation is inherited by the composing annotation. Any constraint target definition on a composing annotation is ignored.#
+
+[tck-testable]#[methodname]`isReportAsSingleViolation()` returns `true` if the constraint is annotated with [classname]`@ReportAsSingleViolation`.#
+
+[tck-testable]#[methodname]`getComposingConstraints()` return a set of composing [classname]``ConstraintDescriptor``s where each descriptor describes a composing constraint.#
+
+[tck-testable]#[methodname]`getConstraintValidatorClasses()` returns the [classname]`ConstraintValidator` classes associated with the constraint.#
+
+=== Example
+
+Assuming the following constraint definitions
+
+[source, JAVA]
+----
+package com.acme.constraint;
+
+@Documented
+@NotNull
+@Size(min=1)
+@ReportAsSingleViolation
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface NotEmpty {
+    String message() default "{com.acme.constraint.NotEmpty.message}";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default { };
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        NotEmpty[] value();
+    }
+
+    class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
+        @Override
+        public void initialize(NotEmpty constraintAnnotation) {}
+
+        @Override
+        public boolean isValid(String value, ConstraintValidatorContext context) {
+            return true;
+        }
+    }
+}
+
+@Documented
+@Constraint(validatedBy = ValidInterval.Validator.class)
+@Target({ METHOD, ANNOTATION_TYPE, CONSTRUCTOR })
+@Retention(RUNTIME)
+public @interface ValidInterval {
+    String message() default "{com.acme.constraint.ValidInterval.message}";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default { };
+    int startParameter();
+    int endParameter();
+
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+        ValidInterval[] value();
+    }
+
+    @SupportedValidationTarget(PARAMETERS)
+    class Validator implements ConstraintValidator<ValidInterval, Object[]> {
+
+        private int start;
+        private int end;
+
+        @Override
+        public void initialize(ValidInterval constraintAnnotation) {
+            this.start = constraintAnnotation.startParameter();
+            this.end = constraintAnnotation.endParameter();
+        }
+
+        @Override
+        public boolean isValid(Object[] value, ConstraintValidatorContext context) {
+            return Integer.parseInt( String.valueOf( value[start] ) ) <
+                   Integer.parseInt( String.valueOf( value[end] ) );
+        }
+    }
+}
+----
+
+and the following class definitions
+
+[source, JAVA]
+----
+public class Author {
+    private String firstName;
+
+    @NotEmpty(message="lastname must not be null")
+    private String lastName;
+
+    @Size(max=30)
+    private String company;
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+}
+
+public class Book {
+
+    public interface FirstLevelCheck {}
+    public interface SecondLevelCheck {}
+
+    private String title;
+    private String description;
+
+    @Valid
+    @NotNull
+    private Author author;
+
+    @Valid
+    public Book(
+            String title,
+            @Size(max=30) String description,
+            @Valid
+            @ConvertGroup(from=Default.class, to=SecondLevelCheck.class)
+            Author author) {
+        [...]
+    }
+
+    public Book() {
+        [...]
+    }
+
+    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
+    @Size(max=30)
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setAuthor(String description) {
+        this.description = description;
+    }
+
+    @ValidInterval(startParameter=1, endParameter=2)
+    public void addChapter(String title, int startPage, int endPage) {
+        [...]
+    }
+}
+----
+
+The following assertions are true.
+
+[source, JAVA]
+----
+BeanDescriptor bookDescriptor = validator.getConstraintsForClass(Book.class);
+
+assert ! bookDescriptor.hasConstraints();
+
+assert bookDescriptor.isBeanConstrained();
+assert bookDescriptor.getConstrainedMethods( MethodType.NON_GETTER ).size() > 0;
+
+
+assert bookDescriptor.getConstraintDescriptors().size() == 0; //no bean-level constraint
+
+//more specifically "author" and "title"
+assert bookDescriptor.getConstrainedProperties().size() == 2;
+
+//not a property
+assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null;
+
+//property with no constraint
+assert bookDescriptor.getConstraintsForProperty("description") == null;
+
+PropertyDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
+assert propertyDescriptor.getConstraintDescriptors().size() == 2;
+assert "title".equals( propertyDescriptor.getPropertyName() );
+
+//assuming the implementation returns the @NotEmpty constraint first
+ConstraintDescriptor<?> constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
+                                                              .iterator().next();
+assert constraintDescriptor.getAnnotation().annotationType().equals( NotEmpty.class );
+assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
+assert constraintDescriptor.getComposingConstraints().size() == 2;
+assert constraintDescriptor.isReportAsSingleViolation() == true;
+
+//@NotEmpty cannot be null
+boolean notNullPresence = false;
+for ( ConstraintDescriptor<?> composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
+    if ( composingDescriptor.getAnnotation().annotationType().equals( NotNull.class ) ) {
+        notNullPresence = true;
+    }
+}
+assert notNullPresence;
+
+//assuming the implementation returns the Size constraint second
+constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
+assert constraintDescriptor.getAnnotation().annotationType().equals( Size.class );
+assert constraintDescriptor.getAttributes().get("max") == Integer.valueOf( 30 );
+assert constraintDescriptor.getGroups().size() == 1;
+
+propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
+assert propertyDescriptor.getConstraintDescriptors().size() == 1;
+assert propertyDescriptor.isCascaded();
+
+//getTitle() and addChapter()
+assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() == 2;
+
+//the constructor accepting title, description and author
+assert bookDescriptor.getConstrainedConstructors().size() == 1;
+
+ConstructorDescriptor constructorDescriptor = bookDescriptor.getConstraintsForConstructor(
+    String.class, String.class, Author.class
+);
+assert constructorDescriptor.getName().equals( "Book" );
+assert constructorDescriptor.getElementClass() == Book.class;
+assert constructorDescriptor.hasConstrainedParameters() == true;
+
+//return value is marked for cascaded validation
+assert constructorDescriptor.hasConstrainedReturnValue() == true;
+
+//constraints are retrieved via the sub-descriptors for parameters etc.
+assert constructorDescriptor.hasConstraints() == false;
+
+//one descriptor for each parameter
+assert constructorDescriptor.getParameterDescriptors().size() == 3;
+
+//"description" parameter
+ParameterDescriptor parameterDescriptor = constructorDescriptor.getParameterDescriptors().get( 1 );
+
+//Assuming the default parameter name provider
+assert parameterDescriptor.getName().equals( "arg1" );
+assert parameterDescriptor.getElementClass() == String.class;
+assert parameterDescriptor.getIndex() == 1;
+assert parameterDescriptor.hasConstraints() == true;
+
+Set<ConstraintDescriptor<?>> parameterConstraints = parameterDescriptor.getConstraintDescriptors();
+assert parameterConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
+
+//"author" parameter
+parameterDescriptor = constructorDescriptor.getParameterDescriptors().get( 2 );
+assert parameterDescriptor.hasConstraints() == false;
+assert parameterDescriptor.isCascaded() == true;
+
+//group conversion on "author" parameter
+GroupConversionDescriptor groupConversion =
+    parameterDescriptor.getGroupConversions().iterator().next();
+assert groupConversion.getFrom() == Default.class;
+assert groupConversion.getTo() == SecondLevelCheck.class;
+
+//constructor return value
+ReturnValueDescriptor returnValueDescriptor = constructorDescriptor.getReturnValueDescriptor();
+assert returnValueDescriptor.hasConstraints() == false;
+assert returnValueDescriptor.isCascaded() == true;
+
+//a getter is also a method which is constrained on its return value
+MethodDescriptor methodDescriptor = bookDescriptor.getConstraintsForMethod( "getTitle" );
+assert methodDescriptor.getName().equals( "getTitle" );
+assert methodDescriptor.getElementClass() == String.class;
+assert methodDescriptor.hasConstrainedParameters() == false;
+assert methodDescriptor.hasConstrainedReturnValue() == true;
+assert methodDescriptor.hasConstraints() == false;
+
+returnValueDescriptor = methodDescriptor.getReturnValueDescriptor();
+assert returnValueDescriptor.getElementClass() == String.class;
+assert returnValueDescriptor.getConstraintDescriptors().size() == 2;
+assert returnValueDescriptor.isCascaded() == false;
+
+//void method which has a cross-parameter constraint
+methodDescriptor = bookDescriptor.getConstraintsForMethod(
+    "addChapter", String.class, int.class, int.class
+);
+assert methodDescriptor.getElementClass() == void.class;
+assert methodDescriptor.hasConstrainedParameters() == true;
+assert methodDescriptor.hasConstrainedReturnValue() == false;
+
+//cross-parameter constraints accessible via separate descriptor
+assert methodDescriptor.hasConstraints() == false;
+
+assert methodDescriptor.getReturnValueDescriptor().getElementClass() == void.class;
+
+//cross-parameter descriptor
+CrossParameterDescriptor crossParameterDescriptor = methodDescriptor.getCrossParameterDescriptor();
+assert crossParameterDescriptor.getElementClass() == Object[].class;
+assert crossParameterDescriptor.hasConstraints() == true;
+
+ConstraintDescriptor<?> crossParameterConstraint =
+    crossParameterDescriptor.getConstraintDescriptors().iterator().next();
+assert crossParameterConstraint.getAnnotation().annotationType() == ValidInterval.class;
+----
