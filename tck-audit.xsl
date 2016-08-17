@@ -50,6 +50,9 @@
 
     <xsl:param name="currentDate"/>
 
+    <!-- A regular apostroph; provided as a variable to avoid escaping issues -->
+    <xsl:variable name="apos">'</xsl:variable>
+
     <!-- ### Passes by creating and processing result tree fragments ### -->
     <xsl:variable name="merged">
         <xsl:apply-templates mode="merge" select="/"/>
@@ -141,7 +144,7 @@
 
         <section>
             <xsl:attribute name="id"><xsl:number from="article" level="single" /></xsl:attribute>
-            <xsl:attribute name="title"><xsl:value-of select="normalize-space(title)" /></xsl:attribute>
+            <xsl:attribute name="title"><xsl:value-of select="normalize-space(translate(title, '’', $apos))" /></xsl:attribute>
 
             <!-- get all assertions directly under chapter, without a section -->
             <xsl:apply-templates select="*[not(local-name() = 'section')]" mode="createAuditFile"/>
@@ -167,7 +170,7 @@
 
     <!-- Add an assertion for any element with role="tck..." -->
     <xsl:template match="*[starts-with(@role, 'tck')]" mode="createAuditFile">
-        <xsl:variable name="normalized"><xsl:value-of select="normalize-space(.)" /></xsl:variable>
+        <xsl:variable name="normalized"><xsl:value-of select="normalize-space(translate(., '’', $apos))" /></xsl:variable>
         <xsl:variable name="firstWord"><xsl:value-of select="substring-before(concat($normalized, ' '), ' ')"/></xsl:variable>
 
         <xsl:variable name="assertionText">
