@@ -1,12 +1,12 @@
 #! /bin/bash
-ant all.doc
+ant render-html
 rc=$?
 if [[ $rc != 0 ]] ; then
     echo "ERROR: Specification build failed!"
     exit $rc
 fi
 
-pushd build
+pushd target
 # clone hibernate.github.io in _tmp if not present
 if [ ! -d "beanvalidation.github.io" ];
 then
@@ -23,7 +23,7 @@ git fetch origin
 git reset --hard origin/master
 
 # Synchronize the content with the latest-draft folder of the site
-rsync -av --delete --exclude ".git" ../en/html_single/ latest-draft/spec/ 
+rsync -av --delete --exclude ".git" ../html/ latest-draft/spec/
 rc=$?
 if [[ $rc != 0 ]] ; then
     echo "ERROR: Latest-draft sync failed!"
