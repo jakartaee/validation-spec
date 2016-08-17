@@ -6,12 +6,14 @@ go to <http://beanvalidation.org>.
 
 ## Building docs
 
-You need to have Apache Ant installed on your system and available on your classpath. The build
+The specification is written in the AsciiDoc format. In order to convert this into nicely rendered
+output, you need to have Apache Ant installed on your system and available on your classpath. The build
 file _build.xml_ is located in this directory and all commands are relative to this directory.
 
-* Running `ant all.doc` builds both PDF and HTML output in the _build/_ directory. `all.doc` is
+* Running `ant all.doc` builds both PDF and HTML output in the _target/_ directory. `all.doc` is
 also the default target.
 * Running `ant clean` will clean up output HTML and PDF files.
+* Running `ant render-html` will only build the HTML output (much faster).
 
 ## Tagging phrases for the TCK
 
@@ -19,34 +21,28 @@ The [Bean Validation TCK](https://github.com/beanvalidation/beanvalidation-tck) 
 tests for validating the compliance of Bean Validation implementations with the specification.
 
 The tests of the TCK are based on assertions representing sentences and phrases in this
-specification. The `role` attribute is used to mark those text elements (`<para>`, `phrase` etc.)
-of the specification which leads to an assertion in the TCK. The following values are allowed:
+specification. Labels on specific text elements of the specification are used to mark those which
+should lead to an assertion in the TCK. The following values are allowed:
 
 * `tck-testable`: The tagged element must be represented by a testable assertion in the TCK
 * `tck-not-testable`: The tagged element must be represented by a non-testable assertion in the
 TCK (e.g. assertions regarding thread safety)
 * `tck-ignore`: The tagged element must be excluded when creating a TCK assertion for an outer
-element. Can be used to exlude explanatory phrases contained in a `para` marked as `tck-testable`.
+element. Can be used to exlude explanatory phrases contained in an element marked as `tck-testable`.
 * `tck-needs-update`: The tagged element must be mark with a note in the TCK audit file saying
 that the tests for this assertion need to be updated, e.g. due to a spec update. Can be used
-together with `tck-testable` and `tck-not-testable`: `<para role="tck-testable tck-needs-update">`.
-
-Prefer hosting `tck-testable` on the inner `<para/>` rather that on the `<listitem/>` or `<itemizedlist/>`
-as they will not properly render in HTML otherwise. If the `tck-testable` is applied on a `<para/>` and
-its following `<itemizedlist/>`, put `<itemizedlist/>` within the `<para/>` to make it a single
-assertion.
+together with `tck-testable` and `tck-not-testable`: `[tck-testable tck-needs-update]#Some sentence...#`.
 
 ### Updating the TCK audit file
 
 The TCK audit file is an XML file containing all assertions of the TCK. This file is generated with
-help of an XSL transformation which is applied to the DocBook files.
+help of an XSL transformation (for that purpose the spec is converted into DocBook).
 
 The generation is executed by running `ant createTckAuditFile`. This is required whenever tagged
 elements have been added, updated, removed or changed their position within all tagged elements of
 a section.
 
-The generated file _build/tck-audit.xml_ should be formatted with a line width of 100 characters
-(allowing for easier comparisons between versions) and must be checked into the
+The generated file _target/tck-audit.xml_ should not be re-formatted and must be checked into the
 [TCK project](https://github.com/beanvalidation/beanvalidation-tck/blob/master/tests/src/main/resources/tck-audit.xml).
 If an update changed the section numbers of existing assertions, the corresponding tests need to be
 adapted as well since they reference the section numbers in the `@SpecAssertion` annotation.
@@ -59,11 +55,6 @@ contribution under the [Apache Software License 2.0](http://www.apache.org/licen
 The recommended approach to contribute to the spec is via GitHub pull requests. 
 More on contribution at <http://beanvalidation.org/contribute/>
 
-Recommended tools by decreasing order of preference:
-
-1. [XMLMind XML Editor](http://www.xmlmind.com/xmleditor/)
-2. Any XML editor
-
 Make sure to not go beyond 80 columns per line.
 
 ### Style rules
@@ -71,10 +62,9 @@ Make sure to not go beyond 80 columns per line.
 - use `[...]` for omissions, prefer it on a dedicated line rather than inlined. For declaration, use a ; after `User user = [...];`
 - remove email in `@author`
 - use `@author` on classes or interfaces (non inner)
-- do not use `<programlisting role="JAVA" language="JAVA>` as we have not introduced the plumbing
 - use `{@link}` for method reference (the first in the JavaDoc of the element) except if it references external classes and if it references the class or element at bay.
 - reference methods with `()` but be careful that some `methodname` are actually annotation attributes and thus should not have `()`
-- in the spec use `<methodname>Foo.bar()</methodname>` and in the JavaDoc `{@link Foo#bar()}`
+- in the spec use `[methodname]\`Foo.bar\`` and in the JavaDoc `{@link Foo#bar()}`
 - no import statement
 - add package statement
 - use `<p/>` to separate paragraphs but do not use `<p>blah blah</p>`
@@ -148,6 +138,8 @@ For the API, in particular the JavaDoc, follow the conventions described at
 <https://community.jboss.org/wiki/ContributingToHibernateValidator#Coding_Guidelines>.
 
 ## Showing tck assertion coverage
+
+TODO: This information refers to the previous DocBook version of the spec. Can we have something similar for AsciiDoc?
 
 You can update the CSS file to show what is covered and what is not covered by
 the TCK assertion coverage.
