@@ -487,7 +487,7 @@ public @interface Acceptable {
 
 It is often useful to declare the same constraint more than once to the same target, with different properties. A common example is the `@Pattern` constraint, which validates that its target matches a specified regular expression. Other constraints have this requirement as well. The same constraint type can belong to different groups and have specific error messages depending on the targeted group.
 
-To support this requirement, [tck-testable]#the bean validation provider treats regular annotations (annotations not annotated by [classname]`@Constraint`) whose `value` element has a return type of an array of constraint annotations in a special way. Each element in the `value` array are processed by the Bean Validation implementation as regular constraint annotations.# This means that each constraint specified in the `value` element is applied to the target. The annotation must have retention `RUNTIME` and can be applied on a type, field, property, executable parameter, executable return value, executable cross-parameter or another annotation. It is recommended to use the same set of targets as the initial constraint.
+To support this requirement, [tck-testable]#the Bean Validation provider treats regular annotations (annotations not annotated by [classname]`@Constraint`) whose `value` element has a return type of an array of constraint annotations in a special way. Each element in the `value` array are processed by the Bean Validation implementation as regular constraint annotations.# This means that each constraint specified in the `value` element is applied to the target. The annotation must have retention `RUNTIME` and can be applied on a type, field, property, executable parameter, executable return value, executable cross-parameter or another annotation. It is recommended to use the same set of targets as the initial constraint.
 
 Note to constraint designers: each constraint annotation should be coupled with its corresponding multi-valued annotation. The specification recommends, though does not mandate, the definition of an inner annotation named [classname]`List`.
 
@@ -684,7 +684,7 @@ public @interface FrenchZipcode {
 
 [[example-composing-overridden]]
 
-.Attributes from composing annotations can be overridden by attributes from the composed annotation.
+.Attributes from composing annotations can be overridden by attributes from the composed annotation
 ====
 
 [source, JAVA]
@@ -722,7 +722,7 @@ public @interface FrenchZipcode {
 
 ====
 
-The value of the composed constraint attribute annotated with [classname]`@OverridesAttribute` ([methodname]`@FrenchZipcode.sizeMessage`) is applied to the composing constraint attribute named after [methodname]`OverridesAttribute.name` and hosted on the composing constraint of type [methodname]`OverridesAttribute.constraint` ([methodname]`@Size.message`). Similarly, [classname]`@FrenchZipcode.numberMessage` value is mapped to [classname]`@Pattern.message`.
+The value of the composed constraint attribute annotated with [classname]`@OverridesAttribute` ([methodname]`@FrenchZipcode.sizeMessage`) is applied to the composing constraint attribute named after [methodname]`@OverridesAttribute.name` and hosted on the composing constraint of type [methodname]`@OverridesAttribute.constraint` ([methodname]`@Size.message`). Similarly, [classname]`@FrenchZipcode.numberMessage` value is mapped to [classname]`@Pattern.message`.
 
 If left undefined, the default value for [methodname]`@OverridesAttribute.name` is the name of the composed constraint attribute hosting the [classname]`@OverridesAttribute` annotation.
 
@@ -867,9 +867,9 @@ public @interface OverridesAttribute {
 
 The following elements uniquely identify an overridden constraint attribute:
 
-* [methodname]`OverridesAttribute.constraint`
-* [methodname]`OverridesAttribute.name`
-* [methodname]`OverridesAttribute.constraintIndex`
+* [methodname]`@OverridesAttribute.constraint`
+* [methodname]`@OverridesAttribute.name`
+* [methodname]`@OverridesAttribute.constraintIndex`
 
 
 [tck-testable]
@@ -885,7 +885,7 @@ If the composition is invalid, e.g.
 a [classname]`ConstraintDefinitionException` is raised either at validation time or when the metadata is requested.
 --
 
-Constraint designers are encouraged to make use of composition (recursively or not) based on the built-in constraints defined by the specification. The composing constraints are exposed through the Bean Validation metadata API ( <<constraintmetadata-constraintdescriptor>>). This metadata is particularly useful for third-party metadata consumers like persistence frameworks generating database schemas (such as Java Persistence) or presentation frameworks.
+Constraint designers are encouraged to make use of composition (recursively or not) based on the built-in constraints defined by the specification. The composing constraints are exposed through the Bean Validation metadata API (<<constraintmetadata-constraintdescriptor>>). This metadata is particularly useful for third-party metadata consumers like persistence frameworks generating database schemas (such as Java Persistence) or presentation frameworks.
 
 [[constraintsdefinitionimplementation-validationimplementation]]
 
@@ -1113,7 +1113,7 @@ public class NumberPositiveValidator implements ConstraintValidator<NumberPositi
 
 ====
 
-The life cycle of a constraint validation implementation instance is undefined. Bean Validation providers are allowed to cache [classname]`ConstraintValidator` instances retrieved from the [classname]`ConstraintValidatorFactory`.
+The lifecycle of a constraint validation implementation instance is undefined. Bean Validation providers are allowed to cache [classname]`ConstraintValidator` instances retrieved from the [classname]`ConstraintValidatorFactory`.
 
 [tck-testable]#The [methodname]`initialize()` method is called by the Bean validation provider prior to any use of the constraint implementation.#
 
@@ -1941,7 +1941,7 @@ The default error message is disabled and replaced by a specific error message d
 
 Constraint validation implementation instances are created by a [classname]`ConstraintValidatorFactory`.
 
-The life cycle of [classname]`ConstraintValidator` instances is fully dependent of the Bean Validation provider and piloted by the [classname]`ConstraintValidatorFactory` methods. Therefore, [classname]`ConstraintValidatorFactory` implementations (such as dependency injection frameworks) must consider these instances as belonging to a dependent scope. [tck-not-testable]#Bean Validation providers must release each instance retrieved. The [classname]`ConstraintValidatorFactory` instance that has created a [classname]`ConstraintValidator` instance must be the one that releases it. In other words, passing an instance of [classname]`ConstraintValidator` to a [classname]`ConstraintValidatorFactory` that has not created it is an error.#
+The lifecycle of [classname]`ConstraintValidator` instances is fully dependent of the Bean Validation provider and piloted by the [classname]`ConstraintValidatorFactory` methods. Therefore, [classname]`ConstraintValidatorFactory` implementations (such as dependency injection frameworks) must consider these instances as belonging to a dependent scope. [tck-not-testable]#Bean Validation providers must release each instance retrieved. The [classname]`ConstraintValidatorFactory` instance that has created a [classname]`ConstraintValidator` instance must be the one that releases it. In other words, passing an instance of [classname]`ConstraintValidator` to a [classname]`ConstraintValidatorFactory` that has not created it is an error.#
 
 [NOTE]
 ====
@@ -1985,7 +1985,7 @@ public interface ConstraintValidatorFactory {
 
 ====
 
-[tck-testable]#The default [classname]`ConstraintValidatorFactory` provided by the Bean Validation provider implementation uses the public no-arg constructor of the [classname]`ConstraintValidator` class.# A custom [classname]`ConstraintValidatorFactory` can be provided; for example it may benefit from dependency injection control in constraint implementations (see <<bootstrapping-usageandcontainerexpectation>>). Any constraint implementation relying on [classname]`ConstraintValidatorFactory` behaviors specific to an implementation (dependency injection, no no-arg constructor and so on) are not portable, hence great care should be given before walking that path. Make sure to configure the Bean Validation provider to honor any specific needs your [classname]`ConstraintValidator` has. As constraint designer and writer, make sure to document any specific non compliant requirements.
+[tck-testable]#The default [classname]`ConstraintValidatorFactory` provided by the Bean Validation provider implementation uses the public no-arg constructor of the [classname]`ConstraintValidator` class.# A custom [classname]`ConstraintValidatorFactory` can be provided; for example it may benefit from dependency injection control in constraint implementations (see <<bootstrapping-usageandcontainerexpectation>>). Any constraint implementation relying on [classname]`ConstraintValidatorFactory` behaviors specific to an implementation (dependency injection, no no-arg constructor and so on) is not portable, hence great care should be given before walking that path. Make sure to configure the Bean Validation provider to honor any specific needs your [classname]`ConstraintValidator` has. As constraint designer and writer, make sure to document any specific non compliant requirements.
 
 [classname]`ConstraintValidatorFactory` should not cache instances as the state of each instance can be altered in the [methodname]`initialize()` method.
 

@@ -17,7 +17,7 @@ This section covers general requirements that should be followed by any containe
 
 ==== Objects lifecycle
 
-Generally speaking, containers and frameworks controlling the life cycle of objects (such as Java EE, dependency injection frameworks or component frameworks) should:
+Generally speaking, containers and frameworks controlling the lifecycle of objects (such as Java EE, dependency injection frameworks or component frameworks) should:
 
 * [tck-testable]#build and bootstrap the [classname]`ValidatorFactory` instance for an application.#
 * [tck-testable]#provide access to the [classname]`ValidatorFactory` instance as well as [classname]`Validator` instances in their default configuration using the paradigm of the container: for example, such instances would be injectable in other objects via a dependency injection framework.#
@@ -61,7 +61,7 @@ More formally, a given executable (constructor or method) is validated upon exec
 * [tck-testable]#otherwise the executable is validated if the global executable validation setting contains the executable type. If the global setting does not contain the executable type, the executable is not validated.#
 * [tck-testable]#The rules above do not apply to methods overriding a superclass method or implementing an interface method. In this case, the method inherits the behavior of the method it overrides / implements. Out of the box, a conforming integration implementation raises a [classname]`ValidationException` if the overriding / implementing method hosts the [classname]`@ValidateOnExecution` annotation.#
 
-The last point is present to enforce the Liskov substitution principle (more info at <<constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance>>) In addition, providers may implement alternative, potentially more liberal, approaches for handling validated methods in inheritance hierarchies. Possible means for activating such alternative behavior include provider-specific configuration properties or annotations. Note that client code relying on such alternative behavior is not portable.
+The last point is present to enforce the Liskov substitution principle (more info at <<constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance>>). In addition, providers may implement alternative, potentially more liberal, approaches for handling validated methods in inheritance hierarchies. Possible means for activating such alternative behavior include provider-specific configuration properties or annotations. Note that client code relying on such alternative behavior is not portable.
 
 The following executable types are available:
 
@@ -292,7 +292,7 @@ All constructors and non-getter methods of [classname]`OrderService` are validat
 
 All getter and non-getter methods of [classname]`SimpleOrderService` are validated upon execution by default due to the presence of [classname]`@ValidateOnExecution` on the class. The [classname]`SimpleOrderService` constructor is thus not validated. [classname]`SimpleOrderService.placeOrder()` is not validated either because it overrides [classname]`OrderService.placeOrder()` and thus inherits its settings.
 
-All constructors and non-getter methods of [classname]`ComplexOrderService` are validated upon execution as this is the default settings - the type level settings of [classname]`SimpleOrderService` are not inherited. This means that the [classname]`ComplexOrderService` constructor is validated.
+All constructors and non-getter methods of [classname]`ComplexOrderService` are validated upon execution as this is the default setting - the type level settings of [classname]`SimpleOrderService` are not inherited. This means that the [classname]`ComplexOrderService` constructor is validated.
 
 [classname]`@ValidateOnExecution` can be optionally set on [classname]`OrderService` and [classname]`ComplexOrderService` without altering the semantic. This marker is necessary for some integration technology in some situations.
 
@@ -322,7 +322,7 @@ Java EE must obey the rules defined above and make the following instances avail
 
 === Context and Dependency Injection (CDI) integration
 
-There are several integrations points between Bean Validation and CDI. If a Bean Validation provider integrates with CDI, it must follow the rules laid out in this section. In a Java EE container, a [tck-testable]#Bean Validation provider must integrate with CDI# .
+There are several integrations points between Bean Validation and CDI. If a Bean Validation provider integrates with CDI, it must follow the rules laid out in this section. In a Java EE container, a [tck-testable]#Bean Validation provider must integrate with CDI.#
 
 ==== [classname]`ValidatorFactory` and [classname]`Validator`
 
@@ -357,7 +357,7 @@ Registration of the built-in default beans and the provider specific beans may b
 If no custom [classname]`ConstraintValidatorFactory` is requested by the user, the [classname]`ValidatorFactory` must be configured with a custom [classname]`ConstraintValidatorFactory` instance that returns CDI managed beans representing the requested [classname]`ConstraintValidator` types. The factory
 
 * creates non-contextual [classname]`ConstraintValidator` instances for each [methodname]`ConstraintValidatorFactory.getInstance()` call. To inject dependencies into the [classname]`ConstraintValidator` instance, the CDI [classname]`InjectionTarget` API should be used. Before returning the instance the following calls should be made: [classname]`InjectionTarget.produce()`, [classname]`InjectionTarget.inject()` and [classname]`InjectionTarget.postConstruct()`.
-* calls [classname]`InjectionTarget.preDestroy()` and [classname]`InjectionTarget.dispose()` upon [classname]`ConstraintValidatorFactory.releaseInstance` (see also <<constraintsdefinitionimplementation-constraintfactory>> for more information about the life cycle of a [classname]`ConstraintValidator`).
+* calls [classname]`InjectionTarget.preDestroy()` and [classname]`InjectionTarget.dispose()` upon [classname]`ConstraintValidatorFactory.releaseInstance` (see also <<constraintsdefinitionimplementation-constraintfactory>> for more information about the lifecycle of a [classname]`ConstraintValidator`).
 --
 
 [tck-not-testable]#Using directly or indirectly a JPA [classname]`EntityManager` that might call back Bean Validation for validation is not allowed in the Bean Validation extension points and in [classname]`ConstraintValidator` instances. This would lead to infinite flush or unexpected behavior.#
