@@ -36,7 +36,7 @@
   ~ The generation happens in several passes, each processing a result tree fragment (RTF) created
   ~ by the previous pass:
   ~
-  ~ * Merge all chapters referenced in the master file
+  ~ * Merge all chapters referenced in the index file
   ~ * Determine the index numbers of all chapters and sections
   ~ * Expand xref elements into the index number of the referenced chapter or section
   ~ * Create the audit file
