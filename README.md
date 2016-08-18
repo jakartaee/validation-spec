@@ -64,7 +64,7 @@ Make sure to not go beyond 80 columns per line.
 - use `@author` on classes or interfaces (non inner)
 - use `{@link}` for method reference (the first in the JavaDoc of the element) except if it references external classes and if it references the class or element at bay.
 - reference methods with `()` but be careful that some `methodname` are actually annotation attributes and thus should not have `()`
-- in the spec use `[methodname]\`Foo.bar\`` and in the JavaDoc `{@link Foo#bar()}`
+- in the spec use `` [methodname]`Foo.bar` `` and in the JavaDoc `{@link Foo#bar()}`
 - no import statement
 - add package statement
 - use `<p/>` to separate paragraphs but do not use `<p>blah blah</p>`
