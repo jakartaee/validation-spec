@@ -135,7 +135,7 @@ Here is an example
 
 
 For the API, in particular the JavaDoc, follow the conventions described at
-<https://community.jboss.org/wiki/ContributingToHibernateValidator#Coding_Guidelines>.
+<http://hibernate.org/validator/contribute/#coding-guidelines>.
 
 ## Showing tck assertion coverage
 
