@@ -1,8 +1,10 @@
 <project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
+	<property name="bv.version" value="2.0.0-SNAPSHOT" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
 	<property name="asciidoctor-version" value="1.5.3" />
+	<property name="validation-api-source-dir" value="target/validation-api/src/" />
 
 	<!-- Needed for the quick preview only -->
 	<property name="browser" location="/usr/bin/google-chrome"/>
@@ -42,11 +44,34 @@
 	<target name="java-build-dir-exists">
 		<mkdir dir="target/asciidocextensions" />
 	</target>
+	<target name="validation-api-dir-exists">
+		<delete dir="${validation-api-source-dir}/javax/" />
+		<mkdir dir="${validation-api-source-dir}" />
+	</target>
 
+	<!-- we update the dependency every time we build as it might have changed on disk -->
+	<target name="detect-validation-api-in-m2">
+		<available file="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
+	</target>
+	<target name="unzip-validation-api-from-repo" depends="validation-api-dir-exists, detect-validation-api-in-m2" unless="validation-api-in-m2">
+		<get src="http://repo.maven.apache.org/maven2/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar"
+					dest="target/validation-api/"
+					skipexisting="true"/>
+		<unzip src="target/validation-api/validation-api-${bv.version}-sources.jar" dest="${validation-api-source-dir}"></unzip>
+	</target>
+	<target name="unzip-validation-api-from-m2" depends="validation-api-dir-exists, detect-validation-api-in-m2" if="validation-api-in-m2">
+		<unzip src="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api-source-dir}"></unzip>
+	</target>
+	<target name="have-validation-api" depends="unzip-validation-api-from-repo,unzip-validation-api-from-m2">
+	</target>
+	
 	<target name="have-asciidoctor" depends="lib-dir-exists">
-		<get src="http://repo1.maven.org/maven2/org/asciidoctor/asciidoctor-ant/${asciidoctor-version}/asciidoctor-ant-${asciidoctor-version}.jar"
+		<get src="http://repo.maven.apache.org/maven2/org/asciidoctor/asciidoctor-ant/${asciidoctor-version}/asciidoctor-ant-${asciidoctor-version}.jar"
 			dest="lib/asciidoctor-ant-${asciidoctor-version}.jar"
 			skipexisting="true"/>
+	</target>
+	
+	<target name="have-dependencies" depends="have-asciidoctor, have-validation-api">
 	</target>
 
 	<macrodef name="renderer">
@@ -63,19 +88,21 @@
 					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<attribute key="tabsize" value="4" />
+					<attribute key="validation-api-source-dir" value="../${validation-api-source-dir}" />
 			</asciidoctor:convert>
 		</sequential>
 	</macrodef>
 
-	<target name="render-html" depends="clean-htmloutput, have-asciidoctor, html-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-html" depends="clean-htmloutput, have-dependencies, html-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/html" backend="html" />
 	</target>
 
-	<target name="render-docbook" depends="clean-docbookoutput, have-asciidoctor, docbook-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-docbook" depends="clean-docbookoutput, have-dependencies, docbook-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/docbook" backend="docbook" />
 	</target>
 
-	<target name="render-pdf" depends="clean-pdfoutput, have-asciidoctor, pdf-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-pdf" depends="clean-pdfoutput, have-dependencies, pdf-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/pdf" backend="pdf" />
 	</target>
 
