@@ -29,7 +29,7 @@ should lead to an assertion in the TCK. The following values are allowed:
 TCK (e.g. assertions regarding thread safety)
 * `tck-ignore`: The tagged element must be excluded when creating a TCK assertion for an outer
 element. Can be used to exlude explanatory phrases contained in an element marked as `tck-testable`.
-* `tck-needs-update`: The tagged element must be mark with a note in the TCK audit file saying
+* `tck-needs-update`: The tagged element must be marked with a note in the TCK audit file saying
 that the tests for this assertion need to be updated, e.g. due to a spec update. Can be used
 together with `tck-testable` and `tck-not-testable`: `[tck-testable tck-needs-update]#Some sentence...#`.
 
@@ -63,7 +63,7 @@ Make sure to not go beyond 80 columns per line.
 - remove email in `@author`
 - use `@author` on classes or interfaces (non inner)
 - use `{@link}` for method reference (the first in the JavaDoc of the element) except if it references external classes and if it references the class or element at bay.
-- reference methods with `()` but be careful that some `methodname` are actually annotation attributes and thus should not have `()`
+- reference methods with a trailing `()` but be careful that some `methodname` are actually annotation attributes and thus should not have `()`
 - in the spec use `` [methodname]`Foo.bar` `` and in the JavaDoc `{@link Foo#bar()}`
 - no import statement
 - add package statement
