@@ -1,10 +1,12 @@
 <project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
 	<property name="bv.version" value="2.0.0-SNAPSHOT" />
+	<property name="asciidoctor.version" value="1.5.3" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
-	<property name="asciidoctor-version" value="1.5.3" />
-	<property name="validation-api-source-dir" value="target/validation-api/src/" />
+	<property name="validation-api.sourcedir" value="target/validation-api/src" />
+	<property name="m2-repository.path" value="${user.home}/.m2/repository" />
+	<property name="maven-central.url" value="http://repo.maven.apache.org/maven2" />
 
 	<!-- Needed for the quick preview only -->
 	<property name="browser" location="/usr/bin/google-chrome"/>
@@ -45,29 +47,29 @@
 		<mkdir dir="target/asciidocextensions" />
 	</target>
 	<target name="validation-api-dir-exists">
-		<delete dir="${validation-api-source-dir}/javax/" />
-		<mkdir dir="${validation-api-source-dir}" />
+		<delete dir="${validation-api.sourcedir}/javax/" />
+		<mkdir dir="${validation-api.sourcedir}" />
 	</target>
 
 	<!-- we update the dependency every time we build as it might have changed on disk -->
 	<target name="detect-validation-api-in-m2">
-		<available file="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
+		<available file="${m2-repository.path}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
 	</target>
 	<target name="unzip-validation-api-from-repo" depends="validation-api-dir-exists, detect-validation-api-in-m2" unless="validation-api-in-m2">
-		<get src="http://repo.maven.apache.org/maven2/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar"
+		<get src="${maven-central.url}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar"
 					dest="target/validation-api/"
 					skipexisting="true"/>
-		<unzip src="target/validation-api/validation-api-${bv.version}-sources.jar" dest="${validation-api-source-dir}"></unzip>
+		<unzip src="target/validation-api/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
 	</target>
 	<target name="unzip-validation-api-from-m2" depends="validation-api-dir-exists, detect-validation-api-in-m2" if="validation-api-in-m2">
-		<unzip src="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api-source-dir}"></unzip>
+		<unzip src="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
 	</target>
 	<target name="have-validation-api" depends="unzip-validation-api-from-repo,unzip-validation-api-from-m2">
 	</target>
 	
 	<target name="have-asciidoctor" depends="lib-dir-exists">
-		<get src="http://repo.maven.apache.org/maven2/org/asciidoctor/asciidoctor-ant/${asciidoctor-version}/asciidoctor-ant-${asciidoctor-version}.jar"
-			dest="lib/asciidoctor-ant-${asciidoctor-version}.jar"
+		<get src="${maven-central.url}/org/asciidoctor/asciidoctor-ant/${asciidoctor.version}/asciidoctor-ant-${asciidoctor.version}.jar"
+			dest="lib/asciidoctor-ant-${asciidoctor.version}.jar"
 			skipexisting="true"/>
 	</target>
 	
@@ -78,7 +80,7 @@
 		<attribute name="outputdirectory" />
 		<attribute name="backend" />
 		<sequential>
-			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar:target/asciidocextensions"/>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar:target/asciidocextensions"/>
 			<asciidoctor:convert
 				sourceDocumentName="index.asciidoc"
 				sourceDirectory="sources"
@@ -89,7 +91,7 @@
 					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<attribute key="tabsize" value="4" />
-					<attribute key="validation-api-source-dir" value="../${validation-api-source-dir}" />
+					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
 			</asciidoctor:convert>
 		</sequential>
 	</macrodef>
@@ -118,7 +120,7 @@
 	<target name="compile-asciidoc-extensions" depends="java-build-dir-clean, java-build-dir-exists, have-asciidoctor">
 		<javac srcdir="asciidoc-extensions/src/main/java"
 			destdir="target/asciidocextensions"
-			classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar"
+			classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar"
 			source="1.8"
 			target="1.8"
 			debug="true"
