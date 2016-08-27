@@ -1,16 +1,18 @@
 <project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
 	<property name="bv.version" value="2.0.0-SNAPSHOT" />
 	<property name="asciidoctor.version" value="1.5.3" />
+	<property name="maven-dependency-plugin.version" value="2.10" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
 	<property name="validation-api.sourcedir" value="target/validation-api/src" />
+	<property name="validation-api.jardir" value="target/validation-api/jar" />
 	<property name="m2-repository.path" value="${user.home}/.m2/repository" />
 	<property name="maven-central.url" value="http://repo.maven.apache.org/maven2" />
+	<property name="maven-settings.path">settings-example.xml</property>
 
 	<!-- Needed for the quick preview only -->
 	<property name="browser" location="/usr/bin/google-chrome"/>
-
 
 	<target name="clean" description="Delete all generated documentation" depends="clean-htmloutput, clean-pdfoutput, clean-docbookoutput, java-build-dir-clean">
 		<delete dir="target" />
@@ -47,8 +49,17 @@
 		<mkdir dir="target/asciidocextensions" />
 	</target>
 	<target name="validation-api-dir-exists">
+		<delete dir="${validation-api.jardir}/*.jar" />
+		<mkdir dir="${validation-api.jardir}" />
 		<delete dir="${validation-api.sourcedir}/javax/" />
 		<mkdir dir="${validation-api.sourcedir}" />
+	</target>
+
+	<!-- Check that a mvn command is available -->
+	<property environment="env" />
+	<available file="mvn" filepath="${env.PATH}" property="mvn-available" />
+	<target name="have-mvn" unless="${mvn-available}">
+		<fail message="You need a Maven installation in your path." />
 	</target>
 
 	<!-- we update the dependency every time we build as it might have changed on disk -->
@@ -56,10 +67,19 @@
 		<available file="${m2-repository.path}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
 	</target>
 	<target name="unzip-validation-api-from-repo" depends="validation-api-dir-exists, detect-validation-api-in-m2" unless="validation-api-in-m2">
-		<get src="${maven-central.url}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar"
-					dest="target/validation-api/"
-					skipexisting="true"/>
-		<unzip src="target/validation-api/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
+		<exec executable="mvn">
+			<arg value="-s" />
+			<arg value="${maven-settings.path}" />
+			<arg value="org.apache.maven.plugins:maven-dependency-plugin:${maven-dependency-plugin.version}:copy"/>
+			<arg value="-Dartifact=javax.validation:validation-api:${bv.version}:jar:sources" />
+			<arg value="-DoutputDirectory=${validation-api.jardir}" />
+			<arg value="-DoverWriteSnapshots=true" />
+		</exec>
+		<unzip dest="${validation-api.sourcedir}">
+			<fileset dir="${validation-api.jardir}">
+				<include name="validation-api-*-sources.jar" />
+			</fileset>
+		</unzip>
 	</target>
 	<target name="unzip-validation-api-from-m2" depends="validation-api-dir-exists, detect-validation-api-in-m2" if="validation-api-in-m2">
 		<unzip src="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
@@ -73,7 +93,7 @@
 			skipexisting="true"/>
 	</target>
 	
-	<target name="have-dependencies" depends="have-asciidoctor, have-validation-api">
+	<target name="have-dependencies" depends="have-mvn, have-asciidoctor, have-validation-api">
 	</target>
 
 	<macrodef name="renderer">
