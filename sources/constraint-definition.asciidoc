@@ -490,6 +490,9 @@ It is often useful to declare the same constraint more than once to the same tar
 To support this requirement, [tck-testable]#the Bean Validation provider treats regular annotations (annotations not annotated by [classname]`@Constraint`) whose `value` element has a return type of an array of constraint annotations in a special way. Each element in the `value` array are processed by the Bean Validation implementation as regular constraint annotations.# This means that each constraint specified in the `value` element is applied to the target. The annotation must have retention `RUNTIME` and can be applied on a type, field, property, executable parameter, executable return value, executable cross-parameter or another annotation. It is recommended to use the same set of targets as the initial constraint.
 
 Note to constraint designers: each constraint annotation should be coupled with its corresponding multi-valued annotation. The specification recommends, though does not mandate, the definition of an inner annotation named [classname]`List`.
+Each constraint annotation type should be meta-annotated with [classname]`java.lang.annotation.Repeatable`, referencing the corresponding [classname]`List` annotation.
+This marks the constraint annotation type as repeatable and lets users specify the constraint several times without explicitly using the [classname]`List` annotation.
+All built-in annotations follow this pattern.
 
 .Multi-valued constraint definition
 ====
@@ -504,6 +507,7 @@ Note to constraint designers: each constraint annotation should be coupled with 
 @Constraint(validatedBy = ZipCodeValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 public @interface ZipCode {
 
     String countryCode();
@@ -535,10 +539,31 @@ public @interface ZipCode {
 [source, JAVA]
 ----
 public class Address {
+    @ZipCode(countryCode="fr", groups=Default.class, message = "zip code is not valid"),
+    @ZipCode(
+        countryCode="fr",
+        groups=SuperUser.class,
+        message = "zip code invalid. Requires overriding before saving."
+    )
+    private String zipcode;
+}
+----
+====
+
+In this example, both constraints apply to the [methodname]`zipcode` field but with different groups and with different error messages.
+It is also possible to explicitly use the [classname]`@List` annotation (though simply repeating the annotation is the preferred idiom as of Bean Validation 2.0 and Java 8):
+
+.Multi-valued constraint declaration using explicit [classname]`@List` annotation
+====
+
+[source, JAVA]
+----
+// Explicitly using @List annotation
+public class Address {
     @ZipCode.List( {
-            @ZipCode(countryCode="fr", groups=Default.class
+            @ZipCode(countryCode="fr", groups=Default.class,
                      message = "zip code is not valid"),
-            @ZipCode(countryCode="fr", groups=SuperUser.class
+            @ZipCode(countryCode="fr", groups=SuperUser.class,
                      message = "zip code invalid. Requires overriding before saving.")
             } )
     private String zipcode;
@@ -546,8 +571,6 @@ public class Address {
 ----
 
 ====
-
-In this example, both constraints apply to the [methodname]`zipcode` field but with different groups and with different error messages.
 
 Using two different multi-constraint annotations for the same underlying constraint type on the same target (i.e. class or property) is not considered portable and is discouraged.
 
