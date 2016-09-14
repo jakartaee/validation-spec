@@ -496,80 +496,30 @@ All built-in annotations follow this pattern.
 
 .Multi-valued constraint definition
 ====
-
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Validate a zipcode for a given country
- * The only supported type is String
- */
-@Documented
-@Constraint(validatedBy = ZipCodeValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-@Retention(RUNTIME)
-@Repeatable(List.class)
-public @interface ZipCode {
-
-    String countryCode();
-
-    String message() default "{com.acme.constraint.ZipCode.message}";
-
-    Class<?>[] groups() default {};
-
-    Class<? extends Payload>[] payload() default {};
-
-    /**
-     * Defines several @ZipCode annotations on the same element
-     * @see (@link ZipCode}
-     */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        ZipCode[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/multivaluedconstraint/ZipCode.java[tags=include]
 ----
 
 ====
 
 .Multi-valued constraint declaration
 ====
-
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-public class Address {
-    @ZipCode(countryCode="fr", groups=Default.class, message = "zip code is not valid"),
-    @ZipCode(
-        countryCode="fr",
-        groups=SuperUser.class,
-        message = "zip code invalid. Requires overriding before saving."
-    )
-    private String zipcode;
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/multivaluedconstraint/Address.java[tags=include]
 ----
 ====
 
 In this example, both constraints apply to the [methodname]`zipcode` field but with different groups and with different error messages.
-It is also possible to explicitly use the [classname]`@List` annotation (though simply repeating the annotation is the preferred idiom as of Bean Validation 2.0 and Java 8):
+It is also possible to specify a constraint several types by explicitly using the [classname]`@List` annotation (though simply repeating the annotation is the preferred idiom as of Bean Validation 2.0 and Java 8):
 
 .Multi-valued constraint declaration using explicit [classname]`@List` annotation
 ====
-
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-// Explicitly using @List annotation
-public class Address {
-    @ZipCode.List( {
-            @ZipCode(countryCode="fr", groups=Default.class,
-                     message = "zip code is not valid"),
-            @ZipCode(countryCode="fr", groups=SuperUser.class,
-                     message = "zip code invalid. Requires overriding before saving.")
-            } )
-    private String zipcode;
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/multivaluedconstraint/explicitlist/Address.java[tags=include]
 ----
-
 ====
 
 Using two different multi-constraint annotations for the same underlying constraint type on the same target (i.e. class or property) is not considered portable and is discouraged.
