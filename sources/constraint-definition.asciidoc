@@ -61,7 +61,7 @@ A constraint on a JavaBean is expressed through one or more annotations. [tck-no
  * <pre>
  * &#64;Documented
  * &#64;Constraint(validatedBy = OrderNumberValidator.class)
- * &#64;Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+ * &#64;Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
  * &#64;Retention(RUNTIME)
  * public &#64;interface OrderNumber {
  *     String message() default "{com.acme.constraint.OrderNumber.message}";
@@ -107,6 +107,7 @@ Generic constraint annotations can target any of the following [classname]``Elem
 * [classname]`PARAMETER` for constrained method and constructor parameters
 * `TYPE` for constrained beans
 * `ANNOTATION_TYPE` for constraints composing other constraints
+* `TYPE_USE` for type argument constraints
 --
 
 [tck-not-testable]
@@ -327,7 +328,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy = OrderNumberValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface OrderNumber {
     String message() default "{com.acme.constraint.OrderNumber.message}";
@@ -432,7 +433,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy = AudibleValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface Audible {
     Age age() default Age.YOUNG;
@@ -467,7 +468,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface Acceptable {
     int[] value();
@@ -545,27 +546,27 @@ Composition is done by annotating a constraint annotation with the composing con
 ----
 @Pattern(regexp="[0-9]*")
 @Size(min=5, max=5)
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+    String message() default "Wrong zip code";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
 
 ====
 
-Annotating an element with [classname]`@FrenchZipcode` (the composed annotation) is equivalent to annotating it with [classname]`@Pattern(regexp="[0-9]*")`, [classname]`@Size(min=5, max=5)` (the composing annotations) and [classname]`@FrenchZipcode`. [tck-testable]#More formally, each constraint annotation hosted on a constraint annotation is applied to the target element and this is done recursively.# [tck-testable]#Note that the main annotation and its constraint validation implementation is also applied.# [tck-testable]#By default, each failing constraint generates an error report.# [tck-testable]#Groups from the main constraint annotation are inherited by the composing annotations.# [tck-testable]#Any [methodname]`groups` definition on a composing annotation is ignored.# [tck-testable]#Payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`payload` definition on a composing annotation is ignored.# [tck-testable]#The constraint target from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`validationAppliesTo` definition on a composing annotation is ignored.#
+Annotating an element with [classname]`@FrenchZipCode` (the composed annotation) is equivalent to annotating it with [classname]`@Pattern(regexp="[0-9]*")`, [classname]`@Size(min=5, max=5)` (the composing annotations) and [classname]`@FrenchZipCode`. [tck-testable]#More formally, each constraint annotation hosted on a constraint annotation is applied to the target element and this is done recursively.# [tck-testable]#Note that the main annotation and its constraint validation implementation is also applied.# [tck-testable]#By default, each failing constraint generates an error report.# [tck-testable]#Groups from the main constraint annotation are inherited by the composing annotations.# [tck-testable]#Any [methodname]`groups` definition on a composing annotation is ignored.# [tck-testable]#Payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`payload` definition on a composing annotation is ignored.# [tck-testable]#The constraint target from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`validationAppliesTo` definition on a composing annotation is ignored.#
 
 [tck-testable]#The type upon which composed constraint is placed must be compatible with all constraints (composing and composed).# A constraint designer should ensure that such a type exists and lists in the JavaDoc all the compatible types.
 
@@ -573,7 +574,7 @@ Annotating an element with [classname]`@FrenchZipcode` (the composed annotation)
 
 It is possible to ensure that composing annotations do not raise individual error reports. In this scenario, if one or more composing annotations are invalid, the main constraint is automatically considered invalid and the corresponding error report is generated. To mark a constraint as raising a single constraint error report if either the composed or one of the composing constraints fail, use the [classname]`@ReportAsSingleViolation` annotation.
 
-.If any of the composing constraints fail, the error report corresponding to @FrenchZipcode is raised and none other.
+.If any of the composing constraints fail, the error report corresponding to [classname]`@FrenchZipCode` is raised and none other.
 ====
 
 [source, JAVA]
@@ -581,20 +582,20 @@ It is possible to ensure that composing annotations do not raise individual erro
 @Pattern(regexp="[0-9]*")
 @Size(min=5, max=5)
 @ReportAsSingleViolation
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+    String message() default "Wrong zip code";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
@@ -626,27 +627,27 @@ public @interface ReportAsSingleViolation {
 
 [tck-testable]#Composing annotations can define the value of `message` and custom attributes (excluding [methodname]`groups`, [methodname]`payload` and [methodname]`validationAppliesTo`) but these are fixed in the composed constraint definition.#
 
-.Composing annotations can use attributes. They are fixed for a given main annotation. All @FrenchZipcode constraints have a @Size restricted to 5.
+.Composing annotations can use attributes. They are fixed for a given main annotation. All [classname]`@FrenchZipCode` constraints have a [classname]`@Size` restricted to 5.
 ====
 
 [source, JAVA]
 ----
 @Pattern(regexp="[0-9]*")
 @Size(min=5, max=5)
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+    String message() default "Wrong zip code";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
@@ -664,12 +665,12 @@ public @interface FrenchZipcode {
 ----
 @Pattern(regexp="[0-9]*")
 @Size
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+    String message() default "Wrong zip code";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
@@ -679,23 +680,23 @@ public @interface FrenchZipcode {
     int size() default 5;
 
     @OverridesAttribute(constraint=Size.class, name="message")
-    String sizeMessage() default "{com.acme.constraint.FrenchZipcode.zipcode.size}";
+    String sizeMessage() default "{com.acme.constraint.FrenchZipCode.zipCode.size}";
 
     @OverridesAttribute(constraint=Pattern.class, name="message")
-    String numberMessage() default "{com.acme.constraint.FrenchZipcode.number.size}";
+    String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
 
 ====
 
-The value of the composed constraint attribute annotated with [classname]`@OverridesAttribute` ([methodname]`@FrenchZipcode.sizeMessage`) is applied to the composing constraint attribute named after [methodname]`@OverridesAttribute.name` and hosted on the composing constraint of type [methodname]`@OverridesAttribute.constraint` ([methodname]`@Size.message`). Similarly, [classname]`@FrenchZipcode.numberMessage` value is mapped to [classname]`@Pattern.message`.
+The value of the composed constraint attribute annotated with [classname]`@OverridesAttribute` ([methodname]`@FrenchZipCode.sizeMessage`) is applied to the composing constraint attribute named after [methodname]`@OverridesAttribute.name` and hosted on the composing constraint of type [methodname]`@OverridesAttribute.constraint` ([methodname]`@Size.message`). Similarly, [classname]`@FrenchZipCode.numberMessage` value is mapped to [classname]`@Pattern.message`.
 
 If left undefined, the default value for [methodname]`@OverridesAttribute.name` is the name of the composed constraint attribute hosting the [classname]`@OverridesAttribute` annotation.
 
@@ -710,36 +711,36 @@ Using <<example-composing-overridden>>,
 
 [source, JAVA]
 ----
-@FrenchZipcode(size=9, sizeMessage="Zipcode should be of size {max}")
+@FrenchZipCode(size=9, sizeMessage="Zip code should be of size {max}")
 ----
 
 is equivalent to
 
 [source, JAVA]
 ----
-@FrenchZipcode
+@FrenchZipCode
 ----
 
-if [classname]`@FrenchZipcode` is defined as
+if [classname]`@FrenchZipCode` is defined as
 
 [source, JAVA]
 ----
 @Pattern(regexp="[0-9]*")
-@Size(min=9, max=9, message="Zipcode should be of size {max}")
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Size(min=9, max=9, message="Zip code should be of size {max}")
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+    String message() default "Wrong zip code";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
@@ -757,7 +758,7 @@ public @interface FrenchZipcode {
 } )
 @Constraint(validatedBy={})
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface EmmanuelsEmail {
     String message() default "Not emmanuel's email";
@@ -771,7 +772,7 @@ public @interface EmmanuelsEmail {
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
