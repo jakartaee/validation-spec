@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint;
+package org.beanvalidation.specexamples.constraintdefinition.annotation;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
@@ -25,44 +25,28 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
 
-import org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.ZipCode.List;
-
 //tag::include[]
 /**
- * Validate a zip code for a given country
- * The only supported type is String
+ * Defines the list of values accepted Accepts int or Integer objects
  */
 @Documented
-@Constraint(validatedBy = ZipCodeValidator.class)
+@Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-@Repeatable(List.class)
-public @interface ZipCode {
+public @interface Acceptable {
 
-	String countryCode();
+	int[] value();
 
-	String message() default "{com.acme.constraint.ZipCode.message}";
+	String message() default "{com.acme.constraint.Acceptable.message}";
 
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
-
-	/**
-	 * Defines several @ZipCode annotations on the same element
-	 * @see (@link ZipCode}
-	 */
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-	@Retention(RUNTIME)
-	@Documented
-	@interface List {
-		ZipCode[] value();
-	}
 }
-//end::include[]
+// end::include[]

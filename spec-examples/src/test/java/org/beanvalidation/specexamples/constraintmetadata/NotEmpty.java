@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint;
+package org.beanvalidation.specexamples.constraintmetadata;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
@@ -25,44 +25,51 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.validation.Constraint;
+import javax.validation.ConstraintValidator;
+import javax.validation.ConstraintValidatorContext;
 import javax.validation.Payload;
-
-import org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.ZipCode.List;
+import javax.validation.ReportAsSingleViolation;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 //tag::include[]
-/**
- * Validate a zip code for a given country
- * The only supported type is String
- */
 @Documented
-@Constraint(validatedBy = ZipCodeValidator.class)
+@NotNull
+@Size(min = 1)
+@ReportAsSingleViolation
+@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-@Repeatable(List.class)
-public @interface ZipCode {
+public @interface NotEmpty {
 
-	String countryCode();
-
-	String message() default "{com.acme.constraint.ZipCode.message}";
+	String message() default "{com.acme.constraint.NotEmpty.message}";
 
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
 
-	/**
-	 * Defines several @ZipCode annotations on the same element
-	 * @see (@link ZipCode}
-	 */
 	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 	@Retention(RUNTIME)
 	@Documented
 	@interface List {
-		ZipCode[] value();
+
+		NotEmpty[] value();
+	}
+
+	class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
+
+		@Override
+		public void initialize(NotEmpty constraintAnnotation) {
+		}
+
+		@Override
+		public boolean isValid(String value, ConstraintValidatorContext context) {
+			return true;
+		}
 	}
 }
-//end::include[]
+// end::include[]

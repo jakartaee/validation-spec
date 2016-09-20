@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint;
+package org.beanvalidation.specexamples.constraintdefinition.constraintcomposition.overriding.interpreted;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
@@ -25,44 +25,48 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.validation.Constraint;
+import javax.validation.OverridesAttribute;
 import javax.validation.Payload;
+import javax.validation.constraints.Pattern;
+import javax.validation.constraints.Size;
 
-import org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.ZipCode.List;
+import org.beanvalidation.specexamples.constraintdefinition.constraintcomposition.FrenchZipCodeValidator;
 
 //tag::include[]
-/**
- * Validate a zip code for a given country
- * The only supported type is String
- */
+@Pattern(regexp = "[0-9]*")
+@Size
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Constraint(validatedBy = ZipCodeValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-@Repeatable(List.class)
-public @interface ZipCode {
+public @interface FrenchZipCode {
 
-	String countryCode();
-
-	String message() default "{com.acme.constraint.ZipCode.message}";
+	String message() default "Wrong zip code";
 
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
 
-	/**
-	 * Defines several @ZipCode annotations on the same element
-	 * @see (@link ZipCode}
-	 */
+	@OverridesAttribute.List({
+			@OverridesAttribute(constraint = Size.class, name = "min"),
+			@OverridesAttribute(constraint = Size.class, name = "max") })
+	int size() default 5;
+
+	@OverridesAttribute(constraint = Size.class, name = "message")
+	String sizeMessage() default "{com.acme.constraint.FrenchZipCode.zipCode.size}";
+
+	@OverridesAttribute(constraint = Pattern.class, name = "message")
+	String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
+
 	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 	@Retention(RUNTIME)
 	@Documented
 	@interface List {
-		ZipCode[] value();
+		FrenchZipCode[] value();
 	}
 }
-//end::include[]
+// end::include[]
