@@ -1023,170 +1023,22 @@ public interface ConstraintDescriptor<T extends Annotation> {
 
 Assuming the following constraint definitions
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
-@Documented
-@NotNull
-@Size(min=1)
-@ReportAsSingleViolation
-@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface NotEmpty {
-    String message() default "{com.acme.constraint.NotEmpty.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default { };
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintmetadata/NotEmpty.java[tags=include]
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        NotEmpty[] value();
-    }
-
-    class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
-        @Override
-        public void initialize(NotEmpty constraintAnnotation) {}
-
-        @Override
-        public boolean isValid(String value, ConstraintValidatorContext context) {
-            return true;
-        }
-    }
-}
-
-@Documented
-@Constraint(validatedBy = ValidInterval.Validator.class)
-@Target({ METHOD, ANNOTATION_TYPE, CONSTRUCTOR })
-@Retention(RUNTIME)
-public @interface ValidInterval {
-    String message() default "{com.acme.constraint.ValidInterval.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default { };
-    int startParameter();
-    int endParameter();
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        ValidInterval[] value();
-    }
-
-    @SupportedValidationTarget(PARAMETERS)
-    class Validator implements ConstraintValidator<ValidInterval, Object[]> {
-
-        private int start;
-        private int end;
-
-        @Override
-        public void initialize(ValidInterval constraintAnnotation) {
-            this.start = constraintAnnotation.startParameter();
-            this.end = constraintAnnotation.endParameter();
-        }
-
-        @Override
-        public boolean isValid(Object[] value, ConstraintValidatorContext context) {
-            return Integer.parseInt( String.valueOf( value[start] ) ) <
-                   Integer.parseInt( String.valueOf( value[end] ) );
-        }
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintmetadata/ValidInterval.java[tags=include]
 ----
 
 and the following class definitions
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-public class Author {
-    private String firstName;
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintmetadata/Author.java[tags=include]
 
-    @NotEmpty(message="lastname must not be null")
-    private String lastName;
-
-    @Size(max=30)
-    private String company;
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public String getCompany() {
-        return company;
-    }
-
-    public void setCompany(String company) {
-        this.company = company;
-    }
-}
-
-public class Book {
-
-    public interface FirstLevelCheck {}
-    public interface SecondLevelCheck {}
-
-    private String title;
-    private String description;
-
-    @Valid
-    @NotNull
-    private Author author;
-
-    @Valid
-    public Book(
-            String title,
-            @Size(max=30) String description,
-            @Valid
-            @ConvertGroup(from=Default.class, to=SecondLevelCheck.class)
-            Author author) {
-        [...]
-    }
-
-    public Book() {
-        [...]
-    }
-
-    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
-    @Size(max=30)
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public Author getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(Author author) {
-        this.author = author;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setAuthor(String description) {
-        this.description = description;
-    }
-
-    @ValidInterval(startParameter=1, endParameter=2)
-    public void addChapter(String title, int startPage, int endPage) {
-        [...]
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintmetadata/Book.java[tags=include]
 ----
 
 The following assertions are true.

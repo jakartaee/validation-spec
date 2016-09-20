@@ -17,82 +17,9 @@ Unless stated otherwise the default package name for the Bean Validation APIs is
 
 A constraint on a JavaBean is expressed through one or more annotations. [tck-not-testable]#An annotation is considered a constraint definition if its retention policy contains `RUNTIME` and if the annotation itself is annotated with `javax.validation.Constraint`# .
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Marks an annotation as being a Bean Validation constraint.
- * <p/>
- * A given constraint annotation must be annotated by a {@code @Constraint}
- * annotation which refers to its list of constraint validation implementations.
- * <p/>
- * Each constraint annotation must host the following attributes:
- * <ul>
- *     <li>{@code String message() default [...];} which should default to an error
- *     message key made of the fully-qualified class name of the constraint followed by
- *     {@code .message}. For example {@code "{com.acme.constraints.NotSafe.message}"}</li>
- *     <li>{@code Class<?>[] groups() default {};} for user to customize the targeted
- *     groups</li>
- *     <li>{@code Class<? extends Payload>[] payload() default {};} for
- *     extensibility purposes</li>
- * </ul>
- * <p/>
- * When building a constraint that is both generic and cross-parameter, the constraint
- * annotation must host the {@code validationAppliesTo()} property.
- * A constraint is generic if it targets the annotated element and is cross-parameter if
- * it targets the array of parameters of a method or constructor.
- * <pre>
- *     ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
- * </pre>
- * This property allows the constraint user to choose whether the constraint
- * targets the return type of the executable or its array of parameters.
- *
- * A constraint is both generic and cross-parameter if
- * <ul>
- *     <li>two kinds of {@code ConstraintValidator}s are attached to the
- *     constraint, one targeting {@link ValidationTarget#ANNOTATED_ELEMENT}
- *     and one targeting {@link ValidationTarget#PARAMETERS},</li>
- *     <li>or if a {@code ConstraintValidator} targets both
- *     {@code ANNOTATED_ELEMENT} and {@code PARAMETERS}.</li>
- * </ul>
- *
- * Such dual constraints are rare. See {@link SupportedValidationTarget} for more info.
- * <p/>
- * Here is an example of constraint definition:
- * <pre>
- * &#64;Documented
- * &#64;Constraint(validatedBy = OrderNumberValidator.class)
- * &#64;Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
- * &#64;Retention(RUNTIME)
- * public &#64;interface OrderNumber {
- *     String message() default "{com.acme.constraint.OrderNumber.message}";
- *     Class<?>[] groups() default {};
- *     Class<? extends Payload>[] payload() default {};
- * }
- * </pre>
- *
- * @author Emmanuel Bernard
- * @author Gavin King
- * @author Hardy Ferentschik
- */
-@Documented
-@Target({ ANNOTATION_TYPE })
-@Retention(RUNTIME)
-public @interface Constraint {
-
-    /**
-     * {@link ConstraintValidator} classes must reference distinct target types
-     * for a given {@link ValidationTarget}
-     * If two {@code ConstraintValidator}s refer to the same type,
-     * an exception will occur.
-     * <p/>
-     * At most one {@code ConstraintValidator} targeting the array of parameters of
-     * methods or constructors (aka cross-parameter) is accepted. If two or more
-     * are present, an exception will occur.
-     *
-     * @return array of (@code ConstraintValidator} classes implementing the constraint
-     */
-    Class<? extends ConstraintValidator<?, ?>>[] validatedBy();
-}
+include::{validation-api-source-dir}javax/validation/Constraint.java[lines=29..-1]
 ----
 
 A constraint is said to be generic if it has at least one constraint validator targeting the element annotated i.e. targeting the (returned) element annotated by the constraint (a bean, a field, a getter, a method/constructor return value or a method/constructor parameter). A constraint is said to be cross-parameter if it has one constraint validator targeting the array of parameters of a method or constructor (to validate the consistency of several method/constructor parameters). A Bean Validation constraint is most of the time either a generic constraint or a cross-parameter constraint. In rare situations, a constraint can be both.
@@ -256,42 +183,9 @@ The `payload` information can be retrieved from error reports via the [classname
 ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
 ----
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Defines the constraint target.
- *
- * @author Emmanuel Bernard
- * @since 1.1
- */
-public enum ConstraintTarget {
-
-    /**
-     * Discover the type when no ambiguity is present
-     * <ul>
-     *     <li>if neither on a method nor a constructor, it implies the annotated element
-     *     (type, field etc),</li>
-     *     <li>if on a method or constructor with no parameter, it implies
-     *     {@code RETURN_VALUE},</li>
-     *     <li>if on a method with no return value ({@code void}), it implies
-     *     {@code PARAMETERS}.</li>
-     * </ul>
-     * Otherwise, {@code IMPLICIT} is not accepted and either {@code RETURN_VALUE} or
-     * {@code PARAMETERS} is required. This is the case for constructors with parameters
-     * and methods with parameters and return value.
-     */
-    IMPLICIT,
-
-    /**
-     * Constraint applies to the return value of a method or a constructor.
-     */
-    RETURN_VALUE,
-
-    /**
-     * Constraint applies to the parameters of a method or a constructor
-     */
-    PARAMETERS
-}
+include::{validation-api-source-dir}javax/validation/ConstraintTarget.java[lines=19..-1]
 ----
 
 ====
@@ -317,24 +211,13 @@ The constraint annotation definitions may define additional elements to paramete
 .Simple constraint definition
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 //assuming OrderNumberValidator is a generic constraint validator
 
 package com.acme.constraint;
 
-/**
- * Mark a String as representing a well formed order number
- */
-@Documented
-@Constraint(validatedBy = OrderNumberValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface OrderNumber {
-    String message() default "{com.acme.constraint.OrderNumber.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/annotation/OrderNumber.java[tags=include]
 ----
 
 ====
@@ -346,26 +229,14 @@ public @interface OrderNumber {
 .Simple cross-parameter constraint definition
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 //assuming DateParametersConsistentValidator is a cross-parameter
 //constraint validator
 
 package com.acme.constraint;
 
-/**
- * Cross-parameter constraint ensuring that two date parameters
- * of a method are in the correct order.
- */
-@Documented
-@Constraint(validatedBy = DateParametersConsistentValidator.class)
-@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
-@Retention(RUNTIME)
-public @interface DateParametersConsistent {
-    String message() default "{com.acme.constraint.DateParametersConsistent.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/annotation/DateParametersConsistent.java[tags=include]
 ----
 
 ====
@@ -377,30 +248,14 @@ public @interface DateParametersConsistent {
 .Constraint that is both generic and cross parameter
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 //assuming ELAssertValidator is both a generic and cross-parameter
 //constraint validator
 
 package com.acme.constraint;
 
-/**
- * EL expression to be validated.
- * This constraint accepts any type and can validate both the
- * annotated type or apply restrictions across parameters.
- */
-@Documented
-@Constraint(validatedBy=ELAssertValidator.class)
-@Target({ METHOD, FIELD, TYPE, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
-@Retention(RUNTIME)
-public @interface ELAssert {
-    String message() default "{com.acme.constraint.DateParametersConsistent.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-    ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
-
-    String expression();
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/annotation/ELAssert.java[tags=include]
 ----
 
 [source, JAVA]
@@ -422,31 +277,11 @@ public User createUser(String email, String password, String repeatPassword) { [
 .Constraint definition with default parameter
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
-/**
- * A frequency in Hz as audible to human ear.
- * Adjustable to the age of the person.
- * Accept Numbers.
- */
-@Documented
-@Constraint(validatedBy = AudibleValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface Audible {
-    Age age() default Age.YOUNG;
-    String message() default "{com.acme.constraint.Audible.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    public enum Age {
-        YOUNG,
-        WONDERING
-        OLD
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/annotation/Audible.java[tags=include]
 ----
 
 ====
@@ -458,24 +293,11 @@ public @interface Audible {
 .Constraint definition with mandatory parameter
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
-/**
- * Defines the list of values accepted
- * Accepts int or Integer objects
- */
-@Documented
-@Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface Acceptable {
-    int[] value();
-    String message() default "{com.acme.constraint.Acceptable.message}";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/annotation/Acceptable.java[tags=include]
 ----
 
 ====
@@ -544,24 +366,7 @@ Composition is done by annotating a constraint annotation with the composing con
 
 [source, JAVA]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=5, max=5)
-@Constraint(validatedBy = FrenchZipCodeValidator.class)
-@Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface FrenchZipCode {
-    String message() default "Wrong zip code";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        FrenchZipCode[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/FrenchZipCode.java[tags=include]
 ----
 
 ====
@@ -577,50 +382,18 @@ It is possible to ensure that composing annotations do not raise individual erro
 .If any of the composing constraints fail, the error report corresponding to [classname]`@FrenchZipCode` is raised and none other.
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=5, max=5)
-@ReportAsSingleViolation
-@Constraint(validatedBy = FrenchZipCodeValidator.class)
-@Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface FrenchZipCode {
-    String message() default "Wrong zip code";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        FrenchZipCode[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/single/FrenchZipCode.java[tags=include]
 ----
 
 ====
 
 The definition of [classname]`@ReportAsSingleViolation` is as follows.
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * A constraint annotation hosting this annotation will return the
- * composed annotation error report if any of the composing annotations fail.
- * The error reports of each individual composing constraint are ignored.
- * <p/>
- * Note: Evaluation of composed constraints stops on the first validation
- * error in case the composing constraint is annotated with
- * {@code @ReportAsSingleViolation}.
- *
- * @author Emmanuel Bernard
- */
-@Target({ ANNOTATION_TYPE })
-@Retention(RUNTIME)
-public @interface ReportAsSingleViolation {
-}
+include::{validation-api-source-dir}javax/validation/ReportAsSingleViolation.java[lines=25..-1]
 ----
 
 [tck-testable]#More specifically, if a composed constraint is marked as [classname]`@ReportAsSingleViolation`, the evaluation of the composing constraints stops at the first failing constraint and the error report corresponding to the composed constraint is generated and returned.#
@@ -630,26 +403,9 @@ public @interface ReportAsSingleViolation {
 .Composing annotations can use attributes. They are fixed for a given main annotation. All [classname]`@FrenchZipCode` constraints have a [classname]`@Size` restricted to 5.
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=5, max=5)
-@Constraint(validatedBy = FrenchZipCodeValidator.class)
-@Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface FrenchZipCode {
-    String message() default "Wrong zip code";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        FrenchZipCode[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/FrenchZipCode.java[tags=include]
 ----
 
 ====
@@ -661,37 +417,9 @@ public @interface FrenchZipCode {
 .Attributes from composing annotations can be overridden by attributes from the composed annotation
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size
-@Constraint(validatedBy = FrenchZipCodeValidator.class)
-@Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface FrenchZipCode {
-    String message() default "Wrong zip code";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    @OverridesAttribute.List( {
-        @OverridesAttribute(constraint=Size.class, name="min"),
-        @OverridesAttribute(constraint=Size.class, name="max") } )
-    int size() default 5;
-
-    @OverridesAttribute(constraint=Size.class, name="message")
-    String sizeMessage() default "{com.acme.constraint.FrenchZipCode.zipCode.size}";
-
-    @OverridesAttribute(constraint=Pattern.class, name="message")
-    String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        FrenchZipCode[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/overriding/FrenchZipCode.java[tags=include]
 ----
 
 ====
@@ -723,26 +451,9 @@ is equivalent to
 
 if [classname]`@FrenchZipCode` is defined as
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=9, max=9, message="Zip code should be of size {max}")
-@Constraint(validatedBy = FrenchZipCodeValidator.class)
-@Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface FrenchZipCode {
-    String message() default "Wrong zip code";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        FrenchZipCode[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/overriding/interpreted/FrenchZipCode.java[tags=include]
 ----
 
 [tck-testable]#If a constraint is used more than once as a composing constraint, the multi value constraints model as described in <<constraintsdefinitionimplementation-multipleconstraints>> is used.# [tck-testable]#To select a specific composing constraint, [methodname]`OverridesAttribute.constraintIndex` is used. It represents the constraint index in the [methodname]`value` array.# [tck-testable]#If `index` is undefined, the single constraint declaration is targeted.#
@@ -750,93 +461,18 @@ public @interface FrenchZipCode {
 .Use of constraintIndex in @OverridesAttribute
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern.List( {
-    @Pattern(regexp="[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}"), //email
-    @Pattern(regexp=".*?emmanuel.*?") //emmanuel
-} )
-@Constraint(validatedBy={})
-@Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-@Retention(RUNTIME)
-public @interface EmmanuelsEmail {
-    String message() default "Not emmanuel's email";
-
-    @OverridesAttribute(constraint=Pattern.class, name="message", constraintIndex=0)
-    String emailMessage() default "Not an email";
-
-    @OverridesAttribute(constraint=Pattern.class, name="message", constraintIndex=1)
-    String emmanuelMessage() default "Not Emmanuel";
-
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
-
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
-    @Retention(RUNTIME)
-    @Documented
-    @interface List {
-        EmmanuelsEmail[] value();
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/overriding/constraintindex/EmmanuelsEmail.java[tags=include]
 ----
 
 ====
 
 [classname]`@OverridesAttribute` definition is as follows:
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Marks an attribute as overriding the attribute of a composing constraint.
- * Both attributes must share the same type.
- *
- * @author Emmanuel Bernard
- */
-@Retention(RUNTIME)
-@Target({ METHOD })
-public @interface OverridesAttribute {
-
-    /**
-     * @return constraint type the attribute is overriding
-     */
-    Class<? extends Annotation> constraint();
-
-    /**
-     * Name of the Constraint attribute overridden.
-     * Defaults to the name of the attribute hosting {@code @OverridesAttribute}.
-     *
-     * @return name of constraint attribute overridden
-     */
-    String name();
-
-    /**
-     * The index of the targeted constraint declaration when using
-     * multiple constraints of the same type.
-     * <p/>
-     * The index represents the index of the constraint in the
-     * {@code value()} array.
-     * <p/>
-     * By default, no index is defined and the single constraint declaration
-     * is targeted.
-     *
-     * @return constraint declaration index if multivalued annotation is used
-     */
-    int constraintIndex() default -1;
-
-    /**
-     * Defines several {@link OverridesAttribute} annotations on the same element
-     *
-     * @see javax.validation.OverridesAttribute
-     */
-    @Documented
-    @Target({ METHOD })
-    @Retention(RUNTIME)
-    public @interface List {
-
-        OverridesAttribute[] value();
-    }
-}
+include::{validation-api-source-dir}javax/validation/OverridesAttribute.java[lines=26..-1]
 ----
 
 The following elements uniquely identify an overridden constraint attribute:
@@ -867,56 +503,9 @@ Constraint designers are encouraged to make use of composition (recursively or n
 
 [tck-testable]#A constraint validation implementation performs the validation of a given constraint annotation for a given type.# [tck-testable]#The implementation classes are specified by the `validatedBy` element of the [classname]`@Constraint` annotation that decorates the constraint definition.# [tck-not-testable]#The constraint validation implementation implements the [classname]`ConstraintValidator` interface.#
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Defines the logic to validate a given constraint {@code A}
- * for a given object type {@code T}.
- * <p/>
- * Implementations must comply to the following restriction:
- * <ul>
- *     <li>{@code T} must resolve to a non parameterized type</li>
- *     <li>or generic parameters of {@code T} must be unbounded
- *     wildcard types</li>
- * </ul>
- * <p/>
- * The annotation {@link SupportedValidationTarget} can be put on a
- * {@code ConstraintValidator} implementation to mark it as supporting
- * cross-parameter constraints. Check out {@link SupportedValidationTarget}
- * and {@link Constraint} for more information.
- *
- * @author Emmanuel Bernard
- * @author Hardy Ferentschik
- */
-public interface ConstraintValidator<A extends Annotation, T> {
-
-    /**
-     * Initializes the validator in preparation for
-     * {@link #isValid(Object, ConstraintValidatorContext)} calls.
-     * The constraint annotation for a given constraint declaration
-     * is passed.
-     * <p/>
-     * This method is guaranteed to be called before any use of this instance for
-     * validation.
-     *
-     * @param constraintAnnotation annotation instance for a given constraint declaration
-     */
-    void initialize(A constraintAnnotation);
-
-    /**
-     * Implements the validation logic.
-     * The state of {@code value} must not be altered.
-     * <p/>
-     * This method can be accessed concurrently, thread-safety must be ensured
-     * by the implementation.
-     *
-     * @param value object to validate
-     * @param context context in which the constraint is evaluated
-     *
-     * @return {@code false} if {@code value} does not pass the constraint
-     */
-    boolean isValid(T value, ConstraintValidatorContext context);
-}
+include::{validation-api-source-dir}javax/validation/ConstraintValidator.java[lines=22..-1]
 ----
 
 [tck-not-testable]

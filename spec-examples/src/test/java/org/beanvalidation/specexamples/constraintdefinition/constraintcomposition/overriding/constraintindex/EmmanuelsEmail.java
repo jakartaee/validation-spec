@@ -14,7 +14,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint;
+package org.beanvalidation.specexamples.constraintdefinition.constraintcomposition.overriding.constraintindex;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
@@ -25,44 +25,43 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.validation.Constraint;
+import javax.validation.OverridesAttribute;
 import javax.validation.Payload;
-
-import org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.ZipCode.List;
+import javax.validation.constraints.Pattern;
 
 //tag::include[]
-/**
- * Validate a zip code for a given country
- * The only supported type is String
- */
+@Pattern.List({
+		@Pattern(regexp = "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}"), // email
+		@Pattern(regexp = ".*?emmanuel.*?") // emmanuel
+})
+@Constraint(validatedBy = {})
 @Documented
-@Constraint(validatedBy = ZipCodeValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-@Repeatable(List.class)
-public @interface ZipCode {
+public @interface EmmanuelsEmail {
 
-	String countryCode();
+	String message() default "Not emmanuel's email";
 
-	String message() default "{com.acme.constraint.ZipCode.message}";
+	@OverridesAttribute(constraint = Pattern.class, name = "message", constraintIndex = 0)
+	String emailMessage() default "Not an email";
+
+	@OverridesAttribute(constraint = Pattern.class, name = "message", constraintIndex = 1)
+	String emmanuelMessage() default "Not Emmanuel";
 
 	Class<?>[] groups() default {};
 
 	Class<? extends Payload>[] payload() default {};
 
-	/**
-	 * Defines several @ZipCode annotations on the same element
-	 * @see (@link ZipCode}
-	 */
 	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 	@Retention(RUNTIME)
 	@Documented
 	@interface List {
-		ZipCode[] value();
+
+		EmmanuelsEmail[] value();
 	}
 }
 //end::include[]
