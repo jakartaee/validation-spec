@@ -1,0 +1,385 @@
+// Bean Validation
+//
+// License: Apache License, Version 2.0
+// See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+
+[[appendix-value-extraction]]
+
+== Value extraction for cascaded validation and type-level constraints (BVAL-508)
+
+This appendix describes the current work-in-progress around the retrieval of values to be validated during cascaded validation and evaluation of type-level constraints (e.g. ). It is based on the original http://beanvalidation.org/proposals/BVAL-508/[proposals for BVAL-508].
+
+=== Motivation
+
+Value extraction is needed when constraints are applied to the element(s) stored within a container type. There are two categories:
+
+* Cascaded validation of collections, maps and arrays as triggered via `@Valid`: `@Valid List<Order> orders`; in this case all the values stored in the list must be extracted so each can be validated
+* Validation of type-level constraints as enabled by Java 8: `Optional<@Email String> email` or `Property<@Min(1) Integer> value`; in this case, e.g. the `Integer` wrapped by the property must be extracted so the `@Min` constraint can be applied
+
+Both cases can also overlap: `List<@RetailOrder @Valid> retailOrders`.
+
+Type-level constraints and pluggable extractors will also make cascaded validation more flexible. As of BV 1.1, there was a fixed set of data types supported by cascaded validation mandated by the spec (`Iterable`, arrays, `Map` (only the values would be validated)). This excludes use cases such as custom collection types (e.g. Guava's multi-map), validation of map keys or collection types of other JVM languages (such as Ceylon's collection framework).
+
+Allowing to put `@Valid` on type parameters allows to express the subject of cascaded validation more specifically: `Map<@Valid AddressType, @Valid Address> addresses` would describe that both, map keys and values, should be validated.
+
+=== Requirements
+
+1. Constraints can be applied to type parameters (of bean properties, but also method parameters etc.): `Property<@Min(1) Integer> value`
+1. Individual type parameters can be marked for cascaded validation: `Map<@Valid AddressType, Address> addresses`
+1. How values are retrieved must be customizable by means of a value extractor SPI, with a set of defined default extractors
+1. Sometimes constraints should apply to a value wrapped by a container type, but there is no type parameter to put the constraints to. JavaFX's `Property` hierarchy is the most prominent example: `@Email StringProperty emailProperty`. In such case the value should be implicitly extracted from the container if unambiguously doable.
+1. OPEN: Support for validation of nested collections: `List<Map<String, @NotNull String>> addressesByType`.
+1. Allow to configure type-level constraints and cascades via XML mappings
+1. Expose meta-data on type-level constraints and cascades in the constraint metadata API
+
+=== Non-requirements
+
+1. Constraints on type uses in local variables, invocations etc: `@NotNull String name = "Emmanuel";`, `new @NonEmpty @Readonly List<String>(myNonEmptyStringSet)`
+1. constraints on type uses in type definitions:
+
+[source,java]
+----
+class CustList extends List<@NotNull Customer> {
+}
+----
+
+=== Solution
+
+Value retrieval for cascaded validation and validation of type-level constraints is done via the `ValueExtractor` SPI:
+
+[source,java]
+----
+package javax.validation.valueretrieval;
+
+public interface ValueExtractor<T> {
+
+	void extractValues(T originalValue, ValueReceiver receiver);
+
+	interface ValueReceiver {
+
+		void value(Object object, String nodeName);
+
+		void iterableValue(Object object, String nodeName);
+
+		void indexedValue(Object object, String nodeName, int i);
+
+		void keyedValue(Object object, String nodeName, Object key);
+	}
+}
+----
+
+An extractor is tied to one specific type parameter of the type from which it extracts values. The `ExtractedValue` annotation is used to mark that type parameter. 
+
+As an example, this is how the implementation of the list extractor may look like:
+
+[source,java]
+----
+class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
+
+	@Override
+	public void extractValues(List<?> originalValue, ValueReceiver receiver) {
+		int i = 0;
+		for ( Object object : originalValue ) {
+			receiver.indexedValue( object, "<collection element>", i );
+			i++;
+		}
+	}
+}
+----
+
+The right callback methods (`indexedValue`, `keyedValue` etc.) must be called in order to allow for proper construction of the property path as per the rules layed out in the BV 1.1 spec.
+
+If a non-null value is passed for `nodeName`, a path node of type `TYPE_PARAMETER` will be appended to the property path. That's desirable for collection types for instance. If null is passed, no node will be appended, resulting in the same path as if the constraint had been given on the element itself instead of a type parameter. That's desirable for pure "wrapper types" such as `Optional`.
+
+In some cases, an extractor applies to the entire extracted type itself (e.g. for arrays). In this case the `@ExtractedValue` annotation is to be given on the extracted type itself:
+
+[source,java]
+----
+class ObjectArrayValueExtractor implements ValueExtractor<@ExtractedValue Object[]> {
+
+	@Override
+	public void extractValues(Object[] originalValue, ValueReceiver receiver) {
+		int i = 0;
+		for ( Object object : originalValue ) {
+			receiver.indexedValue( object, "<collection element>", i );
+			i++;
+		}
+	}
+}
+----
+
+[NOTE]
+.Motivation for callback-style API
+====
+Instead of returning the extracted values from the method call, implementations of `ValueExtractor` pass the extracted values to the given receiver callback. This helps to avoid object allocations and allows to handle the case of a single extracted value (`Optional<T`) and multiple extracted values (`List<T>`) in a uniform fashion.
+====
+
+==== Default extractors
+
+Compatible implementations provide extractors for the following types out of the box:
+
+* arrays of objects and all primitive data types
+* `java.util.Iterable` (when `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatability with BV 1.1; when `@Valid` is given on the type parameter of an iterable element, all the entries will be validated). A node of type `TYPE_PARAMETER` and with the name "<collection element>" will be added to the path when validating a type parameter constraint.
+* `java.util.Map` (when `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatability with BV 1.1; when `@Valid` is given on the key type parameter, only the keys will be validated; when `@Valid` is given on the value type parameter, only the value will be validated. A node of type `TYPE_PARAMETER` and with the name "<map value>" will be added to the path when validating a type parameter constraint on the map value. A node of type `TYPE_PARAMETER` and with the name "<map key>" will be added to the path when validating a type parameter constraint on the map key.
+TODO: format of key representations
+* `java.util.Optional`. No node will be appended to the path when validating type-level constraints on `Optional`. Constraints given on an element of type `Optional` apply to the wrapped value by default (see below).
+* `javafx.beans.observable.ObservableValue`. No node will be appended to the path when validating type-level constraints on `ObservableValue`. Constraints given on an element of type `ObservableValue` apply to the wrapped value by default (see below).
+
+==== Plugging in custom extractors
+
+Additional value extractors can be registered with the Bean Validation provider in the following ways:
+
+* Invoke the new method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it on the validation factory level)
+* Invoke the new method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
+* Specify the FQN of one or several extractors in `META-INF/validation.xml`: 
+
+[source,xml]
+----
+<value-extractors>
+    <value-extractor>com.example.MyExtractor</value-extractor>
+</value-extractors>
+----
+
+==== Retrieval of extractors
+
+When detecting a type-level constraint or cascade, the applicable extractor is determined as follows:
+
+* Chose the most specific extractor matching the type parameter in question; an extractor A is more specific than another extractor B if A extracts a subtype of the type extracted by B.
+* If there are several extractors which are equally specific, a `UnexpectedTypeException` is raised. TODO: apply rules similar to "ConstraintValidator resolution algorithm".
+* When obtaining the extractor for type-parameter constraint validation, the declared type of the validated element is used. This is to be consistent with constraint validator resolution, which is based on the static type of elements, not the runtime type.
+* When obtaining the extractor for cascaded validation, the runtime type of the cascasded element is used. This is to be consistent with the rules defined for property path construction which are based on the runtime type.
+
+[NOTE]
+.Implementation note
+====
+As extractor retrieval for type-parameter constraints is done using the static type of constrained elements, the retrieval can be done once at initialization time and then be cached. This is not possible for retrieval of extractors for cascaded validation.
+====
+
+==== Applying element-level constraints to wrapper elements
+
+Sometimes there is no type-parameter to put a constraint to, but still constraints should be applied to the wrapped value instead of the annotated element. JavaFX's property hierachy falls into that category, as it defines specific `Property` sub-types which are not generic:
+
+[source,java]
+----
+@Email StringProperty emailProperty;
+----
+
+The `ConstraintAppliesTo` annotation can be used to control the target of validation in such cases:
+
+[source,java]
+----
+@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface ConstraintsApplyTo {
+    ValidationTarget value();
+}
+----
+
+[source,java]
+----
+public enum ValidationTarget {
+    ANNOTATED_ELEMENT,
+    WRAPPED_VALUE;
+}
+----
+
+Value extractor definitions can be marked with `ConstraintsApplyTo` so that constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor:
+
+[source,java]
+----
+@ConstraintsApplyTo(WRAPPED_VALUE)
+class PropertyExtractor implements ValueExtractor<Property<@ExtractedValue>> {
+
+	@Override
+	public void extractValues(Property[] originalValue, ValueReceiver receiver) {
+		// ...
+	}
+}
+----
+
+If this extractor was the single most-specific extractor for `StringProperty`, the `@Email` constraint above would automatically be applied to the wrapped string value.
+
+In rare cases it may happen that a constraint should be applied to the wrapped value although an extractor exists. In this case the `ConstraintsApplyTo` annotation can be given on the element itself to prevent the unwrapping:
+
+[source,java]
+----
+@ConstraintsApplyTo(ANNOTATED_ELEMENT)
+@NotNull StringProperty emailProperty;
+----
+
+[NOTE]
+.Limitations
+====
+When looking for an extractor in this case, only the extracted types can be considered (e.g. `Map`), but not the extracted type parameters (e.g. Map's `K` or `V` parameters). If there are multiple extractors for the same most specific type (e.g. the `Map` key and value extractors), no extractor can be chosen and an exception will be raised. I.e. automatic unwrapping is only supported for cases where the super-type in question has a single type-parameter.
+====
+
+==== Examples
+
+* Applying a constraint to the value wrapped by a container type:
+
+[source,java]
+----
+Property<@Min(1) Integer> value;
+----
+
+Note that `@Valid` is not required; the `@Min` constraint will be validated when the `value` property is subject to validation.
+
+* Applying a constraint to each value in a collection type:
+
+[source,java]
+----
+List<@NotNull @Email String> emails;
+----
+
+* Cascaded validation of the values in a collection type:
+
+[source,java]
+----
+List<@Valid Order> orders;
+----
+
+* The legacy style for cascaded validation is supported as well:
+
+[source,java]
+----
+@Valid List<Order> orders;
+----
+
+This would also validate any constraints on a custom list type (e.g. `MyList#getId()`). TODO: we never clarified that in 1.1. Should it be made explicite?
+
+* Map validation with type-level constraints and cascading:
+
+[source,java]
+----
+@Valid
+Map<@RegExp(...) String, @RetailOrder Order> orders;
+----
+
+This would validate the map's key's against `@RegExp`, the map's values against `@RetailOrder` and apply cascaded validation of the map (values).
+
+* When selecting extractors, type parameters must be throroughly traced in the hierarchy. Consider this case where the order of the type parameters of `Map` is swapped in a sub-type:
+
+[source,java]
+----
+public class CrazyMap<K, V> implements Map<V, K> { ... }
+----
+
+[source,java]
+----
+public class Example {
+    private CrazyMap<@RegExp(...) String, @Min(0) Long> crazyMap = ...;
+}
+----
+
+Assuming there is no dedicated extractor for `CrazyMap` but only the default ones for `K` and `V` of `Map`, extraction for `@RegExp` must happen via the default map value extractor and extraction for `@Min` via the default map key extractor.
+
+A type-parameter in a sub-type may also map to several type-parameters in a super-type:
+
+[source,java]
+----
+interface NumericMap<T extends Number> extends Map<T, T> {}
+----
+private NumericMap<@Min(1) Integer> integerMap;
+
+The `@Min` constraint is to be applied to the map' keys and values as the annotated type parameter maps to `K` and `V` of `Map`.
+
+* Type-level constraints can be applied to the elements of `Object` arrays and arrays of any primitive type:
+
+[source,java]
+----
+String @Email[] emails;
+----
+
+[source,java]
+----
+int @Min(1) [] positiveNumbers;
+----
+
+* The extractor for cascaded validation is determined based on an element's runtime type:
+
+[source,java]
+----
+Collection<@Valid Order> orders = new ArrayList<>();
+----
+
+Here the most-specific extractor for the runtime type `ArrayList` must be applied, causing the property nodes of violations to have an index set (`Node#getIndex()`).
+
+* The container value passed to a value extractor is retrieved from the element annotated with the constraint or `@Valid`:
+
+[source,java]
+----
+private Map<String, @Valid @RetailOrder Order> ordersByName;
+
+public get Map<@NotNull String, Order> getOrdersByName() {
+    return ordersByName;
+}
+----
+
+When validating the `@NotNull` constraint, the map as returned by the getter will be passed to the map key extractor in order to obtain the map keys. When validating the `@RetailOrder` constraint and performing cascaded validation, the map as obtained directly from the field will be passed to the map value extractor in order to obtain the map values.
+
+* Custom extractor for a `Tuple` type:
+
+[source,java]
+----
+public interface Tuple<T1, T2> {
+    T1 getFirst();
+    T2 getSecond();
+}
+----
+
+[source,java]
+----
+public class TupleFirstExtractor implements ValueExtractor<Tuple<@ExtractedValue ?, ?>> {
+
+	@Override
+	public void extractValues(Tuple<?, ?> originalValue, ValueReceiver receiver) {
+		receiver.value( originalValue.getFirst(), "<first>" );
+		}
+	}
+}
+----
+
+[source,java]
+----
+public class TupleSecondExtractor implements ValueExtractor<Tuple<?, @ExtractedValue ?>> {
+
+	@Override
+	public void extractValues(Tuple<?, ?> originalValue, ValueReceiver receiver) {
+		receiver.value( originalValue.getSecond(), "<second>" );
+		}
+	}
+}
+----
+
+[source,java]
+----
+private Tuple<@NotNull @Email String, @NotNull @Min(1) Integer> tuple;
+----
+
+==== Invalid examples
+
+* Extractor types must declare exactly one parameter as the extracted value. Hence this extractor type is invalid:
+
+[source,java]
+----
+public class DoubleExtractor implements ValueExtractor<Multimap<@ExtractedValue ?, @ExtractedValue ?>> { ... }
+----
+
+==== XML based configuration
+
+TODO
+
+==== Meta-data retrieval
+
+TODO
+
+==== Misc.
+
+* Regarding group sequences and default group sequences, the same rules apply for type-level constraints as they apply for regular element-level constraints.
+
+=== Open questions
+
+* `ConstraintsApplyTo` only allows one behavior per annotated element. Should it be per constraint? E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@NotNull` to the wrapper but `@Email` to the wrapped value. That's not possible currently.
+* Should type-level constraints be validated when the container is null?
+* What to return from `PropertyDescriptor#getElementClass()` if there is a field of type `Foo` but a getter of type `Optional<Foo>`. So far, BV assumed the types of field and getter to be the same and exposed a single property descriptor (which btw. also may fall apart as of BV 1.1 when the field is of a sub-type of the getter's type). What to return here?
+* Should the presence of type-level constraints alone trigger cascaded validation? It doesn't seem right, but it may be useful when e.g. considering the case of `Tuple` above.
