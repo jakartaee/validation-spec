@@ -312,10 +312,18 @@ List<String> emails;
 
 When detecting a type argument constraint or cascade, the applicable extractor is determined as follows:
 
-* Choose the most specific extractor matching the type parameter in question;
-an extractor A is more specific than another extractor B if A extracts a subtype of the type extracted by B.
-* If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
-TODO: apply rules similar to "ConstraintValidator resolution algorithm".
+* Select all those value extractors which handle a type parameter that maps to the type argument annotated with the constraint or `@Valid` annotation;
+Example:
+** Given `List<@Email String> emails` and considering the default extractors listed above, only the extractors for `List` and `Iterable` are selected.
+The former handles the type parameter `T` of type `List`, which directly maps to the type argument annotated with `@Email`.
+The latter handles the type parameter `E` of type `Iterable` which (indirectly) maps to the annotated type argument (as `List` extends `Iterable` and binds its type parameter `T` to `E` from `Iterable`).
+Other extractors such as the ones for `K` and `V` of `Map` are dismissed, as they handle type parameters not mapping to the annotated type argument
+* From the remaining candidate value extractors chose the one which is most specific to the container type declaring the annoted type argument.
+An extractor A is more specific than another extractor B if A extracts a subtype of the type extracted by B.
+Example:
+** From the two extractors above, the one for `List` is chosen as `List` is a subtype of `Iterable`.
+* If there are several extractors which are equally specific (e.g. several extractors for `List`), an `UnexpectedTypeException` is raised.
+TODO: apply rules similar to "ConstraintValidator resolution algorithm" and further clarify wording
 * When obtaining the extractor for type parameter constraint validation, the declared type of the validated element is used.
 This is to be consistent with constraint validator resolution, which is based on the static type of elements, not the runtime type.
 * When obtaining the extractor for cascaded validation, the runtime type of the cascasded element is used.
@@ -450,7 +458,7 @@ Collection<@Valid Order> orders = new ArrayList<>();
 
 Here the most-specific extractor for the runtime type `ArrayList` must be applied, causing the property nodes of violations to have an index set (`Node#getIndex()`).
 
-* The container value passed to a value extractor is retrieved from the element annotated with the constraint or `@Valid`:
+* The container value passed to a value extractor is retrieved from the element that has the type argument carrying the constraint or `@Valid` annotation:
 
 [source,java]
 ----
@@ -641,6 +649,7 @@ So far, BV assumed the types of field and getter to be the same and exposed a si
 What to return here?
 * Should the presence of type argument constraints alone trigger cascaded validation?
 It doesn't seem right, but it may be useful when e.g. considering the case of `Tuple` above.
+* For an element with a type argument, should it be allowed to specify constraints on the element (and use `@ConstraintsApplyTo(WRAPPED_ELEMENT)`) or should it be disallowed: `@Email @ConstraintsApplyTo(WRAPPED_ELEMENT) Optional<String>`
 * Should we allow extractors to be defined for specific parameterizations of generic types, e.g.
 
 [source,java]
