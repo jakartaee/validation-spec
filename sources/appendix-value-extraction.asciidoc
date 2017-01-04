@@ -231,47 +231,6 @@ Additional value extractors can be registered with the Bean Validation provider 
 </value-extractors>
 ----
 
-==== Retrieval of extractors
-When detecting a type argument constraint or cascade, the applicable extractor is determined as follows:
-
-* Choose the most specific extractor matching the type parameter in question;
-an extractor A is more specific than another extractor B if A extracts a subtype of the type extracted by B.
-* If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
-TODO: apply rules similar to "ConstraintValidator resolution algorithm".
-* When obtaining the extractor for type parameter constraint validation, the declared type of the validated element is used.
-This is to be consistent with constraint validator resolution, which is based on the static type of elements, not the runtime type.
-* When obtaining the extractor for cascaded validation, the runtime type of the cascasded element is used.
-This is to be consistent with the rules defined for property path construction which are based on the runtime type.
-
-When detecting a regular element-level constraint (i.e. non type argument constraint) the applicable value extractor, if any, is determined as follows:
-
-1. If `@ConstraintsApplyTo(ANNOTATED_ELEMENT)` is given, don't apply any value extractor
-
-1. Determine the set of uniquely mapping type parameters declared by the types in the element types type hiearchy; Examples:
-** element of type `java.lang.String`: () (empty set)
-** element of type `java.lang.Iterable`: (T)
-** element of type `java.lang.Map`: (K, V)
-** element of type `java.util.Collection`: (E) (as the type parameter `E` of `Collection` maps to `T` of `Iterable`, only the type parameter of the subtype is considered)
-** `interface A<T> {}`, `interface B<U> {}`, `class C implements A<String>, B<Integer> {}`; element of type `C`: (T, U) (two non mapping type parameters)
-
-1. If `@ConstraintsApplyTo(WRAPPED_VALUE)` is given:
-** If no type parameter or more than one type parameter was found in step 2, raise an exception
-** Choose the most specific extractor matching the single type parameter found in step 2
-** If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
-
-1. If `@ConstraintsApplyTo` is not given:
-** If no type parameter or more than one type parameter was found in step 2, don't apply any value extractor
-** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `@ConstraintsApplyTo(WRAPPED_VALUE)`
-** If there are multiple such extractors, an `UnexpectedTypeException` is raised.
-
-[NOTE]
-.Implementation note
-====
-As extractor retrieval for type parameter constraints is done using the static type of constrained elements,
-the retrieval can be done once at initialization time and then be cached.
-This is not possible for retrieval of extractors for cascaded validation.
-====
-
 [[appendixvalueextraction-wrappedelements]]
 ==== Applying element-level constraints to wrapped elements
 
@@ -347,6 +306,48 @@ over
 @ConstraintsApplyTo(WRAPPED_VALUE)
 List<String> emails;
 ----
+====
+
+==== Retrieval of extractors
+
+When detecting a type argument constraint or cascade, the applicable extractor is determined as follows:
+
+* Choose the most specific extractor matching the type parameter in question;
+an extractor A is more specific than another extractor B if A extracts a subtype of the type extracted by B.
+* If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
+TODO: apply rules similar to "ConstraintValidator resolution algorithm".
+* When obtaining the extractor for type parameter constraint validation, the declared type of the validated element is used.
+This is to be consistent with constraint validator resolution, which is based on the static type of elements, not the runtime type.
+* When obtaining the extractor for cascaded validation, the runtime type of the cascasded element is used.
+This is to be consistent with the rules defined for property path construction which are based on the runtime type.
+
+When detecting a regular element-level constraint (i.e. non type argument constraint) the applicable value extractor, if any, is determined as follows:
+
+1. If `@ConstraintsApplyTo(ANNOTATED_ELEMENT)` is given, don't apply any value extractor
+
+1. Determine the set of uniquely mapping type parameters declared by the types in the element types type hiearchy; Examples:
+** element of type `java.lang.String`: () (empty set)
+** element of type `java.lang.Iterable`: (T)
+** element of type `java.lang.Map`: (K, V)
+** element of type `java.util.Collection`: (E) (as the type parameter `E` of `Collection` maps to `T` of `Iterable`, only the type parameter of the subtype is considered)
+** `interface A<T> {}`, `interface B<U> {}`, `class C implements A<String>, B<Integer> {}`; element of type `C`: (T, U) (two non mapping type parameters)
+
+1. If `@ConstraintsApplyTo(WRAPPED_VALUE)` is given:
+** If no type parameter or more than one type parameter was found in step 2, raise an exception
+** Choose the most specific extractor matching the single type parameter found in step 2
+** If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
+
+1. If `@ConstraintsApplyTo` is not given:
+** If no type parameter or more than one type parameter was found in step 2, don't apply any value extractor
+** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `@ConstraintsApplyTo(WRAPPED_VALUE)`
+** If there are multiple such extractors, an `UnexpectedTypeException` is raised.
+
+[NOTE]
+.Implementation note
+====
+As extractor retrieval for type parameter constraints is done using the static type of constrained elements,
+the retrieval can be done once at initialization time and then be cached.
+This is not possible for retrieval of extractors for cascaded validation.
 ====
 
 ==== Examples
