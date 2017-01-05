@@ -667,6 +667,10 @@ E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@N
 __This proposal suggests to not do it, but Emmanuel is not convinced of this__.
 
 1. Should value extractors be discoverable via the service loader mechanism (i.e. by means of `META-INF/services/javax.validation.valueextraction.ValueExtractor` files)
++
+__Pro: It'd allow 3rd party libs such as Google Guava to provide custom extractors for their container types and have them automatically be applied without any effort for the user__.
++
+__Cons: Need a way to disable or override some extractors with others. Which might make it a nogo__.
 
 1. What to return from `PropertyDescriptor#getElementClass()` if there is a field of type `Foo` but a getter of type `Optional<Foo>`.
 So far, BV assumed the types of field and getter to be the same and exposed a single property descriptor
@@ -675,7 +679,14 @@ What to return here?
 
 1. Should the presence of type argument constraints alone trigger cascaded validation?
 +
-__It doesn't seem right, but it may be useful when e.g. considering the case of `Tuple` above__.
+E.g. consider the case of `Tuple` above:
++
+[source,java]
+----
+Tuple<@Min(1) Integer, @Email String> tuple;
+----
++
+__Here it may be nice to validate e.g. `@NotNull` constraints given within the `Tuple` class itself when validating the type argument constraints. With the current proposal their validation requires a separate `@Valid` on the element. Personally I think that's better (more consistent)__. 
 
 1. For an element with a type argument, should it be allowed to specify constraints on the element (and use `@ConstraintsApplyTo(WRAPPED_ELEMENT)`) or should it be disallowed?
 +
@@ -683,9 +694,8 @@ __It doesn't seem right, but it may be useful when e.g. considering the case of 
 ----
 @Email @ConstraintsApplyTo(WRAPPED_ELEMENT) Optional<String> email;
 ----
-+
 
-1. Should we allow extractors to be defined for specific parameterizations of generic types, e.g.
+1. Should we allow extractors to be defined for specific parameterized types, e.g.:
 +
 [source,java]
 ----
@@ -693,6 +703,8 @@ public class ListOfIntegerExtractor implements ValueExtractor<List<@ExtractedVal
 
 public class ListOfStringExtractor implements ValueExtractor<List<@ExtractedValue String>> { ... }
 ----
++
+Currently, only one extractor (for type `List<?>` is allowed).
 +
 __I can't see a compelling use case for this (when would extractor behavior differ between different parameterizations of the same generic type) and am leaning towards only supporting the wildcard parameterization (`implements ValueExtractor<List<@ExtractedValue ?>>`)__.
 +
