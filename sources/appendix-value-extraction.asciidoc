@@ -198,13 +198,13 @@ Both will cause the validation of all the array elements
 *** kind: `TYPE_ARGUMENT`
 *** isInIterable: `true`
 *** index: `null`
-*** key: "(" + key + ")"; TODO: re-consider
+*** key: key
 ** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map value>"
 *** kind: `TYPE_ARGUMENT`
 *** isInIterable: `true`
 *** index: `null`
-*** key: key; TODO: re-consider
+*** key: key
 * `java.util.Optional`
 ** No node will be appended to the path when validating type argument constraints on `Optional`
 * `javafx.beans.observable.ObservableValue`
@@ -790,3 +790,17 @@ assertThat( path.hasNext() ).isFalse();
 ----
 
 1. In the original proposal it was foreseen that `@ExtractedValue` could refer to type-parameters from super-types. Is that still needed?
+
+1. During cascaded validation of an element with several type arguments, it's currently not possible to tell from the resulting constraint violation and its node path which type argument was cascaded.
+Example:
++
+[source,java]
+----
+Map<@Valid OrderType, @Valid Order> ordersByType;
+----
++
+If there was constraint violation on an `OrderType` property and one on an `Order` property, one couldn't tell from the resulting paths and their nodes which is which.
++
+__One way out could be to add `Node#getTypeParameter()`. This would return the type parameter handled by the extractor used for obtaining the cascaded value__.
+__`Node#getTypeParameter()` would also return the type parameter for type argument constraints__.
+__Note it must be `getTypeParameter()` (not `getTypeArgument()`) because one annotated type argument at the constrained/cascaded element could represent multiple type parameters (see example "A type parameter in a sub-type may also map to several type parameters in a super-type" above).__
