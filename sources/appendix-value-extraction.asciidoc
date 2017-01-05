@@ -634,31 +634,51 @@ private List<@Valid @ConvertGroup(from=Default.class, to=Other.class) Order> ord
 
 === Open questions
 
-* 1. Should nested containers be supported: `List<Map<String, @NotNull String>> addressesByType`?
+1. Should nested containers be supported: `List<Map<String, @NotNull String>> addressesByType`?
 Or `Optional<List<@Email>> optionalEmails`;
 The latter seems very reasonable.
-* `ConstraintsApplyTo` only allows one behavior per annotated element. Should it be per constraint?
-E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@NotNull` to the wrapper but `@Email` to the wrapped value. That's not possible currently.
-* Should `ConstraintsApplyTo` also be used for tagging extractors triggering "auto-extraction". Maybe a separate annotation would be less confusing, e.g. `@AutoExtract` or so?
-* Should a path node be added for type argument constraints of `Optional` and similar types?
-This proposal suggests to not do it, but Emmanuel is not convinced of this.
-* Should type argument constraints be validated when the container is null?
-* Should value extractors be discoverable via the service loader mechanism (i.e. by means of `META-INF/services/javax.validation.valueextraction.ValueExtractor` files)
-* What to return from `PropertyDescriptor#getElementClass()` if there is a field of type `Foo` but a getter of type `Optional<Foo>`.
-So far, BV assumed the types of field and getter to be the same and exposed a single property descriptor (which btw. also may fall apart as of BV 1.1 when the field is of a sub-type of the getter's type).
-What to return here?
-* Should the presence of type argument constraints alone trigger cascaded validation?
-It doesn't seem right, but it may be useful when e.g. considering the case of `Tuple` above.
-* For an element with a type argument, should it be allowed to specify constraints on the element (and use `@ConstraintsApplyTo(WRAPPED_ELEMENT)`) or should it be disallowed: `@Email @ConstraintsApplyTo(WRAPPED_ELEMENT) Optional<String>`
-* Should we allow extractors to be defined for specific parameterizations of generic types, e.g.
 
+1. `ConstraintsApplyTo` only allows one behavior per annotated element. Should it be per constraint?
+E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@NotNull` to the wrapper but `@Email` to the wrapped value. That's not possible currently.
+
+1. Should `ConstraintsApplyTo` also be used for tagging extractors triggering "auto-extraction". Maybe a separate annotation would be less confusing, e.g. `@AutoExtract` or so?
+
+1. Should a path node be added for type argument constraints of `Optional` and similar types?
++
+__This proposal suggests to not do it, but Emmanuel is not convinced of this__.
+
+1. Should value extractors be discoverable via the service loader mechanism (i.e. by means of `META-INF/services/javax.validation.valueextraction.ValueExtractor` files)
+
+1. What to return from `PropertyDescriptor#getElementClass()` if there is a field of type `Foo` but a getter of type `Optional<Foo>`.
+So far, BV assumed the types of field and getter to be the same and exposed a single property descriptor
+(which btw. also may fall apart as of BV 1.1 when the field is of a sub-type of the getter's type).
+What to return here?
+
+1. Should the presence of type argument constraints alone trigger cascaded validation?
++
+__It doesn't seem right, but it may be useful when e.g. considering the case of `Tuple` above__.
+
+1. For an element with a type argument, should it be allowed to specify constraints on the element (and use `@ConstraintsApplyTo(WRAPPED_ELEMENT)`) or should it be disallowed?
++
+[source,java]
+----
+@Email @ConstraintsApplyTo(WRAPPED_ELEMENT) Optional<String> email;
+----
++
+
+1. Should we allow extractors to be defined for specific parameterizations of generic types, e.g.
++
 [source,java]
 ----
 public class ListOfIntegerExtractor implements ValueExtractor<List<@ExtractedValue Integer>> { ... }
 
 public class ListOfStringExtractor implements ValueExtractor<List<@ExtractedValue String>> { ... }
 ----
-
-I can't see a compelling use case for this (when would extractor behavior differ between different parameterizations of the same generic type) and am leaning towards only supporting the wildcard parameterization (`implements ValueExtractor<List<@ExtractedValue ?>>`).
-
-* Vet the API by exploring advanced use cases, e.g. Guava's https://github.com/google/guava/wiki/NewCollectionTypesExplained#table[Table], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Graph.html[Graph], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/ValueGraph.html[ValueGraph] and http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Network.html[Network] types
++
+__I can't see a compelling use case for this (when would extractor behavior differ between different parameterizations of the same generic type) and am leaning towards only supporting the wildcard parameterization (`implements ValueExtractor<List<@ExtractedValue ?>>`)__.
++
+1. Can we find another name than "type argument constraints"? While that suits for the most cases, it doesn't when applying constraints to the component type of an array: `String @NotBlank [] names`.
++
+__I think "type use" is the correct one in Java terminology. But would anyone get what a "type use constraint" is?__.
+1. Vet the API by exploring advanced use cases, e.g. Guava's https://github.com/google/guava/wiki/NewCollectionTypesExplained#table[Table], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Graph.html[Graph], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/ValueGraph.html[ValueGraph] and http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Network.html[Network] types
+1. In the original proposal it was foreseen that `@ExtractedValue` could refer to type-parameters from super-types. Is that still needed?
