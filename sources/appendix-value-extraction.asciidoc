@@ -711,5 +711,82 @@ __I can't see a compelling use case for this (when would extractor behavior diff
 1. Can we find another name than "type argument constraints"? While that suits for the most cases, it doesn't when applying constraints to the component type of an array: `String @NotBlank [] names`.
 +
 __I think "type use" is the correct one in Java terminology. But would anyone get what a "type use constraint" is?__.
-1. Vet the API by exploring advanced use cases, e.g. Guava's https://github.com/google/guava/wiki/NewCollectionTypesExplained#table[Table], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Graph.html[Graph], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/ValueGraph.html[ValueGraph] and http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Network.html[Network] types
+1. Vet the API by exploring advanced use cases, e.g. Guava's https://github.com/google/guava/wiki/NewCollectionTypesExplained#table[Table], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Graph.html[Graph], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/ValueGraph.html[ValueGraph] and http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Network.html[Network] types.
++
+Example for `Table`:
++
+[source,java]
+----
+class TableValueExtractor implements ValueExtractor<Table<?, ?, @ExtractedValue ?>> {
+
+	@Override
+	public void extractValues(Table<?, ?, ?> originalValue, ValueExtractor.ValueReceiver receiver) {
+
+		for ( Cell<?, ?, ?> cell : originalValue.cellSet() ) {
+			receiver.keyedValue(
+					cell.getValue(),
+					"<table cell>",
+					new CellKey( cell.getRowKey(), cell.getColumnKey() )
+			);
+		}
+	}
+}
+----
++
+[source,java]
+----
+public static class CellKey {
+
+	private final Object rowKey;
+	private final Object columnKey;
+
+	public CellKey(Object rowKey, Object columnKey) {
+		this.rowKey = rowKey;
+		this.columnKey = columnKey;
+	}
+
+	@Override
+	public String toString() {
+		return "(" + rowKey + "," + columnKey + ")";
+	}
+
+	// equals(), hashCode() ...
+}
+----
++
+When having an invalid table cell in the following and validating it:
++
+[source,java]
+----
+public class Customer {
+
+    Table<Year, String, @Min(1) Integer> revenuePerYearAndCategory = HashBasedTable.create();
+}
+----
++
+Then this will be the result:
++
+[source,java]
+----
+ConstraintViolation<Customer> violation = ...;
+
+assertThat( violation.getPropertyPath.toString() ).isEqualTo( "revenuePerYearAndCategory[(2015,cds)].<table cell>" );
+
+Iterator<Node> path = violation.getPropertyPath().iterator();
+
+Node node = path.next();
+assertThat( node.getName() ).isEqualTo( "revenuePerYearAndCategory" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isNull();
+assertThat( node.getIndex() ).isNull();
+
+node = path.next();
+assertThat( node.getName() ).isEqualTo( "<table cell>" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKey() ).isEqualTo( new CellKey(Year.of( 2015 ), "cds") );
+assertThat( node.getIndex() ).isNull();
+
+assertThat( path.hasNext() ).isFalse();
+----
+
 1. In the original proposal it was foreseen that `@ExtractedValue` could refer to type-parameters from super-types. Is that still needed?
