@@ -65,13 +65,13 @@ public interface ValueExtractor<T> {
 
 	interface ValueReceiver {
 
-		void value(Object object, String nodeName);
+		void value(String nodeName, Object object);
 
-		void iterableValue(Object object, String nodeName);
+		void iterableValue(String nodeName, Object object);
 
-		void indexedValue(Object object, String nodeName, int i);
+		void indexedValue(String nodeName, int i, Object object);
 
-		void keyedValue(Object object, String nodeName, Object key);
+		void keyedValue(String nodeName, Object key, Object object);
 	}
 }
 ----
@@ -86,14 +86,14 @@ class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
 
 	@Override
 	public void extractValues(List<?> originalValue, ValueReceiver receiver) {
-		for ( int i 0 = 0; i < originalValue.length; i++ ) {
-			receiver.indexedValue( originalValue.get( i ), "<iterable element>", i );
+		for ( int i = 0; i < originalValue.length; i++ ) {
+			receiver.indexedValue( "<iterable element>", i, originalValue.get( i ) );
 		}
 	}
 }
 ----
 
-The right callback methods (`indexedValue()`, `keyedValue()` etc.) must be called in order to allow for proper construction of the property path as per the rules layed out in the BV 1.1 spec.
+The right callback methods (`indexedValue()`, `keyedValue()` etc.) must be called in order to allow for proper construction of the property path as per the rules laid out in the BV 1.1 spec.
 
 If a non-null value is passed for `nodeName`, a path node of type `TYPE_ARGUMENT` will be appended to the property path.
 That's desirable for collection types for instance. If null is passed, no node will be appended,
@@ -154,7 +154,7 @@ class ObjectArrayValueExtractor implements ValueExtractor<@ExtractedValue Object
 	@Override
 	public void extractValues(Object[] originalValue, ValueReceiver receiver) {
 		for ( int i = 0; i < originalValue.length; i++ ) {
-			receiver.indexedValue( originalValue[i], "<iterable element>", i );
+			receiver.indexedValue( "<iterable element>", i, originalValue[i] );
 		}
 	}
 }
@@ -198,7 +198,7 @@ Both will cause the validation of all the array elements
 *** kind: `TYPE_ARGUMENT`
 *** isInIterable: `true`
 *** index: `null`
-*** key: "(" + key + ")"; TODO: re-consider
+*** key: "key(" + key + ")"; TODO: re-consider
 ** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map value>"
 *** kind: `TYPE_ARGUMENT`
@@ -237,7 +237,7 @@ Additional value extractors can be registered with the Bean Validation provider 
 
 Sometimes there is no type parameter to put a constraint to, but still constraints should be applied to the wrapped value instead of the annotated element
 (a field, property getter, method return value or executable parameter).
-JavaFX's property hierachy falls into that category, as it defines specific `Property` sub-types which are not generic:
+JavaFX's property hierarchy falls into that category, as it defines specific `Property` sub-types which are not generic:
 
 [source,java]
 ----
@@ -339,7 +339,7 @@ An extractor A is more specific than another extractor B if A extracts a subtype
 Example:
 ** When obtaining the extractor for type parameter constraint validation, the declared type of the validated element is considered.
 This is to be consistent with constraint validator resolution, which is based on the static type of elements, not the runtime type.
-** When obtaining the extractor for cascaded validation, the runtime type of the cascasded element is considered.
+** When obtaining the extractor for cascaded validation, the runtime type of the cascaded element is considered.
 This is to be consistent with the rules defined for property path construction which are based on the runtime type.
 ** From the two extractors above, the one for `List` is chosen as `List` is a subtype of `Iterable`.
 
@@ -422,7 +422,7 @@ Map<@RegExp(...) String, @RetailOrder Order> orders;
 +
 This would validate the map's keys against `@RegExp`, the map's values against `@RetailOrder` and apply cascaded validation of the map values (as well as the map object itself).
 
-* When selecting extractors, type parameters must be throroughly traced in the hierarchy.
+* When selecting extractors, type parameters must be thoroughly traced in the hierarchy.
 Consider this case where the order of the type parameters of `Map` is swapped in a sub-type:
 +
 [source,java]
@@ -506,7 +506,7 @@ public class TupleFirstExtractor implements ValueExtractor<Tuple<@ExtractedValue
 
 	@Override
 	public void extractValues(Tuple<?, ?> originalValue, ValueReceiver receiver) {
-		receiver.value( originalValue.getFirst(), "<first>" );
+		receiver.value( "<first>", originalValue.getFirst() );
 	}
 }
 ----
@@ -517,7 +517,7 @@ public class TupleSecondExtractor implements ValueExtractor<Tuple<?, @ExtractedV
 
 	@Override
 	public void extractValues(Tuple<?, ?> originalValue, ValueReceiver receiver) {
-		receiver.value( originalValue.getSecond(), "<second>" );
+		receiver.value( "<second>", originalValue.getSecond() );
 	}
 }
 ----
