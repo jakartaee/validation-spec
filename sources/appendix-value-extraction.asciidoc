@@ -801,6 +801,34 @@ Map<@Valid OrderType, @Valid Order> ordersByType;
 +
 If there was constraint violation on an `OrderType` property and one on an `Order` property, one couldn't tell from the resulting paths and their nodes which is which.
 +
-__One way out could be to add `Node#getTypeParameter()`. This would return the type parameter handled by the extractor used for obtaining the cascaded value__.
+__One way out could be to add `TypeVariable<?> Node#getTypeParameter()`__.
++
+__This would return the type parameter handled by the extractor used for obtaining the cascaded value__.
 __`Node#getTypeParameter()` would also return the type parameter for type argument constraints__.
 __Note it must be `getTypeParameter()` (not `getTypeArgument()`) because one annotated type argument at the constrained/cascaded element could represent multiple type parameters (see example "A type parameter in a sub-type may also map to several type parameters in a super-type" above).__
+__Assuming a constraint violation on property `description` of class `OrderType` we'd get__:
++
+[source,java]
+----
+ConstraintViolation<Customer> violation = ...;
+
+assertThat( violation.getPropertyPath.toString() ).isEqualTo( "ordersByType[RETAIL].description" );
+
+Iterator<Node> path = violation.getPropertyPath().iterator();
+
+Node node = path.next();
+assertThat( node.getName() ).isEqualTo( "ordersByType" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isNull();
+assertThat( node.getIndex() ).isNull();
+assertThat( node.getTypeParameter() ).isNull();
+
+node = path.next();
+assertThat( node.getName() ).isEqualTo( "description" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isEqualTo( new OrderType( "RETAIL" ) );
+assertThat( node.getIndex() ).isNull();
+assertThat( node.getTypeParameter().getName() ).isEqualTo( "K" );
+
+assertThat( path.hasNext() ).isFalse();
+----
