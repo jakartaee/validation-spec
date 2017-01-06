@@ -763,11 +763,6 @@ public static class CellKey {
 		this.columnKey = columnKey;
 	}
 
-	@Override
-	public String toString() {
-		return "(" + rowKey + "," + columnKey + ")";
-	}
-
 	// equals(), hashCode() ...
 }
 ----
@@ -787,8 +782,6 @@ Then this will be the result:
 [source,java]
 ----
 ConstraintViolation<Customer> violation = ...;
-
-assertThat( violation.getPropertyPath.toString() ).isEqualTo( "revenuePerYearAndCategory[(2015,cds)].<table cell>" );
 
 Iterator<Node> path = violation.getPropertyPath().iterator();
 
@@ -830,8 +823,6 @@ __Assuming a constraint violation on property `description` of class `OrderType`
 ----
 ConstraintViolation<Customer> violation = ...;
 
-assertThat( violation.getPropertyPath.toString() ).isEqualTo( "ordersByType[RETAIL].description" );
-
 Iterator<Node> path = violation.getPropertyPath().iterator();
 
 Node node = path.next();
@@ -862,8 +853,6 @@ Map<OrderType, @Min(1) Integer> orderQuantitiesByType;
 ----
 ConstraintViolation<Customer> violation = ...;
 
-assertThat( violation.getPropertyPath.toString() ).isEqualTo( "orderQuantitiesByType[RETAIL].<map value>" );
-
 Iterator<Node> path = violation.getPropertyPath().iterator();
 
 Node node = path.next();
@@ -882,3 +871,6 @@ assertThat( node.getTypeParameter().getName() ).isEqualTo( "V" );
 
 assertThat( path.hasNext() ).isFalse();
 ----
+
+1. Revisit the names of nodes of kind `TYPE_ARGUMENT`;
+instead of `<iterable element`, `<map value` etc. should it be the names of the type parameters in question, i.e. `<E>`, `<V` etc.?
