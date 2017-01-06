@@ -167,6 +167,24 @@ Instead of returning the extracted values from the method call, implementations 
 This helps to avoid object allocations and allows to handle the case of a single extracted value (`Optional<T>`) and multiple extracted values (`List<T>`) in a uniform fashion.
 ====
 
+==== Extensions to `Node`
+
+There is a new `javax.validation.ElementKind`, `TYPE_ARGUMENT`.
+There is also a new `Node` sub-type, `TypeArgumentNode`:
+
+[source,java]
+----
+interface TypeArgumentNode extends Node {
+
+    /**
+     * Returns type parameter affected by the violated constraint.
+     */
+    TypeVariable<?> getTypeParameter();
+}
+----
+
+`getTypeParameter()` also needs to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
+
 ==== Default extractors
 
 Compatible implementations provide extractors for the following types out of the box. They must invoke the right callback methods in order to ensure path nodes in the described form are appended:
