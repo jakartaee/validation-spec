@@ -702,7 +702,10 @@ The [classname]`ConstraintValidatorContext` object passed to the [methodname]`is
 include::{validation-api-source-dir}javax/validation/ConstraintValidatorContext.java[lines=11..-1]
 ----
 
-The [classname]`ConstraintValidatorContext` interface allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object. This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
+The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (`getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporal-validators>> ).
+
+It also allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object.
+This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
 
 [tck-testable]#The [classname]`ConstraintValidatorContext` methods let the constraint implementation disable the default [classname]`ConstraintViolation` generation and create one or more custom ones.# [tck-testable]#The non-interpolated message passed as a parameter is used to build the [classname]`ConstraintViolation` message (the message interpolation operation is applied to it).#
 
@@ -796,6 +799,25 @@ context.buildConstraintViolationWithTemplate(
 ====
 
 [tck-testable]#If [methodname]`disableDefaultConstraintViolation()` is called, no custom error is added (using the error builder) and if the constraint is not valid, a [classname]`ValidationException` is raised.#
+
+[[constraintsdefinitionimplementation-validationimplementation-temporal-validators]]
+
+==== Implementation of temporal constraint validators
+
+[tck-testable]#
+Constraint validators for temporal constraints (either the built-in constraints `@Past` and `@Future` or custom temporal constraints) can obtain the current instant from the `ClockProvider` object exposed by `ConstraintValidatorContext#getClockProvider()`.#
+
+[source, JAVA]
+----
+include::{validation-api-source-dir}javax/validation/ClockProvider.java[lines=11..-1]
+----
+
+[tck-testable]#The `getClock()` method returns a `java.time.Clock` object which represents the current instant, date and time using a time-zone.
+A conforming Bean validation implementation provides a default clock provider which returns a clock representing the current system time and default time zone.#
+It is recommended that implementations call `Clock#systemDefaultZone()` to obtain the clock.
+
+When bootstrapping a validator factory or validator, an alternative clock provider can be registered (see <<bootstrapping>>).
+This can be useful for testing, for applying the time zone of the currently logged in user in a multi-user, multi time zone application or for running batch applications with a logical date and time different from the actual current date and time.
 
 [[constraintsdefinitionimplementation-validationimplementation-example]]
 
@@ -963,6 +985,18 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator<Syntax, S
 ====
 
 The default error message is disabled and replaced by a specific error message depending on the type of constraint violation detected. In this case, only one error report is returned at a given time but a constraint validation implementation can return several error reports.
+
+The following example shows how to obtain the current date and time via the `ClockProvider` when validating a temporal constraint such as `@Past`:
+
+.Validation of a temporal constraint
+====
+
+[source, JAVA, indent=0]
+----
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/temporal/PastValidatorForZonedDateTime.java[tags=include]
+----
+
+====
 
 [[constraintsdefinitionimplementation-constraintfactory]]
 

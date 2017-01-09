@@ -2119,7 +2119,7 @@ factory.close();
 
 The second example shows how a container can customize some Bean Validator resource handling to match its own behavior.
 
-.Customize message resolution, traversable resolver, constraint Validator factory and parameter name provider implementation
+.Customize message resolution, traversable resolver, constraint Validator factory parameter name provider and clock provider implementation
 ====
 
 [source, JAVA]
@@ -2131,6 +2131,7 @@ ValidatorFactory factory = Validation
           .constraintValidatorFactory( new ContainerComponentConstraintValidatorFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
           .parameterNameProvider( new AnnotationBasedParameterNameProvider() )
+          .clockProvider( new BatchJobClockProvider() )
           .buildValidatorFactory();
 
 //cache the factory somewhere
@@ -2279,7 +2280,9 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [tck-testable]#[methodname]`getParameterNameProvider()` returns the [classname]`ParameterNameProvider` instance configured during the initialization of the [classname]`ValidatorFactory`.# It is particularly useful to build a [classname]`Validator` specific [classname]`ParameterNameProvider` wrapping the one from the [classname]`ValidatorFactory`.
 
-[classname]`ValidatorContext` returned by [methodname]`usingContext()` can be used to customize the state in which the [classname]`Validator` must be initialized. This is used to customize the [classname]`MessageInterpolator`, the [classname]`TraversableResolver`, [classname]`ParameterNameProvider` or the [classname]`ConstraintValidatorFactory`.
+[tck-testable]#[methodname]`getClockProvider()` returns the [classname]`ClockProvider` instance configured during the initialization of the [classname]`ValidatorFactory`.# It is particularly useful to build a [classname]`Validator` specific [classname]`ClockProvider` wrapping the one from the [classname]`ValidatorFactory`.
+
+[classname]`ValidatorContext` returned by [methodname]`usingContext()` can be used to customize the state in which the [classname]`Validator` must be initialized. This is used to customize the [classname]`MessageInterpolator`, the [classname]`TraversableResolver`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` or the [classname]`ConstraintValidatorFactory`.
 
 .ValidatorContext interface
 ====
@@ -2291,7 +2294,7 @@ include::{validation-api-source-dir}javax/validation/Configuration.java[lines=9.
 
 ====
 
-[tck-testable]#The `MessageInterpolator`, the `TraversableResolver`, the `ConstraintValidatorFactory` or the `ParameterNameProvider` passed to the `ValidatorContext` are used instead of the ``ValidatorFactory``'s `MessageInterpolator`, `TraversableResolver`, `ConstraintValidatorFactory` or `ParameterNameProvider` instances.#
+[tck-testable]#The `MessageInterpolator`, the `TraversableResolver`, the `ConstraintValidatorFactory`, the `ParameterNameProvider` or the `ClockProvider` passed to the `ValidatorContext` are used instead of the ``ValidatorFactory``'s `MessageInterpolator`, `TraversableResolver`, `ConstraintValidatorFactory`, `ParameterNameProvider` or `ClockProvider` instances.#
 
 .Use of ValidatorFactory
 ====
@@ -2318,6 +2321,7 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 * the traversable resolver instance
 * the constraint validator factory instance
 * the parameter name provider instance
+* the clock provider instance
 * XML constraint mappings
 * provider specific properties
 * whether or not [classname]`META-INF/validation.xml` is considered
@@ -2330,6 +2334,8 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 [tck-testable]#[classname]`Configuration` does provide a [classname]`ConstraintValidatorFactory` implementation following the default Bean Validation [classname]`ConstraintValidatorFactory` rules as defined in <<constraintsdefinitionimplementation-constraintfactory>>. You can access it by calling [methodname]`getDefaultConstraintValidatorFactory()`.# Such an implementation is useful to let a custom [classname]`ConstraintValidatorFactory` delegate to the standard [classname]`ConstraintValidatorFactory`.
 
 [tck-testable]#[classname]`Configuration` does provide a [classname]`ParameterNameProvider` implementation following the default Bean Validation [classname]`ParameterNameProvider` rules as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>. You can access it by calling [methodname]`getDefaultParameterNameProvider()`.# Such an implementation is useful to let a custom [classname]`ParameterNameProvider` delegate to the standard [classname]`ParameterNameProvider`.
+
+[tck-testable]#[classname]`Configuration` does provide a [classname]`ClockProvider` implementation following the default Bean Validation [classname]`ClockProvider` rules as defined in <<constraintsdefinitionimplementation-validationimplementation-temporal-validators>>. You can access it by calling [methodname]`getDefaultClockProvider()`.#
 
 [tck-testable]#Via [classname]`getBootstrapConfiguration()`, [classname]`Configuration` also exposes data stored in [classname]`META-INF/validation.xml`# (see <<xml-config>>). This is particularly useful for containers wishing to control the instance creation and lifecycle (more information at <<bootstrapping-usageandcontainerexpectation>>).
 
@@ -2970,6 +2976,8 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 [tck-testable]#`constraint-validator-factory`: represents the fully qualified class name of the [classname]`ConstraintValidatorFactory` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
 
 [tck-testable]#`parameter-name-provider`: represents the fully qualified class name of the [classname]`ParameterNameProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
+
+[tck-testable]#`clock-provider`: represents the fully qualified class name of the [classname]`ClockProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
 
 [tck-testable]#`executable-validation`: allows to disable executable validation entirely via its attribute [code]`enabled="false"` and optionally contains `default-validated-executable-types`. `enabled` defaults to `true`.#
 
