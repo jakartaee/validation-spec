@@ -1,25 +1,35 @@
 <project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
+	<property name="bv.version" value="2.0.0-SNAPSHOT" />
+	<property name="asciidoctor.version" value="1.5.3" />
+	<property name="maven-dependency-plugin.version" value="2.10" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
-	<property name="asciidoctor-version" value="1.5.3" />
+	<property name="validation-api.sourcedir" value="target/validation-api/src" />
+	<property name="spec-examples.sourcedir" value="spec-examples/src/test/java" />
+	<property name="validation-api.jardir" value="target/validation-api/jar" />
+	<property name="m2-repository.path" value="${user.home}/.m2/repository" />
+	<property name="maven-central.url" value="http://repo.maven.apache.org/maven2" />
+	<property name="maven-settings.path">settings-example.xml</property>
 
 	<!-- Needed for the quick preview only -->
 	<property name="browser" location="/usr/bin/google-chrome"/>
 
-
-	<target name="clean" description="Delete all generated documentation" depends="clean-htmloutput, clean-pdfoutput, clean-docbookoutput, java-build-dir-clean">
+	<target name="clean" description="Delete all generated documentation" depends="clean-html-output, clean-pdf-output, clean-docbook-output, clean-preprocessed-output, java-build-dir-clean">
 		<delete dir="target" />
 	</target>
-	<target name="clean-htmloutput">
+	<target name="clean-html-output">
 		<delete dir="target/html" />
 	</target>
-	<target name="clean-pdfoutput">
+	<target name="clean-pdf-output">
 		<delete dir="target/pdf" />
 	</target>
-	<target name="clean-docbookoutput">
+	<target name="clean-docbook-output">
 		<delete dir="target/docbook" />
 	</target>
+	<target name="clean-preprocessed-output">
+			<delete dir="target/preprocessed" />
+		</target>
 	<target name="java-build-dir-clean">
 		<delete dir="target/asciidocextensions" />
 	</target>
@@ -39,21 +49,65 @@
 	<target name="html-output-dir-exists">
 		<mkdir dir="target/html" />
 	</target>
+	<target name="preprocessed-output-dir-exists">
+		<mkdir dir="target/preprocessed" />
+	</target>
 	<target name="java-build-dir-exists">
 		<mkdir dir="target/asciidocextensions" />
 	</target>
+	<target name="validation-api-dir-exists">
+		<delete dir="${validation-api.jardir}/*.jar" />
+		<mkdir dir="${validation-api.jardir}" />
+		<delete dir="${validation-api.sourcedir}/javax/" />
+		<mkdir dir="${validation-api.sourcedir}" />
+	</target>
 
+	<!-- Check that a mvn command is available -->
+	<property environment="env" />
+	<available file="mvn" filepath="${env.PATH}" property="mvn-available" />
+	<target name="have-mvn" unless="${mvn-available}">
+		<fail message="You need a Maven installation in your path." />
+	</target>
+
+	<!-- we update the dependency every time we build as it might have changed on disk -->
+	<target name="detect-validation-api-in-m2">
+		<available file="${m2-repository.path}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
+	</target>
+	<target name="unzip-validation-api-from-repo" depends="validation-api-dir-exists, detect-validation-api-in-m2" unless="validation-api-in-m2">
+		<exec executable="mvn">
+			<arg value="-s" />
+			<arg value="${maven-settings.path}" />
+			<arg value="org.apache.maven.plugins:maven-dependency-plugin:${maven-dependency-plugin.version}:copy"/>
+			<arg value="-Dartifact=javax.validation:validation-api:${bv.version}:jar:sources" />
+			<arg value="-DoutputDirectory=${validation-api.jardir}" />
+			<arg value="-DoverWriteSnapshots=true" />
+		</exec>
+		<unzip dest="${validation-api.sourcedir}">
+			<fileset dir="${validation-api.jardir}">
+				<include name="validation-api-*-sources.jar" />
+			</fileset>
+		</unzip>
+	</target>
+	<target name="unzip-validation-api-from-m2" depends="validation-api-dir-exists, detect-validation-api-in-m2" if="validation-api-in-m2">
+		<unzip src="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
+	</target>
+	<target name="have-validation-api" depends="unzip-validation-api-from-repo,unzip-validation-api-from-m2">
+	</target>
+	
 	<target name="have-asciidoctor" depends="lib-dir-exists">
-		<get src="http://repo1.maven.org/maven2/org/asciidoctor/asciidoctor-ant/${asciidoctor-version}/asciidoctor-ant-${asciidoctor-version}.jar"
-			dest="lib/asciidoctor-ant-${asciidoctor-version}.jar"
+		<get src="${maven-central.url}/org/asciidoctor/asciidoctor-ant/${asciidoctor.version}/asciidoctor-ant-${asciidoctor.version}.jar"
+			dest="lib/asciidoctor-ant-${asciidoctor.version}.jar"
 			skipexisting="true"/>
+	</target>
+	
+	<target name="have-dependencies" depends="have-mvn, have-asciidoctor, have-validation-api">
 	</target>
 
 	<macrodef name="renderer">
 		<attribute name="outputdirectory" />
 		<attribute name="backend" />
 		<sequential>
-			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar:target/asciidocextensions"/>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar:target/asciidocextensions"/>
 			<asciidoctor:convert
 				sourceDocumentName="master.asciidoc"
 				sourceDirectory="sources"
@@ -63,20 +117,44 @@
 					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<attribute key="license" value="license" />
+					<attribute key="tabsize" value="4" />
+					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
+					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
 			</asciidoctor:convert>
 		</sequential>
 	</macrodef>
 
-	<target name="render-html" depends="clean-htmloutput, have-asciidoctor, html-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-html" depends="clean-html-output, have-dependencies, html-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/html" backend="html" />
 	</target>
 
-	<target name="render-docbook" depends="clean-docbookoutput, have-asciidoctor, docbook-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-docbook" depends="clean-docbook-output, have-dependencies, docbook-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/docbook" backend="docbook" />
 	</target>
 
-	<target name="render-pdf" depends="clean-pdfoutput, have-asciidoctor, pdf-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-pdf" depends="clean-pdf-output, have-dependencies, pdf-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/pdf" backend="pdf" />
+	</target>
+
+	<target name="generate-preprocessed" depends="have-dependencies, preprocessed-output-dir-exists, compile-asciidoc-extensions">
+		<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar:target/asciidocextensions"/>
+		<asciidoctor:convert
+			sourceDocumentName="master.asciidoc"
+			sourceDirectory="sources"
+			sourceHighlighter="coderay"
+			outputDirectory="target/preprocessed"
+			backend="html">
+				<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+				<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+				<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+				<preProcessor className="org.beanvalidation.asciidocextensions.SavePreprocessedOutputPreprocessor" />
+				<attribute key="license" value="license" />
+				<attribute key="tabsize" value="4" />
+				<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
+				<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
+		</asciidoctor:convert>
+		<delete file="target/preprocessed/master.html" />
 	</target>
 
 	<target name="all.doc" depends="render-html,render-pdf" description="Builds the specification documents in all formats" />
@@ -84,14 +162,14 @@
 	<target name="preview" depends="render-html" description="Build and opens the HTML version of the specification in your browser">
 		<property name="outputDirectory" location="target"/>
 		<exec executable="${browser}" spawn="true">
-			<arg value="${outputDirectory}/html/master.html"/>
+			<arg value="${outputDirectory}/html/index.html"/>
 		</exec>
 	</target>
 
 	<target name="compile-asciidoc-extensions" depends="java-build-dir-clean, java-build-dir-exists, have-asciidoctor">
 		<javac srcdir="asciidoc-extensions/src/main/java"
 			destdir="target/asciidocextensions"
-			classpath="lib/asciidoctor-ant-${asciidoctor-version}.jar"
+			classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar"
 			source="1.8"
 			target="1.8"
 			debug="true"
@@ -100,13 +178,13 @@
 
 	<!-- Creates the tck-audit.xml file; Run after updates to the spec and copy+commit to the beanvalidation-tck repository -->
 	<!-- Converts the spec to DocBook before as that's the input format for the audit file creation -->
-	<target name="createTckAuditFile" depends="render-docbook">
+	<target name="create-tck-audit-file" depends="render-docbook">
 		<tstamp>
 			<format property="NOW" pattern="yyyy-MM-dd HH:mm" locale="en"/>
 		</tstamp>
 
 		<xslt
-			in="${basedir}/target/docbook/master.xml"
+			in="${basedir}/target/docbook/index.xml"
 			out="target/tck-audit.xml"
 			force="true"
 			style="tck-audit.xsl">
