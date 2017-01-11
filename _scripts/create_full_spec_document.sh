@@ -13,6 +13,7 @@ fi
 branch="spec-full"
 fullSpecDir="preprocessed"
 workingDir="target/$fullSpecDir"
+remote="origin"
 
 echo "Deleting old worktree"
 rm -rf $workingDir
@@ -21,7 +22,7 @@ git worktree prune
 rm -rf .git/worktrees/$fullSpecDir
 
 echo "Checking out $branch branch into $workingDir"
-git worktree add -B $branch $workingDir upstream/$branch
+git worktree add -B $branch $workingDir $remote/$branch
 
 echo "Generating full spec document"
 ant generate-preprocessed
