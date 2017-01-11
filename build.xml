@@ -15,18 +15,21 @@
 	<!-- Needed for the quick preview only -->
 	<property name="browser" location="/usr/bin/google-chrome"/>
 
-	<target name="clean" description="Delete all generated documentation" depends="clean-htmloutput, clean-pdfoutput, clean-docbookoutput, java-build-dir-clean">
+	<target name="clean" description="Delete all generated documentation" depends="clean-html-output, clean-pdf-output, clean-docbook-output, clean-preprocessed-output, java-build-dir-clean">
 		<delete dir="target" />
 	</target>
-	<target name="clean-htmloutput">
+	<target name="clean-html-output">
 		<delete dir="target/html" />
 	</target>
-	<target name="clean-pdfoutput">
+	<target name="clean-pdf-output">
 		<delete dir="target/pdf" />
 	</target>
-	<target name="clean-docbookoutput">
+	<target name="clean-docbook-output">
 		<delete dir="target/docbook" />
 	</target>
+	<target name="clean-preprocessed-output">
+			<delete dir="target/preprocessed" />
+		</target>
 	<target name="java-build-dir-clean">
 		<delete dir="target/asciidocextensions" />
 	</target>
@@ -45,6 +48,9 @@
 	</target>
 	<target name="html-output-dir-exists">
 		<mkdir dir="target/html" />
+	</target>
+	<target name="preprocessed-output-dir-exists">
+		<mkdir dir="target/preprocessed" />
 	</target>
 	<target name="java-build-dir-exists">
 		<mkdir dir="target/asciidocextensions" />
@@ -111,6 +117,7 @@
 					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<attribute key="license" value="license" />
 					<attribute key="tabsize" value="4" />
 					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
 					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
@@ -118,16 +125,36 @@
 		</sequential>
 	</macrodef>
 
-	<target name="render-html" depends="clean-htmloutput, have-dependencies, html-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-html" depends="clean-html-output, have-dependencies, html-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/html" backend="html" />
 	</target>
 
-	<target name="render-docbook" depends="clean-docbookoutput, have-dependencies, docbook-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-docbook" depends="clean-docbook-output, have-dependencies, docbook-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/docbook" backend="docbook" />
 	</target>
 
-	<target name="render-pdf" depends="clean-pdfoutput, have-dependencies, pdf-output-dir-exists, compile-asciidoc-extensions">
+	<target name="render-pdf" depends="clean-pdf-output, have-dependencies, pdf-output-dir-exists, compile-asciidoc-extensions">
 		<renderer outputdirectory="target/pdf" backend="pdf" />
+	</target>
+
+	<target name="generate-preprocessed" depends="clean-preprocessed-output, have-dependencies, preprocessed-output-dir-exists, compile-asciidoc-extensions">
+		<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar:target/asciidocextensions"/>
+		<asciidoctor:convert
+			sourceDocumentName="index.asciidoc"
+			sourceDirectory="sources"
+			sourceHighlighter="coderay"
+			outputDirectory="target/preprocessed"
+			backend="html">
+				<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+				<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+				<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+				<preProcessor className="org.beanvalidation.asciidocextensions.SavePreprocessedOutputPreprocessor" />
+				<attribute key="license" value="license" />
+				<attribute key="tabsize" value="4" />
+				<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
+				<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
+		</asciidoctor:convert>
+		<delete file="target/preprocessed/index.html" />
 	</target>
 
 	<target name="all.doc" depends="render-html,render-pdf" description="Builds the specification documents in all formats" />
