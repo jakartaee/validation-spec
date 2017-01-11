@@ -22,6 +22,7 @@ git worktree prune
 rm -rf .git/worktrees/$fullSpecDir
 
 echo "Checking out $branch branch into $workingDir"
+git fetch $remote
 git worktree add -B $branch $workingDir $remote/$branch
 
 echo "Generating full spec document"
