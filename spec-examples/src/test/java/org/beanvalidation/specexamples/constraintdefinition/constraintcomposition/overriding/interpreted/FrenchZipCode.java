@@ -29,7 +29,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import javax.validation.Constraint;
-import javax.validation.OverridesAttribute;
 import javax.validation.Payload;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
@@ -38,7 +37,7 @@ import org.beanvalidation.specexamples.constraintdefinition.constraintcompositio
 
 //tag::include[]
 @Pattern(regexp = "[0-9]*")
-@Size
+@Size(min = 9, max = 9, message = "Zip code should be of size {max}")
 @Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
@@ -51,21 +50,11 @@ public @interface FrenchZipCode {
 
 	Class<? extends Payload>[] payload() default {};
 
-	@OverridesAttribute.List({
-			@OverridesAttribute(constraint = Size.class, name = "min"),
-			@OverridesAttribute(constraint = Size.class, name = "max") })
-	int size() default 5;
-
-	@OverridesAttribute(constraint = Size.class, name = "message")
-	String sizeMessage() default "{com.acme.constraint.FrenchZipCode.zipCode.size}";
-
-	@OverridesAttribute(constraint = Pattern.class, name = "message")
-	String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
-
 	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 	@Retention(RUNTIME)
 	@Documented
 	@interface List {
+
 		FrenchZipCode[] value();
 	}
 }
