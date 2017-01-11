@@ -41,13 +41,9 @@ import javax.validation.Payload;
 @Retention(RUNTIME)
 public @interface Audible {
 
-	Age age()
+	Age age() default Age.YOUNG;
 
-	default Age.YOUNG;
-
-	String message()
-
-	default "{com.acme.constraint.Audible.message}";
+	String message() default "{com.acme.constraint.Audible.message}";
 
 	Class<?>[] groups() default {};
 
