@@ -33,7 +33,7 @@ import javax.validation.Payload;
 
 //tag::include[]
 /**
- * Defines the list of values accepted Accepts int or Integer objects
+ * Defines the list of values accepted. Accepts int or Integer objects.
  */
 @Documented
 @Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
