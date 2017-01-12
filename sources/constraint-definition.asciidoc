@@ -17,14 +17,14 @@ Unless stated otherwise the default package name for the Bean Validation APIs is
 
 A constraint on a JavaBean is expressed through one or more annotations. [tck-not-testable]#An annotation is considered a constraint definition if its retention policy contains `RUNTIME` and if the annotation itself is annotated with `javax.validation.Constraint`# .
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
  * Marks an annotation as being a Bean Validation constraint.
- * <p/>
+ * <p>
  * A given constraint annotation must be annotated by a {@code @Constraint}
  * annotation which refers to its list of constraint validation implementations.
- * <p/>
+ * <p>
  * Each constraint annotation must host the following attributes:
  * <ul>
  *     <li>{@code String message() default [...];} which should default to an error
@@ -35,7 +35,7 @@ A constraint on a JavaBean is expressed through one or more annotations. [tck-no
  *     <li>{@code Class<? extends Payload>[] payload() default {};} for
  *     extensibility purposes</li>
  * </ul>
- * <p/>
+ * <p>
  * When building a constraint that is both generic and cross-parameter, the constraint
  * annotation must host the {@code validationAppliesTo()} property.
  * A constraint is generic if it targets the annotated element and is cross-parameter if
@@ -56,7 +56,7 @@ A constraint on a JavaBean is expressed through one or more annotations. [tck-no
  * </ul>
  *
  * Such dual constraints are rare. See {@link SupportedValidationTarget} for more info.
- * <p/>
+ * <p>
  * Here is an example of constraint definition:
  * <pre>
  * &#64;Documented
@@ -65,8 +65,8 @@ A constraint on a JavaBean is expressed through one or more annotations. [tck-no
  * &#64;Retention(RUNTIME)
  * public &#64;interface OrderNumber {
  *     String message() default "{com.acme.constraint.OrderNumber.message}";
- *     Class<?>[] groups() default {};
- *     Class<? extends Payload>[] payload() default {};
+ *     Class&lt;?&gt;[] groups() default {};
+ *     Class&lt;? extends Payload&gt;[] payload() default {};
  * }
  * </pre>
  *
@@ -84,7 +84,7 @@ public @interface Constraint {
      * for a given {@link ValidationTarget}
      * If two {@code ConstraintValidator}s refer to the same type,
      * an exception will occur.
-     * <p/>
+     * <p>
      * At most one {@code ConstraintValidator} targeting the array of parameters of
      * methods or constructors (aka cross-parameter) is accepted. If two or more
      * are present, an exception will occur.
@@ -255,7 +255,7 @@ The `payload` information can be retrieved from error reports via the [classname
 ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
 ----
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
  * Defines the constraint target.
@@ -316,7 +316,7 @@ The constraint annotation definitions may define additional elements to paramete
 .Simple constraint definition
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 //assuming OrderNumberValidator is a generic constraint validator
 
@@ -330,8 +330,11 @@ package com.acme.constraint;
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface OrderNumber {
+
     String message() default "{com.acme.constraint.OrderNumber.message}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }
 ----
@@ -345,7 +348,7 @@ public @interface OrderNumber {
 .Simple cross-parameter constraint definition
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 //assuming DateParametersConsistentValidator is a cross-parameter
 //constraint validator
@@ -353,16 +356,18 @@ public @interface OrderNumber {
 package com.acme.constraint;
 
 /**
- * Cross-parameter constraint ensuring that two date parameters
- * of a method are in the correct order.
+ * Cross-parameter constraint ensuring that two date parameters of a method are in the correct order.
  */
 @Documented
 @Constraint(validatedBy = DateParametersConsistentValidator.class)
 @Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
 @Retention(RUNTIME)
 public @interface DateParametersConsistent {
+
     String message() default "{com.acme.constraint.DateParametersConsistent.message}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }
 ----
@@ -376,7 +381,7 @@ public @interface DateParametersConsistent {
 .Constraint that is both generic and cross parameter
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 //assuming ELAssertValidator is both a generic and cross-parameter
 //constraint validator
@@ -384,18 +389,21 @@ public @interface DateParametersConsistent {
 package com.acme.constraint;
 
 /**
- * EL expression to be validated.
- * This constraint accepts any type and can validate both the
- * annotated type or apply restrictions across parameters.
+ * EL expression to be validated. This constraint accepts any type and can validate both the annotated type or apply
+ * restrictions across parameters.
  */
 @Documented
-@Constraint(validatedBy=ELAssertValidator.class)
+@Constraint(validatedBy = ELAssertValidator.class)
 @Target({ METHOD, FIELD, TYPE, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface ELAssert {
+
     String message() default "{com.acme.constraint.DateParametersConsistent.message}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
+
     ConstraintTarget validationAppliesTo() default ConstraintTarget.IMPLICIT;
 
     String expression();
@@ -421,28 +429,30 @@ public User createUser(String email, String password, String repeatPassword) { [
 .Constraint definition with default parameter
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
 /**
- * A frequency in Hz as audible to human ear.
- * Adjustable to the age of the person.
- * Accept Numbers.
+ * A frequency in Hz as audible to human ear. Adjustable to the age of the person. Accept Numbers.
  */
 @Documented
 @Constraint(validatedBy = AudibleValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface Audible {
+
     Age age() default Age.YOUNG;
+
     String message() default "{com.acme.constraint.Audible.message}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     public enum Age {
         YOUNG,
-        WONDERING
+        WONDERING,
         OLD
     }
 }
@@ -457,22 +467,25 @@ public @interface Audible {
 .Constraint definition with mandatory parameter
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
 /**
- * Defines the list of values accepted
- * Accepts int or Integer objects
+ * Defines the list of values accepted. Accepts int or Integer objects.
  */
 @Documented
 @Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface Acceptable {
+
     int[] value();
+
     String message() default "{com.acme.constraint.Acceptable.message}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }
 ----
@@ -493,11 +506,10 @@ Note to constraint designers: each constraint annotation should be coupled with 
 
 .Multi-valued constraint definition
 ====
-
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
- * Validate a zipcode for a given country
+ * Validate a zip code for a given country
  * The only supported type is String
  */
 @Documented
@@ -526,28 +538,25 @@ public @interface ZipCode {
     }
 }
 ----
-
 ====
 
 .Multi-valued constraint declaration
 ====
-
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 public class Address {
     @ZipCode.List( {
-            @ZipCode(countryCode="fr", groups=Default.class
+            @ZipCode(countryCode="fr", groups=Default.class,
                      message = "zip code is not valid"),
-            @ZipCode(countryCode="fr", groups=SuperUser.class
+            @ZipCode(countryCode="fr", groups=SuperUser.class,
                      message = "zip code invalid. Requires overriding before saving.")
             } )
-    private String zipcode;
+    private String zipCode;
 }
 ----
-
 ====
 
-In this example, both constraints apply to the [methodname]`zipcode` field but with different groups and with different error messages.
+In this example, both constraints apply to the [methodname]`zipCode` field but with different groups and with different error messages.
 
 Using two different multi-constraint annotations for the same underlying constraint type on the same target (i.e. class or property) is not considered portable and is discouraged.
 
@@ -570,29 +579,32 @@ Composition is done by annotating a constraint annotation with the composing con
 
 [source, JAVA]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=5, max=5)
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Pattern(regexp = "[0-9]*")
+@Size(min = 5, max = 5)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+
+    String message() default "Wrong zip code";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
 
 ====
 
-Annotating an element with [classname]`@FrenchZipcode` (the composed annotation) is equivalent to annotating it with [classname]`@Pattern(regexp="[0-9]*")`, [classname]`@Size(min=5, max=5)` (the composing annotations) and [classname]`@FrenchZipcode`. [tck-testable]#More formally, each constraint annotation hosted on a constraint annotation is applied to the target element and this is done recursively.# [tck-testable]#Note that the main annotation and its constraint validation implementation is also applied.# [tck-testable]#By default, each failing constraint generates an error report.# [tck-testable]#Groups from the main constraint annotation are inherited by the composing annotations.# [tck-testable]#Any [methodname]`groups` definition on a composing annotation is ignored.# [tck-testable]#Payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`payload` definition on a composing annotation is ignored.# [tck-testable]#The constraint target from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`validationAppliesTo` definition on a composing annotation is ignored.#
+Annotating an element with [classname]`@FrenchZipCode` (the composed annotation) is equivalent to annotating it with [classname]`@Pattern(regexp="[0-9]*")`, [classname]`@Size(min=5, max=5)` (the composing annotations) and [classname]`@FrenchZipCode`. [tck-testable]#More formally, each constraint annotation hosted on a constraint annotation is applied to the target element and this is done recursively.# [tck-testable]#Note that the main annotation and its constraint validation implementation is also applied.# [tck-testable]#By default, each failing constraint generates an error report.# [tck-testable]#Groups from the main constraint annotation are inherited by the composing annotations.# [tck-testable]#Any [methodname]`groups` definition on a composing annotation is ignored.# [tck-testable]#Payload from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`payload` definition on a composing annotation is ignored.# [tck-testable]#The constraint target from the main constraint annotation is inherited by the composing annotations.# [tck-testable]#Any [methodname]`validationAppliesTo` definition on a composing annotation is ignored.#
 
 [tck-testable]#The type upon which composed constraint is placed must be compatible with all constraints (composing and composed).# A constraint designer should ensure that such a type exists and lists in the JavaDoc all the compatible types.
 
@@ -600,28 +612,31 @@ Annotating an element with [classname]`@FrenchZipcode` (the composed annotation)
 
 It is possible to ensure that composing annotations do not raise individual error reports. In this scenario, if one or more composing annotations are invalid, the main constraint is automatically considered invalid and the corresponding error report is generated. To mark a constraint as raising a single constraint error report if either the composed or one of the composing constraints fail, use the [classname]`@ReportAsSingleViolation` annotation.
 
-.If any of the composing constraints fail, the error report corresponding to @FrenchZipcode is raised and none other.
+.If any of the composing constraints fail, the error report corresponding to [classname]`@FrenchZipCode` is raised and none other.
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=5, max=5)
+@Pattern(regexp = "[0-9]*")
+@Size(min = 5, max = 5)
 @ReportAsSingleViolation
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+
+    String message() default "Wrong zip code";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
@@ -630,13 +645,13 @@ public @interface FrenchZipcode {
 
 The definition of [classname]`@ReportAsSingleViolation` is as follows.
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
  * A constraint annotation hosting this annotation will return the
  * composed annotation error report if any of the composing annotations fail.
  * The error reports of each individual composing constraint are ignored.
- * <p/>
+ * <p>
  * Note: Evaluation of composed constraints stops on the first validation
  * error in case the composing constraint is annotated with
  * {@code @ReportAsSingleViolation}.
@@ -653,27 +668,30 @@ public @interface ReportAsSingleViolation {
 
 [tck-testable]#Composing annotations can define the value of `message` and custom attributes (excluding [methodname]`groups`, [methodname]`payload` and [methodname]`validationAppliesTo`) but these are fixed in the composed constraint definition.#
 
-.Composing annotations can use attributes. They are fixed for a given main annotation. All @FrenchZipcode constraints have a @Size restricted to 5.
+.Composing annotations can use attributes. They are fixed for a given main annotation. All [classname]`@FrenchZipCode` constraints have a [classname]`@Size` restricted to 5.
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=5, max=5)
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Pattern(regexp = "[0-9]*")
+@Size(min = 5, max = 5)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+
+    String message() default "Wrong zip code";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+        FrenchZipCode[] value();
     }
 }
 ----
@@ -687,42 +705,46 @@ public @interface FrenchZipcode {
 .Attributes from composing annotations can be overridden by attributes from the composed annotation
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
+@Pattern(regexp = "[0-9]*")
 @Size
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+
+    String message() default "Wrong zip code";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
-    @OverridesAttribute.List( {
-        @OverridesAttribute(constraint=Size.class, name="min"),
-        @OverridesAttribute(constraint=Size.class, name="max") } )
+    @OverridesAttribute.List({
+            @OverridesAttribute(constraint = Size.class, name = "min"),
+            @OverridesAttribute(constraint = Size.class, name = "max") })
     int size() default 5;
 
-    @OverridesAttribute(constraint=Size.class, name="message")
-    String sizeMessage() default "{com.acme.constraint.FrenchZipcode.zipcode.size}";
+    @OverridesAttribute(constraint = Size.class, name = "message")
+    String sizeMessage() default "{com.acme.constraint.FrenchZipCode.zipCode.size}";
 
-    @OverridesAttribute(constraint=Pattern.class, name="message")
-    String numberMessage() default "{com.acme.constraint.FrenchZipcode.number.size}";
+    @OverridesAttribute(constraint = Pattern.class, name = "message")
+    String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+
+        FrenchZipCode[] value();
     }
 }
 ----
 
 ====
 
-The value of the composed constraint attribute annotated with [classname]`@OverridesAttribute` ([methodname]`@FrenchZipcode.sizeMessage`) is applied to the composing constraint attribute named after [methodname]`@OverridesAttribute.name` and hosted on the composing constraint of type [methodname]`@OverridesAttribute.constraint` ([methodname]`@Size.message`). Similarly, [classname]`@FrenchZipcode.numberMessage` value is mapped to [classname]`@Pattern.message`.
+The value of the composed constraint attribute annotated with [classname]`@OverridesAttribute` ([methodname]`@FrenchZipCode.sizeMessage`) is applied to the composing constraint attribute named after [methodname]`@OverridesAttribute.name` and hosted on the composing constraint of type [methodname]`@OverridesAttribute.constraint` ([methodname]`@Size.message`). Similarly, [classname]`@FrenchZipCode.numberMessage` value is mapped to [classname]`@Pattern.message`.
 
 If left undefined, the default value for [methodname]`@OverridesAttribute.name` is the name of the composed constraint attribute hosting the [classname]`@OverridesAttribute` annotation.
 
@@ -737,36 +759,40 @@ Using <<example-composing-overridden>>,
 
 [source, JAVA]
 ----
-@FrenchZipcode(size=9, sizeMessage="Zipcode should be of size {max}")
+@FrenchZipCode(size=9, sizeMessage="Zip code should be of size {max}")
 ----
 
 is equivalent to
 
 [source, JAVA]
 ----
-@FrenchZipcode
+@FrenchZipCode
 ----
 
-if [classname]`@FrenchZipcode` is defined as
+if [classname]`@FrenchZipCode` is defined as
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern(regexp="[0-9]*")
-@Size(min=9, max=9, message="Zipcode should be of size {max}")
-@Constraint(validatedBy = FrenchZipcodeValidator.class)
+@Pattern(regexp = "[0-9]*")
+@Size(min = 9, max = 9, message = "Zip code should be of size {max}")
+@Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
-public @interface FrenchZipcode {
-    String message() default "Wrong zipcode";
+public @interface FrenchZipCode {
+
+    String message() default "Wrong zip code";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
-        FrenchZipcode[] value();
+
+        FrenchZipCode[] value();
     }
 }
 ----
@@ -776,32 +802,35 @@ public @interface FrenchZipcode {
 .Use of constraintIndex in @OverridesAttribute
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-@Pattern.List( {
-    @Pattern(regexp="[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}"), //email
-    @Pattern(regexp=".*?emmanuel.*?") //emmanuel
-} )
-@Constraint(validatedBy={})
+@Pattern.List({
+        @Pattern(regexp = "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}"), // email
+        @Pattern(regexp = ".*?emmanuel.*?") // emmanuel
+})
+@Constraint(validatedBy = {})
 @Documented
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface EmmanuelsEmail {
+
     String message() default "Not emmanuel's email";
 
-    @OverridesAttribute(constraint=Pattern.class, name="message", constraintIndex=0)
+    @OverridesAttribute(constraint = Pattern.class, name = "message", constraintIndex = 0)
     String emailMessage() default "Not an email";
 
-    @OverridesAttribute(constraint=Pattern.class, name="message", constraintIndex=1)
+    @OverridesAttribute(constraint = Pattern.class, name = "message", constraintIndex = 1)
     String emmanuelMessage() default "Not Emmanuel";
 
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
+
         EmmanuelsEmail[] value();
     }
 }
@@ -811,7 +840,7 @@ public @interface EmmanuelsEmail {
 
 [classname]`@OverridesAttribute` definition is as follows:
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
  * Marks an attribute as overriding the attribute of a composing constraint.
@@ -839,10 +868,10 @@ public @interface OverridesAttribute {
     /**
      * The index of the targeted constraint declaration when using
      * multiple constraints of the same type.
-     * <p/>
+     * <p>
      * The index represents the index of the constraint in the
      * {@code value()} array.
-     * <p/>
+     * <p>
      * By default, no index is defined and the single constraint declaration
      * is targeted.
      *
@@ -893,19 +922,19 @@ Constraint designers are encouraged to make use of composition (recursively or n
 
 [tck-testable]#A constraint validation implementation performs the validation of a given constraint annotation for a given type.# [tck-testable]#The implementation classes are specified by the `validatedBy` element of the [classname]`@Constraint` annotation that decorates the constraint definition.# [tck-not-testable]#The constraint validation implementation implements the [classname]`ConstraintValidator` interface.#
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
  * Defines the logic to validate a given constraint {@code A}
  * for a given object type {@code T}.
- * <p/>
+ * <p>
  * Implementations must comply to the following restriction:
  * <ul>
  *     <li>{@code T} must resolve to a non parameterized type</li>
  *     <li>or generic parameters of {@code T} must be unbounded
  *     wildcard types</li>
  * </ul>
- * <p/>
+ * <p>
  * The annotation {@link SupportedValidationTarget} can be put on a
  * {@code ConstraintValidator} implementation to mark it as supporting
  * cross-parameter constraints. Check out {@link SupportedValidationTarget}
@@ -921,7 +950,7 @@ public interface ConstraintValidator<A extends Annotation, T> {
      * {@link #isValid(Object, ConstraintValidatorContext)} calls.
      * The constraint annotation for a given constraint declaration
      * is passed.
-     * <p/>
+     * <p>
      * This method is guaranteed to be called before any use of this instance for
      * validation.
      *
@@ -932,7 +961,7 @@ public interface ConstraintValidator<A extends Annotation, T> {
     /**
      * Implements the validation logic.
      * The state of {@code value} must not be altered.
-     * <p/>
+     * <p>
      * This method can be accessed concurrently, thread-safety must be ensured
      * by the implementation.
      *
@@ -1149,7 +1178,7 @@ public interface ConstraintValidatorContext {
     /**
      * Disables the default {@link ConstraintViolation} object generation (which
      * is using the message template declared on the constraint).
-     * <p/>
+     * <p>
      * Useful to set a different violation message or generate a {@code ConstraintViolation}
      * based on a different property.
      */
@@ -1164,23 +1193,23 @@ public interface ConstraintValidatorContext {
      * Returns a constraint violation builder building a violation report
      * allowing to optionally associate it to a sub path.
      * The violation message will be interpolated.
-     * <p/>
+     * <p>
      * To create the {@link ConstraintViolation}, one must call either one of
      * the {@code addConstraintViolation()} methods available in one of the
      * interfaces of the fluent API.
      * If another method is called after {@code addConstraintViolation()} on
      * {@code ConstraintViolationBuilder} or any of its associated nested interfaces
      * an {@code IllegalStateException} is raised.
-     * <p/>
+     * <p>
      * If {@link ConstraintValidator#isValid(Object, ConstraintValidatorContext)} returns
      * {@code false}, a {@code ConstraintViolation} object will be built per constraint
      * violation report including the default one (unless
      * {@link #disableDefaultConstraintViolation()} has been called).
-     * <p/>
+     * <p>
      * {@code ConstraintViolation} objects generated from such a call
      * contain the same contextual information (root bean, path and so on) unless
      * the path has been overridden.
-     * <p/>
+     * <p>
      * To create a different {@code ConstraintViolation}, a new constraint violation builder
      * has to be retrieved from {@code ConstraintValidatorContext}
      *
@@ -1188,7 +1217,7 @@ public interface ConstraintValidatorContext {
      * <pre>
      * //assuming the following domain model
      * public class User {
-     *     public Map<String,Address> getAddresses() { ... }
+     *     public Map&lt;String,Address&gt; getAddresses() { ... }
      * }
      *
      * public class Address {
@@ -1230,10 +1259,9 @@ public interface ConstraintValidatorContext {
      *             .addPropertyNode( "name" )
      *             .addConstraintViolation();
      * </pre>
-     * <p/>
+     * <p>
      * Cross-parameter constraints on a method can create a node specific
      * to a particular parameter if required. Let's explore a few examples:
-     * <p/>
      * <pre>
      * //Cross-parameter constraint on method createUser(String password, String passwordRepeat)
      * //Build a constraint violation on the default path + "passwordRepeat"
@@ -1242,7 +1270,7 @@ public interface ConstraintValidatorContext {
      *             .addConstraintViolation();
      *
      * //Cross-parameter constraint on a method
-     * //mergeAddresses(Map<String,Address> addresses, Map<String,Address> otherAddresses)
+     * //mergeAddresses(Map&lt;String,Address&gt; addresses, Map&lt;String,Address&gt; otherAddresses)
      * //Build a constraint violation on the default path + "otherAddresses["home"]
      * //i.e. the Address bean hosted in the "home" key of the "otherAddresses" map parameter
      * context.buildConstraintViolationWithTemplate(
@@ -1253,7 +1281,7 @@ public interface ConstraintValidatorContext {
      *             .addConstraintViolation();
      *
      * //Cross-parameter constraint on a method
-     * //mergeAddresses(Map<String,Address> addresses, Map<String,Address> otherAddresses)
+     * //mergeAddresses(Map&lt;String,Address&gt; addresses, Map&lt;String,Address&gt; otherAddresses)
      * //Build a constraint violation on the default path + "otherAddresses["home"].city
      * //i.e. on the "city" property of the Address bean hosted in
      * //the "home" key of the "otherAddresses" map
@@ -1287,11 +1315,11 @@ public interface ConstraintValidatorContext {
     /**
      * {@link ConstraintViolation} builder allowing to optionally associate
      * the violation report to a sub path.
-     * <p/>
+     * <p>
      * To create the {@code ConstraintViolation}, one must call either one of
      * the {@code addConstraintViolation()} methods available in one of the
      * interfaces of the fluent API.
-     * <p/>
+     * <p>
      * If another method is called after {@code addConstraintViolation()} on
      * {@code ConstraintViolationBuilder} or any of its associated objects
      * an {@code IllegalStateException} is raised.
@@ -1300,7 +1328,7 @@ public interface ConstraintValidatorContext {
 
         /**
          * Adds a node to the path the {@link ConstraintViolation} will be associated to.
-         * <p/>
+         * <p>
          * {@code name} describes a single property. In particular,
          * dot (.) is not allowed.
          *
@@ -1314,7 +1342,7 @@ public interface ConstraintValidatorContext {
         /**
          * Adds a property node to the path the {@link ConstraintViolation}
          * will be associated to.
-         * <p/>
+         * <p>
          * {@code name} describes a single property. In particular,
          * dot (.) is not allowed.
          *
@@ -1354,7 +1382,7 @@ public interface ConstraintValidatorContext {
         /**
          * Adds the new {@link ConstraintViolation} to be generated if the
          * constraint validator marks the value as invalid.
-         * <p/>
+         * <p>
          * Methods of this {@code ConstraintViolationBuilder} instance and its nested
          * objects throw {@code IllegalStateException} from now on.
          *
@@ -1375,7 +1403,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator marks the value as invalid.
-             * <p/>
+             * <p>
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1405,7 +1433,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
-             * <p/>
+             * <p>
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1419,10 +1447,10 @@ public interface ConstraintValidatorContext {
         /**
          * Represents refinement choices for a node which is
          * in an {@code Iterator} or {@code Map}.
-         * <p/>
+         * <p>
          * If the iterator is an indexed collection or a map,
          * the index or the key should be set.
-         * <p/>
+         * <p>
          * The node is a leaf node (i.e. no subnode can be added).
          *
          * @since 1.1
@@ -1448,7 +1476,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
-             * <p/>
+             * <p>
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1469,7 +1497,7 @@ public interface ConstraintValidatorContext {
 
             /**
              * Adds a node to the path the {@link ConstraintViolation} will be associated to.
-             * <p/>
+             * <p>
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
              *
@@ -1483,7 +1511,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds a property node to the path the {@link ConstraintViolation}
              * will be associated to.
-             * <p/>
+             * <p>
              * {@code name} describes a single property. In particular,
              * dot (.) is not allowed.
              *
@@ -1509,7 +1537,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator marks the value as invalid.
-             * <p/>
+             * <p>
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1577,7 +1605,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
-             * <p/>
+             * <p>
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.
@@ -1591,10 +1619,10 @@ public interface ConstraintValidatorContext {
         /**
          * Represents refinement choices for a node which is
          * in an {@code Iterator} or {@code Map}.
-         * <p/>
+         * <p>
          * If the iterator is an indexed collection or a map,
          * the index or the key should be set.
-         * <p/>
+         * <p>
          * The node is not necessarily a leaf node (i.e. subnodes can
           * be added).
          */
@@ -1647,7 +1675,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds a bean node (class-level) to the path the {@link ConstraintViolation}
              * will be associated to.
-             * <p/>
+             * <p>
              * Note that bean nodes are always leaf nodes.
              *
              * @return a builder representing the bean node
@@ -1659,7 +1687,7 @@ public interface ConstraintValidatorContext {
             /**
              * Adds the new {@link ConstraintViolation} to be generated if the
              * constraint validator mark the value as invalid.
-             * <p/>
+             * <p>
              * Methods of the {@code ConstraintViolationBuilder} instance this object
              * comes from and the constraint violation builder nested
              * objects throw {@code IllegalStateException} after this call.

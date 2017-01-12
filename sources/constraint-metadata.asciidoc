@@ -1023,32 +1023,38 @@ public interface ConstraintDescriptor<T extends Annotation> {
 
 Assuming the following constraint definitions
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
 @Documented
 @NotNull
-@Size(min=1)
+@Size(min = 1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
+
     String message() default "{com.acme.constraint.NotEmpty.message}";
+
     Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default { };
+
+    Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
+
         NotEmpty[] value();
     }
 
     class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
+
         @Override
-        public void initialize(NotEmpty constraintAnnotation) {}
+        public void initialize(NotEmpty constraintAnnotation) {
+        }
 
         @Override
         public boolean isValid(String value, ConstraintValidatorContext context) {
@@ -1062,16 +1068,22 @@ public @interface NotEmpty {
 @Target({ METHOD, ANNOTATION_TYPE, CONSTRUCTOR })
 @Retention(RUNTIME)
 public @interface ValidInterval {
+
     String message() default "{com.acme.constraint.ValidInterval.message}";
+
     Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default { };
+
+    Class<? extends Payload>[] payload() default {};
+
     int startParameter();
+
     int endParameter();
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
+
         ValidInterval[] value();
     }
 
@@ -1089,8 +1101,7 @@ public @interface ValidInterval {
 
         @Override
         public boolean isValid(Object[] value, ConstraintValidatorContext context) {
-            return Integer.parseInt( String.valueOf( value[start] ) ) <
-                   Integer.parseInt( String.valueOf( value[end] ) );
+            return Integer.parseInt( String.valueOf( value[start] ) ) < Integer.parseInt( String.valueOf( value[end] ) );
         }
     }
 }
@@ -1098,15 +1109,16 @@ public @interface ValidInterval {
 
 and the following class definitions
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 public class Author {
+
     private String firstName;
 
-    @NotEmpty(message="lastname must not be null")
+    @NotEmpty(message = "lastname must not be null")
     private String lastName;
 
-    @Size(max=30)
+    @Size(max = 30)
     private String company;
 
     public String getFirstName() {
@@ -1132,8 +1144,11 @@ public class Author {
 
 public class Book {
 
-    public interface FirstLevelCheck {}
-    public interface SecondLevelCheck {}
+    public interface FirstLevelCheck {
+    }
+
+    public interface SecondLevelCheck {
+    }
 
     private String title;
     private String description;
@@ -1145,19 +1160,17 @@ public class Book {
     @Valid
     public Book(
             String title,
-            @Size(max=30) String description,
-            @Valid
-            @ConvertGroup(from=Default.class, to=SecondLevelCheck.class)
-            Author author) {
-        [...]
+            @Size(max = 30) String description,
+            @Valid @ConvertGroup(from = Default.class, to = SecondLevelCheck.class) Author author) {
+        // [...]
     }
 
     public Book() {
-        [...]
+        // [...]
     }
 
-    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
-    @Size(max=30)
+    @NotEmpty(groups = { FirstLevelCheck.class, Default.class })
+    @Size(max = 30)
     public String getTitle() {
         return title;
     }
@@ -1182,9 +1195,9 @@ public class Book {
         this.description = description;
     }
 
-    @ValidInterval(startParameter=1, endParameter=2)
+    @ValidInterval(startParameter = 1, endParameter = 2)
     public void addChapter(String title, int startPage, int endPage) {
-        [...]
+        // [...]
     }
 }
 ----

@@ -20,7 +20,7 @@ A [classname]`Validator` instance is able to validate instances of beans and the
 .Validator interface
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
  * Validates bean instances. Implementations of this interface must be thread-safe.
@@ -67,7 +67,7 @@ public interface Validator {
     /**
      * Validates all constraints placed on the property named {@code propertyName}
      * of the class {@code beanType} would the property value be {@code value}.
-     * <p/>
+     * <p>
      * {@link ConstraintViolation} objects return {@code null} for
      * {@link ConstraintViolation#getRootBean()} and {@link ConstraintViolation#getLeafBean()}.
      *
@@ -90,7 +90,7 @@ public interface Validator {
 
     /**
      * Returns the descriptor object describing bean constraints.
-     * <p/>
+     * <p>
      * The returned object (and associated objects including
      * {@link ConstraintDescriptor}s) are immutable.
      *
@@ -106,7 +106,7 @@ public interface Validator {
     /**
      * Returns an instance of the specified type allowing access to
      * provider-specific APIs.
-     * <p/>
+     * <p>
      * If the Bean Validation provider implementation does not support
      * the specified class, {@link ValidationException} is thrown.
      *
@@ -1362,32 +1362,40 @@ If a user wishes to send [classname]`ConstraintViolation` remotely, it should ma
 
 These examples assume the following definition of [classname]`@NotEmpty`.
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
 @Documented
 @NotNull
-@Size(min=1)
+@Size(min = 1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
 @Retention(RUNTIME)
 public @interface NotEmpty {
+
     String message() default "{com.acme.constraint.NotEmpty.message}";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 
     @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
     @Retention(RUNTIME)
     @Documented
     @interface List {
+
         NotEmpty[] value();
     }
 
     class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
-        public void initialize(NotEmpty constraintAnnotation) {}
 
+        @Override
+        public void initialize(NotEmpty constraintAnnotation) {
+        }
+
+        @Override
         public boolean isValid(String value, ConstraintValidatorContext context) {
             return true;
         }
@@ -1397,15 +1405,16 @@ public @interface NotEmpty {
 
 and the following class definitions
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 public class Author {
+
     private String firstName;
 
-    @NotEmpty(message="lastname must not be null")
+    @NotEmpty(message = "lastname must not be null")
     private String lastName;
 
-    @Size(max=30)
+    @Size(max = 30)
     private String company;
 
     public String getFirstName() {
@@ -1434,7 +1443,8 @@ public class Author {
 }
 
 public class Book {
-    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
+
+    @NotEmpty(groups = { FirstLevelCheck.class, Default.class })
     private String title;
 
     @Valid
@@ -2434,7 +2444,7 @@ We will now explore the various interfaces, their constraints and usage. We will
 ----
 /**
  * Factory returning initialized {@code Validator} instances.
- * <p/>
+ * <p>
  * Implementations are thread-safe and instances are typically cached and reused.
  *
  * @author Emmanuel Bernard
@@ -2447,7 +2457,7 @@ public interface ValidatorFactory {
      * Returns an initialized {@link Validator} instance using the
      * factory defaults for message interpolator, traversable resolver
      * and constraint validator factory.
-     * <p/>
+     * <p>
      * Validator instances can be pooled and shared by the implementation.
      *
      * @return an initialized {@code Validator} instance
@@ -2583,7 +2593,7 @@ public interface ValidatorContext {
     /**
      * Defines the message interpolator implementation used by the
      * {@link Validator}.
-     * <p/>
+     * <p>
      * If not set or if {@code null} is passed as a parameter,
      * the message interpolator of the {@link ValidatorFactory}
      * is used.
@@ -2597,7 +2607,7 @@ public interface ValidatorContext {
     /**
      * Defines the traversable resolver implementation used by the
      * {@link Validator}.
-     * <p/>
+     * <p>
      * If not set or if {@code null} is passed as a parameter,
      * the traversable resolver of the {@link ValidatorFactory} is used.
      *
@@ -2700,34 +2710,34 @@ Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the
 /**
  * Receives configuration information, selects the appropriate
  * Bean Validation provider and builds the appropriate {@link ValidatorFactory}.
- * <p/>
+ * <p>
  * Usage:
  * <pre>
- * Configuration<?> configuration = //provided by one of the Validation bootstrap methods
+ * Configuration&lt;?&gt; configuration = //provided by one of the Validation bootstrap methods
  *     ValidatorFactory = configuration
  *         .messageInterpolator( new CustomMessageInterpolator() )
  *         .buildValidatorFactory();
  * </pre>
- * <p/>
+ * <p>
  * By default, the configuration information is retrieved from
  * {@code META-INF/validation.xml}.
  * It is possible to override the configuration retrieved from the XML file
  * by using one or more of the {@code Configuration} methods.
- * <p/>
+ * <p>
  * The {@link ValidationProviderResolver} is specified at configuration time
  * (see {@link ValidationProvider}).
  * If none is explicitly requested, the default {@code ValidationProviderResolver} is used.
- * <p/>
+ * <p>
  * The provider is selected in the following way:
  * <ul>
  *     <li>if a specific provider is requested programmatically using
  *     {@link Validation#byProvider(Class)}, find the first provider implementing
  *     the provider class requested and use it</li>
- *     <li>if a specific provider is requested in {@code META-INF/validation.xml}>,
+ *     <li>if a specific provider is requested in {@code META-INF/validation.xml},
  *     find the first provider implementing the provider class requested and use it</li>
  *     <li>otherwise, use the first provider returned by the {@code ValidationProviderResolver}</li>
  * </ul>
- * <p/>
+ * <p>
  * Implementations are not meant to be thread-safe.
  *
  * @author Emmanuel Bernard
@@ -2739,7 +2749,7 @@ public interface Configuration<T extends Configuration<T>> {
     /**
      * Ignores data from the {@code META-INF/validation.xml} file if this
      * method is called.
-     * <p/>
+     * <p>
      * This method is typically useful for containers that parse
      * {@code META-INF/validation.xml} themselves and pass the information
      * via the {@code Configuration} methods.
@@ -2751,7 +2761,7 @@ public interface Configuration<T extends Configuration<T>> {
     /**
      * Defines the message interpolator used. Has priority over the configuration
      * based message interpolator.
-     * <p/>
+     * <p>
      * If {@code null} is passed, the default message interpolator is used
      * (defined in XML or the specification default).
      *
@@ -2763,7 +2773,7 @@ public interface Configuration<T extends Configuration<T>> {
     /**
      * Defines the traversable resolver used. Has priority over the configuration
      * based traversable resolver.
-     * <p/>
+     * <p>
      * If {@code null} is passed, the default traversable resolver is used
      * (defined in XML or the specification default).
      *
@@ -2775,7 +2785,7 @@ public interface Configuration<T extends Configuration<T>> {
     /**
      * Defines the constraint validator factory. Has priority over the configuration
      * based constraint factory.
-     * <p/>
+     * <p>
      * If {@code null} is passed, the default constraint validator factory is used
      * (defined in XML or the specification default).
      *
@@ -2787,7 +2797,7 @@ public interface Configuration<T extends Configuration<T>> {
     /**
      * Defines the parameter name provider. Has priority over the configuration
      * based provider.
-     * <p/>
+     * <p>
      * If {@code null} is passed, the default parameter name provider is used
      * (defined in XML or the specification default).
      *
@@ -2801,7 +2811,7 @@ public interface Configuration<T extends Configuration<T>> {
     /**
      * Add a stream describing constraint mapping in the Bean Validation XML
      * format.
-     * <p/>
+     * <p>
      * The stream should be closed by the client API after the
      * {@link ValidatorFactory} has been built. The Bean Validation provider
      * must not close the stream.
@@ -2822,9 +2832,9 @@ public interface Configuration<T extends Configuration<T>> {
      * XML configuration properties.
      * If the underlying provider does not know how to handle the property,
      * it must silently ignore it.
-     * <p/>
+     * <p>
      * Note: Using this non type-safe method is generally not recommended.
-     * <p/>
+     * <p>
      * It is more appropriate to use, if available, the type-safe equivalent provided
      * by a specific provider via its {@link Configuration} subclass.
      * <pre>
@@ -2835,10 +2845,10 @@ public interface Configuration<T extends Configuration<T>> {
      * </pre>
      * This method is typically used by containers parsing {@code META-INF/validation.xml}
      * themselves and injecting the state to the {@code Configuration} object.
-     * <p/>
+     * <p>
      * If a property with a given name is defined both via this method and in the
      * XML configuration, the value set programmatically has priority.
-     * <p/>
+     * <p>
      * If {@code null} is passed as a value, the value defined in XML is used. If no value
      * is defined in XML, the property is considered unset.
      *
@@ -2913,8 +2923,9 @@ public interface Configuration<T extends Configuration<T>> {
 
     /**
      * Returns configuration information stored in the {@code META-INF/validation.xml} file.
-     * <p/>
-     * <b>Note</b>:<br/>
+     * <p>
+     * <b>Note</b>:
+     * <br>
      * Implementations are encouraged to lazily build this object to delay parsing.
      *
      * @return returns an instance of {@link BootstrapConfiguration}; this method never
@@ -2941,7 +2952,7 @@ public interface Configuration<T extends Configuration<T>> {
 /**
  * Represents the user specified default configuration in
  * {@code META-INF/validation.xml}.
- * <p/>
+ * <p>
  * Note that modifications to the returned objects do not have any effect.
  * Instead use the methods provided on {@link Configuration} in order to
  * apply modifications to the configuration.
@@ -3012,7 +3023,7 @@ public interface BootstrapConfiguration {
     /**
      * Returns the set of executable types that should be considered
      * unless explicitly overridden via {@link ValidateOnExecution}
-     * <p/>
+     * <p>
      * Returns a set containing {@link ExecutableType#CONSTRUCTORS} and
      * {@link ExecutableType#NON_GETTER_METHODS} if unspecified in the configuration.
      *
@@ -3080,7 +3091,7 @@ package javax.validation.spi;
 /**
  * Contract between a {@link Configuration} and a
  * {@link ValidationProvider} to create a {@link ValidatorFactory}.
- * <p/>
+ * <p>
  * The configuration artifacts defined in the XML configuration and provided to the
  * {@code Configuration} are merged and passed along via
  * {@code ConfigurationState}.
@@ -3093,7 +3104,7 @@ public interface ConfigurationState {
 
     /**
      * Returns {@code true} if {@link Configuration#ignoreXmlConfiguration()} has been called.
-     * <p/>
+     * <p>
      * In this case, the {@link ValidatorFactory} must ignore
      * {@code META-INF/validation.xml}.
      *
@@ -3103,7 +3114,7 @@ public interface ConfigurationState {
 
     /**
      * Returns the message interpolator of this configuration.
-     * <p/>
+     * <p>
      * Message interpolator is defined in the following decreasing priority:
      * <ul>
      *     <li>set via the {@link Configuration} programmatic API</li>
@@ -3119,14 +3130,14 @@ public interface ConfigurationState {
 
     /**
      * Returns a set of configuration streams.
-     * <p/>
+     * <p>
      * The streams are defined by:
      * <ul>
      *     <li>mapping XML streams passed programmatically in {@link Configuration}</li>
      *     <li>mapping XML streams located in the resources defined in
      *     {@code META-INF/validation.xml} (constraint-mapping element)</li>
      * </ul>
-     * <p/>
+     * <p>
      * Streams represented in the XML configuration and opened by the
      * {@code Configuration} implementation must be closed by the
      * {@code Configuration} implementation after the {@link ValidatorFactory}
@@ -3140,7 +3151,7 @@ public interface ConfigurationState {
 
     /**
      * Returns the constraint validator factory of this configuration.
-     * <p/>
+     * <p>
      * The {@link ConstraintValidatorFactory} implementation is defined in the following
      * decreasing priority:
      * <ul>
@@ -3157,7 +3168,7 @@ public interface ConfigurationState {
 
     /**
      * Returns the traversable resolver for this configuration.
-     * <p/>
+     * <p>
      * {@link TraversableResolver} is defined in the following decreasing priority:
      * <ul>
      *     <li>set via the {@link Configuration} programmatic API</li>
@@ -3173,7 +3184,7 @@ public interface ConfigurationState {
 
     /**
      * Returns the parameter name provider for this configuration.
-     * <p/>
+     * <p>
      * {@link ParameterNameProvider} is defined in the following decreasing priority:
      * <ul>
      *     <li>set via the {@link Configuration} programmatic API</li>
@@ -3191,14 +3202,14 @@ public interface ConfigurationState {
 
     /**
      * Returns a map of non type-safe custom properties.
-     * <p/>
+     * <p>
      * Properties defined via:
      * <ul>
      *     <li>{@link Configuration#addProperty(String, String)}</li>
      *     <li>{@code META-INF/validation.xml} provided that
-     *     {@code ignoreXmlConfiguration}</li> is {@code false}.
+     *     {@code ignoreXmlConfiguration} is {@code false}.</li>
      * </ul>
-     * <p/>
+     * <p>
      * If a property is defined both programmatically and in XML,
      * the value defined programmatically has priority.
      *
