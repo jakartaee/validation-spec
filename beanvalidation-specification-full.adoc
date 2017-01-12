@@ -3,7 +3,7 @@
 // License: Apache License, Version 2.0
 // See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
 
-= Bean Validation specification
+= Bean Validation 2.0 specification - WORK IN PROGRESS
 :sectanchors:
 :anchor:
 :toc: left
@@ -42,7 +42,11 @@ It also offers method and constructor validation facilities to ensure constraint
 
 === Expert group
 
-This work has been conducted as part of JSR 349 and formerly JSR 303 under the Java Community Process Program. This specification is the result of the collaborative work of the members of the JSR 349 Expert Group and the community at large. The following persons have actively contributed to Bean Validation 1.1 in alphabetical order:
+This work has been conducted as part of JSR 380 and formerly JSRs 349 and 303 under the Java Community Process Program. This specification is the result of the collaborative work of the members of the JSR 380 Expert Group and the community at large. The following persons have actively contributed to Bean Validation 2.0 in alphabetical order:
+
+* TODO
+
+The following persons have actively contributed to Bean Validation 1.1 as members of the JSR 349 expert group and the community at large in alphabetical order:
 
 * Matt Benson
 * Paul Benedict
@@ -103,7 +107,7 @@ As of version 1.1, Bean Validation constraints can also be applied to the parame
 
 === Required Java version
 
-The specification uses Java 6.0 language features. There is no requirement that implementations be compatible with Java language versions prior to 6.0.
+The specification uses Java 8.0 language features. There is no requirement that implementations be compatible with Java language versions prior to 8.0.
 
 === How this document is organized
 
@@ -139,6 +143,12 @@ The expert group is eager to receive feedback from readers. Feel free to contact
 [[whatsnew]]
 
 == What's new
+
+=== What's new in 2.0
+
+The main contribution of Bean Validation 2.0 is leveraging the new language features of Java 8 for the purposes of validation.
+
+TODO
 
 === What's new in 1.1
 
@@ -245,7 +255,7 @@ A constraint on a JavaBean is expressed through one or more annotations. [tck-no
  * <pre>
  * &#64;Documented
  * &#64;Constraint(validatedBy = OrderNumberValidator.class)
- * &#64;Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+ * &#64;Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
  * &#64;Retention(RUNTIME)
  * public &#64;interface OrderNumber {
  *     String message() default "{com.acme.constraint.OrderNumber.message}";
@@ -291,6 +301,7 @@ Generic constraint annotations can target any of the following [classname]``Elem
 * [classname]`PARAMETER` for constrained method and constructor parameters
 * `TYPE` for constrained beans
 * `ANNOTATION_TYPE` for constraints composing other constraints
+* `TYPE_USE` for type argument constraints
 --
 
 [tck-not-testable]
@@ -511,7 +522,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy = OrderNumberValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface OrderNumber {
 
@@ -622,7 +633,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy = AudibleValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface Audible {
 
@@ -660,7 +671,7 @@ package com.acme.constraint;
  */
 @Documented
 @Constraint(validatedBy = DiscreteListOfIntegerValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface Acceptable {
 
@@ -687,6 +698,9 @@ It is often useful to declare the same constraint more than once to the same tar
 To support this requirement, [tck-testable]#the Bean Validation provider treats regular annotations (annotations not annotated by [classname]`@Constraint`) whose `value` element has a return type of an array of constraint annotations in a special way. Each element in the `value` array are processed by the Bean Validation implementation as regular constraint annotations.# This means that each constraint specified in the `value` element is applied to the target. The annotation must have retention `RUNTIME` and can be applied on a type, field, property, executable parameter, executable return value, executable cross-parameter or another annotation. It is recommended to use the same set of targets as the initial constraint.
 
 Note to constraint designers: each constraint annotation should be coupled with its corresponding multi-valued annotation. The specification recommends, though does not mandate, the definition of an inner annotation named [classname]`List`.
+Each constraint annotation type should be meta-annotated with [classname]`java.lang.annotation.Repeatable`, referencing the corresponding [classname]`List` annotation.
+This marks the constraint annotation type as repeatable and lets users specify the constraint several times without explicitly using the [classname]`List` annotation.
+All built-in annotations follow this pattern.
 
 .Multi-valued constraint definition
 ====
@@ -698,8 +712,9 @@ Note to constraint designers: each constraint annotation should be coupled with 
  */
 @Documented
 @Constraint(validatedBy = ZipCodeValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 public @interface ZipCode {
 
     String countryCode();
@@ -714,7 +729,7 @@ public @interface ZipCode {
      * Defines several @ZipCode annotations on the same element
      * @see (@link ZipCode}
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -729,18 +744,35 @@ public @interface ZipCode {
 [source, JAVA, indent=0]
 ----
 public class Address {
-    @ZipCode.List( {
-            @ZipCode(countryCode="fr", groups=Default.class,
-                     message = "zip code is not valid"),
-            @ZipCode(countryCode="fr", groups=SuperUser.class,
-                     message = "zip code invalid. Requires overriding before saving.")
-            } )
+    @ZipCode(countryCode = "fr", groups = Default.class, message = "zip code is not valid")
+    @ZipCode(
+        countryCode = "fr",
+        groups = SuperUser.class,
+        message = "zip code invalid. Requires overriding before saving."
+    )
     private String zipCode;
 }
 ----
 ====
 
 In this example, both constraints apply to the [methodname]`zipCode` field but with different groups and with different error messages.
+It is also possible to specify a constraint several times by explicitly using the [classname]`@List` annotation (though simply repeating the annotation is the preferred idiom as of Bean Validation 2.0 and Java 8):
+
+.Multi-valued constraint declaration using explicit [classname]`@List` annotation
+====
+[source, JAVA, indent=0]
+----
+public class Address {
+    @ZipCode.List( {
+        @ZipCode(countryCode="fr", groups=Default.class,
+            message = "zip code is not valid"),
+        @ZipCode(countryCode="fr", groups=SuperUser.class,
+            message = "zip code invalid. Requires overriding before saving.")
+    } )
+    private String zipCode;
+}
+----
+====
 
 Using two different multi-constraint annotations for the same underlying constraint type on the same target (i.e. class or property) is not considered portable and is discouraged.
 
@@ -767,7 +799,7 @@ Composition is done by annotating a constraint annotation with the composing con
 @Size(min = 5, max = 5)
 @Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface FrenchZipCode {
 
@@ -777,7 +809,7 @@ public @interface FrenchZipCode {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -806,7 +838,7 @@ It is possible to ensure that composing annotations do not raise individual erro
 @ReportAsSingleViolation
 @Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface FrenchZipCode {
 
@@ -816,7 +848,7 @@ public @interface FrenchZipCode {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -861,7 +893,7 @@ public @interface ReportAsSingleViolation {
 @Size(min = 5, max = 5)
 @Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface FrenchZipCode {
 
@@ -871,7 +903,7 @@ public @interface FrenchZipCode {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -895,7 +927,7 @@ public @interface FrenchZipCode {
 @Size
 @Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface FrenchZipCode {
 
@@ -916,7 +948,7 @@ public @interface FrenchZipCode {
     @OverridesAttribute(constraint = Pattern.class, name = "message")
     String numberMessage() default "{com.acme.constraint.FrenchZipCode.number.size}";
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -961,7 +993,7 @@ if [classname]`@FrenchZipCode` is defined as
 @Size(min = 9, max = 9, message = "Zip code should be of size {max}")
 @Constraint(validatedBy = FrenchZipCodeValidator.class)
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface FrenchZipCode {
 
@@ -971,7 +1003,7 @@ public @interface FrenchZipCode {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -994,7 +1026,7 @@ public @interface FrenchZipCode {
 })
 @Constraint(validatedBy = {})
 @Documented
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface EmmanuelsEmail {
 
@@ -1010,7 +1042,7 @@ public @interface EmmanuelsEmail {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -1356,6 +1388,7 @@ The [classname]`ConstraintValidatorContext` object passed to the [methodname]`is
  * of if the default {@code ConstraintViolation} is disabled, a custom one).
  *
  * @author Emmanuel Bernard
+ * @author Guillaume Smet
  */
 public interface ConstraintValidatorContext {
 
@@ -1372,6 +1405,19 @@ public interface ConstraintValidatorContext {
      * @return the current un-interpolated default message
      */
     String getDefaultConstraintMessageTemplate();
+
+
+    /**
+     * Returns the provider for obtaining the current time in the form of a {@link Clock}, e.g. when validating the
+     * {@code Future} and {@code Past} constraints.
+     *
+     * @return the provider for obtaining the current time, never {@code null}. If no specific provider has been
+     * configured during bootstrap, a default implementation using the current system time and the current default time
+     * zone as returned by {@link Clock#systemDefaultZone()} will be returned.
+     *
+     * @since 2.0
+     */
+    ClockProvider getClockProvider();
 
     /**
      * Returns a constraint violation builder building a violation report
@@ -1489,6 +1535,7 @@ public interface ConstraintValidatorContext {
      * {@link ValidationException} is thrown.
      *
      * @param type the class of the object to be returned
+     * @param <T> the type of the object to be returned
      * @return an instance of the specified class
      * @throws ValidationException if the provider does not support the call
      *
@@ -1885,7 +1932,10 @@ public interface ConstraintValidatorContext {
 }
 ----
 
-The [classname]`ConstraintValidatorContext` interface allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object. This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
+The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (e.g. `getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporal-validators>> ).
+
+It also allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object.
+This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
 
 [tck-testable]#The [classname]`ConstraintValidatorContext` methods let the constraint implementation disable the default [classname]`ConstraintViolation` generation and create one or more custom ones.# [tck-testable]#The non-interpolated message passed as a parameter is used to build the [classname]`ConstraintViolation` message (the message interpolation operation is applied to it).#
 
@@ -1979,6 +2029,47 @@ context.buildConstraintViolationWithTemplate(
 ====
 
 [tck-testable]#If [methodname]`disableDefaultConstraintViolation()` is called, no custom error is added (using the error builder) and if the constraint is not valid, a [classname]`ValidationException` is raised.#
+
+[[constraintsdefinitionimplementation-validationimplementation-temporal-validators]]
+
+==== Implementation of temporal constraint validators
+
+[tck-testable]#
+Constraint validators for temporal constraints (either the built-in constraints `@Past` and `@Future` or custom temporal constraints) can obtain the current instant from the `ClockProvider` object exposed by `ConstraintValidatorContext#getClockProvider()`.#
+
+[source, JAVA]
+----
+/**
+ * Contract for obtaining the {@link Clock} used as the reference for {@code now} when validating the {@code @Future}
+ * and {@code @Past} constraints.
+ * <p>
+ * The default implementation will return the current system time. Plugging in custom implementations may be useful for
+ * instance in batch applications which need to run with a specific logical date, e.g. with yesterday's date when
+ * re-running a failed batch job execution.
+ * <p>
+ * Implementations must be safe for access from several threads at the same time.
+ *
+ * @author Gunnar Morling
+ * @author Guillaume Smet
+ * @since 2.0
+ */
+public interface ClockProvider {
+
+    /**
+     * Returns the clock which serves as the reference for {@code now}.
+     *
+     * @return the clock which serves as the reference for {@code now}; must not be {@code null}
+     */
+    Clock getClock();
+}
+----
+
+[tck-testable]#The `getClock()` method returns a `java.time.Clock` object which represents the current instant, date and time using a time zone.
+A conforming Bean Validation implementation provides a default clock provider which returns a clock representing the current system time and default time zone.#
+It is recommended that implementations call `Clock#systemDefaultZone()` to obtain the clock.
+
+When bootstrapping a validator factory or validator, an alternative clock provider can be registered (see <<bootstrapping>>).
+This can be useful for testing, for applying the time zone of the currently logged in user in a multi-user, multi time zone application or for running batch applications with a logical date and time different from the actual current date and time.
 
 [[constraintsdefinitionimplementation-validationimplementation-example]]
 
@@ -2146,6 +2237,37 @@ public class FineGrainedSyntaxValidator implements ConstraintValidator<Syntax, S
 ====
 
 The default error message is disabled and replaced by a specific error message depending on the type of constraint violation detected. In this case, only one error report is returned at a given time but a constraint validation implementation can return several error reports.
+
+The following example shows how to obtain the current date and time via the `ClockProvider` when validating a temporal constraint such as `@Past`:
+
+.Validation of a temporal constraint
+====
+
+[source, JAVA, indent=0]
+----
+/**
+ * Validates that the given {@link ZonedDateTime} is in the past.
+ */
+public class PastValidatorForZonedDateTime implements ConstraintValidator<Past, ZonedDateTime> {
+
+    @Override
+    public void initialize(Past constraintAnnotation) {
+    }
+
+    @Override
+    public boolean isValid(ZonedDateTime value, ConstraintValidatorContext context) {
+        if ( value == null ) {
+            return true;
+        }
+
+        ZonedDateTime now = ZonedDateTime.now( context.getClockProvider().getClock() );
+
+        return value.isBefore( now );
+    }
+}
+----
+
+====
 
 [[constraintsdefinitionimplementation-constraintfactory]]
 
@@ -2681,8 +2803,9 @@ package javax.validation.groups;
  * @author Emmanuel Bernard
  * @since 1.1
  */
-@Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 public @interface ConvertGroup {
 
@@ -2694,7 +2817,7 @@ public @interface ConvertGroup {
      * Defines several {@link ConvertGroup} annotations
      * on the same element.
      */
-    @Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+    @Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     public @interface List {
@@ -3037,7 +3160,7 @@ Some constraints can target an executable's return value as well as its array of
 
 ===== Naming parameters
 
-In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). As of version 7, Java doesn't provide a portable way to retrieve parameter names. Bean Validation therefore defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
+In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). Bean Validation defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
 
 
 [source, JAVA]
@@ -3077,7 +3200,15 @@ public interface ParameterNameProvider {
 }
 ----
 
-[tck-testable]#A conforming Bean Validation implementation provides a default [classname]`ParameterNameProvider` implementation which returns parameter names in the form arg``PARAMETER_INDEX``, where `PARAMETER_INDEX` starts at 0 for the first parameter, e.g. [varname]`arg0`, [varname]`arg1` etc.#
+[tck-testable]
+--
+A conforming Bean Validation implementation provides a default [classname]`ParameterNameProvider` implementation which returns parameter names as stored in the class file containing the validated executable, if present. A conforming implementation must either use the Java reflection API or ensure behavioral compatibility to using the reflection API in the following way:
+
+ * Obtain the method's or constructor's parameters via [methodname]`java.lang.reflect.Executable.getParameters()`
+ * Obtain each parameter's name via [methodname]`java.lang.reflect.Parameter.getName()`
+--
+
+Depending on whether the class file of the validated executable contains parameter name information or not, the actual parameter names as provided in the executable's definition will be returned or synthetic names in the form arg``PARAMETER_INDEX``, where `PARAMETER_INDEX` starts at 0 for the first parameter, e.g. [varname]`arg0`, [varname]`arg1` etc.
 
 Bean Validation providers and integrators are free to provide additional implementations (e.g. based on annotations specifying parameter names, debug symbols etc.). If a user wishes to use another parameter name provider than the default implementation, they may specify the provider to use with help of the bootstrap API (see <<bootstrapping>>) or the XML configuration (see <<xml-config>>).
 
@@ -3851,9 +3982,9 @@ When validating a generic constraint [classname]`A` placed on a target declaring
 
 * [tck-testable]#Only [classname]`ConstraintValidator` implementations targeting annotated elements are considered.#
 * [tck-testable]#Primitive types are considered equivalent to their respective primitive wrapper class.#
-* A [classname]`ConstraintValidator<A, U>` is said to be _compliant_ with [classname]`T` if [classname]`T` is a subtype of [classname]`U` (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]). Note that [classname]`T` is a subtype of [classname]`U` if [classname]`T` = [classname]`U`.
+* A [classname]`ConstraintValidator<A, U>` is said to be _compliant_ with [classname]`T` if [classname]`T` is a subtype of [classname]`U` (according to the link:$$http://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]). Note that [classname]`T` is a subtype of [classname]`U` if [classname]`T` = [classname]`U`.
 * [tck-testable]#If no [classname]`ConstraintValidator` compliant with [classname]`T` is found amongst the [classname]``ConstraintValidator``s listed by the constraint [classname]`A`, an [classname]`UnexpectedTypeException` is raised.#
-* [tck-testable]#A [classname]`ConstraintValidator<A, U>` compliant with [classname]`T` is considered _strictly more specific_ than a [classname]`ConstraintValidator<A, V>` compliant with [classname]`T` if [classname]`U` is a strict subtype of [classname]`V`. [classname]`U` is a strict subtype of [classname]`V` if [classname]`U` is a subtype of [classname]`V` and [classname]`U` != [classname]`V` (according to the link:$$http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]).#
+* [tck-testable]#A [classname]`ConstraintValidator<A, U>` compliant with [classname]`T` is considered _strictly more specific_ than a [classname]`ConstraintValidator<A, V>` compliant with [classname]`T` if [classname]`U` is a strict subtype of [classname]`V`. [classname]`U` is a strict subtype of [classname]`V` if [classname]`U` is a subtype of [classname]`V` and [classname]`U` != [classname]`V` (according to the link:$$http://docs.oracle.com/javase/specs/jls/se8/html/jls-4.html#jls-4.10$$[Java Language Specification 3rd edition chapter 4.10 Subtyping]).#
 * A [classname]`ConstraintValidator<A, U>` compliant with [classname]`T` is considered maximally specific if no other [classname]`ConstraintValidator<A, V>` compliant with [classname]`T` is strictly more specific than [classname]`ConstraintValidator<A, U>`.
 * [tck-testable]#If more than one maximally specific [classname]`ConstraintValidator` is found, an [classname]`UnexpectedTypeException` is raised.#
 
@@ -4099,7 +4230,7 @@ Assuming that [classname]`@NotEmpty` is defined as such
 @Size(min = 1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface NotEmpty {
 
@@ -4109,7 +4240,7 @@ public @interface NotEmpty {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -4381,6 +4512,7 @@ public interface Validator {
      * @param object object to validate
      * @param groups the group or list of groups targeted for validation (defaults to
      *        {@link Default})
+     * @param <T> the type of the object to validate
      * @return constraint violations or an empty set if none
      * @throws IllegalArgumentException if object is {@code null}
      *         or if {@code null} is passed to the varargs groups
@@ -4397,6 +4529,7 @@ public interface Validator {
      * @param propertyName property to validate (i.e. field and getter constraints)
      * @param groups the group or list of groups targeted for validation (defaults to
      *        {@link Default})
+     * @param <T> the type of the object to validate
      * @return constraint violations or an empty set if none
      * @throws IllegalArgumentException if {@code object} is {@code null},
      *         if {@code propertyName} is {@code null}, empty or not a valid object property
@@ -4420,6 +4553,7 @@ public interface Validator {
      * @param value property value to validate
      * @param groups the group or list of groups targeted for validation (defaults to
      *        {@link Default}).
+     * @param <T> the type of the object to validate
      * @return constraint violations or an empty set if none
      * @throws IllegalArgumentException if {@code beanType} is {@code null},
      *         if {@code propertyName} is {@code null}, empty or not a valid object property
@@ -4455,6 +4589,7 @@ public interface Validator {
      * the specified class, {@link ValidationException} is thrown.
      *
      * @param type the class of the object to be returned
+     * @param <T> the type of the object to be returned
      * @return an instance of the specified class
      * @throws ValidationException if the provider does not support the call
      */
@@ -4502,7 +4637,7 @@ acmeValidator.setSpecificConfiguration( [...] );
 
 [tck-testable]#[methodname]`<T> Set<ConstraintViolation<T>> validateProperty(T object, String propertyName, Class<?>\... groups)` validates a given field or property of an object.# [tck-testable]#An [classname]`IllegalArgumentException` is thrown when [methodname]`validateProperty()` is called and [varname]`object` is null or [varname]`propertyName` is null, empty or invalid or null is passed to the varargs [varname]`groups` parameter.# [tck-testable]#The property name is the JavaBeans property name (as defined by the JavaBeans [classname]`Introspector` class).# This method implements the logic described in <<constraintdeclarationvalidationprocess-validationroutine>> but only to the given property. [tck-testable]#`@Valid` is not honored by this method.# This method is useful for partial object validation.
 
-[tck-testable]#[methodname]`<T> Set<ConstraintViolation<T>> validateValue(Class<T> beanType, String propertyName, Object value, Class<?>\... groups)` validates the property referenced by [parameter]`propertyName` present on `beanType` or any of its superclasses, if the property value were [parameter]`value`.# [tck-testable]#An [classname]`IllegalArgumentException` is thrown when [methodname]`validateValue()` is called and [varname]`object` is null or [varname]`propertyName` is null, empty or invalid or null is passed to the varargs [varname]`groups` parameter.# This method implements the logic described in <<constraintdeclarationvalidationprocess-validationroutine>> and apply it only to the given property and for the given value. [tck-testable]#`@Valid` is not honored by this method.# This method is useful for ahead of time validation (i.e. before the JavaBean is populated or updated).
+[tck-testable]#[methodname]`<T> Set<ConstraintViolation<T>> validateValue(Class<T> beanType, String propertyName, Object value, Class<?>\... groups)` validates the property referenced by [parameter]`propertyName` present on `beanType` or any of its superclasses, if the property value were [parameter]`value`.# [tck-testable]#An [classname]`IllegalArgumentException` is thrown when [methodname]`validateValue()` is called and [varname]`beanType` is null or [varname]`propertyName` is null, empty or invalid or null is passed to the varargs [varname]`groups` parameter.# This method implements the logic described in <<constraintdeclarationvalidationprocess-validationroutine>> and apply it only to the given property and for the given value. [tck-testable]#`@Valid` is not honored by this method.# This method is useful for ahead of time validation (i.e. before the JavaBean is populated or updated).
 
 [NOTE]
 ====
@@ -5715,7 +5850,7 @@ package com.acme.constraint;
 @Size(min = 1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface NotEmpty {
 
@@ -5725,7 +5860,7 @@ public @interface NotEmpty {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -6657,7 +6792,7 @@ factory.close();
 
 The second example shows how a container can customize some Bean Validator resource handling to match its own behavior.
 
-.Customize message resolution, traversable resolver, constraint Validator factory and parameter name provider implementation
+.Customize message resolution, traversable resolver, constraint validator factory, parameter name provider and clock provider implementation
 ====
 
 [source, JAVA]
@@ -6669,6 +6804,7 @@ ValidatorFactory factory = Validation
           .constraintValidatorFactory( new ContainerComponentConstraintValidatorFactory() )
           .traversableResolver( new JPAAwareTraversableResolver() )
           .parameterNameProvider( new AnnotationBasedParameterNameProvider() )
+          .clockProvider( new BatchJobClockProvider() )
           .buildValidatorFactory();
 
 //cache the factory somewhere
@@ -6794,8 +6930,9 @@ We will now explore the various interfaces, their constraints and usage. We will
  * @author Emmanuel Bernard
  * @author Gunnar Morling
  * @author Hardy Ferentschik
+ * @author Guillaume Smet
  */
-public interface ValidatorFactory {
+public interface ValidatorFactory extends AutoCloseable {
 
     /**
      * Returns an initialized {@link Validator} instance using the
@@ -6856,12 +6993,24 @@ public interface ValidatorFactory {
     ParameterNameProvider getParameterNameProvider();
 
     /**
+     * Returns the {@link ClockProvider} instance configured at
+     * initialization time for the {@code ValidatorFactory}.
+     * This is the instance used by #getValidator().
+     *
+     * @return {@code ClockProvider} instance
+     *
+     * @since 2.0
+     */
+    ClockProvider getClockProvider();
+
+    /**
      * Returns an instance of the specified type allowing access to
      * provider-specific APIs. If the Bean Validation provider
      * implementation does not support the specified class, a
      * {@code ValidationException} is thrown.
      *
      * @param type the class of the object to be returned
+     * @param <T> the type of the object to be returned
      * @return an instance of the specified class
      * @throws ValidationException if the provider does not
      *         support the call.
@@ -6880,6 +7029,7 @@ public interface ValidatorFactory {
      *
      * @since 1.1
      */
+    @Override
     public void close();
 }
 ----
@@ -6912,7 +7062,9 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [tck-testable]#[methodname]`getParameterNameProvider()` returns the [classname]`ParameterNameProvider` instance configured during the initialization of the [classname]`ValidatorFactory`.# It is particularly useful to build a [classname]`Validator` specific [classname]`ParameterNameProvider` wrapping the one from the [classname]`ValidatorFactory`.
 
-[classname]`ValidatorContext` returned by [methodname]`usingContext()` can be used to customize the state in which the [classname]`Validator` must be initialized. This is used to customize the [classname]`MessageInterpolator`, the [classname]`TraversableResolver`, [classname]`ParameterNameProvider` or the [classname]`ConstraintValidatorFactory`.
+[tck-testable]#[methodname]`getClockProvider()` returns the [classname]`ClockProvider` instance configured during the initialization of the [classname]`ValidatorFactory`.# It is particularly useful to build a [classname]`Validator` specific [classname]`ClockProvider` wrapping the one from the [classname]`ValidatorFactory`.
+
+[classname]`ValidatorContext` returned by [methodname]`usingContext()` can be used to customize the state in which the [classname]`Validator` must be initialized. This is used to customize the [classname]`MessageInterpolator`, the [classname]`TraversableResolver`, the [classname]`ParameterNameProvider`, the  [classname]`ClockProvider` or the [classname]`ConstraintValidatorFactory`.
 
 .ValidatorContext interface
 ====
@@ -6931,6 +7083,7 @@ acmeFactory.setSpecificConfiguration( [...] );
  *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
+ * @author Guillaume Smet
  */
 public interface ValidatorContext {
 
@@ -6984,6 +7137,18 @@ public interface ValidatorContext {
     ValidatorContext parameterNameProvider(ParameterNameProvider parameterNameProvider);
 
     /**
+     * Defines the {@link ClockProvider} implementation used by the {@link Validator}.
+     * If not set or if {@code null} is passed as a parameter,
+     * the clock provider of the {@link ValidatorFactory} is used.
+     *
+     * @param clockProvider {@code ClockProvider} implementation
+     * @return self following the chaining method pattern
+     *
+     * @since 2.0
+     */
+    ValidatorContext clockProvider(ClockProvider clockProvider);
+
+    /**
      * Returns an initialized {@link Validator} instance respecting the defined state.
      * {@code Validator} instances can be pooled and shared by the implementation.
      *
@@ -6995,7 +7160,7 @@ public interface ValidatorContext {
 
 ====
 
-[tck-testable]#The `MessageInterpolator`, the `TraversableResolver`, the `ConstraintValidatorFactory` or the `ParameterNameProvider` passed to the `ValidatorContext` are used instead of the ``ValidatorFactory``'s `MessageInterpolator`, `TraversableResolver`, `ConstraintValidatorFactory` or `ParameterNameProvider` instances.#
+[tck-testable]#The `MessageInterpolator`, the `TraversableResolver`, the `ConstraintValidatorFactory`, the `ParameterNameProvider` or the `ClockProvider` passed to the `ValidatorContext` are used instead of the ``ValidatorFactory``'s `MessageInterpolator`, `TraversableResolver`, `ConstraintValidatorFactory`, `ParameterNameProvider` or `ClockProvider` instances.#
 
 .Use of ValidatorFactory
 ====
@@ -7022,6 +7187,7 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 * the traversable resolver instance
 * the constraint validator factory instance
 * the parameter name provider instance
+* the clock provider instance
 * XML constraint mappings
 * provider specific properties
 * whether or not [classname]`META-INF/validation.xml` is considered
@@ -7034,6 +7200,8 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 [tck-testable]#[classname]`Configuration` does provide a [classname]`ConstraintValidatorFactory` implementation following the default Bean Validation [classname]`ConstraintValidatorFactory` rules as defined in <<constraintsdefinitionimplementation-constraintfactory>>. You can access it by calling [methodname]`getDefaultConstraintValidatorFactory()`.# Such an implementation is useful to let a custom [classname]`ConstraintValidatorFactory` delegate to the standard [classname]`ConstraintValidatorFactory`.
 
 [tck-testable]#[classname]`Configuration` does provide a [classname]`ParameterNameProvider` implementation following the default Bean Validation [classname]`ParameterNameProvider` rules as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>. You can access it by calling [methodname]`getDefaultParameterNameProvider()`.# Such an implementation is useful to let a custom [classname]`ParameterNameProvider` delegate to the standard [classname]`ParameterNameProvider`.
+
+[tck-testable]#[classname]`Configuration` does provide a [classname]`ClockProvider` implementation following the default Bean Validation [classname]`ClockProvider` rules as defined in <<constraintsdefinitionimplementation-validationimplementation-temporal-validators>>. You can access it by calling [methodname]`getDefaultClockProvider()`.#
 
 [tck-testable]#Via [classname]`getBootstrapConfiguration()`, [classname]`Configuration` also exposes data stored in [classname]`META-INF/validation.xml`# (see <<xml-config>>). This is particularly useful for containers wishing to control the instance creation and lifecycle (more information at <<bootstrapping-usageandcontainerexpectation>>).
 
@@ -7087,6 +7255,7 @@ Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the
  * @author Emmanuel Bernard
  * @author Gunnar Morling
  * @author Hardy Ferentschik
+ * @author Guillaume Smet
  */
 public interface Configuration<T extends Configuration<T>> {
 
@@ -7151,6 +7320,20 @@ public interface Configuration<T extends Configuration<T>> {
      * @since 1.1
      */
     T parameterNameProvider(ParameterNameProvider parameterNameProvider);
+
+    /**
+     * Defines the clock provider. Has priority over the configuration
+     * based provider.
+     * <p>
+     * If {@code null} is passed, the default clock provider is used
+     * (defined in XML or the specification default).
+     *
+     * @param clockProvider clock provider implementation
+     * @return {@code this} following the chaining method pattern.
+     *
+     * @since 2.0
+     */
+    T clockProvider(ClockProvider clockProvider);
 
     /**
      * Add a stream describing constraint mapping in the Bean Validation XML
@@ -7266,6 +7449,20 @@ public interface Configuration<T extends Configuration<T>> {
     ParameterNameProvider getDefaultParameterNameProvider();
 
     /**
+     * Returns an implementation of the {@link ClockProvider}
+     * interface following the default {@code ClockProvider}
+     * defined in the specification:
+     *
+     * TODO BVAL-496 paste definition of the specification
+     *
+     * @return default {@code ClockProvider} implementation compliant with
+     *         the specification
+     *
+     * @since 2.0
+     */
+    ClockProvider getDefaultClockProvider();
+
+    /**
      * Returns configuration information stored in the {@code META-INF/validation.xml} file.
      * <p>
      * <b>Note</b>:
@@ -7304,6 +7501,7 @@ public interface Configuration<T extends Configuration<T>> {
  * @author Emmanuel Bernard
  * @author Gunnar Morling
  * @author Hardy Ferentschik
+ * @author Guillaume Smet
  * @since 1.1
  */
 public interface BootstrapConfiguration {
@@ -7347,6 +7545,16 @@ public interface BootstrapConfiguration {
      * @return parameter name provider class name or {@code null}
      */
     String getParameterNameProviderClassName();
+
+    /**
+     * Class name of the {@link ClockProvider} implementation or
+     * {@code null} if none is specified.
+     *
+     * @return clock provider class name or {@code null}
+     *
+     * @since 2.0
+     */
+    String getClockProviderClassName();
 
     /**
      * Returns a set of resource paths pointing to XML constraint mapping files.
@@ -7443,6 +7651,7 @@ package javax.validation.spi;
  * @author Emmanuel Bernard
  * @author Hardy Ferentschik
  * @author Gunnar Morling
+ * @author Guillaume Smet
  */
 public interface ConfigurationState {
 
@@ -7543,6 +7752,24 @@ public interface ConfigurationState {
      * @since 1.1
      */
     ParameterNameProvider getParameterNameProvider();
+
+    /**
+     * Returns the clock provider for this configuration.
+     * <p>
+     * {@link ClockProvider} is defined in the following decreasing priority:
+     * <ul>
+     *     <li>set via the {@link Configuration} programmatic API</li>
+     *     <li>defined in {@code META-INF/validation.xml} provided that
+     *     {@code ignoreXmlConfiguration} is {@code false}. In this case the instance
+     *     is created via its no-arg constructor.</li>
+     *     <li>{@code null} if undefined.</li>
+     * </ul>
+     *
+     * @return clock provider instance or {@code null} if not defined
+     *
+     * @since 2.0
+     */
+    ClockProvider getClockProvider();
 
     /**
      * Returns a map of non type-safe custom properties.
@@ -8118,8 +8345,6 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 
 [tck-testable]#Unless explicitly ignored by calling [classname]`Configuration.ignoreXMLConfiguration()`, a [classname]`Configuration` takes into account the configuration available in [filename]`META-INF/validation.xml`.# [tck-testable]#This configuration file is optional# but can be used by applications to refine some of the Bean Validation behavior. [tck-not-testable]#If more than one [filename]`META-INF/validation.xml` file is found in the classpath, a [classname]`ValidationException` is raised.#
 
-[tck-testable]#Implementations supporting Bean Validation 1.1 must properly parse deployment descriptors of Bean Validation 1.0 and 1.1.#
-
 [tck-testable]#Unless stated otherwise, XML based configuration settings are overridden by values explicitly set via the [classname]`Configuration` API.# For example, the [classname]`MessageInterpolator` defined via [methodname]`Configuration.messageInterpolator(MessageInterpolator)` has priority over the `message-interpolator` definition.
 
 [tck-testable]#`default-provider`: represents the class name of the provider specific [classname]`ValidationProvider` implementation class. If defined, the specific provider is used# (unless a specific provider has been chosen via the programmatic approach).
@@ -8131,6 +8356,8 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 [tck-testable]#`constraint-validator-factory`: represents the fully qualified class name of the [classname]`ConstraintValidatorFactory` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
 
 [tck-testable]#`parameter-name-provider`: represents the fully qualified class name of the [classname]`ParameterNameProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
+
+[tck-testable]#`clock-provider`: represents the fully qualified class name of the [classname]`ClockProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
 
 [tck-testable]#`executable-validation`: allows to disable executable validation entirely via its attribute [code]`enabled="false"` and optionally contains `default-validated-executable-types`. `enabled` defaults to `true`.#
 
@@ -8151,11 +8378,11 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <validation-config
-        xmlns="http://jboss.org/xml/ns/javax/validation/configuration"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/configuration"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/configuration validation-configuration-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/configuration validation-configuration-2.0.xsd"
+        version="2.0">
     <default-provider>com.acme.ACMEProvider</default-provider>
     <message-interpolator>com.acme.ACMEAwareMessageInterpolator</message-interpolator>
 
@@ -9220,7 +9447,7 @@ package com.acme.constraint;
 @Size(min = 1)
 @ReportAsSingleViolation
 @Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface NotEmpty {
 
@@ -9230,7 +9457,7 @@ public @interface NotEmpty {
 
     Class<? extends Payload>[] payload() default {};
 
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9555,8 +9782,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Null {
@@ -9572,7 +9800,7 @@ public @interface Null {
      *
      * @see javax.validation.constraints.Null
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9580,6 +9808,7 @@ public @interface Null {
         Null[] value();
     }
 }
+
 ----
 
 ====
@@ -9597,8 +9826,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface NotNull {
@@ -9614,7 +9844,7 @@ public @interface NotNull {
      *
      * @see javax.validation.constraints.NotNull
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9641,8 +9871,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface AssertTrue {
@@ -9658,7 +9889,7 @@ public @interface AssertTrue {
      *
      * @see AssertTrue
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9685,8 +9916,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface AssertFalse {
@@ -9702,7 +9934,7 @@ public @interface AssertFalse {
      *
      * @see javax.validation.constraints.AssertFalse
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9739,8 +9971,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Min {
@@ -9761,7 +9994,7 @@ public @interface Min {
      *
      * @see Min
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9798,8 +10031,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Max {
@@ -9820,7 +10054,7 @@ public @interface Max {
      *
      * @see Max
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9858,8 +10092,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface DecimalMin {
@@ -9894,7 +10129,7 @@ public @interface DecimalMin {
      *
      * @see DecimalMin
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -9932,8 +10167,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface DecimalMax {
@@ -9968,7 +10204,7 @@ public @interface DecimalMax {
      *
      * @see DecimalMax
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -10002,8 +10238,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Size {
@@ -10029,7 +10266,7 @@ public @interface Size {
      *
      * @see Size
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -10063,8 +10300,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Digits {
@@ -10090,7 +10328,7 @@ public @interface Digits {
      *
      * @see Digits
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -10110,24 +10348,39 @@ public @interface Digits {
 package javax.validation.constraints;
 
 /**
- * The annotated element must be a date in the past.
- * Now is defined as the current time according to the virtual machine.
+The annotated element must be an instant, date or time in the past.
  * <p>
- * The calendar used if the compared type is of type {@code Calendar}
- * is the calendar based on the current time zone and the current locale.
+ * By default, "now" is defined as the current time according to the virtual machine, applying the current default time
+ * zone if needed. If required, an alternative {@link ClockProvider} can be specified when bootstrapping a validator
+ * factory or validator, allowing to customize the {@link Clock} representing the current instant, date and time.
  * <p>
  * Supported types are:
  * <ul>
  *     <li>{@code java.util.Date}</li>
  *     <li>{@code java.util.Calendar}</li>
+ *     <li>{@code java.time.Instant}</li>
+ *     <li>{@code java.time.LocalDate}</li>
+ *     <li>{@code java.time.LocalDateTime}</li>
+ *     <li>{@code java.time.LocalTime}</li>
+ *     <li>{@code java.time.MonthDay}</li>
+ *     <li>{@code java.time.OffsetDateTime}</li>
+ *     <li>{@code java.time.OffsetTime}</li>
+ *     <li>{@code java.time.Year}</li>
+ *     <li>{@code java.time.YearMonth}</li>
+ *     <li>{@code java.time.ZonedDateTime}</li>
+ *     <li>{@code java.time.chrono.HijrahDate}</li>
+ *     <li>{@code java.time.chrono.JapaneseDate}</li>
+ *     <li>{@code java.time.chrono.MinguoDate}</li>
+ *     <li>{@code java.time.chrono.ThaiBuddhistDate}</li>
  * </ul>
  * <p>
  * {@code null} elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Past {
@@ -10139,11 +10392,19 @@ public @interface Past {
     Class<? extends Payload>[] payload() default { };
 
     /**
+     * The notion of present here is defined relatively to the type on which the constraint is used. For instance, if
+     * the constraint is on a {@link Year}, present would mean the whole current year.
+     *
+     * @return {@code true} if the present date should be considered valid
+     */
+    boolean orPresent() default false;
+
+    /**
      * Defines several {@link Past} annotations on the same element.
      *
      * @see Past
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -10163,23 +10424,39 @@ public @interface Past {
 package javax.validation.constraints;
 
 /**
- * The annotated element must be a date in the future.
- * Now is defined as the current time according to the virtual machine
- * The calendar used if the compared type is of type {@code Calendar}
- * is the calendar based on the current time zone and the current locale.
+ * The annotated element must be an instant, date or time in the future.
+ * <p>
+ * By default, "now" is defined as the current time according to the virtual machine, applying the current default time
+ * zone if needed. If required, an alternative {@link ClockProvider} can be specified when bootstrapping a validator
+ * factory or validator, allowing to customize the {@link Clock} representing the current instant, date and time.
  * <p>
  * Supported types are:
  * <ul>
  *     <li>{@code java.util.Date}</li>
  *     <li>{@code java.util.Calendar}</li>
+ *     <li>{@code java.time.Instant}</li>
+ *     <li>{@code java.time.LocalDate}</li>
+ *     <li>{@code java.time.LocalDateTime}</li>
+ *     <li>{@code java.time.LocalTime}</li>
+ *     <li>{@code java.time.MonthDay}</li>
+ *     <li>{@code java.time.OffsetDateTime}</li>
+ *     <li>{@code java.time.OffsetTime}</li>
+ *     <li>{@code java.time.Year}</li>
+ *     <li>{@code java.time.YearMonth}</li>
+ *     <li>{@code java.time.ZonedDateTime}</li>
+ *     <li>{@code java.time.chrono.HijrahDate}</li>
+ *     <li>{@code java.time.chrono.JapaneseDate}</li>
+ *     <li>{@code java.time.chrono.MinguoDate}</li>
+ *     <li>{@code java.time.chrono.ThaiBuddhistDate}</li>
  * </ul>
  * <p>
  * {@code null} elements are considered valid.
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Future {
@@ -10191,11 +10468,19 @@ public @interface Future {
     Class<? extends Payload>[] payload() default { };
 
     /**
+     * The notion of present here is defined relatively to the type on which the constraint is used. For instance, if
+     * the constraint is on a {@link Year}, present would mean the whole current year.
+     *
+     * @return {@code true} if the present date should be considered valid
+     */
+    boolean orPresent() default false;
+
+    /**
      * Defines several {@link Future} annotations on the same element.
      *
      * @see Future
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -10223,8 +10508,9 @@ package javax.validation.constraints;
  *
  * @author Emmanuel Bernard
  */
-@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
+@Repeatable(List.class)
 @Documented
 @Constraint(validatedBy = { })
 public @interface Pattern {
@@ -10328,7 +10614,7 @@ public @interface Pattern {
      *
      * @see Pattern
      */
-    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     @interface List {
@@ -10383,11 +10669,11 @@ The `ignore-annotations` setting is not inherited from nor by the class hierarch
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
 
     <default-package>com.acme.app.domain</default-package>
 
@@ -10420,11 +10706,11 @@ Class level annotations are described via the `class` element. [tck-testable]#If
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
         <class ignore-annotations="true">
@@ -10461,11 +10747,11 @@ Field level annotations are described via the `field` element. The `name` attrib
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
         <field name="firstName">
@@ -10501,11 +10787,11 @@ Property-level annotations are described via the `getter` element. [tck-testable
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
         <getter name="firstName">
@@ -10573,11 +10859,11 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
         <constructor ignore-annotations="true">
@@ -10664,11 +10950,11 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
         <method name="update" ignore-annotations="true">
@@ -10727,11 +11013,11 @@ Other custom elements of an annotation are represented by `element`. [tck-testab
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
 
@@ -10860,11 +11146,11 @@ Other custom elements of an annotation are represented by `element`. [tck-testab
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
     <default-package>com.acme.app.domain</default-package>
     <bean class="Customer" ignore-annotations="false">
 
@@ -10924,11 +11210,11 @@ A constraint definition (i.e. the annotation representing a constraint), cannot 
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <constraint-mappings
-        xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/mapping validation-mapping-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
    <default-package>com.acme.app.domain</default-package>
    <bean class="com.acme.common.model.Address">
        [...]
@@ -10987,9 +11273,9 @@ A [classname]`char` is represented according to the following rules:
 
 This section contains the XML schema used for constraint mapping descriptors.
 
-From Bean Validation revision 1.1 onwards, mapping authors must specify the used version of the schema within the `version` attribute of the `constraint-mappings` element. [tck-testable]#Implementations supporting Bean Validation 1.1 must properly parse mapping descriptors of Bean Validation 1.0 and 1.1.# [tck-not-testable]#If the `version` attribute attribute is not given, schema version 1.0 is to be assumed by the Bean Validation provider.#
+From Bean Validation revision 1.1 onwards, mapping authors must specify the used version of the schema within the `version` attribute of the `constraint-mappings` element. [tck-testable]#Implementations supporting Bean Validation 2.0 must properly parse mapping descriptors of Bean Validation 1.0, 1.1 and 2.0.# [tck-not-testable]#If the `version` attribute attribute is not given, schema version 1.0 is to be assumed by the Bean Validation provider.#
 
-[tck-testable]#In case an unknown version is given (e.g. if a mapping descriptor adhering to a future schema version is parsed by a Bean Validation 1.1 provider) a [classname]`ValidationException` is raised.#
+[tck-testable]#In case an unknown version is given (e.g. if a mapping descriptor adhering to a future schema version is parsed by a Bean Validation 2.0 provider) a [classname]`ValidationException` is raised.#
 
 .XML schema for constraint mapping descriptors
 ====
@@ -10999,10 +11285,10 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema attributeFormDefault="unqualified"
            elementFormDefault="qualified"
-           targetNamespace="http://jboss.org/xml/ns/javax/validation/mapping"
+           targetNamespace="http://xmlns.jcp.org/xml/ns/validation/mapping"
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:map="http://jboss.org/xml/ns/javax/validation/mapping"
-           version="1.1">
+           xmlns:map="http://xmlns.jcp.org/xml/ns/validation/mapping"
+           version="2.0">
 
     <xs:annotation>
         <xs:documentation><![CDATA[
@@ -11011,19 +11297,19 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
             Bean Validation constraint mapping files must indicate the Bean Validation
             XML schema by using the constraint mapping namespace:
 
-            http://jboss.org/xml/ns/javax/validation/mapping
+            http://xmlns.jcp.org/xml/ns/validation/mapping
 
             and indicate the version of the schema by using the version attribute
             as shown below:
 
             <constraint-mappings
-                xmlns="http://jboss.org/xml/ns/javax/validation/mapping"
+                xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="
-                    http://jboss.org/xml/ns/javax/validation/mapping
-                    validation-mapping-1.1.xsd"
-                version="1.1">
-                [...]
+                    http://xmlns.jcp.org/xml/ns/validation/mapping
+                    validation-mapping-2.0.xsd"
+                version="2.0">
+                ...
             </constraint-mappings>
         ]]>
         </xs:documentation>
@@ -11062,7 +11348,7 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         maxOccurs="unbounded"
                         minOccurs="0"/>
         </xs:sequence>
-        <xs:attribute name="version" type="map:versionType" fixed="1.1" use="required"/>
+        <xs:attribute name="version" type="map:versionType" fixed="2.0" use="required"/>
     </xs:complexType>
     <xs:simpleType name="versionType">
         <xs:restriction base="xs:token">
@@ -11276,10 +11562,10 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema attributeFormDefault="unqualified"
            elementFormDefault="qualified"
-           targetNamespace="http://jboss.org/xml/ns/javax/validation/configuration"
+           targetNamespace="http://xmlns.jcp.org/xml/ns/validation/configuration"
            xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns:config="http://jboss.org/xml/ns/javax/validation/configuration"
-           version="1.1">
+           xmlns:config="http://xmlns.jcp.org/xml/ns/validation/configuration"
+           version="2.0">
 
     <xs:annotation>
         <xs:documentation><![CDATA[
@@ -11289,18 +11575,18 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
             Bean Validation configuration files must indicate the Bean Validation
             XML schema by using the validation namespace:
 
-            http://jboss.org/xml/ns/javax/validation/configuration
+            http://xmlns.jcp.org/xml/ns/validation/configuration
 
             and indicate the version of the schema by using the version attribute
             as shown below:
 
             <validation-config
-                xmlns="http://jboss.org/xml/ns/javax/validation/configuration"
+                xmlns="http://xmlns.jcp.org/xml/ns/validation/configuration"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="
-                    http://jboss.org/xml/ns/javax/validation/configuration
-                    validation-configuration-1.1.xsd"
-                version="1.1">
+                    http://xmlns.jcp.org/xml/ns/validation/configuration
+                    validation-configuration-2.0.xsd"
+                version="2.0">
                 [...]
             </validation-config>
         ]]>
@@ -11315,11 +11601,12 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
             <xs:element type="xs:string" name="traversable-resolver" minOccurs="0"/>
             <xs:element type="xs:string" name="constraint-validator-factory" minOccurs="0"/>
             <xs:element type="xs:string" name="parameter-name-provider" minOccurs="0"/>
+            <xs:element type="xs:string" name="clock-provider" minOccurs="0"/>
             <xs:element type="config:executable-validationType" name="executable-validation" minOccurs="0"/>
             <xs:element type="xs:string" name="constraint-mapping" maxOccurs="unbounded" minOccurs="0"/>
             <xs:element type="config:propertyType" name="property" maxOccurs="unbounded" minOccurs="0"/>
         </xs:sequence>
-        <xs:attribute name="version" type="config:versionType" fixed="1.1" use="required"/>
+        <xs:attribute name="version" type="config:versionType" fixed="2.0" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="executable-validationType">
@@ -11360,7 +11647,7 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
 
 ====
 
-From Bean Validation revision 1.1 onwards, the used version of the schema must be specified within the `version` attribute of the `validation-config` element. [tck-testable]#Implementations supporting Bean Validation 1.1 must properly parse configuration descriptors of Bean Validation 1.0 and 1.1.# [tck-not-testable]#If the `version` attribute attribute is not given, schema version 1.0 is to be assumed by the Bean Validation Provider.#
+From Bean Validation revision 1.1 onwards, the used version of the schema must be specified within the `version` attribute of the `validation-config` element. [tck-testable]#Implementations supporting Bean Validation 2.0 must properly parse configuration descriptors of Bean Validation 1.0, 1.1 and 2.0.# [tck-not-testable]#If the `version` attribute attribute is not given, schema version 1.0 is to be assumed by the Bean Validation Provider.#
 
 [tck-testable]#In case an unknown version is given a [classname]`ValidationException` is raised.#
 
@@ -11394,7 +11681,7 @@ Illegal arguments passed to the Bean Validation APIs generally lead to an [class
 
 Each of these error cases lead to a [classname]`ValidationException` or a subclass of [classname]`ValidationException` (see following subsections).
 
-[tck-testable]#Every (runtime) exception raised either at initialization time or execution time by any of the extension interfaces ([classname]`ConstraintValidator`, [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`TraversableResolver`, [classname]`ValidationProviderResolver`, [classname]`ParameterNameProvider`) is wrapped in a [classname]`ValidationException`.#
+[tck-testable]#Every (runtime) exception raised either at initialization time or execution time by any of the extension interfaces ([classname]`ConstraintValidator`, [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`TraversableResolver`, [classname]`ValidationProviderResolver`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`) is wrapped in a [classname]`ValidationException`.#
 
 If a constraint definition or constraint declaration is invalid for a given class, the metadata API should raise the according exception.
 
@@ -11524,7 +11811,7 @@ Generally speaking, containers and frameworks controlling the lifecycle of objec
 * [tck-testable]#build and bootstrap the [classname]`ValidatorFactory` instance for an application.#
 * [tck-testable]#provide access to the [classname]`ValidatorFactory` instance as well as [classname]`Validator` instances in their default configuration using the paradigm of the container: for example, such instances would be injectable in other objects via a dependency injection framework.#
 * [tck-testable]#configure [classname]`ValidatorFactory` with a custom [classname]`ConstraintValidatorFactory` instance that returns managed [classname]`ConstraintValidator` instances, unless a custom [classname]`ConstraintValidatorFactory` is requested by the user. The scope of [classname]`ConstraintValidator` instances is still fully controlled by the Bean Validation provider as described in <<constraintsdefinitionimplementation-constraintfactory>>, but as managed beans they can receive expected services like injection of other objects.#
-* [tck-testable]#configure [classname]`ValidatorFactory` with managed instances of [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider` and [classname]`TraversableResolver`, if such instances are defined in the XML deployment descriptor. Services provided by the container (like dependency injection) should thus be available to these instances.#
+* [tck-testable]#configure [classname]`ValidatorFactory` with managed instances of [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` and [classname]`TraversableResolver`, if such instances are defined in the XML deployment descriptor. Services provided by the container (like dependency injection) should thus be available to these instances.#
 * [tck-not-testable]#invoke [methodname]`ValidatorFactory.close()` when the [classname]`ValidatorFactory` instance is no longer needed.#
 * [tck-not-testable]#dispose of managed instances provided to the Bean Validation bootstrap process after [methodname]`ValidatorFactory.close()` has been invoked.#
 
@@ -11719,11 +12006,11 @@ public enum ExecutableType {
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <validation-config
-        xmlns="http://jboss.org/xml/ns/javax/validation/configuration"
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/configuration"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation=
-            "http://jboss.org/xml/ns/javax/validation/configuration validation-configuration-1.1.xsd"
-        version="1.1">
+            "http://xmlns.jcp.org/xml/ns/validation/configuration validation-configuration-2.0.xsd"
+        version="2.0">
     <default-provider>com.acme.ACMEProvider</default-provider>
     <message-interpolator>com.acme.ACMEAwareMessageInterpolator</message-interpolator>
 
@@ -11850,9 +12137,9 @@ Optionally, the CDI container can support injection of provider specific - as de
 Registration of the built-in default beans and the provider specific beans may be achieved using the CDI portable extension SPI or a vendor specific SPI.
 ====
 
-==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider` and [classname]`TraversableResolver`
+==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` and [classname]`TraversableResolver`
 
-[tck-testable]#If a custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider` or [classname]`TraversableResolver` class is defined in the XML deployment descriptor (see <<xml-config>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
+[tck-testable]#If a custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` or [classname]`TraversableResolver` class is defined in the XML deployment descriptor (see <<xml-config>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
 
 [tck-testable]
 --
@@ -11919,6 +12206,881 @@ javax.validation.ConstraintViolation:: Interface describing a given constraint f
 Getter:: Method whose:
 * name starts with `get` and has a return type but no parameter
 * name starts with `is`, has no parameter and is returning [classname]`boolean`
+
+<<<
+
+[[appendix-value-extraction]]
+
+[appendix]
+== Value extraction for cascaded validation and type argument constraints (BVAL-508)
+
+This appendix describes the current work-in-progress around the retrieval of values to be validated during cascaded validation and evaluation of type argument constraints.
+It is based on the original http://beanvalidation.org/proposals/BVAL-508/[proposals for BVAL-508].
+
+=== Motivation
+
+Value extraction is needed when constraints are applied to the element(s) stored within a container type.
+There are two categories:
+
+* Cascaded validation of iterables, maps and arrays as triggered via `@Valid`: `@Valid List<Order> orders`; in this case all the values stored in the list must be extracted so each can be validated
+* Validation of type argument constraints as enabled by Java 8: `Optional<@Email String> email` or `Property<@Min(1) Integer> value`;
+in this case, e.g. the wrapped `String` and `Integer` values must be extracted so the `@Email` and `@Min` constraints can be applied
+
+Both cases can also overlap: `List<@RetailOrder @Valid Order> retailOrders`.
+
+Type argument constraints and pluggable extractors will also make cascaded validation more flexible.
+As of BV 1.1, there was a fixed set of data types supported by cascaded validation mandated by the spec (`Iterable`, arrays, `Map` (only the values would be validated).
+This excludes use cases such as custom collection types (e.g. Guava's multi-map),
+validation of map keys or collection types of other JVM languages (such as Ceylon's collection framework).
+
+Allowing to put `@Valid` on type parameters allows to express the subject of cascaded validation more specifically:
+`Map<@Valid AddressType, @Valid Address> addresses` would describe that both, map keys and values, should be validated.
+
+=== Requirements
+
+1. Constraints can be applied to type arguments (of bean properties, but also executable parameters and method return values): `Property<@Min(1) Integer> value`
+1. Individual type parameters can be marked for cascaded validation: `Map<@Valid AddressType, Address> addresses`
+1. How values are retrieved must be customizable by means of a pluggable value extractor mechanism, with a set of defined default extractors
+1. Sometimes constraints should apply to a value wrapped by a container type, but there is no type parameter to put the constraints to.
+JavaFX's `Property` hierarchy is the most prominent example: `@Email StringProperty emailProperty`.
+In such case the value should be implicitly extracted from the container if unambiguously doable.
+1. Allow to configure type argument constraints and cascades via XML mappings
+1. Expose meta-data on type argument constraints and cascades in the constraint metadata API
+
+=== Non-requirements
+
+1. Constraints on type uses in local variables, invocations etc: `@NotNull String name = "Emmanuel";`, `new @NonEmpty @Readonly List<String>(myNonEmptyStringSet)`
+1. constraints on type uses in type definitions:
+
+[source,java]
+----
+class CustList extends List<@NotNull Customer> {
+}
+----
+
+=== Solution
+
+Value retrieval for cascaded validation and validation of type argument constraints is done via the `ValueExtractor` API:
+
+[source,java]
+----
+package javax.validation.valueretrieval;
+
+public interface ValueExtractor<T> {
+
+    void extractValues(T originalValue, ValueReceiver receiver);
+
+    interface ValueReceiver {
+
+        void value(String nodeName, Object object);
+
+        void iterableValue(String nodeName, Object object);
+
+        void indexedValue(String nodeName, int i, Object object);
+
+        void keyedValue(String nodeName, Object key, Object object);
+    }
+}
+----
+
+An extractor is tied to one specific type parameter of the type from which it extracts values. The `@ExtractedValue` annotation is used to mark that type parameter.
+
+As an example, this is how the implementation of the list extractor may look like:
+
+[source,java]
+----
+class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
+
+    @Override
+    public void extractValues(List<?> originalValue, ValueReceiver receiver) {
+        for ( int i = 0; i < originalValue.size(); i++ ) {
+            receiver.indexedValue( "<iterable element>", i, originalValue.get( i ) );
+        }
+    }
+}
+----
+
+The right callback methods (`indexedValue()`, `keyedValue()` etc.) must be called in order to allow for proper construction of the property path as per the rules laid out in the BV 1.1 spec.
+
+If a non-null value is passed for `nodeName`, a path node of type `TYPE_ARGUMENT` will be appended to the property path.
+That's desirable for collection types for instance. If null is passed, no node will be appended,
+resulting in the same path as if the constraint had been given on the element itself instead of a type parameter.
+That's desirable for pure "wrapper types" such as `Optional`.
+
+==== @ExtractedValue
+
+The `@ExtractedValue` annotation is used to denote the element extracted by a given value extractor:
+
+[source,java]
+----
+package javax.validation.valueextraction;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * @author Gunnar Morling
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+public @interface ExtractedValue {
+}
+----
+
+The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.
+Thus the following extractor definition is illegal as it specifies `@ExtractedValue` several times:
+
+[source,java]
+----
+public class DoubleExtractor implements ValueExtractor<Multimap<@ExtractedValue ?, @ExtractedValue ?>> { ... }
+----
+
+When defined for a generic type, only wildcard type arguments may be annotated with `@ExtractedValue`.
+Thus the following extractor definition is illegal:
+
+[source,java]
+----
+public class StringListValueExtractor implements ValueExtractor<List<@ExtractedValue String>> { ... }
+----
+
+[NOTE]
+====
+This implies that there may not be more than one extractor for a given generic type.
+I.e. there can be an extractor for `List<?>`, but not one for `List<String>` and one for `List<Integer>`.
+====
+
+In some cases, an extractor applies to the entire extracted type itself (e.g. for arrays).
+In this case the `@ExtractedValue` annotation is to be given on the extracted type itself:
+
+[source,java]
+----
+class ObjectArrayValueExtractor implements ValueExtractor<@ExtractedValue Object[]> {
+
+    @Override
+    public void extractValues(Object[] originalValue, ValueReceiver receiver) {
+        for ( int i = 0; i < originalValue.length; i++ ) {
+            receiver.indexedValue( "<iterable element>", i, originalValue[i] );
+        }
+    }
+}
+----
+
+[NOTE]
+.Motivation for callback-style API
+====
+Instead of returning the extracted values from the method call, implementations of `ValueExtractor` pass the extracted values to the given receiver callback.
+This helps to avoid object allocations and allows to handle the case of a single extracted value (`Optional<T>`) and multiple extracted values (`List<T>`) in a uniform fashion.
+====
+
+==== Extensions to `Node`
+
+There is a new `javax.validation.ElementKind`, `TYPE_ARGUMENT`.
+There is also a new `Node` sub-type, `TypeArgumentNode`:
+
+[source,java]
+----
+interface TypeArgumentNode extends Node {
+
+    /**
+     * Returns type parameter affected by the violated constraint.
+     */
+    TypeVariable<?> getTypeParameter();
+}
+----
+
+`getTypeParameter()` also needs to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
+
+==== Default extractors
+
+Compatible implementations provide extractors for the following types out of the box. They must invoke the right callback methods in order to ensure path nodes in the described form are appended:
+
+* Arrays of objects and all primitive data types
+** `@Valid` can be given for the array itself or for its component type.
+Both will cause the validation of all the array elements
+** If a constraint given for an array's component type is validated, a node with the following properties will be added to the path:
+*** name: "<iterable element>"
+*** kind: `TYPE_ARGUMENT`
+*** isInIterable: `false`
+*** index: the element's index
+*** key: `null`
+* `java.util.Iterable`
+** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatability with BV 1.1
+** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
+** When validating a type argument constraint for `Iterable`, a node with the following properties will be added to the path:
+*** name: "<iterable element>"
+*** kind: `TYPE_ARGUMENT`
+*** isInIterable: `true`
+*** index: the element's index if the iterable is of type `List` or a subtype thereof; `null` otherwise
+*** key: `null`
+* `java.util.Map`
+** When `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatability with BV 1.1
+** When `@Valid` is given on the key type parameter, the map keys will be validated
+** When `@Valid` is given on the value type parameter, the map values will be validated
+** When validating a constraint on the key type argument of `Map`, a node with the following properties will be added to the path:
+*** name: "<map key>"
+*** kind: `TYPE_ARGUMENT`
+*** isInIterable: `true`
+*** index: `null`
+*** key: key
+** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
+*** name: "<map value>"
+*** kind: `TYPE_ARGUMENT`
+*** isInIterable: `true`
+*** index: `null`
+*** key: key
+* `java.util.Optional`
+** No node will be appended to the path when validating type argument constraints on `Optional`
+* `javafx.beans.observable.ObservableValue`
+** No node will be appended to the path when validating type argument constraints on `ObservableValue`
+** Constraints given on an element of type `ObservableValue` apply to the wrapped value by default (see <<appendix-valueextraction-wrappedelements>>).
+* `java.lang.Object`
+** When `@Valid` is given for an element, the element will be validated
+
+===== Examples
+
+TODO
+
+==== Plugging in custom extractors
+
+Additional value extractors can be registered with the Bean Validation provider in the following ways:
+
+* Invoke the new method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
+* Invoke the new method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
+* Specify the fully qualified class name of one or several extractors in `META-INF/validation.xml`:
+
+[source,xml]
+----
+<value-extractors>
+    <value-extractor>com.example.MyExtractor</value-extractor>
+</value-extractors>
+----
+
+[[appendix-valueextraction-wrappedelements]]
+==== Applying element-level constraints to wrapped elements
+
+Sometimes there is no type parameter to put a constraint to, but still constraints should be applied to the wrapped value instead of the annotated element
+(a field, property getter, method return value or executable parameter).
+JavaFX's property hierarchy falls into that category, as it defines specific `Property` sub-types which are not generic:
+
+[source,java]
+----
+@Email StringProperty emailProperty;
+----
+
+The `ConstraintAppliesTo` annotation can be used to control the target of validation in such cases:
+
+[source,java]
+----
+@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
+@Retention(RUNTIME)
+public @interface ConstraintsApplyTo {
+    ValidationTarget value();
+}
+----
+
+[source,java]
+----
+public enum ValidationTarget {
+    ANNOTATED_ELEMENT,
+    WRAPPED_VALUE;
+}
+----
+
+Value extractor definitions can be marked with `ConstraintsApplyTo` so that constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor:
+
+[source,java]
+----
+@ConstraintsApplyTo(WRAPPED_VALUE)
+class PropertyExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
+
+    @Override
+    public void extractValues(Property originalValue, ValueReceiver receiver) {
+        // ...
+    }
+}
+----
+
+If this extractor was identified as the single most-specific extractor for `StringProperty` (see <<appendix-valueextraction-extractorretrieval>>), the `@Email` constraint above would automatically be applied to the wrapped string value.
+
+In rare cases it may happen that a constraint should be applied to the wrapped value although an extractor exists.
+In this case the `ConstraintsApplyTo` annotation can be given on the element itself to prevent the unwrapping:
+
+[source,java]
+----
+@ConstraintsApplyTo(ANNOTATED_ELEMENT)
+@NotNull StringProperty emailProperty;
+----
+
+[NOTE]
+====
+For the sake of readability, when applying constraints to the elements of a generic container type,
+it is strongly recommended to put the constraints to the type argument instead of the element itself in conjunction with `@ConstraintsApplyTo`.
+I.e. you should prefer
+
+[source,java]
+----
+List<@Email String> emails;
+----
+
+over
+
+[source,java]
+----
+@Email
+@ConstraintsApplyTo(WRAPPED_VALUE)
+List<String> emails;
+----
+====
+
+[[appendix-valueextraction-extractorretrieval]]
+==== Retrieval of extractors
+
+When detecting a type argument constraint or cascade, the applicable extractor is determined as follows:
+
+1. Select all those value extractors which handle a type parameter that maps to the type argument annotated with the constraint or `@Valid` annotation;
+Example:
+** Given `List<@Email String> emails` and considering the default extractors listed above, only the extractors for `List` and `Iterable` are selected.
+The former handles the type parameter `T` of type `List`, which directly maps to the type argument annotated with `@Email`.
+The latter handles the type parameter `E` of type `Iterable` which (indirectly) maps to the annotated type argument (as `List` extends `Iterable` and binds its type parameter `T` to `E` from `Iterable`).
+Other extractors such as the ones for `K` and `V` of `Map` are dismissed, as they handle type parameters not mapping to the annotated type argument
+** Given
++
+[source,java]
+----
+interface ConfusingMap<K, V> extends Map<V, K> {}
+----
++
+[source,java]
+----
+ConfusingMap<@Email String, String> map;
+----
++
+And considering the default extractors listed above, only the extractor for the type parameter `V` of `Map` will be selected. This is because the `@Email` constraint is given for the type argument representing type parameter `K` of `ConfusingMap` which maps to type parameter `V` of `Map`.
+
+1. From the remaining candidate value extractors choose the one which is most specific to the container type declaring the annoted type argument.
+An extractor A is more specific than another extractor B if A extracts a subtype of the type extracted by B.
+Example:
+** When obtaining the extractor for type parameter constraint validation, the declared type of the validated element is considered.
+This is to be consistent with constraint validator resolution, which is based on the static type of elements, not the runtime type.
+** When obtaining the extractor for cascaded validation, the runtime type of the cascaded element is considered.
+This is to be consistent with the rules defined for property path construction which are based on the runtime type.
+** From the two extractors above, the one for `List` is chosen as `List` is a subtype of `Iterable`.
+
+1. If there are several extractors which are equally specific (e.g. several extractors for `List`), an `UnexpectedTypeException` is raised.
+TODO: apply rules similar to "ConstraintValidator resolution algorithm" and further clarify wording
+
+When detecting a regular element-level constraint (i.e. non type argument constraint) the applicable value extractor, if any, is determined as follows:
+
+1. If `@ConstraintsApplyTo(ANNOTATED_ELEMENT)` is given, don't apply any value extractor
+
+1. Determine the set of uniquely mapping type parameters declared by the types in the element type's type hierarchy; Examples:
+** element of type `java.lang.String`: () (empty set)
+** element of type `java.lang.Iterable`: (T)
+** element of type `java.lang.Map`: (K, V)
+** element of type `java.util.Collection`: (E) (as the type parameter `E` of `Collection` maps to `T` of `Iterable`, only the type parameter of the subtype is considered)
+** `interface A<T> {}`, `interface B<U> {}`, `class C implements A<String>, B<Integer> {}`; element of type `C`: (T, U) (two non mapping type parameters)
+
+1. If `@ConstraintsApplyTo(WRAPPED_VALUE)` is given:
+** If no type parameter or more than one type parameter was found in step 2, raise an exception
+** Choose the most specific extractor matching the single type parameter found in step 2
+** If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
+
+1. If `@ConstraintsApplyTo` is not given:
+** If no type parameter or more than one type parameter was found in step 2, don't apply any value extractor
+** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `@ConstraintsApplyTo(WRAPPED_VALUE)`
+** If there are multiple such extractors, an `UnexpectedTypeException` is raised.
+
+[NOTE]
+.Implementation note
+====
+As extractor retrieval for type parameter constraints is done using the static type of constrained elements,
+the retrieval can be done once at initialization time and then be cached.
+This is not possible for retrieval of extractors for cascaded validation.
+====
+
+==== Examples
+
+* Applying a constraint to the value wrapped by a container type:
++
+[source,java]
+----
+Property<@Min(1) Integer> value;
+----
++
+Note that `@Valid` is not required; the `@Min` constraint will be validated when the `value` property is subject to validation.
+
+* Applying constraints to each value in a collection type:
++
+[source,java]
+----
+List<@NotNull @Email String> emails;
+----
+
+* Cascaded validation of the values in a collection type:
++
+[source,java]
+----
+List<@Valid Order> orders;
+----
++
+This will validate the constraints on each `Order` element in the list.
+
+* The legacy style for cascaded validation is supported as well:
++
+[source,java]
+----
+@Valid List<Order> orders;
+----
++
+This would also validate any constraints on a custom list type (e.g. `MyList#getId()`).
+TODO: we never clarified that in 1.1. Should it be made explicit?
+
+* Map validation with type argument constraints and cascading:
++
+[source,java]
+----
+@Valid
+Map<@RegExp(...) String, @RetailOrder Order> orders;
+----
++
+This would validate the map's keys against `@RegExp`, the map's values against `@RetailOrder` and apply cascaded validation of the map values (as well as the map object itself).
+
+* When selecting extractors, type parameters must be thoroughly traced in the hierarchy.
+Consider this case where the order of the type parameters of `Map` is swapped in a sub-type:
++
+[source,java]
+----
+public class CrazyMap<K, V> implements Map<V, K> { ... }
+----
++
+[source,java]
+----
+public class Example {
+    private CrazyMap<@RegExp(...) String, @Min(0) Long> crazyMap = ...;
+}
+----
++
+Assuming there is no dedicated extractor for `CrazyMap` but only the default ones for `K` and `V` of `Map`,
+extraction for `@RegExp` must happen via the default map value extractor and extraction for `@Min` via the default map key extractor.
++
+A type parameter in a sub-type may also map to several type parameters in a super-type:
++
+[source,java]
+----
+interface NumericMap<T extends Number> extends Map<T, T> {}
+----
++
+[source,java]
+----
+private NumericMap<@Min(1) Integer> integerMap;
+----
++
+The `@Min` constraint is to be applied to the map's keys and values as the annotated type parameter maps to `K` and `V` of `Map`.
+
+* type argument constraints can be applied to the elements of `Object` arrays and arrays of any primitive type:
++
+[source,java]
+----
+String @Email[] emails;
+----
++
+[source,java]
+----
+int @Min(1) [] positiveNumbers;
+----
+
+* The extractor for cascaded validation is determined based on an element's runtime type:
++
+[source,java]
+----
+Collection<@Valid Order> orders = new ArrayList<>();
+----
++
+Here the most-specific extractor for the runtime type `ArrayList` must be applied, causing the property nodes of violations to have an index set (`Node#getIndex()`).
+
+* The container value passed to a value extractor is retrieved from the element that has the type argument carrying the constraint or `@Valid` annotation:
++
+[source,java]
+----
+private Map<String, @Valid @RetailOrder Order> ordersByName;
+
+public Map<@NotNull String, Order> getOrdersByName() {
+    return ordersByName;
+}
+----
+
+When validating the `@NotNull` constraint, the map as returned by the getter will be passed to the map key extractor in order to obtain the map keys.
+When validating the `@RetailOrder` constraint and performing cascaded validation,
+the map as obtained directly from the field will be passed to the map value extractor in order to obtain the map values.
+
+* Custom extractor for a `Tuple` type:
++
+[source,java]
+----
+public interface Tuple<T1, T2> {
+    T1 getFirst();
+    T2 getSecond();
+}
+----
++
+[source,java]
+----
+public class TupleFirstExtractor implements ValueExtractor<Tuple<@ExtractedValue ?, ?>> {
+
+    @Override
+    public void extractValues(Tuple<?, ?> originalValue, ValueReceiver receiver) {
+        receiver.value( "<first>", originalValue.getFirst() );
+    }
+}
+----
++
+[source,java]
+----
+public class TupleSecondExtractor implements ValueExtractor<Tuple<?, @ExtractedValue ?>> {
+
+    @Override
+    public void extractValues(Tuple<?, ?> originalValue, ValueReceiver receiver) {
+        receiver.value( "<second>", originalValue.getSecond() );
+    }
+}
+----
++
+[source,java]
+----
+private Tuple<@NotNull @Email String, @NotNull @Min(1) Integer> tuple;
+----
+
+===== Examples for extractor retrieval
+
+* The most specific extractor matching the constrained type argument is chosen:
++
+[source,java]
+----
+private List<@Email String> emails;
+----
++
+Based on the algorithm described above and considering the mandated default extractors, only the extractor for `List` and `Iterable` are candidate extractors (all other extractors are defined for a type parameter not mapping to `T` of `List`). The extractor for `List` will be applied as it's more specific than the extractor for `Iterable` (`List` is a subtype of `Iterable`).
+
+* Constraints targeting wrapped values can be given on the wrapping element.
+Let there be these definitions:
++
+[source,java]
+----
+class StringWrapper {
+    String wrapped;
+};
+----
++
+[source,java]
+----
+@ConstraintsApplyTo(WRAPPED_VALUE)
+class StringWrapperExtractor implements ValueExtractor<@ExtractedValue StringWrapper> { ... }
+};
+----
++
+[source,java]
+----
+private @Email StringWrapper email;
+----
++
+The `@Email` constraint will be applied to the wrapped string and can be validated as the extractor defines that element-level constraints should be applied to the wrapped value.
++
+If the extractor were not decorated with `@ConstraintsApplyTo` an exception would be raised as there is no validator for `@Email` on `StringWrapper`.
++
+Unwrapping could be mandated explicitly in this case:
++
+[source,java]
+----
+@ConstraintsApplyTo(WRAPPED_VALUE)
+@Email
+private StringWrapper email;
+----
+
+===== Invalid examples
+
+* No most specific extractor can be found unambiguously:
++
+[source,java]
+----
+public interface CachedValue<V> {
+    V getCachedValue();
+}
+----
++
+[source,java]
+----
+public interface RealValue<V> {
+    V getRealValue();
+}
+----
++
+[source,java]
+----
+public class CachableValue<V> implements CachedValue<V>, RealValue<V> { ... }
+----
++
+[source,java]
+----
+public class CachedValueExtractor implements ValueExtractor<CachedValue<@ExtractedValue ?>> { ... }
+----
++
+[source,java]
+----
+public class RealValueExtractor implements ValueExtractor<RealValue<@ExtractedValue ?>> { ... }
+----
++
+[source,java]
+----
+private CachableValue<@Min(1) Integer> foo;
+----
++
+Validation of `foo` will fail, as none of the two matching extractors is more specific than the other one.
+An extractor for `CachableValue` must be added, resolving the ambiguity.
+
+* Element-level constraints cannot be applied if there is no type parameter at all or multiple non-mapping type parameters in the annotated element's type hierarchy. Thus an exception will be raised in the following cases:
++
+[source,java]
+----
+// no type parameter
+@ConstraintsApplyTo(WRAPPED_VALUE)
+@Email
+private String email;
+----
++
+[source,java]
+----
+// multiple type parameters
+@ConstraintsApplyTo(WRAPPED_VALUE)
+@Email
+private Map<String, String> emails;
+----
+
+==== XML based configuration
+
+TODO
+
+==== Metadata retrieval
+
+TODO
+
+==== Misc.
+
+* Regarding group sequences and default group sequences, the same rules apply for type argument constraints as they apply for regular element-level constraints.
+* For the conversion of validation groups the same rules apply no matter whether `@Valid` is given for a regular element or for a type argument.
+I.e. the following group conversion declaration is valid:
+
+[source,java]
+----
+private List<@Valid @ConvertGroup(from=Default.class, to=Other.class) Order> orders;
+----
+
+=== Open questions
+
+1. Should nested containers be supported: `List<Map<String, @NotNull String>> addressesByType`?
+Or `Optional<List<@Email>> optionalEmails`;
+The latter seems very reasonable.
+
+1. `ConstraintsApplyTo` only allows one behavior per annotated element. Should it be per constraint?
+E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@NotNull` to the wrapper but `@Email` to the wrapped value. That's not possible currently.
+
+1. Should `ConstraintsApplyTo` also be used for tagging extractors triggering "auto-extraction". Maybe a separate annotation would be less confusing, e.g. `@AutoExtract` or so?
+
+1. Should a path node be added for type argument constraints of `Optional` and similar types?
++
+__This proposal suggests to not do it, but Emmanuel is not convinced of this__.
+
+1. Should value extractors be discoverable via the service loader mechanism (i.e. by means of `META-INF/services/javax.validation.valueextraction.ValueExtractor` files)
++
+__Pro: It'd allow 3rd party libs such as Google Guava to provide custom extractors for their container types and have them automatically be applied without any effort for the user__.
++
+__Cons: Need a way to disable or override some extractors with others. Which might make it a nogo__.
+
+1. What to return from `PropertyDescriptor#getElementClass()` if there is a field of type `Foo` but a getter of type `Optional<Foo>`.
+So far, BV assumed the types of field and getter to be the same and exposed a single property descriptor
+(which btw. also may fall apart as of BV 1.1 when the field is of a sub-type of the getter's type).
+What to return here?
+
+1. Should the presence of type argument constraints alone trigger cascaded validation?
++
+E.g. consider the case of `Tuple` above:
++
+[source,java]
+----
+Tuple<@Min(1) Integer, @Email String> tuple;
+----
++
+__Here it may be nice to validate e.g. `@NotNull` constraints given within the `Tuple` class itself when validating the type argument constraints. With the current proposal their validation requires a separate `@Valid` on the element. Personally I think that's better (more consistent)__.
+
+1. For an element with a type argument, should it be allowed to specify constraints on the element (and use `@ConstraintsApplyTo(WRAPPED_ELEMENT)`) or should it be disallowed?
++
+[source,java]
+----
+@Email @ConstraintsApplyTo(WRAPPED_ELEMENT) Optional<String> email;
+----
+
+1. Should we allow extractors to be defined for specific parameterized types, e.g.:
++
+[source,java]
+----
+public class ListOfIntegerExtractor implements ValueExtractor<List<@ExtractedValue Integer>> { ... }
+
+public class ListOfStringExtractor implements ValueExtractor<List<@ExtractedValue String>> { ... }
+----
++
+Currently, only one extractor (for type `List<?>` is allowed).
++
+__I can't see a compelling use case for this (when would extractor behavior differ between different parameterizations of the same generic type) and am leaning towards only supporting the wildcard parameterization (`implements ValueExtractor<List<@ExtractedValue ?>>`)__.
++
+1. Can we find another name than "type argument constraints"? While that suits for the most cases, it doesn't when applying constraints to the component type of an array: `String @NotBlank [] names`.
++
+__I think "type use" is the correct one in Java terminology. But would anyone get what a "type use constraint" is?__.
+1. Vet the API by exploring advanced use cases, e.g. Guava's https://github.com/google/guava/wiki/NewCollectionTypesExplained#table[Table], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Graph.html[Graph], http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/ValueGraph.html[ValueGraph] and http://google.github.io/guava/releases/snapshot/api/docs/com/google/common/graph/Network.html[Network] types.
++
+Example for `Table`:
++
+[source,java]
+----
+class TableValueExtractor implements ValueExtractor<Table<?, ?, @ExtractedValue ?>> {
+
+    @Override
+    public void extractValues(Table<?, ?, ?> originalValue, ValueExtractor.ValueReceiver receiver) {
+
+        for ( Cell<?, ?, ?> cell : originalValue.cellSet() ) {
+            receiver.keyedValue(
+                    "<table cell>",
+                    new CellKey( cell.getRowKey(), cell.getColumnKey() ),
+                    cell.getValue()
+            );
+        }
+    }
+}
+----
++
+[source,java]
+----
+public static class CellKey {
+
+    private final Object rowKey;
+    private final Object columnKey;
+
+    public CellKey(Object rowKey, Object columnKey) {
+        this.rowKey = rowKey;
+        this.columnKey = columnKey;
+    }
+
+    // equals(), hashCode() ...
+}
+----
++
+When having an invalid table cell in the following and validating it:
++
+[source,java]
+----
+public class Customer {
+
+    Table<Year, String, @Min(1) Integer> revenuePerYearAndCategory = HashBasedTable.create();
+}
+----
++
+Then this will be the result:
++
+[source,java]
+----
+ConstraintViolation<Customer> violation = ...;
+
+Iterator<Node> path = violation.getPropertyPath().iterator();
+
+Node node = path.next();
+assertThat( node.getName() ).isEqualTo( "revenuePerYearAndCategory" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isNull();
+assertThat( node.getIndex() ).isNull();
+
+node = path.next();
+assertThat( node.getName() ).isEqualTo( "<table cell>" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKey() ).isEqualTo( new CellKey(Year.of( 2015 ), "cds") );
+assertThat( node.getIndex() ).isNull();
+
+assertThat( path.hasNext() ).isFalse();
+----
+
+1. In the original proposal it was foreseen that `@ExtractedValue` could refer to type-parameters from super-types. Is that still needed?
+
+1. During cascaded validation of an element with several type arguments, it's currently not possible to tell from the resulting constraint violation and its node path which type argument was cascaded.
+Example:
++
+[source,java]
+----
+Map<@Valid OrderType, @Valid Order> ordersByType;
+----
++
+If there was constraint violation on an `OrderType` property and one on an `Order` property, one couldn't tell from the resulting paths and their nodes which is which.
++
+__One way out could be to add `TypeVariable<?> Node#getTypeParameter()` __.
++
+__This would return the type parameter handled by the extractor used for obtaining the cascaded value__.
+__ `Node#getTypeParameter()` would also return the type parameter for type argument constraints__.
+__Note it must be `getTypeParameter()` (not `getTypeArgument()`) because one annotated type argument at the constrained/cascaded element could represent multiple type parameters (see example "A type parameter in a sub-type may also map to several type parameters in a super-type" above).__
+__Assuming a constraint violation on property `description` of class `OrderType` we'd get__:
++
+[source,java]
+----
+ConstraintViolation<Customer> violation = ...;
+
+Iterator<Node> path = violation.getPropertyPath().iterator();
+
+Node node = path.next();
+assertThat( node.getName() ).isEqualTo( "ordersByType" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isNull();
+assertThat( node.getIndex() ).isNull();
+assertThat( node.getTypeParameter() ).isNull();
+
+node = path.next();
+assertThat( node.getName() ).isEqualTo( "description" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isEqualTo( new OrderType( "RETAIL" ) );
+assertThat( node.getIndex() ).isNull();
+assertThat( node.getTypeParameter().getName() ).isEqualTo( "K" );
+
+assertThat( path.hasNext() ).isFalse();
+----
++
+__ `getTypeParameter()` would also return the type parameter in case of type argument constraints:__
++
+[source,java]
+----
+Map<OrderType, @Min(1) Integer> orderQuantitiesByType;
+----
++
+[source,java]
+----
+ConstraintViolation<Customer> violation = ...;
+
+Iterator<Node> path = violation.getPropertyPath().iterator();
+
+Node node = path.next();
+assertThat( node.getName() ).isEqualTo( "orderQuantitiesByType" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.PROPERTY );
+assertThat( node.getKey() ).isNull();
+assertThat( node.getIndex() ).isNull();
+assertThat( node.getTypeParameter() ).isNull();
+
+node = path.next();
+assertThat( node.getName() ).isEqualTo( "<map value>" );
+assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKey() ).isEqualTo( new OrderType( "RETAIL" ) );
+assertThat( node.getIndex() ).isNull();
+assertThat( node.getTypeParameter().getName() ).isEqualTo( "V" );
+
+assertThat( path.hasNext() ).isFalse();
+----
+
+1. Revisit the names of nodes of kind `TYPE_ARGUMENT`;
+instead of `<iterable element>`, `<map value>` etc. should it be the names of the type parameters in question, i.e. `<E>`, `<V>` etc.?
 
 <<<
 
