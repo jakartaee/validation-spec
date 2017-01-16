@@ -145,15 +145,32 @@ This implies that there may not be more than one extractor for a given generic t
 I.e. there can be an extractor for `List<?>`, but not one for `List<String>` and one for `List<Integer>`.
 ====
 
-In some cases, an extractor applies to the entire extracted type itself (e.g. for arrays).
-In this case the `@ExtractedValue` annotation is to be given on the extracted type itself:
+In case an illegal value extractor definition is detected, a `ValueExtractorDefinitionException` is raised.
+
+If a value extractor returns the entire extracted type itself
+(as it is the case for the built-in extractor for handling any non-collection object associations),
+the `@ExtractedValue` annotation is to be given on the extracted type itself:
 
 [source,java]
 ----
-class ObjectArrayValueExtractor implements ValueExtractor<@ExtractedValue Object[]> {
+class ObjectValueExtractor implements ValueExtractor<@ExtractedValue Object> {
 
 	@Override
-	public void extractValues(Object[] originalValue, ValueReceiver receiver) {
+	public void extractValues(Object originalValue, ValueReceiver receiver) {
+		receiver.value( null, originalValue );
+	}
+}
+----
+
+If a value extractor returns the elements of an array type,
+the `@ExtractedValue` annotation is to be given for the array type as follows:
+
+[source,java]
+----
+class IntArrayValueExtractor implements ValueExtractor<int @ExtractedValue[]> {
+
+	@Override
+	public void extractValues(int[] originalValue, ValueReceiver receiver) {
 		for ( int i = 0; i < originalValue.length; i++ ) {
 			receiver.indexedValue( "<iterable element>", i, originalValue[i] );
 		}
@@ -377,14 +394,14 @@ When detecting a regular element-level constraint (i.e. non type argument constr
 ** `interface A<T> {}`, `interface B<U> {}`, `class C implements A<String>, B<Integer> {}`; element of type `C`: (T, U) (two non mapping type parameters)
 
 1. If `@ConstraintsApplyTo(WRAPPED_VALUE)` is given:
-** If no type parameter or more than one type parameter was found in step 2, raise an exception
+** If no type parameter or more than one type parameter was found in step 2, raise a `ConstraintDeclarationException`
 ** Choose the most specific extractor matching the single type parameter found in step 2
-** If there are several extractors which are equally specific, an `UnexpectedTypeException` is raised.
+** If there are several extractors which are equally specific, an `ConstraintDeclarationException` is raised.
 
 1. If `@ConstraintsApplyTo` is not given:
 ** If no type parameter or more than one type parameter was found in step 2, don't apply any value extractor
 ** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `@ConstraintsApplyTo(WRAPPED_VALUE)`
-** If there are multiple such extractors, an `UnexpectedTypeException` is raised.
+** If there are multiple such extractors, an `ConstraintDeclarationException` is raised.
 
 [NOTE]
 .Implementation note
@@ -669,6 +686,22 @@ I.e. the following group conversion declaration is valid:
 ----
 private List<@Valid @ConvertGroup(from=Default.class, to=Other.class) Order> orders;
 ----
+
+=== Extensions to the exception model
+
+A `ValueExtractorDefinitionException` will be raised when detecting an illegal value extractor definition:
+
+[source,java]
+----
+package javax.validation.valueextraction;
+include::{validation-api-source-dir}javax/validation/valueextraction/ValueExtractorDefinitionException.java[lines=7..8;11..-1]
+----
+
+Reasons for raising this exception include:
+
+* The extracted type is not marked with `@ExtractedValue`
+* The `@ExtractedValue` annotation is given more than once for one value extractor type
+* A non-wildcard type parameter has been marked with `@ExtractedValue
 
 === Open questions
 
