@@ -295,7 +295,7 @@ include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.
 
 [source,java]
 ----
-@Email(payload=Unwrapping.Unwrap.class) StringProperty emailProperty;
+@Email(payload = Unwrapping.Unwrap.class) StringProperty emailProperty;
 ----
 
 Value extractor definitions can be marked with the `@UnwrapByDefault` annotation so that constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor:
@@ -329,7 +329,7 @@ In this case the `Unwrapping.Skip` payload type can be specified for that constr
 
 [source,java]
 ----
-@NotNull(payload=Unwrapping.Skip.class) StringProperty emailProperty;
+@NotNull(payload = Unwrapping.Skip.class) StringProperty emailProperty;
 ----
 
 [NOTE]
@@ -347,7 +347,7 @@ over
 
 [source,java]
 ----
-@Email(payload=Unwrapping.Unwrap.class)
+@Email(payload = Unwrapping.Unwrap.class)
 List<String> emails;
 ----
 ====
@@ -404,11 +404,16 @@ When detecting a regular element-level constraint (i.e. non type argument constr
 ** If no type parameter or more than one type parameter was found in step 2, raise a `ConstraintDeclarationException`
 ** Choose the most specific extractor matching the single type parameter found in step 2
 ** If there are several extractors which are equally specific, a `ConstraintDeclarationException` is raised.
+** If there is exactly one remaining extractor, apply this extractor
+** Otherwise, a `ConstraintDeclarationException` is raised.
 
 1. If the constraint neither carries the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
 ** If no type parameter or more than one type parameter was found in step 2, don't apply any value extractor
-** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `UnwrapByDefault`
+** Choose the most specific extractor matching the single type parameter found in step 2
 ** If there are multiple such extractors, a `ConstraintDeclarationException` is raised.
+** If there is exactly one remaining extractor and it is marked with `UnwrapByDefault`, apply this extractor
+** Otherise, no extractor is applied
+
 
 [NOTE]
 .Implementation note
@@ -611,7 +616,7 @@ Unwrapping could be mandated explicitly in this case:
 +
 [source,java]
 ----
-@Email(payload=Unwrapping.Unwrap.class)
+@Email(payload = Unwrapping.Unwrap.class)
 private StringWrapper email;
 ----
 
@@ -662,14 +667,14 @@ Thus an exception will be raised in the following cases:
 [source,java]
 ----
 // no type parameter
-@Email(payload=Unwrapping.Unwrap.class)
+@Email(payload = Unwrapping.Unwrap.class)
 private String email;
 ----
 +
 [source,java]
 ----
 // multiple type parameters
-@Email(payload=Unwrapping.Unwrap.class)
+@Email(payload = Unwrapping.Unwrap.class)
 private Map<String, String> emails;
 ----
 
@@ -757,7 +762,7 @@ __We agreed to require `@Valid` for the sake of consistency.__
 +
 [source,java]
 ----
-@Email(payload=Unwrapping.Unwrap.class) Optional<String> email;
+@Email(payload = Unwrapping.Unwrap.class) Optional<String> email;
 ----
 
 1. [line-through]#Should we allow extractors to be defined for specific parameterized types, e.g.:#
