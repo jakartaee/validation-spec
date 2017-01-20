@@ -8,7 +8,8 @@
 [appendix]
 == Value extraction for cascaded validation and type argument constraints (BVAL-508)
 
-This appendix describes the current work-in-progress around the retrieval of values to be validated during cascaded validation and evaluation of type argument constraints.
+This appendix describes the current work-in-progress around the retrieval of values to be validated during cascaded validation (e.g. `@Valid List<Order> orders`)
+and evaluation of type argument constraints (e.g. `Optional<@Email String> email`)
 It is based on the original http://beanvalidation.org/proposals/BVAL-508/[proposals for BVAL-508].
 
 === Motivation
@@ -77,7 +78,7 @@ public interface ValueExtractor<T> {
 }
 ----
 
-An extractor is tied to one specific type parameter of the type from which it extracts values. The `@ExtractedValue` annotation is used to mark that type parameter. 
+An extractor is tied to one specific type parameter of the type from which it extracts values. The `@ExtractedValue` annotation is used to mark that type parameter.
 
 As an example, this is how the implementation of the list extractor may look like:
 
@@ -259,7 +260,7 @@ Additional value extractors can be registered with the Bean Validation provider 
 
 * Invoke the new method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
 * Invoke the new method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
-* Specify the fully qualified class name of one or several extractors in `META-INF/validation.xml`: 
+* Specify the fully qualified class name of one or several extractors in `META-INF/validation.xml`:
 
 [source,xml]
 ----
@@ -280,30 +281,38 @@ JavaFX's property hierarchy falls into that category, as it defines specific `Pr
 @Email StringProperty emailProperty;
 ----
 
-The `ConstraintAppliesTo` annotation can be used to control the target of validation in such cases:
+Two defined sub-types of `javax.validation.Payload` can be used to control the target of validation in such cases via the constraint's `payload()` attribute:
+
+.`Payload` types for unwrapping control
+====
+
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.java[lines=7..8;11..-1]
+----
+
+====
 
 [source,java]
 ----
-@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
-@Retention(RUNTIME)
-public @interface ConstraintsApplyTo {
-    ValidationTarget value();
-}
+@Email(payload=Unwrapping.Unwrap.class) StringProperty emailProperty;
 ----
+
+Value extractor definitions can be marked with the `@UnwrapByDefault` annotation so that constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor:
+
+.`@UnwrapByDefault` annotation
+====
+
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/UnwrapByDefault.java[lines=7..8;15..-1]
+----
+
+====
 
 [source,java]
 ----
-public enum ValidationTarget {
-    ANNOTATED_ELEMENT,
-    WRAPPED_VALUE;
-}
-----
-
-Value extractor definitions can be marked with `ConstraintsApplyTo` so that constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor:
-
-[source,java]
-----
-@ConstraintsApplyTo(WRAPPED_VALUE)
+@UnwrapByDefault
 class PropertyExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
 
 	@Override
@@ -316,18 +325,17 @@ class PropertyExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
 If this extractor was identified as the single most-specific extractor for `StringProperty` (see <<appendix-valueextraction-extractorretrieval>>), the `@Email` constraint above would automatically be applied to the wrapped string value.
 
 In rare cases it may happen that a constraint should be applied to the wrapped value although an extractor exists.
-In this case the `ConstraintsApplyTo` annotation can be given on the element itself to prevent the unwrapping:
+In this case the `Unwrapping.Skip` payload type can be specified for that constraint to prevent the unwrapping:
 
 [source,java]
 ----
-@ConstraintsApplyTo(ANNOTATED_ELEMENT)
-@NotNull StringProperty emailProperty;
+@NotNull(payload=Unwrapping.Skip.class) StringProperty emailProperty;
 ----
 
 [NOTE]
 ====
 For the sake of readability, when applying constraints to the elements of a generic container type,
-it is strongly recommended to put the constraints to the type argument instead of the element itself in conjunction with `@ConstraintsApplyTo`.
+it is strongly recommended to put the constraints to the type argument instead of the element itself in conjunction with `Unwrapping.Unwrap`.
 I.e. you should prefer
 
 [source,java]
@@ -339,8 +347,7 @@ over
 
 [source,java]
 ----
-@Email
-@ConstraintsApplyTo(WRAPPED_VALUE)
+@Email(payload=Unwrapping.Unwrap.class)
 List<String> emails;
 ----
 ====
@@ -384,7 +391,7 @@ TODO: apply rules similar to "ConstraintValidator resolution algorithm" and furt
 
 When detecting a regular element-level constraint (i.e. non type argument constraint) the applicable value extractor, if any, is determined as follows:
 
-1. If `@ConstraintsApplyTo(ANNOTATED_ELEMENT)` is given, don't apply any value extractor
+1. If the constraint carries the `Unwrapping.Skip` payload, don't apply any value extractor
 
 1. Determine the set of uniquely mapping type parameters declared by the types in the element type's type hierarchy; Examples:
 ** element of type `java.lang.String`: () (empty set)
@@ -393,14 +400,14 @@ When detecting a regular element-level constraint (i.e. non type argument constr
 ** element of type `java.util.Collection`: (E) (as the type parameter `E` of `Collection` maps to `T` of `Iterable`, only the type parameter of the subtype is considered)
 ** `interface A<T> {}`, `interface B<U> {}`, `class C implements A<String>, B<Integer> {}`; element of type `C`: (T, U) (two non mapping type parameters)
 
-1. If `@ConstraintsApplyTo(WRAPPED_VALUE)` is given:
+1. If the constraint carries the `Unwrapping.Unwrap` payload:
 ** If no type parameter or more than one type parameter was found in step 2, raise a `ConstraintDeclarationException`
 ** Choose the most specific extractor matching the single type parameter found in step 2
 ** If there are several extractors which are equally specific, a `ConstraintDeclarationException` is raised.
 
-1. If `@ConstraintsApplyTo` is not given:
+1. If the constraint neither carries the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
 ** If no type parameter or more than one type parameter was found in step 2, don't apply any value extractor
-** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `@ConstraintsApplyTo(WRAPPED_VALUE)`
+** Choose the most specific extractor matching the single type parameter found in step 2 which is marked with `UnwrapByDefault`
 ** If there are multiple such extractors, a `ConstraintDeclarationException` is raised.
 
 [NOTE]
@@ -586,7 +593,7 @@ class StringWrapper {
 +
 [source,java]
 ----
-@ConstraintsApplyTo(WRAPPED_VALUE)
+@UnwrapByDefault
 class StringWrapperExtractor implements ValueExtractor<@ExtractedValue StringWrapper> { ... }
 };
 ----
@@ -598,14 +605,13 @@ private @Email StringWrapper email;
 +
 The `@Email` constraint will be applied to the wrapped string and can be validated as the extractor defines that element-level constraints should be applied to the wrapped value.
 +
-If the extractor were not decorated with `@ConstraintsApplyTo` an exception would be raised as there is no validator for `@Email` on `StringWrapper`.
+If the extractor were not decorated with `@UnwrapByDefault` an exception would be raised as there is no validator for `@Email` on `StringWrapper`.
 +
 Unwrapping could be mandated explicitly in this case:
 +
 [source,java]
 ----
-@ConstraintsApplyTo(WRAPPED_VALUE)
-@Email
+@Email(payload=Unwrapping.Unwrap.class)
 private StringWrapper email;
 ----
 
@@ -650,21 +656,20 @@ private CachableValue<@Min(1) Integer> foo;
 Validation of `foo` will fail, as none of the two matching extractors is more specific than the other one.
 An extractor for `CachableValue` must be added, resolving the ambiguity.
 
-* Element-level constraints cannot be applied if there is no type parameter at all or multiple non-mapping type parameters in the annotated element's type hierarchy. Thus an exception will be raised in the following cases:
+* Element-level constraints cannot be applied if there is no type parameter at all or multiple non-mapping type parameters in the annotated element's type hierarchy.
+Thus an exception will be raised in the following cases:
 +
 [source,java]
 ----
 // no type parameter
-@ConstraintsApplyTo(WRAPPED_VALUE)
-@Email
+@Email(payload=Unwrapping.Unwrap.class)
 private String email;
 ----
 +
 [source,java]
 ----
 // multiple type parameters
-@ConstraintsApplyTo(WRAPPED_VALUE)
-@Email
+@Email(payload=Unwrapping.Unwrap.class)
 private Map<String, String> emails;
 ----
 
@@ -708,10 +713,17 @@ Reasons for raising this exception include:
 Or `Optional<List<@Email>> optionalEmails`;
 The latter seems very reasonable.
 
-1. `ConstraintsApplyTo` only allows one behavior per annotated element. Should it be per constraint?
-E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@NotNull` to the wrapper but `@Email` to the wrapped value. That's not possible currently.
+1. [line-through]#`ConstraintsApplyTo` only allows one behavior per annotated element. Should it be per constraint?#
+[line-through]#E.g. for `@NotNull @Email StringProperty email` it may be desirable to apply `@NotNull` to the wrapper but `@Email` to the wrapped value. That's not possible currently.#
++
+__For the first draft we settled for using dedicated `Payload` types to control the unwrapping behavior.__
+__While not ideal, this provides the required level of control.__
+__Discussed alternatives include a new constraint member `boolean validateWrappedValue()`, but this requires to update every existing constraint and adds a lot of "weight" for a rather small corner case.__
+__Any approach using a separate annotation fails as there is no way to clearly identify the targeted constraint annotation, as annotations cannot obtained from an element in a guaranteed order__.
 
-1. Should `ConstraintsApplyTo` also be used for tagging extractors triggering "auto-extraction". Maybe a separate annotation would be less confusing, e.g. `@AutoExtract` or so?
+1. [line-through]#Should `ConstraintsApplyTo` also be used for tagging extractors triggering "auto-extraction". Maybe a separate annotation would be less confusing, e.g. `@AutoExtract` or so?#
++
+__This is done by `@UnwrapByDefault` now which solely exists for this purpose.__
 
 1. Should a path node be added for type argument constraints of `Optional` and similar types?
 +
@@ -728,25 +740,27 @@ So far, BV assumed the types of field and getter to be the same and exposed a si
 (which btw. also may fall apart as of BV 1.1 when the field is of a sub-type of the getter's type).
 What to return here?
 
-1. Should the presence of type argument constraints alone trigger cascaded validation?
+1. [line-through]#Should the presence of type argument constraints alone trigger cascaded validation?#
 +
-E.g. consider the case of `Tuple` above:
+[line-through]#E.g. consider the case of `Tuple` above:#
 +
 [source,java]
 ----
 Tuple<@Min(1) Integer, @Email String> tuple;
 ----
 +
-__Here it may be nice to validate e.g. `@NotNull` constraints given within the `Tuple` class itself when validating the type argument constraints. With the current proposal their validation requires a separate `@Valid` on the element. Personally I think that's better (more consistent)__. 
+[line-through]#__Here it may be nice to validate e.g. `@NotNull` constraints given within the `Tuple` class itself when validating the type argument constraints. With the current proposal their validation requires a separate `@Valid` on the element. Personally I think that's better (more consistent)__.#
++
+__We agreed to require `@Valid` for the sake of consistency.__
 
-1. For an element with a type argument, should it be allowed to specify constraints on the element (and use `@ConstraintsApplyTo(WRAPPED_ELEMENT)`) or should it be disallowed?
+1. For an element with a type argument, should it be allowed to specify constraints on the element (and use the `Unwrapping.Unwrap` payload) or should it be disallowed?
 +
 [source,java]
 ----
-@Email @ConstraintsApplyTo(WRAPPED_ELEMENT) Optional<String> email;
+@Email(payload=Unwrapping.Unwrap.class) Optional<String> email;
 ----
 
-1. Should we allow extractors to be defined for specific parameterized types, e.g.:
+1. [line-through]#Should we allow extractors to be defined for specific parameterized types, e.g.:#
 +
 [source,java]
 ----
@@ -755,10 +769,13 @@ public class ListOfIntegerExtractor implements ValueExtractor<List<@ExtractedVal
 public class ListOfStringExtractor implements ValueExtractor<List<@ExtractedValue String>> { ... }
 ----
 +
-Currently, only one extractor (for type `List<?>` is allowed).
+[line-through]#Currently, only one extractor (for type `List<?>` is allowed).#
 +
-__I can't see a compelling use case for this (when would extractor behavior differ between different parameterizations of the same generic type) and am leaning towards only supporting the wildcard parameterization (`implements ValueExtractor<List<@ExtractedValue ?>>`)__.
+[line-through]#__I can't see a compelling use case for this (when would extractor behavior differ between different parameterizations of the same generic type) and am leaning towards only supporting the wildcard parameterization (`implements ValueExtractor<List<@ExtractedValue ?>>`)__.#
 +
+__We agreed on only allowing one extractor per type, to be given using the wildcard parameterization, as we cannot see a use case for having multiple extractors right now.__
+__But if needed, this limitation can be lifted in a future revision.__
+
 1. Can we find another name than "type argument constraints"? While that suits for the most cases, it doesn't when applying constraints to the component type of an array: `String @NotBlank [] names`.
 +
 __I think "type use" is the correct one in Java terminology. But would anyone get what a "type use constraint" is?__.
