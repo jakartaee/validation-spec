@@ -274,11 +274,12 @@ Additional value extractors can be registered with the Bean Validation provider 
 
 Sometimes there is no type parameter to put a constraint to, but still constraints should be applied to the wrapped value instead of the annotated element
 (a field, property getter, method return value or executable parameter).
-JavaFX's property hierarchy falls into that category, as it defines specific `Property` sub-types which are not generic:
+JavaFX's property hierarchy falls into that category, as it defines specific `Property` sub-types which are not generic.
+As an example, consider a generic type `Wrapper<T>` and a non-generic sub-type `StringWrapper` which binds the type parameter `<T>` to `String`:
 
 [source,java]
 ----
-@Email StringProperty emailProperty;
+@Email StringWrapper email;
 ----
 
 Two defined sub-types of `javax.validation.Payload` can be used to control the target of validation in such cases via the constraint's `payload()` attribute:
@@ -313,23 +314,23 @@ include::{validation-api-source-dir}javax/validation/valueextraction/UnwrapByDef
 [source,java]
 ----
 @UnwrapByDefault
-class PropertyExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
+class WrapperExtractor implements ValueExtractor<Wrapper<@ExtractedValue ?>> {
 
 	@Override
-	public void extractValues(Property originalValue, ValueReceiver receiver) {
+	public void extractValues(Wrapper originalValue, ValueReceiver receiver) {
 		// ...
 	}
 }
 ----
 
-If this extractor was identified as the single most-specific extractor for `StringProperty` (see <<appendix-valueextraction-extractorretrieval>>), the `@Email` constraint above would automatically be applied to the wrapped string value.
+If this extractor was identified as the single most-specific extractor for `StringWrapper` (see <<appendix-valueextraction-extractorretrieval>>), the `@Email` constraint above would automatically be applied to the wrapped string value.
 
 In rare cases it may happen that a constraint should be applied to the wrapped value although an extractor exists.
 In this case the `Unwrapping.Skip` payload type can be specified for that constraint to prevent the unwrapping:
 
 [source,java]
 ----
-@NotNull(payload = Unwrapping.Skip.class) StringProperty emailProperty;
+@NotNull(payload = Unwrapping.Skip.class) StringWrapper email;
 ----
 
 [NOTE]
