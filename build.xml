@@ -1,5 +1,6 @@
 <project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
 	<property name="bv.version" value="2.0.0-SNAPSHOT" />
+	<property name="license" value="license-evaluation" />
 	<property name="asciidoctor.version" value="1.5.3" />
 	<property name="maven-dependency-plugin.version" value="2.10" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
@@ -93,13 +94,13 @@
 	</target>
 	<target name="have-validation-api" depends="unzip-validation-api-from-repo,unzip-validation-api-from-m2">
 	</target>
-	
+
 	<target name="have-asciidoctor" depends="lib-dir-exists">
 		<get src="${maven-central.url}/org/asciidoctor/asciidoctor-ant/${asciidoctor.version}/asciidoctor-ant-${asciidoctor.version}.jar"
 			dest="lib/asciidoctor-ant-${asciidoctor.version}.jar"
 			skipexisting="true"/>
 	</target>
-	
+
 	<target name="have-dependencies" depends="have-mvn, have-asciidoctor, have-validation-api">
 	</target>
 
@@ -117,10 +118,11 @@
 					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-					<attribute key="license" value="license" />
+					<attribute key="license" value="${license}" />
 					<attribute key="tabsize" value="4" />
 					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
 					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
+					<attribute key="bv-version" value="${bv.version}" />
 			</asciidoctor:convert>
 		</sequential>
 	</macrodef>
@@ -149,10 +151,11 @@
 				<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 				<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 				<preProcessor className="org.beanvalidation.asciidocextensions.SavePreprocessedOutputPreprocessor" />
-				<attribute key="license" value="license" />
+				<attribute key="license" value="${license}" />
 				<attribute key="tabsize" value="4" />
 				<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
 				<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
+				<attribute key="bv-version" value="${bv.version}" />
 		</asciidoctor:convert>
 		<delete file="target/preprocessed/index.html" />
 	</target>
