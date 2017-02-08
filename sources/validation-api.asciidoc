@@ -2709,7 +2709,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
 ----
 /**
  * This class is the entry point for Bean Validation.
- * <p/>
+ * <p>
  * There are three ways to bootstrap it:
  * <ul>
  *     <li>The easiest approach is to build the default {@link ValidatorFactory}.
@@ -2718,7 +2718,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  * </pre>
  *     In this case, the default validation provider resolver
  *     will be used to locate available providers.
- *     <p/>
+ *     <p>
  *     The chosen provider is defined as followed:
  *     <ul>
  *         <li>if the XML configuration defines a provider, this provider is used</li>
@@ -2733,7 +2733,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  *     {@link ValidationProvider} is then determined in the same way
  *     as in the default bootstrapping case (see above).
  *     <pre>
- * Configuration<?> configuration = Validation
+ * Configuration&lt;?&gt; configuration = Validation
  *    .byDefaultProvider()
  *    .providerResolver( new MyResolverStrategy() )
  *    .configure();
@@ -2743,7 +2743,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  *     <li>
  *     The third approach allows you to specify explicitly and in
  *     a type safe fashion the expected provider.
- *     <p/>
+ *     <p>
  *     Optionally you can choose a custom {@code ValidationProviderResolver}.
  *     <pre>
  * ACMEConfiguration configuration = Validation
@@ -2754,7 +2754,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  * </pre>
  *     </li>
  * </ul>
- * <p/>
+ * <p>
  * Note:
  * <ul>
  *     <li>
@@ -2772,16 +2772,18 @@ public class Validation {
     /**
      * Builds and returns a {@link ValidatorFactory} instance based on the
      * default Bean Validation provider and following the XML configuration.
-     * <p/>
+     * <p>
      * The provider list is resolved using the default validation provider resolver
      * logic.
-     * <p/>
+     * <p>
      * The code is semantically equivalent to
      * {@code Validation.byDefaultProvider().configure().buildValidatorFactory()}.
      *
      * @return {@code ValidatorFactory} instance
      *
-     * @throws ValidationException if the {@code ValidatorFactory} cannot be built
+     * @throws NoProviderFoundException if no Bean Validation provider was found
+     * @throws ValidationException if a Bean Validation provider was found but the
+     * {@code ValidatorFactory} cannot be built
      */
     public static ValidatorFactory buildDefaultValidatorFactory() {
         [...]
@@ -2791,7 +2793,7 @@ public class Validation {
      * Builds a {@link Configuration}. The provider list is resolved
      * using the strategy provided to the bootstrap state.
      * <pre>
-     * Configuration&lt?&gt; configuration = Validation
+     * Configuration&lt;?&gt; configuration = Validation
      *    .byDefaultProvider()
      *    .providerResolver( new MyResolverStrategy() )
      *    .configure();
@@ -2810,11 +2812,10 @@ public class Validation {
 
     /**
      * Builds a {@link Configuration} for a particular provider implementation.
-     * <p/>
+     * <p>
      * Optionally overrides the provider resolution strategy used to determine the provider.
-     * <p/>
+     * <p>
      * Used by applications targeting a specific provider programmatically.
-     * <p/>
      * <pre>
      * ACMEConfiguration configuration =
      *     Validation.byProvider(ACMEProvider.class)
@@ -2827,6 +2828,8 @@ public class Validation {
      * {@link ValidationProvider} implementation of the ACME provider.
      *
      * @param providerType the {@code ValidationProvider} implementation type
+     * @param <T> the type of the {@code Configuration} corresponding to this {@code ValidationProvider}
+     * @param <U> the type of the {@code ValidationProvider} implementation
      *
      * @return instance building a provider specific {@code Configuration}
      *         sub interface implementation
@@ -2849,43 +2852,7 @@ public class Validation {
 
 [source, JAVA]
 ----
-package javax.validation.bootstrap;
-
-/**
- * Defines the state used to bootstrap Bean Validation and
- * creates a provider agnostic {@link Configuration}.
- *
- * @author Emmanuel Bernard
- */
-public interface GenericBootstrap {
-
-    /**
-     * Defines the provider resolution strategy.
-     * This resolver returns the list of providers evaluated
-     * to build the {@link Configuration}.
-     * <p/>
-     * If no resolver is defined, the default {@link ValidationProviderResolver}
-     * implementation is used.
-     *
-     * @param resolver the {@code ValidationProviderResolver} to use for bootstrapping
-     * @return {@code this} following the chaining method pattern
-     */
-    GenericBootstrap providerResolver(ValidationProviderResolver resolver);
-
-    /**
-     * Returns a generic {@link Configuration} implementation.
-     * At this stage the provider used to build the {@link ValidatorFactory}
-     * is not defined.
-     * <p/>
-     * The {@code Configuration} implementation is provided by the first provider
-     * returned by the {@link ValidationProviderResolver} strategy.
-     *
-     * @return a {@code Configuration} implementation compliant with the bootstrap state
-     * @throws ValidationException if the {@code Configuration} object cannot be built;
-     *         this is generally due to an issue with the {@code ValidationProviderResolver}
-     */
-    Configuration<?> configure();
-}
+include::{validation-api-source-dir}javax/validation/bootstrap/GenericBootstrap.java[lines=7..8;15..-1]
 ----
 
 ====
