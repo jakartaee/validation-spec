@@ -34,12 +34,10 @@ import javax.validation.Payload;
 import javax.validation.constraints.Pattern;
 
 //tag::include[]
-@Pattern.List({
-		@Pattern(regexp = "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}"), // email
-		@Pattern(regexp = ".*?emmanuel.*?") // emmanuel
-})
-@Constraint(validatedBy = {})
 @Documented
+@Constraint(validatedBy = {})
+@Pattern(regexp = "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}") // email
+@Pattern(regexp = ".*?emmanuel.*?") // emmanuel
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface EmmanuelsEmail {
