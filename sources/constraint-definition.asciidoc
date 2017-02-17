@@ -409,7 +409,12 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 
 ====
 
-[tck-testable]#It is possible to override attributes and messages defined on a composing annotation. An attribute from the main annotation is used to override one or more attributes of the composing annotations. Such an attribute is annotated with the [classname]`@OverridesAttribute` annotation or its multivalued equivalent [classname]`@OverridesAttribute.List`.#
+[tck-testable]
+--
+It is possible to override attributes and messages defined on a composing annotation.
+An attribute from the main annotation is used to override one or more attributes of the composing annotations.
+Such an attribute is annotated with one or more `@OverridesAttribute` annotations.
+--
 
 [[example-composing-overridden]]
 
@@ -455,7 +460,18 @@ if [classname]`@FrenchZipCode` is defined as
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/constraintcomposition/overriding/interpreted/FrenchZipCode.java[tags=include]
 ----
 
-[tck-testable]#If a constraint is used more than once as a composing constraint, the multi value constraints model as described in <<constraintsdefinitionimplementation-multipleconstraints>> is used.# [tck-testable]#To select a specific composing constraint, [methodname]`OverridesAttribute.constraintIndex` is used. It represents the constraint index in the [methodname]`value` array.# [tck-testable]#If `index` is undefined, the single constraint declaration is targeted.#
+[tck-testable]#If a constraint is used more than once as a composing constraint, the multi value constraints model as described in <<constraintsdefinitionimplementation-multipleconstraints>> is used.#
+
+To select a specific composing constraint, [methodname]`OverridesAttribute.constraintIndex` is used.
+[tck-testable]#If the composing constraints are directly given on the composing constraint, `constraintIndex` refers to the left-to-right order of the constraints of this type in which they are given on the composing constraint.#
+[tck-testable]#If the composing constraints are specified using their corresponding `List` annotation, `constraintIndex` refers to the index within the `value` array.#
+[tck-testable]
+--
+A composing constraint must not be given directly on the composing constraint and using the corresponding `List` annotation at the same time.
+A `ConstraintDeclarationException` will be raised in this case.
+--
+
+[tck-testable]#If `index` is undefined, the single constraint declaration is targeted.#
 
 .Use of constraintIndex in @OverridesAttribute
 ====
@@ -471,7 +487,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 
 [source, JAVA, indent=0]
 ----
-include::{validation-api-source-dir}javax/validation/OverridesAttribute.java[lines=16..-1]
+include::{validation-api-source-dir}javax/validation/OverridesAttribute.java[lines=20..-1]
 ----
 
 The following elements uniquely identify an overridden constraint attribute:
