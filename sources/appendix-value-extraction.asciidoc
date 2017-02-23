@@ -259,8 +259,8 @@ TODO
 Additional value extractors can be plugged in when bootstrapping a `Validator` or `ValidatorFactory`, amending and/or overriding the set of built-in value extractors.
 The following ways to do so exist, in descending order of precedence:
 
-* Invoking the new method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
-* Invoking the new method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
+* Invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
+* Invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
 * Specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`:
 +
 [source,xml]
@@ -273,9 +273,9 @@ The following ways to do so exist, in descending order of precedence:
 with the fully-qualified name(s) of one or more extractor implementations as its contents (i.e. employing the Java service loader mechanism)
 
 A value extractor for a given type and extracted type parameter specified at a higher level overrides any other extractors for the same type and extracted type given at lower levels.
-If e.g. a `ValueExtractor<List<@ExtractedValue ?>>` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
-it will take precedence of any value extractor for the same type (`List`) and type parameter (`E`) given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
-_META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for that type and type parameter.
+If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
+it will take precedence over any other value extractor implementing `List<@ExtractedValue ?>` given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
+_META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for `List` elements.
 
 [[appendix-valueextraction-wrappedelements]]
 ==== Applying element-level constraints to wrapped elements
