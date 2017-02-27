@@ -97,7 +97,7 @@ class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
 
 The right callback methods (`indexedValue()`, `keyedValue()` etc.) must be called in order to allow for proper construction of the property path as per the rules laid out in the BV 1.1 spec.
 
-If a non-null value is passed for `nodeName`, a path node of type `TYPE_ARGUMENT` will be appended to the property path.
+If a non-null value is passed for `nodeName`, a path node of type `CONTAINER_ELEMENT` will be appended to the property path.
 That's desirable for collection types for instance. If null is passed, no node will be appended,
 resulting in the same path as if the constraint had been given on the element itself instead of a type parameter.
 That's desirable for pure "wrapper types" such as `Optional`.
@@ -188,21 +188,28 @@ This helps to avoid object allocations and allows to handle the case of a single
 
 ==== Extensions to `Node`
 
-There is a new `javax.validation.ElementKind`, `TYPE_ARGUMENT`.
-There is also a new `Node` sub-type, `TypeArgumentNode`:
+There is a new `javax.validation.ElementKind`, `CONTAINER_ELEMENT`.
+There is also a new `Node` sub-type, `ContainerElementNode`:
 
 [source,java]
 ----
-interface TypeArgumentNode extends Node {
+interface ContainerElementNode extends Node {
 
     /**
-     * Returns type parameter affected by the violated constraint.
+     * @return the type parameter affected by the violated constraint
      */
-    TypeVariable<?> getTypeParameter();
+    TypeParameter getTypeParameter();
 }
 ----
 
 `getTypeParameter()` also needs to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
+
+`TypeParameter` contains the information about the type parameter. It is designed as a simplified and serializable version of `java.lang.reflect.TypeVariable`:
+
+[source,java,indent=0]
+----
+include::{validation-api-source-dir}javax/validation/TypeParameter.java[lines=7..8;12..-1]
+----
 
 ==== Default extractors
 
@@ -213,7 +220,7 @@ Compatible implementations provide extractors for the following types out of the
 Both will cause the validation of all the array elements
 ** If a constraint given for an array's component type is validated, a node with the following properties will be added to the path:
 *** name: "<iterable element>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `false`
 *** index: the element's index
 *** key: `null`
@@ -222,7 +229,7 @@ Both will cause the validation of all the array elements
 ** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
 ** When validating a type argument constraint for `Iterable`, a node with the following properties will be added to the path:
 *** name: "<iterable element>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: the element's index if the iterable is of type `List` or a subtype thereof; `null` otherwise
 *** key: `null`
@@ -232,13 +239,13 @@ Both will cause the validation of all the array elements
 ** When `@Valid` is given on the value type parameter, the map values will be validated
 ** When validating a constraint on the key type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map key>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: `null`
 *** key: key
 ** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map value>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: `null`
 *** key: key
@@ -859,7 +866,7 @@ assertThat( node.getIndex() ).isNull();
 
 node = path.next();
 assertThat( node.getName() ).isEqualTo( "<table cell>" );
-assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKind() ).isEqualTo( ElementKind.CONTAINER_ELEMENT );
 assertThat( node.getKey() ).isEqualTo( new CellKey(Year.of( 2015 ), "cds") );
 assertThat( node.getIndex() ).isNull();
 
@@ -930,7 +937,7 @@ assertThat( node.getTypeParameter() ).isNull();
 
 node = path.next();
 assertThat( node.getName() ).isEqualTo( "<map value>" );
-assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKind() ).isEqualTo( ElementKind.CONTAINER_ELEMENT );
 assertThat( node.getKey() ).isEqualTo( new OrderType( "RETAIL" ) );
 assertThat( node.getIndex() ).isNull();
 assertThat( node.getTypeParameter().getName() ).isEqualTo( "V" );
@@ -938,5 +945,5 @@ assertThat( node.getTypeParameter().getName() ).isEqualTo( "V" );
 assertThat( path.hasNext() ).isFalse();
 ----
 
-1. Revisit the names of nodes of kind `TYPE_ARGUMENT`;
+1. Revisit the names of nodes of kind `CONTAINER_ELEMENT`;
 instead of `<iterable element>`, `<map value>` etc. should it be the names of the type parameters in question, i.e. `<E>`, `<V>` etc.?
