@@ -196,20 +196,18 @@ There is also a new `Node` sub-type, `ContainerElementNode`:
 interface ContainerElementNode extends Node {
 
     /**
-     * @return the type parameter affected by the violated constraint
+     * @return the class of the container for the element affected by the violated constraint
      */
-    TypeParameter getTypeParameter();
+    Class<?> getContainerClass();
+
+    /**
+     * @return the index of the type parameter affected by the violated constraint in the container class
+     */
+    Integer getContainerElementIndex();
 }
 ----
 
-`getTypeParameter()` also needs to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
-
-`TypeParameter` contains the information about the type parameter. It is designed as a simplified and serializable version of `java.lang.reflect.TypeVariable`:
-
-[source,java,indent=0]
-----
-include::{validation-api-source-dir}javax/validation/TypeParameter.java[lines=7..8;12..-1]
-----
+`getContainerClass()` and `getContainerElementIndex()` also need to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
 
 ==== Default extractors
 
@@ -224,8 +222,10 @@ Both will cause the validation of all the array elements
 *** isInIterable: `false`
 *** index: the element's index
 *** key: `null`
-* `java.util.Iterable`
-** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatability with BV 1.1
+*** containerClass: `null`
+*** containerElementIndex: `null`
+* `java.util.Iterable` - excluding the case of `java.util.List` described below
+** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
 ** When validating a type argument constraint for `Iterable`, a node with the following properties will be added to the path:
 *** name: "<iterable element>"
@@ -233,8 +233,21 @@ Both will cause the validation of all the array elements
 *** isInIterable: `true`
 *** index: the element's index if the iterable is of type `List` or a subtype thereof; `null` otherwise
 *** key: `null`
+*** containerClass: `Iterable`
+*** containerElementIndex: `0`
+* `java.util.List`
+** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatibility with BV 1.1
+** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
+** When validating a type argument constraint for `List`, a node with the following properties will be added to the path:
+*** name: "<iterable element>"
+*** kind: `CONTAINER_ELEMENT`
+*** isInIterable: `true`
+*** index: the element's index
+*** key: `null`
+*** containerClass: `List`
+*** containerElementIndex: `0`
 * `java.util.Map`
-** When `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatability with BV 1.1
+** When `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the key type parameter, the map keys will be validated
 ** When `@Valid` is given on the value type parameter, the map values will be validated
 ** When validating a constraint on the key type argument of `Map`, a node with the following properties will be added to the path:
@@ -243,12 +256,16 @@ Both will cause the validation of all the array elements
 *** isInIterable: `true`
 *** index: `null`
 *** key: key
+*** containerClass: `Map`
+*** containerElementIndex: `0`
 ** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map value>"
 *** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: `null`
 *** key: key
+*** containerClass: `Map`
+*** containerElementIndex: `1`
 * `java.util.Optional`
 ** No node will be appended to the path when validating type argument constraints on `Optional`
 * `javafx.beans.observable.ObservableValue`
