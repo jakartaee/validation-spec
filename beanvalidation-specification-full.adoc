@@ -9,7 +9,9 @@ Gunnar Morling
 :sectanchors:
 :anchor:
 :toc: left
-:numbered:
+:toclevels: 3
+:sectnums:
+:sectnumlevels: 4
 :docinfo:
 :docinfodir: ../docinfo
 
@@ -82,7 +84,7 @@ The Specification is subject to U.S. export control laws and may be subject to e
 
 This Agreement is the parties' entire agreement relating to its subject matter. It supersedes all prior or contemporaneous oral or written communications, proposals, conditions, representations and warranties and prevails over any conflicting or additional terms of any quote, order, acknowledgment, or other communication between the parties relating to its subject matter during the term of this Agreement. No modification to this Agreement will be binding, unless in writing and signed by an authorized representative of each party.
 
-:numbered:
+:sectnums:
 
 <<<
 
@@ -955,6 +957,7 @@ The definition of [classname]`@ReportAsSingleViolation` is as follows.
  */
 @Target({ ANNOTATION_TYPE })
 @Retention(RUNTIME)
+@Documented
 public @interface ReportAsSingleViolation {
 }
 ----
@@ -993,7 +996,12 @@ public @interface FrenchZipCode {
 
 ====
 
-[tck-testable]#It is possible to override attributes and messages defined on a composing annotation. An attribute from the main annotation is used to override one or more attributes of the composing annotations. Such an attribute is annotated with the [classname]`@OverridesAttribute` annotation or its multivalued equivalent [classname]`@OverridesAttribute.List`.#
+[tck-testable]
+--
+It is possible to override attributes and messages defined on a composing annotation.
+An attribute from the main annotation is used to override one or more attributes of the composing annotations.
+Such an attribute is annotated with one or more `@OverridesAttribute` annotations.
+--
 
 [[example-composing-overridden]]
 
@@ -1016,9 +1024,8 @@ public @interface FrenchZipCode {
 
     Class<? extends Payload>[] payload() default {};
 
-    @OverridesAttribute.List({
-            @OverridesAttribute(constraint = Size.class, name = "min"),
-            @OverridesAttribute(constraint = Size.class, name = "max") })
+    @OverridesAttribute(constraint = Size.class, name = "min")
+    @OverridesAttribute(constraint = Size.class, name = "max")
     int size() default 5;
 
     @OverridesAttribute(constraint = Size.class, name = "message")
@@ -1092,19 +1099,28 @@ public @interface FrenchZipCode {
 }
 ----
 
-[tck-testable]#If a constraint is used more than once as a composing constraint, the multi value constraints model as described in <<constraintsdefinitionimplementation-multipleconstraints>> is used.# [tck-testable]#To select a specific composing constraint, [methodname]`OverridesAttribute.constraintIndex` is used. It represents the constraint index in the [methodname]`value` array.# [tck-testable]#If `index` is undefined, the single constraint declaration is targeted.#
+[tck-testable]#If a constraint is used more than once as a composing constraint, the multi value constraints model as described in <<constraintsdefinitionimplementation-multipleconstraints>> is used.#
+
+To select a specific composing constraint, [methodname]`OverridesAttribute.constraintIndex` is used.
+[tck-testable]#If the composing constraints are directly given on the composing constraint, `constraintIndex` refers to the left-to-right order of the constraints of this type in which they are given on the composing constraint.#
+[tck-testable]#If the composing constraints are specified using their corresponding `List` annotation, `constraintIndex` refers to the index within the `value` array.#
+[tck-testable]
+--
+A composing constraint must not be given directly on the composing constraint and using the corresponding `List` annotation at the same time.
+A `ConstraintDeclarationException` will be raised in this case.
+--
+
+[tck-testable]#If `index` is undefined, the single constraint declaration is targeted.#
 
 .Use of constraintIndex in @OverridesAttribute
 ====
 
 [source, JAVA, indent=0]
 ----
-@Pattern.List({
-        @Pattern(regexp = "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}"), // email
-        @Pattern(regexp = ".*?emmanuel.*?") // emmanuel
-})
-@Constraint(validatedBy = {})
 @Documented
+@Constraint(validatedBy = {})
+@Pattern(regexp = "[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}") // email
+@Pattern(regexp = ".*?emmanuel.*?") // emmanuel
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 public @interface EmmanuelsEmail {
@@ -1143,8 +1159,10 @@ public @interface EmmanuelsEmail {
  *
  * @author Emmanuel Bernard
  */
+@Documented
 @Retention(RUNTIME)
 @Target({ METHOD })
+@Repeatable(List.class)
 public @interface OverridesAttribute {
 
     /**
@@ -2704,7 +2722,7 @@ Groups defining a sequence and groups composing a sequence must not be involved 
 ----
 /**
  * Defines group sequence.
- * <p/>
+ * <p>
  * The interface hosting {@code @GroupSequence} is representing
  * the group sequence.
  * When hosted on a class, represents the {@link Default} group
@@ -2715,6 +2733,7 @@ Groups defining a sequence and groups composing a sequence must not be involved 
  */
 @Target({ TYPE })
 @Retention(RUNTIME)
+@Documented
 public @interface GroupSequence {
 
     Class<?>[] value();
@@ -5362,7 +5381,7 @@ The [methodname]`getLeafBean()` method returns the following object:
  * Represents the navigation path from an object to another
  * in an object graph.
  * Each path element is represented by a {@code Node}.
- * <p/>
+ * <p>
  * The path corresponds to the succession of nodes
  * in the order they are returned by the {@code Iterator}.
  *
@@ -5370,6 +5389,18 @@ The [methodname]`getLeafBean()` method returns the following object:
  * @author Gunnar Morling
  */
 public interface Path extends Iterable<Path.Node> {
+
+    /**
+     * Returns a human-readable representation of this path.
+     * <p>
+     * Clients should not rely on any specific structure of the returned value. Instead they should iterate through the
+     * path nodes and obtain any required information by calling the methods on {@link Node} and its sub-types.
+     *
+     * @return a human-readable representation of this path
+     * @since 2.0
+     */
+    @Override
+    String toString();
 
     /**
      * Represents an element of a navigation path.
@@ -5427,7 +5458,7 @@ public interface Path extends Iterable<Path.Node> {
          *     <li>{@link ElementKind#CROSS_PARAMETER}: {@link CrossParameterNode}</li>
          *     <li>{@link ElementKind#RETURN_VALUE}: {@link ReturnValueNode}</li>
          * </ul>
-         * <p/>
+         * <p>
          * This is useful to narrow down the {@code Node} type and access node specific
          * information:
          * <pre>
@@ -5460,6 +5491,18 @@ public interface Path extends Iterable<Path.Node> {
          * @since 1.1
          */
         <T extends Node> T as(Class<T> nodeType);
+
+        /**
+         * Returns a human-readable representation of this node.
+         * <p>
+         * Clients should not rely on any specific structure of the returned value. Instead they should obtain any
+         * required information by calling the methods on this interface and its sub-types.
+         *
+         * @return a human-readable representation of this node
+         * @since 2.0
+         */
+        @Override
+        String toString();
     }
 
     /**
@@ -7155,6 +7198,9 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [source, JAVA]
 ----
+import javax.validation.valueextraction.ValueExtractor;
+import javax.validation.valueextraction.ValueExtractorDeclarationException;
+
 /**
  * Represents the context that is used to create {@link Validator}
  * instances.
@@ -7233,6 +7279,20 @@ public interface ValidatorContext {
     ValidatorContext clockProvider(ClockProvider clockProvider);
 
     /**
+     * Adds a value extractor to be used by the {@link Validator}. Has
+     * priority over any extractor for the same type and type parameter
+     * detected through the service loader, given in the XML configuration or
+     * configured for the validator factory.
+     *
+     * @param extractor value extractor implementation
+     * @return self following the chaining method pattern
+     * @throws ValueExtractorDeclarationException If more than one extractor for
+     *         the same type and type use is added
+     * @since 2.0
+     */
+    ValidatorContext addValueExtractor(ValueExtractor<?> extractor);
+
+    /**
      * Returns an initialized {@link Validator} instance respecting the defined state.
      * {@code Validator} instances can be pooled and shared by the implementation.
      *
@@ -7303,6 +7363,8 @@ Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the
 
 [source, JAVA]
 ----
+import javax.validation.valueextraction.ValueExtractorDeclarationException;
+
 /**
  * Receives configuration information, selects the appropriate
  * Bean Validation provider and builds the appropriate {@link ValidatorFactory}.
@@ -7418,6 +7480,19 @@ public interface Configuration<T extends Configuration<T>> {
      * @since 2.0
      */
     T clockProvider(ClockProvider clockProvider);
+
+    /**
+     * Adds a value extractor. Has priority over any extractor for the same
+     * type and type parameter detected through the service loader or given in
+     * the XML configuration.
+     *
+     * @param extractor value extractor implementation
+     * @return {@code this} following the chaining method pattern.
+     * @throws ValueExtractorDeclarationException If more than one extractor for
+     *         the same type and type use is added
+     * @since 2.0
+     */
+    T addValueExtractor(ValueExtractor<?> extractor);
 
     /**
      * Add a stream describing constraint mapping in the Bean Validation XML
@@ -7574,6 +7649,8 @@ public interface Configuration<T extends Configuration<T>> {
 
 [source, JAVA]
 ----
+import javax.validation.valueextraction.ValueExtractor;
+
 /**
  * Represents the user specified default configuration in
  * {@code META-INF/validation.xml}.
@@ -7639,6 +7716,14 @@ public interface BootstrapConfiguration {
      * @since 2.0
      */
     String getClockProviderClassName();
+
+    /**
+     * Returns the class names of {@link ValueExtractor}s.
+     *
+     * @return the value extractor class names or an empty set if none are specified
+     * @since 2.0
+     */
+    Set<String> getValueExtractorClassNames();
 
     /**
      * Returns a set of resource paths pointing to XML constraint mapping files.
@@ -7724,6 +7809,7 @@ A typical implementation of [classname]`Configuration` also implements [classnam
 ----
 package javax.validation.spi;
 
+
 /**
  * Contract between a {@link Configuration} and a
  * {@link ValidationProvider} to create a {@link ValidatorFactory}.
@@ -7785,6 +7871,31 @@ public interface ConfigurationState {
      * @return set of input stream
      */
     Set<InputStream> getMappingStreams();
+
+    /**
+     * Returns a set of value extractors.
+     * <p>
+     * The extractors are retrieved from the following sources in decreasing
+     * order:
+     * <ul>
+     *     <li>extractors passed programmatically to {@link Configuration}</li>
+     *     <li>extractors defined in {@code META-INF/validation.xml} provided
+     *     that {@code ignoredXmlConfiguration} is {@code false}</li>
+     *     <li>extractors loaded through the Java service loader</li>
+     * </ul>
+     * An extractor for a given type and type parameter passed in
+     * programmatically takes precedence over any extractor for the same type
+     * and type parameter defined in {@code META-INF/validation.xml} or loaded
+     * through the service loader. Extractors defined in
+     * {@code META-INF/validation.xml} take precedence over any extractor for
+     * the same type and type parameter loaded through the service loader.
+     * <p>
+     * Extractors defined in {@code META-INF/validation.xml} or loaded through
+     * the service loader are instantiated using their no-arg constructor.
+     *
+     * @return set of value extractors; may be empty but never {@code null}
+     */
+    Set<ValueExtractor<?>> getValueExtractors();
 
     /**
      * Returns the constraint validator factory of this configuration.
@@ -8175,7 +8286,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
 ----
 /**
  * This class is the entry point for Bean Validation.
- * <p/>
+ * <p>
  * There are three ways to bootstrap it:
  * <ul>
  *     <li>The easiest approach is to build the default {@link ValidatorFactory}.
@@ -8184,7 +8295,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  * </pre>
  *     In this case, the default validation provider resolver
  *     will be used to locate available providers.
- *     <p/>
+ *     <p>
  *     The chosen provider is defined as followed:
  *     <ul>
  *         <li>if the XML configuration defines a provider, this provider is used</li>
@@ -8199,7 +8310,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  *     {@link ValidationProvider} is then determined in the same way
  *     as in the default bootstrapping case (see above).
  *     <pre>
- * Configuration<?> configuration = Validation
+ * Configuration&lt;?&gt; configuration = Validation
  *    .byDefaultProvider()
  *    .providerResolver( new MyResolverStrategy() )
  *    .configure();
@@ -8209,7 +8320,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  *     <li>
  *     The third approach allows you to specify explicitly and in
  *     a type safe fashion the expected provider.
- *     <p/>
+ *     <p>
  *     Optionally you can choose a custom {@code ValidationProviderResolver}.
  *     <pre>
  * ACMEConfiguration configuration = Validation
@@ -8220,7 +8331,7 @@ The [classname]`Validation` class is the entry point used to bootstrap Bean Vali
  * </pre>
  *     </li>
  * </ul>
- * <p/>
+ * <p>
  * Note:
  * <ul>
  *     <li>
@@ -8238,16 +8349,18 @@ public class Validation {
     /**
      * Builds and returns a {@link ValidatorFactory} instance based on the
      * default Bean Validation provider and following the XML configuration.
-     * <p/>
+     * <p>
      * The provider list is resolved using the default validation provider resolver
      * logic.
-     * <p/>
+     * <p>
      * The code is semantically equivalent to
      * {@code Validation.byDefaultProvider().configure().buildValidatorFactory()}.
      *
      * @return {@code ValidatorFactory} instance
      *
-     * @throws ValidationException if the {@code ValidatorFactory} cannot be built
+     * @throws NoProviderFoundException if no Bean Validation provider was found
+     * @throws ValidationException if a Bean Validation provider was found but the
+     * {@code ValidatorFactory} cannot be built
      */
     public static ValidatorFactory buildDefaultValidatorFactory() {
         [...]
@@ -8257,7 +8370,7 @@ public class Validation {
      * Builds a {@link Configuration}. The provider list is resolved
      * using the strategy provided to the bootstrap state.
      * <pre>
-     * Configuration&lt?&gt; configuration = Validation
+     * Configuration&lt;?&gt; configuration = Validation
      *    .byDefaultProvider()
      *    .providerResolver( new MyResolverStrategy() )
      *    .configure();
@@ -8276,11 +8389,10 @@ public class Validation {
 
     /**
      * Builds a {@link Configuration} for a particular provider implementation.
-     * <p/>
+     * <p>
      * Optionally overrides the provider resolution strategy used to determine the provider.
-     * <p/>
+     * <p>
      * Used by applications targeting a specific provider programmatically.
-     * <p/>
      * <pre>
      * ACMEConfiguration configuration =
      *     Validation.byProvider(ACMEProvider.class)
@@ -8293,6 +8405,8 @@ public class Validation {
      * {@link ValidationProvider} implementation of the ACME provider.
      *
      * @param providerType the {@code ValidationProvider} implementation type
+     * @param <T> the type of the {@code Configuration} corresponding to this {@code ValidationProvider}
+     * @param <U> the type of the {@code ValidationProvider} implementation
      *
      * @return instance building a provider specific {@code Configuration}
      *         sub interface implementation
@@ -8308,7 +8422,7 @@ public class Validation {
 
 ====
 
-[tck-testable]#The second entry point lets the client provide a custom [classname]`ValidationProviderResolution` instance. This instance is passed to [classname]`GenericBootstrap`. [classname]`GenericBootstrap` builds a generic [classname]`Configuration` using the first [classname]`ValidationProvider` returned by [classname]`ValidationProviderResolution` and calling [code]`ValidationProvider.createGenericConfiguration(BootstrapState state)`.# [classname]`BootstrapState` holds the [classname]`ValidationProviderResolution` instance passed to [classname]`GenericBootstrap` and will be used by the [classname]`Configuration` instance when resolving the provider to use. Note that [code]`ValidationProvider.createGenericConfiguration` returns a [classname]`Configuration` object not bound to any particular provider.
+[tck-testable]#The second entry point lets the client provide a custom [classname]`ValidationProviderResolver` instance. This instance is passed to [classname]`GenericBootstrap`. [classname]`GenericBootstrap` builds a generic [classname]`Configuration` using the first [classname]`ValidationProvider` returned by [classname]`ValidationProviderResolution` and calling [code]`ValidationProvider.createGenericConfiguration(BootstrapState state)`.# [classname]`BootstrapState` holds the [classname]`ValidationProviderResolution` instance passed to [classname]`GenericBootstrap` and will be used by the [classname]`Configuration` instance when resolving the provider to use. Note that [code]`ValidationProvider.createGenericConfiguration` returns a [classname]`Configuration` object not bound to any particular provider.
 
 .GenericBootstrap interface
 ====
@@ -8329,7 +8443,7 @@ public interface GenericBootstrap {
      * Defines the provider resolution strategy.
      * This resolver returns the list of providers evaluated
      * to build the {@link Configuration}.
-     * <p/>
+     * <p>
      * If no resolver is defined, the default {@link ValidationProviderResolver}
      * implementation is used.
      *
@@ -8342,13 +8456,15 @@ public interface GenericBootstrap {
      * Returns a generic {@link Configuration} implementation.
      * At this stage the provider used to build the {@link ValidatorFactory}
      * is not defined.
-     * <p/>
+     * <p>
      * The {@code Configuration} implementation is provided by the first provider
      * returned by the {@link ValidationProviderResolver} strategy.
      *
      * @return a {@code Configuration} implementation compliant with the bootstrap state
-     * @throws ValidationException if the {@code Configuration} object cannot be built;
-     *         this is generally due to an issue with the {@code ValidationProviderResolver}
+     * @throws NoProviderFoundException if no Bean Validation provider was found
+     * @throws ValidationException if a Bean Validation provider was found but the
+     *         {@code Configuration} object cannot be built; this is generally due to an
+     *         issue with the {@code ValidationProviderResolver}
      */
     Configuration<?> configure();
 }
@@ -8410,7 +8526,7 @@ public interface ProviderSpecificBootstrap<T extends Configuration<T>> {
 
 ====
 
-[methodname]`ProviderSpecificBootstrap.configure()` must return the result of [methodname]`ValidationProvider.createSpecializedConfiguration(BootstrapState state)`. The state parameter holds the [classname]`ValidationProviderResolver` passed to [classname]`ProviderSpecificBootstrap`. The validation provider instance used is the one assignable to the type passed as a parameter in [methodname]`Validation.byProvider(Class)`. The validation provider is selected according to the algorithm described in (<<id-bootstrap-validationprovider>>).
+[methodname]`ProviderSpecificBootstrap.configure()` must return the result of [methodname]`ValidationProvider.createSpecializedConfiguration(BootstrapState state)`. The state parameter holds the [classname]`ValidationProviderResolver` passed to [classname]`ProviderSpecificBootstrap`. The validation provider instance used is the one assignable to the type passed as a parameter in [methodname]`Validation.byProvider(Class)`. The validation provider is selected according to the algorithm described in <<id-bootstrap-validationprovider>>.
 
 [tck-testable]#The [classname]`Validation` implementation must not contain any non private attribute or method aside from the three public static bootstrap methods:#
 
@@ -10431,11 +10547,12 @@ public @interface Digits {
 package javax.validation.constraints;
 
 /**
-The annotated element must be an instant, date or time in the past.
+ * The annotated element must be an instant, date or time in the past.
  * <p>
- * By default, "now" is defined as the current time according to the virtual machine, applying the current default time
- * zone if needed. If required, an alternative {@link ClockProvider} can be specified when bootstrapping a validator
- * factory or validator, allowing to customize the {@link Clock} representing the current instant, date and time.
+ * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link javax.validation.Validator}
+ * or {@link javax.validation.ValidatorFactory}.
+ * The default {@code clockProvider} defines the current time according to the virtual machine,
+ * applying the current default time zone if needed.
  * <p>
  * Supported types are:
  * <ul>
@@ -10509,9 +10626,10 @@ package javax.validation.constraints;
 /**
  * The annotated element must be an instant, date or time in the future.
  * <p>
- * By default, "now" is defined as the current time according to the virtual machine, applying the current default time
- * zone if needed. If required, an alternative {@link ClockProvider} can be specified when bootstrapping a validator
- * factory or validator, allowing to customize the {@link Clock} representing the current instant, date and time.
+ * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link javax.validation.Validator}
+ * or {@link javax.validation.ValidatorFactory}.
+ * The default {@code clockProvider} defines the current time according to the virtual machine,
+ * applying the current default time zone if needed.
  * <p>
  * Supported types are:
  * <ul>
@@ -11830,7 +11948,7 @@ Bean Validation never raises this exception itself. Other frameworks like Java P
 
 [NOTE]
 ====
-If this exception is meant to be send remotely, [classname]`ConstraintViolation` objects should be [classname]`Serializable` as defined and explained in <<validationapi-constraintviolation>>.
+If this exception is meant to be sent remotely, [classname]`ConstraintViolation` objects should be [classname]`Serializable` as defined and explained in <<validationapi-constraintviolation>>.
 ====
 
 === Constraint definition: [classname]`ConstraintDefinitionException`
@@ -11872,6 +11990,11 @@ These exception cases can be determined at compile time by a tool such as an ann
 These exception cases can be determined at compile time by a tool such as an annotation processor.
 ====
 
+=== No Bean Validation Provider detected: `NoProviderFoundException`
+
+[tck-testable]#When trying to bootstrap Bean Validation via `Validation.buildDefaultValidatorFactory()` or `Validation.byDefaultProvider().configure()` and no Bean Validation provider could be found, a `NoProviderFoundException` is raised.#
+
+`NoProviderFoundException` is a subclass of `ValidationException`.
 
 <<<
 
@@ -11962,12 +12085,12 @@ package javax.validation.executable;
  * Expresses which executables (methods or constructors) should have their parameters
  * and return value validated upon execution. Can be on executable (method, constructor)
  * or type level (with the former taking precedence).
- * <p/>
+ * <p>
  * If not present for a given executable, the default configuration from
  * {@code META-INF/validation.xml} and finally the implicit default
  * validated executable types (constructors and non-getters) are taken into account to determine
  * whether a given executable is validated upon execution or not.
- * <p/>
+ * <p>
  * The following describes the formal rules for deciding whether an executable is validated.
  * They are applied in decreasing order:
  * <ul>
@@ -11991,7 +12114,7 @@ package javax.validation.executable;
  *     raises a {@link ValidationException} if the overriding / implementing method hosts
  *     the {@code ValidateOnExecution} annotation.</li>
  * </ul>
- * <p/>
+ * <p>
  * Note that you can exclude an executable from validation by making sure the rules above do not match
  * or by annotating the executable with {@code @ValidateOnExecution(NONE)}.
  *
@@ -12000,11 +12123,14 @@ package javax.validation.executable;
  */
 @Target({ CONSTRUCTOR, METHOD, TYPE, PACKAGE })
 @Retention(RUNTIME)
+@Documented
 public @interface ValidateOnExecution {
 
     /**
      * List of executable types to be validated when called.
      * Defaults to the types discovered implicitly (see {@link ExecutableType#IMPLICIT}).
+     *
+     * @return array of {@code ExecutableType}s to be validated
      */
     ExecutableType[] type() default {ExecutableType.IMPLICIT};
 }
@@ -12025,18 +12151,18 @@ public enum ExecutableType {
     /**
      * If the annotation using {@code ExecutableType} is on a type (class or interface),
      * the behavior is equivalent to the annotation not being present.
-     * <p/>
+     * <p>
      * If on a constructor, it is equivalent to {@link #CONSTRUCTORS}.
-     * <p/>
+     * <p>
      * If on a non-getter method, it is equivalent to {@link #NON_GETTER_METHODS}.
-     * <p/>
+     * <p>
      * If on a getter method, it is equivalent to {@link #GETTER_METHODS}.
      */
     IMPLICIT,
 
     /**
      * None of the executables.
-     * <p/>
+     * <p>
      * Note that this option is equivalent to an empty list of executable types
      * and is present to improve readability. If {@code NONE} and other types of executables
      * are present in a list, {@code NONE} is ignored.
@@ -12297,7 +12423,7 @@ Getter:: Method whose:
 [appendix]
 == Value extraction for cascaded validation and type argument constraints (BVAL-508)
 
-This appendix describes the current work-in-progress around the retrieval of values to be validated during cascaded validation (e.g. `@Valid List<Order> orders`)
+This appendix describes the current work-in-progress around the retrieval of values to be validated during cascaded validation (e.g. `List<@Valid Order> orders`)
 and evaluation of type argument constraints (e.g. `Optional<@Email String> email`)
 It is based on the original http://beanvalidation.org/proposals/BVAL-508/[proposals for BVAL-508].
 
@@ -12545,18 +12671,26 @@ TODO
 
 ==== Plugging in custom extractors
 
-Additional value extractors can be registered with the Bean Validation provider in the following ways:
+Additional value extractors can be plugged in when bootstrapping a `Validator` or `ValidatorFactory`, amending and/or overriding the set of built-in value extractors.
+The following ways to do so exist, in descending order of precedence:
 
-* Invoke the new method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
-* Invoke the new method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
-* Specify the fully qualified class name of one or several extractors in `META-INF/validation.xml`:
-
+* Invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
+* Invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
+* Specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`:
++
 [source,xml]
 ----
 <value-extractors>
     <value-extractor>com.example.MyExtractor</value-extractor>
 </value-extractors>
 ----
+* Placing a file named _META-INF/services/javax.validation.valueextraction.ValueExtractor_ on the classpath,
+with the fully-qualified name(s) of one or more extractor implementations as its contents (i.e. employing the Java service loader mechanism)
+
+A value extractor for a given type and extracted type parameter specified at a higher level overrides any other extractors for the same type and extracted type given at lower levels.
+If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
+it will take precedence over any other value extractor implementing `List<@ExtractedValue ?>` given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
+_META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for `List` elements.
 
 [[appendix-valueextraction-wrappedelements]]
 ==== Applying element-level constraints to wrapped elements
@@ -12637,6 +12771,7 @@ package javax.validation.valueextraction;
  */
 @Target({ TYPE })
 @Retention(RUNTIME)
+@Documented
 public @interface UnwrapByDefault {
 
 }
@@ -13093,11 +13228,13 @@ __This is done by `@UnwrapByDefault` now which solely exists for this purpose.__
 +
 __This proposal suggests to not do it, but Emmanuel is not convinced of this__.
 
-1. Should value extractors be discoverable via the service loader mechanism (i.e. by means of `META-INF/services/javax.validation.valueextraction.ValueExtractor` files)
+1. [line-through]#Should value extractors be discoverable via the service loader mechanism (i.e. by means of `META-INF/services/javax.validation.valueextraction.ValueExtractor` files)#
 +
-__Pro: It'd allow 3rd party libs such as Google Guava to provide custom extractors for their container types and have them automatically be applied without any effort for the user__.
+[line-through]#Pro: It'd allow 3rd party libs such as Google Guava to provide custom extractors for their container types and have them automatically be applied without any effort for the user.#
 +
-__Cons: Need a way to disable or override some extractors with others. Which might make it a nogo__.
+[line-through]#Cons: Need a way to disable or override some extractors with others. Which might make it a nogo.#
++
+__Added service loader mechanism as source of value extractors. Specified order of precedence.__
 
 1. What to return from `PropertyDescriptor#getElementClass()` if there is a field of type `Foo` but a getter of type `Optional<Foo>`.
 So far, BV assumed the types of field and getter to be the same and exposed a single property descriptor
