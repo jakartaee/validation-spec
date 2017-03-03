@@ -5,17 +5,19 @@
 	</tstamp>
 
 	<property name="bv.version" value="2.0.0-SNAPSHOT" /><!-- e.g. '2.0.0.Alpha1' -->
-	<property name="bv.version.qualifier" value="" /><!-- e.g. ' (Early Draft 1)' -->
+	<property name="bv.version.qualifier" value="" /><!-- e.g. ' (Early Draft 1)' - be careful about the space before the qualifier -->
 	<property name="bv.revdate" value="${current.date}" /> <!-- Replace with fixed date when releasing -->
 	<property name="license" value="license-evaluation" />
-	<property name="asciidoctor.version" value="1.5.3" />
+	<property name="asciidoctor-ant.version" value="1.5.3" />
+	<property name="hibernate-asciidoctor-theme.version" value="1.0.1.Final" />
 	<property name="maven-dependency-plugin.version" value="2.10" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
-	<property name="validation-api.sourcedir" value="target/validation-api/src" />
+	<property name="validation-api.sourcedir" value="target/validation-api" />
 	<property name="spec-examples.sourcedir" value="spec-examples/src/test/java" />
-	<property name="validation-api.jardir" value="target/validation-api/jar" />
+	<property name="hibernate-asciidoctor-theme.sourcedir" value="target/hibernate-asciidoctor-theme" />
+	<property name="downloaded-jars.dir" value="target/downloaded-jars" />
 	<property name="m2-repository.path" value="${user.home}/.m2/repository" />
 	<property name="maven-central.url" value="http://repo.maven.apache.org/maven2" />
 	<property name="maven-settings.path">settings-example.xml</property>
@@ -41,7 +43,10 @@
 	<target name="java-build-dir-clean">
 		<delete dir="target/asciidocextensions" />
 	</target>
-	<target name="deep-clean" description="Delete all generated documentation and downloaded libraries" depends="clean">
+	<target name="downloaded-jars-dir-clean">
+		<delete dir="${downloaded-jars.dir}" />
+	</target>
+	<target name="deep-clean" description="Delete all generated documentation and downloaded libraries" depends="clean, downloaded-jars-dir-clean">
 		<delete dir="lib" />
 	</target>
 
@@ -63,11 +68,16 @@
 	<target name="java-build-dir-exists">
 		<mkdir dir="target/asciidocextensions" />
 	</target>
+	<target name="downloaded-jars-dir-exists">
+		<mkdir dir="${downloaded-jars.dir}" />
+	</target>
 	<target name="validation-api-dir-exists">
-		<delete dir="${validation-api.jardir}/*.jar" />
-		<mkdir dir="${validation-api.jardir}" />
-		<delete dir="${validation-api.sourcedir}/javax/" />
+		<delete dir="${validation-api.sourcedir}" />
 		<mkdir dir="${validation-api.sourcedir}" />
+	</target>
+	<target name="hibernate-asciidoctor-theme-dir-exists">
+		<delete dir="${hibernate-asciidoctor-theme.sourcedir}" />
+		<mkdir dir="${hibernate-asciidoctor-theme.sourcedir}" />
 	</target>
 
 	<!-- Check that a mvn command is available -->
@@ -82,16 +92,9 @@
 		<available file="${m2-repository.path}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
 	</target>
 	<target name="unzip-validation-api-from-repo" depends="validation-api-dir-exists, detect-validation-api-in-m2" unless="validation-api-in-m2">
-		<exec executable="mvn">
-			<arg value="-s" />
-			<arg value="${maven-settings.path}" />
-			<arg value="org.apache.maven.plugins:maven-dependency-plugin:${maven-dependency-plugin.version}:copy"/>
-			<arg value="-Dartifact=javax.validation:validation-api:${bv.version}:jar:sources" />
-			<arg value="-DoutputDirectory=${validation-api.jardir}" />
-			<arg value="-DoverWriteSnapshots=true" />
-		</exec>
+		<download-maven-dependency groupId="javax.validation" artifactId="validation-api" version="${bv.version}" qualifier="jar:sources" />
 		<unzip dest="${validation-api.sourcedir}">
-			<fileset dir="${validation-api.jardir}">
+			<fileset dir="${downloaded-jars.dir}">
 				<include name="validation-api-*-sources.jar" />
 			</fileset>
 		</unzip>
@@ -99,69 +102,76 @@
 	<target name="unzip-validation-api-from-m2" depends="validation-api-dir-exists, detect-validation-api-in-m2" if="validation-api-in-m2">
 		<unzip src="${user.home}/.m2/repository/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
 	</target>
-	<target name="have-validation-api" depends="unzip-validation-api-from-repo,unzip-validation-api-from-m2">
+	<target name="have-validation-api" depends="unzip-validation-api-from-repo, unzip-validation-api-from-m2">
 	</target>
 
-	<target name="have-asciidoctor" depends="lib-dir-exists">
-		<get src="${maven-central.url}/org/asciidoctor/asciidoctor-ant/${asciidoctor.version}/asciidoctor-ant-${asciidoctor.version}.jar"
-			dest="lib/asciidoctor-ant-${asciidoctor.version}.jar"
-			skipexisting="true"/>
+	<!-- we update the dependency every time we build as it might have changed on disk -->
+	<target name="detect-hibernate-asciidoctor-theme-in-m2">
+		<available file="${m2-repository.path}/org/hibernate/infra/hibernate-asciidoctor-theme/${hibernate-asciidoctor-theme.version}/hibernate-asciidoctor-theme-${hibernate-asciidoctor-theme.version}.zip" property="hibernate-asciidoctor-theme-in-m2"></available>
+	</target>
+	<target name="unzip-hibernate-asciidoctor-theme-from-repo" depends="hibernate-asciidoctor-theme-dir-exists, detect-hibernate-asciidoctor-theme-in-m2" unless="hibernate-asciidoctor-theme-in-m2">
+		<download-maven-dependency groupId="org.hibernate.infra" artifactId="hibernate-asciidoctor-theme" version="${hibernate-asciidoctor-theme.version}" qualifier="zip" />
+		<unzip dest="target"><!-- the zip contains the base directory -->
+			<fileset dir="${downloaded-jars.dir}">
+				<include name="hibernate-asciidoctor-theme-*.zip" />
+			</fileset>
+		</unzip>
+	</target>
+	<target name="unzip-hibernate-asciidoctor-theme-from-m2" depends="hibernate-asciidoctor-theme-dir-exists, detect-hibernate-asciidoctor-theme-in-m2" if="hibernate-asciidoctor-theme-in-m2">
+		<unzip src="${user.home}/.m2/repository/org/hibernate/infra/hibernate-asciidoctor-theme/${hibernate-asciidoctor-theme.version}/hibernate-asciidoctor-theme-${hibernate-asciidoctor-theme.version}.zip" dest="target"></unzip>
+	</target>
+	<target name="copy-bean-validation-logo-to-hibernate-asciidoctor-theme">
+		<copy todir="${hibernate-asciidoctor-theme.sourcedir}" overwrite="true">
+			<fileset dir="resources" />
+		</copy>
+	</target>
+	<target name="have-hibernate-asciidoctor-theme" depends="unzip-hibernate-asciidoctor-theme-from-repo, unzip-hibernate-asciidoctor-theme-from-m2, copy-bean-validation-logo-to-hibernate-asciidoctor-theme">
 	</target>
 
-	<target name="have-dependencies" depends="have-mvn, have-asciidoctor, have-validation-api">
+	<target name="detect-asciidoctor-ant-in-m2">
+		<available file="${m2-repository.path}/org/asciidoctor/asciidoctor-ant/${asciidoctor-ant.version}/asciidoctor-ant-${asciidoctor-ant.version}.jar" property="asciidoctor-ant-in-m2"></available>
+	</target>
+	<target name="download-asciidoctor-ant-from-repo" depends="lib-dir-exists, detect-asciidoctor-ant-in-m2" unless="asciidoctor-ant-in-m2">
+		<download-maven-dependency groupId="org.asciidoctor" artifactId="asciidoctor-ant" version="${asciidoctor-ant.version}" qualifier="jar" outputDirectory="lib" />
+	</target>
+	<target name="copy-asciidoctor-ant-from-m2" depends="lib-dir-exists, detect-asciidoctor-ant-in-m2" if="asciidoctor-ant-in-m2">
+		<copy file="${user.home}/.m2/repository/org/asciidoctor/asciidoctor-ant/${asciidoctor-ant.version}/asciidoctor-ant-${asciidoctor-ant.version}.jar" todir="lib" />
+	</target>
+	<target name="have-asciidoctor" depends="download-asciidoctor-ant-from-repo, copy-asciidoctor-ant-from-m2">
 	</target>
 
-	<macrodef name="renderer">
-		<attribute name="outputdirectory" />
-		<attribute name="backend" />
-		<sequential>
-			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar:target/asciidocextensions"/>
-			<asciidoctor:convert
-				sourceDocumentName="index.asciidoc"
-				sourceDirectory="sources"
-				sourceHighlighter="coderay"
-				outputDirectory="@{outputdirectory}"
-				backend="@{backend}">
-					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-					<attribute key="license" value="${license}" />
-					<attribute key="tabsize" value="4" />
-					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
-					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
-					<attribute key="bv-version" value="${bv.version}" />
-					<attribute key="bv-version-qualifier" value="${bv.version.qualifier}" />
-					<attribute key="bv-revdate" value="${bv.revdate}" />
-			</asciidoctor:convert>
-		</sequential>
-	</macrodef>
+	<target name="have-dependencies" depends="downloaded-jars-dir-clean, have-mvn, have-asciidoctor, have-validation-api, have-hibernate-asciidoctor-theme">
+	</target>
 
 	<target name="render-html" depends="clean-html-output, have-dependencies, html-output-dir-exists, compile-asciidoc-extensions">
-		<renderer outputdirectory="target/html" backend="html" />
+		<renderer outputDirectory="target/html" backend="html" sourceHighlighter="prettify" />
 	</target>
 
 	<target name="render-docbook" depends="clean-docbook-output, have-dependencies, docbook-output-dir-exists, compile-asciidoc-extensions">
-		<renderer outputdirectory="target/docbook" backend="docbook" />
+		<renderer outputDirectory="target/docbook" backend="docbook" sourceHighlighter="coderay" />
 	</target>
 
 	<target name="render-pdf" depends="clean-pdf-output, have-dependencies, pdf-output-dir-exists, compile-asciidoc-extensions">
-		<renderer outputdirectory="target/pdf" backend="pdf" />
+		<renderer outputDirectory="target/pdf" backend="pdf" sourceHighlighter="coderay" />
 	</target>
 
 	<target name="generate-preprocessed" depends="have-dependencies, preprocessed-output-dir-exists, compile-asciidoc-extensions">
-		<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar:target/asciidocextensions"/>
+		<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar:target/asciidocextensions"/>
 		<asciidoctor:convert
 			sourceDocumentName="index.asciidoc"
 			sourceDirectory="sources"
 			sourceHighlighter="coderay"
 			outputDirectory="target/preprocessed"
-			backend="html">
+			backend="html"
+			imagesDir="${hibernate-asciidoctor-theme.sourcedir}/images">
 				<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 				<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 				<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 				<preProcessor className="org.beanvalidation.asciidocextensions.SavePreprocessedOutputPreprocessor" />
+
 				<attribute key="license" value="${license}" />
 				<attribute key="tabsize" value="4" />
+
 				<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
 				<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
 				<attribute key="bv-version" value="${bv.version}" />
@@ -181,7 +191,7 @@
 	<target name="compile-asciidoc-extensions" depends="java-build-dir-clean, java-build-dir-exists, have-asciidoctor">
 		<javac srcdir="asciidoc-extensions/src/main/java"
 			destdir="target/asciidocextensions"
-			classpath="lib/asciidoctor-ant-${asciidoctor.version}.jar"
+			classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar"
 			source="1.8"
 			target="1.8"
 			debug="true"
@@ -203,5 +213,57 @@
 			<param name="currentDate" expression="${NOW}"/>
 		</xslt>
 	</target>
+
+	<!-- Macro definitions -->
+
+	<macrodef name="renderer">
+		<attribute name="outputDirectory" />
+		<attribute name="backend" />
+		<attribute name="sourceHighlighter" />
+		<sequential>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar:target/asciidocextensions"/>
+			<asciidoctor:convert
+				sourceDocumentName="index.asciidoc"
+				sourceDirectory="sources"
+				sourceHighlighter="@{sourceHighlighter}"
+				outputDirectory="@{outputdirectory}"
+				backend="@{backend}"
+				imagesDir="${hibernate-asciidoctor-theme.sourcedir}/images">
+					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
+
+					<attribute key="license" value="${license}" />
+					<attribute key="tabsize" value="4" />
+					<attribute key="pdf-stylesdir" value="${hibernate-asciidoctor-theme.sourcedir}/theme" />
+					<attribute key="pdf-style" value="hibernate" />
+					<attribute key="pdf-fontsdir" value="${hibernate-asciidoctor-theme.sourcedir}/theme/fonts" />
+
+					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
+					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
+					<attribute key="bv-version" value="${bv.version}" />
+					<attribute key="bv-version-qualifier" value="${bv.version.qualifier}" />
+					<attribute key="bv-revdate" value="${bv.revdate}" />
+			</asciidoctor:convert>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="download-maven-dependency">
+		<attribute name="groupId" />
+		<attribute name="artifactId" />
+		<attribute name="version" />
+		<attribute name="qualifier" default="jar" />
+		<attribute name="outputDirectory" default="${downloaded-jars.dir}" />
+		<sequential>
+			<exec executable="mvn" failonerror="true">
+				<arg value="-s" />
+				<arg value="${maven-settings.path}" />
+				<arg value="org.apache.maven.plugins:maven-dependency-plugin:${maven-dependency-plugin.version}:copy"/>
+				<arg value="-Dartifact=@{groupId}:@{artifactId}:@{version}:@{qualifier}" />
+				<arg value="-DoutputDirectory=@{outputDirectory}" />
+				<arg value="-DoverWriteSnapshots=true" />
+			</exec>
+		</sequential>
+	</macrodef>
 
 </project>
