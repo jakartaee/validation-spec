@@ -196,18 +196,19 @@ There is also a new `Node` sub-type, `ContainerElementNode`:
 interface ContainerElementNode extends Node {
 
     /**
-     * @return the class of the container for the element affected by the violated constraint
+     * @return the type of the container the node is placed in, if contained in a container type such as
+     * {@code Optional}, {@code List} or an array, {@code null} otherwise
      */
     Class<?> getContainerClass();
 
     /**
      * @return the index of the type parameter affected by the violated constraint in the container class
      */
-    Integer getContainerElementIndex();
+    Integer getTypeArgumentIndex();
 }
 ----
 
-`getContainerClass()` and `getContainerElementIndex()` also need to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
+`getContainerClass()` and `getTypeArgumentIndex()` also need to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
 
 ==== Default extractors
 
@@ -222,8 +223,8 @@ Both will cause the validation of all the array elements
 *** isInIterable: `false`
 *** index: the element's index
 *** key: `null`
-*** containerClass: `null`
-*** containerElementIndex: `null`
+*** containerClass: in the case of an array of ``Object``s, `Object[]`, in the case of an array of primitives, the type of the array (e.g. `int[]`)
+*** typeArgumentIndex: `null`
 * `java.util.Iterable` - excluding the case of `java.util.List` described below
 ** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
@@ -234,7 +235,7 @@ Both will cause the validation of all the array elements
 *** index: the element's index if the iterable is of type `List` or a subtype thereof; `null` otherwise
 *** key: `null`
 *** containerClass: `Iterable`
-*** containerElementIndex: `0`
+*** typeArgumentIndex: `0`
 * `java.util.List`
 ** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
@@ -245,7 +246,7 @@ Both will cause the validation of all the array elements
 *** index: the element's index
 *** key: `null`
 *** containerClass: `List`
-*** containerElementIndex: `0`
+*** typeArgumentIndex: `0`
 * `java.util.Map`
 ** When `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the key type parameter, the map keys will be validated
@@ -257,7 +258,7 @@ Both will cause the validation of all the array elements
 *** index: `null`
 *** key: key
 *** containerClass: `Map`
-*** containerElementIndex: `0`
+*** typeArgumentIndex: `0`
 ** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map value>"
 *** kind: `CONTAINER_ELEMENT`
@@ -265,7 +266,7 @@ Both will cause the validation of all the array elements
 *** index: `null`
 *** key: key
 *** containerClass: `Map`
-*** containerElementIndex: `1`
+*** typeArgumentIndex: `1`
 * `java.util.Optional`
 ** No node will be appended to the path when validating type argument constraints on `Optional`
 * `javafx.beans.observable.ObservableValue`
