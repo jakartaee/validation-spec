@@ -2,6 +2,8 @@
 //
 // License: Apache License, Version 2.0
 // See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+:chapNum: {counter:chapter}
+:index: 0
 
 [[constraintdeclarationvalidationprocess]]
 
@@ -75,6 +77,7 @@ When using field access strategy, the Bean Validation provider accesses the inst
 
 In addition to supporting instance validation, validation of graphs of objects is also supported. The result of a graph validation is returned as a unified set of constraint violations. [classname]`@Valid` is used to express validation traversal of an association.
 
+[caption="Example {chapter}.{counter:index:1}: "]
 .[classname]`@Valid` annotation
 
 ====
@@ -142,6 +145,8 @@ A group defines a subset of constraints. Instead of validating all constraints f
 
 [tck-testable]#Groups are represented by interfaces.#
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Definition of groups
 ====
 
@@ -164,6 +169,7 @@ public interface BuyInOneClick {
 [tck-testable]#A constraint can belong to one or more groups.#
 
 [[example-assigngrouptoconstraints]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Assign groups to constraints
 ====
@@ -216,6 +222,7 @@ public interface Default {
 
 In some situations, a group is a superset of one or more groups. This can be described by Bean Validation. [tck-testable]#A group may inherit one or more groups by using interface inheritance.#
 
+[caption="Example {chapter}.{counter:index}: "]
 .Groups can inherit other groups
 ====
 
@@ -233,6 +240,7 @@ public interface BuyInOneClick extends Default, Billable {}
 
 In the following example:
 
+[caption="Example {chapter}.{counter:index}: "]
 .Use of a inherited group
 ====
 
@@ -300,6 +308,7 @@ include::{validation-api-source-dir}javax/validation/GroupSequence.java[lines=18
 Here is a usage example:
 
 [[example-groupsequence]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Make use of group sequence
 ====
@@ -347,6 +356,7 @@ In <<example-groupsequence>>, when the [classname]`Address.Complete` group is va
 In <<example-groupsequence>>, validating the [classname]`Default` group does not validate [classname]`HighLevelCoherence` constraints. To ensure a complete validation, a user must use the [classname]`Complete` group. This breaks some of the encapsulation you could expect. You can work around this by redefining what the [classname]`Default` group means for a given class. [tck-testable]#To redefine [classname]`Default` for a class, place a [classname]`@GroupSequence` annotation on the class; this sequence expresses the sequence of groups that does substitute [classname]`Default` for this class.#
 
 [[example-overridedefaultgroup]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Redefining Default group for Address
 ====
@@ -385,6 +395,8 @@ Since sequences cannot have circular dependencies, using [classname]`Default` in
 ==== Implicit grouping
 
 It is possible to implicitly group several constraints in the same group without explicitly listing such a group in the constraint declaration. [tck-testable]#Every constraint hosted on an interface [classname]`Z` and part of the [classname]`Default` group (implicitly or explicitly) belongs to the group [classname]`Z`.# This is useful to validate the partial state of an object based on a role represented by an interface.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Example of interface / group hosting constraints
 ====
@@ -447,6 +459,8 @@ When an [classname]`Order` object is validated on the [classname]`Auditable` gro
 
 When performing cascading validation, it is possible to use a different group than the one originally requested using the group conversion feature. Group conversions are declared by using the [classname]`@ConvertGroup` annotation.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .@ConvertGroup annotation
 ====
 
@@ -490,8 +504,6 @@ Group circularity in a group conversion are not problematic because:
 * only one rule is applied for a given cascade (rules are not applied recursively)
 * validation cascading is stopped when the same instance / property is validated with the same group in a given path (existing rule)
 
-
-
 ====
 
 [tck-testable]#[classname]`@ConvertGroup` and [classname]`@ConvertGroup.List` can only be placed where [classname]`@Valid` is present to ensure proper respect of the Liskov substitution principle:# if rules were to be defined on an overriding method of a method marked as cascading validation, the rules could end up altering the list of constraints validated by the super type and thus violating the Liskov substitution principle.
@@ -505,6 +517,8 @@ Group conversion is quite useful to facilitate object graph reuse without spread
 ===== Group conversion examples
 
 In this example we will reuse the [classname]`Address` group split and match it to the [classname]`User` group split.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Example of group conversion
 ====
@@ -544,6 +558,8 @@ public class User {
 When validating an instance of [classname]`User` with the [classname]`Default` group, the associated addresses are validated with the [classname]`BasicPostal` group. When validating an instance of [classname]`User` with the [classname]`Complete` group, the associated addresses are validated with the [classname]`FullPostal` group.
 
 The following example shows an illegal declaration of a group conversion rule on a method's return value:
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Example of an illegal group conversion
 ====
@@ -708,6 +724,8 @@ Getters are not considered constrained methods by default (see <<integration-gen
 
 [tck-testable]#Parameter constraints are declared by putting constraint annotations on method or constructor parameters.#
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Declaring parameter constraints
 ====
 
@@ -750,6 +768,8 @@ In order to use constraint annotations for method or constructor parameters, the
 ===== Cross-parameter constraints
 
 Cross-parameter constraints allow to express constraints based on the value of several method parameters, similar to class-level constraints which are based on several properties of a given class. [tck-testable]#Cross-parameter constraints are declared by putting cross-parameter constraint annotations on methods or constructors# as shown in the following example.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Declaring cross-parameter constraints
 ====
@@ -848,6 +868,8 @@ Bean Validation providers and integrators are free to provide additional impleme
 
 Some constraints can target both the return value and the array of parameters of an executable. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such constraint on an executable to target the return value, one must set [methodname]`validationAppliesTo` in case there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.RETURN_VALUE` as it improves readability.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Declaring return value constraints
 ====
 
@@ -898,6 +920,7 @@ Like parameter constraints, these return value constraints are not per-se valida
 * [tck-testable]#The validation is recursive; that is, if validated parameter or return value objects have references marked with [classname]`@Valid` themselves, these references will also be validated#
 * [tck-not-testable]#Bean Validation providers must guarantee the prevention of infinite loops during cascaded validation#
 
+[caption="Example {chapter}.{counter:index}: "]
 
 .Marking parameters and return values for cascaded validation
 ====
@@ -966,6 +989,8 @@ Therefore the following rules with respect to the definition of method level con
 
 This sections provides some examples of illegal constraint definitions which violate the rules stated above in one way or another.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Illegally declared parameter constraints on interface implementation
 ====
 
@@ -992,6 +1017,8 @@ public class SimpleOrderService implements OrderService {
 ====
 
 The constraints in [classname]`SimpleOrderService` are illegal, as they strengthen the preconditions of the [methodname]`placeOrder()` method as constituted by the interface [classname]`OrderService`.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Illegally declared parameter constraints on sub class
 ====
@@ -1023,6 +1050,7 @@ public class SimpleOrderService extends OrderService {
 The constraints in [classname]`SimpleOrderService` are illegal, as they strengthen the preconditions of the [methodname]`placeOrder()` method as constituted by the super class [classname]`OrderService`.
 
 [[illegal_constraints_in_parallel_types]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Illegally declared parameter constraints on parallel types
 ====
@@ -1055,6 +1083,8 @@ public class SimpleOrderService implements OrderService, OrderPlacementService {
 ====
 
 Here the class [classname]`SimpleOrderService` implements the interfaces [classname]`OrderService` and [classname]`OrderPlacementService`, which themselves are unrelated to each other but both define a method [methodname]`placeOrder()` with an identical signature. This hierarchy is illegal with respect to the parameter constraints as a client of [classname]`SimpleOrderService` would have to fulfill the constraints defined on the interface [classname]`OrderPlacementService` even if the client only expects [classname]`OrderService`.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Correctly declared return value constraints on sub class
 ====
@@ -1131,6 +1161,7 @@ This object graph navigation can lead to multiple validations of the same constr
 ====
 
 [[example-oglimit]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Object graph limits
 ====
@@ -1183,6 +1214,8 @@ The [classname]`ConstraintViolation` objects are built when a failing constraint
 
 [tck-testable]#[classname]`@Valid` is an orthogonal concept to the notion of group. If two groups are in sequence, the first group must pass for all associated objects before the second group is evaluated.# Note however that the [classname]`Default` group sequence overriding is local to the class it is defined on and is not propagated to the associated objects. The following example illustrates this:
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Class Driver with redefined default group
 ====
 
@@ -1205,6 +1238,8 @@ public class Driver {
 
 ====
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Class Car with redefined default group
 ====
 
@@ -1224,6 +1259,8 @@ public class Car {
 
 ====
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Defining a group sequence
 ====
 
@@ -1235,6 +1272,8 @@ public interface SequencedGroups {
 ----
 
 ====
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Group sequence overriding is not propagated to associated objects
 ====
@@ -1405,6 +1444,7 @@ The traversable resolver used by default by a Bean Validation provider behaves a
 An example implementation of such a resolver is shown in <<constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver>>.
 
 [[constraintdeclarationvalidationprocess-validationroutine-traversable-jparesolver]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Java Persistence aware TraversableResolver
 ====
@@ -1445,6 +1485,7 @@ See <<bootstrapping>> to learn how to pass a custom [classname]`TraversableResol
 The following example assumes the object graph defined in <<example-ognav-definitions>> and assumes the validation operation is applied on an address object.
 
 [[example-ognav-definitions]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Definitions used in the example
 ====
@@ -1559,6 +1600,7 @@ When the Bean Validation provider is about to cascade validation on `country` ([
 The following example shows invocations of the [classname]`TraversableResolver` as to be performed by the Bean Validation provider during method validation. The example is based on the object graph defined in <<example-ognav-definitions>> and the [classname]`AddressService` class shown in <<example-ognav-definitions-methodvalidation>>. It assumes that a call of [methodname]`persistAddress()` is subject to method parameter validation.
 
 [[example-ognav-definitions-methodvalidation]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Examplary class [classname]`AddressService`
 ====
@@ -1625,6 +1667,7 @@ While the Java compiler itself cannot determine if a constraint declaration will
 Let's see a couple of declarations and their respective [classname]`ConstraintValidator` resolution. Assuming the definitions shown in <<example-constraintvalidator-resolution>>:
 
 [[example-constraintvalidator-resolution]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .ConstraintValidator and type resolution
 ====
@@ -1691,6 +1734,8 @@ The resolutions shown in <<table-constraintvalidator-resolution>> occur.
 
 The first example demonstrates how beans, fields and getters are annotated to express some constraints.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Place constraint declarations on the element to validate
 ====
 
@@ -1753,6 +1798,8 @@ During the validation routine execution on an [classname]`Address` object,
 * [classname]`@ZipCodeCoherenceChecker` is a constraint whose validation implementation's [methodname]`isValid` method receives the [classname]`Address` object.
 
 The second example demonstrates object graph validation.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Define object graph validation
 ====
@@ -1858,6 +1905,8 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdec
 
 The third example demonstrates superclass, inheritance and composite constraints.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Use inheritance, constraints on superclasses and composite constraints
 ====
 
@@ -1956,6 +2005,8 @@ When validating [classname]`CommonGuest`, the following constraints are processe
 * [classname]`@NotNull` on [methodname]`customerId`, [classname]`@Password` on [methodname]`password`
 
 The fourth example demonstrates the influence of group sequence.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Use groups and group sequence to define constraint ordering
 ====
