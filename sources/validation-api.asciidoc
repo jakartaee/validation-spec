@@ -73,6 +73,7 @@ However, constraints hosted on the most specific (hierarchy wise) element type a
 
 [tck-testable]#If some unrecoverable failure happens during validation, a [classname]`ValidationException` is raised.# This exception can be specialized in some situations (invalid group definition, invalid constraint definition, invalid constraint declaration). See <<exception>> or the relative sections for more information.
 
+[[validationapi-validatorapi-validationmethods-examples]]
 ===== Examples
 
 All the examples will be based on the following class definition, constraint declarations and address instance.
@@ -271,6 +272,7 @@ public interface ExecutableValidator {
 
 [tck-testable]#None of those methods honor the XML configuration around executable validation nor the presence of [classname]`@ValidateOnExecution`. In other words, elements will be validated regardless of these settings when explicitly calling the validation methods.#
 
+[[validationapi-validatorapi-methodlevelvalidationmethods-examples]]
 ===== Examples
 
 All the examples will be based on the following class definitions, constraint declarations and instances.
@@ -417,10 +419,11 @@ public class SampleMethodInterceptor {
 
 ==== groups
 
-Groups allow you to restrict the set of constraints applied during validation. Groups targeted are passed as parameters to the [methodname]`validate()`, [methodname]`validateProperty()` and [methodname]`validateValue()` methods as well as the methods to validate method/constructor constraints (see <<validationapi-validatorapi-methodlevelvalidationmethods>>). [tck-testable]#All constraints belonging to the targeted group(s) are applied during the <<constraintdeclarationvalidationprocess-validationroutine>>.# [tck-testable]#If no group is passed, the `Default` group is assumed.# <<constraintsdefinitionimplementation-constraintdefinition-groups>> describes how to define groups on constraints.
+Groups allow you to restrict the set of constraints applied during validation. Groups targeted are passed as parameters to the [methodname]`validate()`, [methodname]`validateProperty()` and [methodname]`validateValue()` methods as well as the methods to validate method/constructor constraints (see <<validationapi-validatorapi-methodlevelvalidationmethods>>). [tck-testable]#All constraints belonging to the targeted group(s) are applied during the <<constraintdeclarationvalidationprocess-validationroutine>>.# [tck-testable]#If no group is passed, the `Default` group is assumed.# <<constraintsdefinitionimplementation-constraintdefinition-properties-groups>> describes how to define groups on constraints.
 
 [tck-not-testable]#When more than one group is evaluated and passed to the various validate methods, order is not constrained.# It is equivalent to the validation of a group `G` inheriting all groups (i.e. implementing all interfaces) passed to the validation method.
 
+[[validationapi-validatorapi-groups-examples]]
 ===== Examples
 
 [source, JAVA]
@@ -758,7 +761,7 @@ public enum ElementKind {
 ** The property name for a property.
 ** The method name for a method.
 ** The unqualified name of the type declaring the constructor for a constructor.
-** The parameter named as defined by the [classname]`ParameterNameProvider` (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>) for a method or constructor parameter.
+** The parameter named as defined by the [classname]`ParameterNameProvider` (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>) for a method or constructor parameter.
 ** The literal `<cross-parameter>` for a method or constructor cross-parameter.
 ** The literal `<return value>` for a method or constructor return value.
 
@@ -854,7 +857,7 @@ case PROPERTY:
 
 * For a method/constructor constraint (parameter, cross-parameter or return value constraint on a method or constructor):
 ** [tck-testable]#a [classname]`MethodNode` respectively a [classname]`ConstructorNode` object is added to the [classname]`Path` which represents the validated method respectively constructor. The `name` of the node equals the validated method name or the validated constructor's unqualified class name, the [classname]`ElementKind` of the node is [varname]`ElementKind.METHOD` respectively [varname]`ElementKind.CONSTRUCTOR`.#
-** [tck-testable]#if the constraint is on a parameter, a [classname]`ParameterNode` object is added to the [classname]`Path` which represents the validated parameter. The `name` of the node equals the parameter name as determined by the current parameter name provider (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>). The [classname]`ElementKind` of the node is [varname]`ElementKind.PARAMETER`.#
+** [tck-testable]#if the constraint is on a parameter, a [classname]`ParameterNode` object is added to the [classname]`Path` which represents the validated parameter. The `name` of the node equals the parameter name as determined by the current parameter name provider (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>). The [classname]`ElementKind` of the node is [varname]`ElementKind.PARAMETER`.#
 ** [tck-testable]#if the constraint is a cross-parameter constraint, a [classname]`CrossParameterNode` object is added to the [classname]`Path` which represents the validated cross-parameter element. The `name` of the node has the constant value `<cross-parameter>`. The [classname]`ElementKind` of the node is [varname]`ElementKind.CROSS_PARAMETER.`#
 ** [tck-testable]#if the constraint is on the return value, a [classname]`ReturnValueNode` object is added to the [classname]`Path` which represents the validated return value. The `name` of the node has the constant value `<return value>`. The [classname]`ElementKind` of the node is [varname]`ElementKind.RETURN_VALUE.`#
 ** [tck-testable]#the property path is considered complete#
@@ -1080,6 +1083,7 @@ ParameterNode(name=arg2, inIterable=false, index=null, key=null, kind=ElementKin
 If a user wishes to send [classname]`ConstraintViolation` remotely, it should make sure the object graph validated is itself [classname]`Serializable`.
 ====
 
+[[validationapi-constraintviolation-examples]]
 ==== Examples
 
 These examples assume the following definition of [classname]`@NotEmpty`.
@@ -1161,6 +1165,7 @@ assert ElementKind.PROPERTY.equals( node.getKind() );
 assert false == nodeIter.hasNext();
 ----
 
+[[validationapi-constraintviolation-examplesexecutables]]
 ==== Examples for method and constructor constraint violations
 
 The following examples assume the constraint, class and object definitions given in the previous section. Additionally the following class and object definitions are assumed:
@@ -1421,7 +1426,7 @@ assert false == nodeIter.hasNext();
 
 A message interpolator is responsible for transforming the so called message descriptor specified via the message attribute of the constraint into a fully expanded, human-readable error message.
 
-[[default-messageresolver]]
+[[validationapi-message-defaultmessageinterpolation]]
 
 ==== Default message interpolation
 
@@ -1440,7 +1445,7 @@ A message interpolator is responsible for transforming the so called message des
 * [tck-testable]#[code]`\$` is considered as the literal `$` instead of being considered as the beginning of a message expression#
 
 
-Below are two examples using message parameters and expressions. The second is evaluated using Expression Language as defined in <<message-expressions>>.
+Below are two examples using message parameters and expressions. The second is evaluated using Expression Language as defined in <<validationapi-message-defaultmessageinterpolation-expressionlanguage>>.
 
 .Message using parameters
 ====
@@ -1462,16 +1467,16 @@ Must be greater than ${inclusive == true ? 'or equal to ' : ''}{value}
 
 ====
 
-[[default-resolution-algorithm]]
+[[validationapi-message-defaultmessageinterpolation-resolutionalgorithm]]
 
 ===== Default message interpolation algorithm
 
 The default message interpolator uses the following steps:
 
-. [tck-testable]#Message parameters are extracted from the message string and used as keys to search the [classname]`ResourceBundle` named `ValidationMessages`# (often materialized as the property file [filename]`/ValidationMessages.properties` and its locale variations) using the defined locale (see <<message-interpolation-default-locale>>). If a property is found, the message parameter is replaced with the property value in the message string. [tck-testable]#Step 1 is applied recursively until no replacement is performed# (i.e. a message parameter value can itself contain a message parameter).
+. [tck-testable]#Message parameters are extracted from the message string and used as keys to search the [classname]`ResourceBundle` named `ValidationMessages`# (often materialized as the property file [filename]`/ValidationMessages.properties` and its locale variations) using the defined locale (see <<validationapi-message-defaultmessageinterpolation-locale>>). If a property is found, the message parameter is replaced with the property value in the message string. [tck-testable]#Step 1 is applied recursively until no replacement is performed# (i.e. a message parameter value can itself contain a message parameter).
 
 
-. [tck-testable]#Message parameters are extracted from the message string and used as keys to search the Bean Validation provider's built-in [classname]`ResourceBundle` using the defined locale (see <<message-interpolation-default-locale>>). If a property is found, the message parameter is replaced with the property value in the message string.# [tck-not-testable]#Contrary to step 1, step 2 is not processed recursively.#
+. [tck-testable]#Message parameters are extracted from the message string and used as keys to search the Bean Validation provider's built-in [classname]`ResourceBundle` using the defined locale (see <<validationapi-message-defaultmessageinterpolation-locale>>). If a property is found, the message parameter is replaced with the property value in the message string.# [tck-not-testable]#Contrary to step 1, step 2 is not processed recursively.#
 
 
 . [tck-not-testable]#If step 2 triggers a replacement, then step 1 is applied again.# Otherwise step 4 is performed.
@@ -1480,7 +1485,7 @@ The default message interpolator uses the following steps:
 . [tck-testable]#Message parameters are extracted from the message string. Those matching the name of an attribute of the constraint are replaced by the value of that attribute in the constraint declaration. Parameter interpolation has precedence over message expressions. For example for the message descriptor `${value}`, trying to evaluate `{value}` as message parameter has precedence over evaluating `${value}` as message expression.#
 
 
-. [tck-testable]#Message expressions are extracted from the message string and evaluated using Expression Language. See also <<message-expressions>>.#
+. [tck-testable]#Message expressions are extracted from the message string and evaluated using Expression Language. See also <<validationapi-message-defaultmessageinterpolation-expressionlanguage>>.#
 
 
 [NOTE]
@@ -1493,7 +1498,7 @@ The proposed algorithm ensures that custom resource bundle always have priority 
 The precedence of message parameter over expression interpolation ensures backwards compatibility to Bean Validation 1.0.
 ====
 
-[[message-interpolation-default-locale]]
+[[validationapi-message-defaultmessageinterpolation-locale]]
 
 ===== Locale for default message interpolation
 
@@ -1505,7 +1510,7 @@ The locale to be used for message interpolation is defined as following:
 
 
 
-[[message-expressions]]
+[[validationapi-message-defaultmessageinterpolation-expressionlanguage]]
 
 ===== Message expressions using Expression Language (EL)
 
@@ -1513,12 +1518,12 @@ The locale to be used for message interpolation is defined as following:
 
 * [tck-testable]#the attribute values of the constraint declaration mapped to their attribute name#
 * [tck-testable]#the validated value mapped under the name `validatedValue`.#
-* [tck-testable]#a bean mapped to the name `formatter` exposing the vararg method [methodname]`format(String format, Object\... args)`. This method must behave like [methodname]`java.util.Formatter.format(String format, Object\... args)`. The locale used for formatting is defined by <<message-interpolation-default-locale>>. The `formatter` bean allows to format property values, for example in the case of the validated value being 98.12345678, `${formatter.format('%1$.2f', validatedValue)}` would format it to 98.12 (two digits after the decimal point, where the use of '.' vs ',' would be locale specific).#
+* [tck-testable]#a bean mapped to the name `formatter` exposing the vararg method [methodname]`format(String format, Object\... args)`. This method must behave like [methodname]`java.util.Formatter.format(String format, Object\... args)`. The locale used for formatting is defined by <<validationapi-message-defaultmessageinterpolation-locale>>. The `formatter` bean allows to format property values, for example in the case of the validated value being 98.12345678, `${formatter.format('%1$.2f', validatedValue)}` would format it to 98.12 (two digits after the decimal point, where the use of '.' vs ',' would be locale specific).#
 
 
 [tck-testable]#If an exception occurs during message interpolation, e.g. due invalid expressions or references to an unknown property, the message expression stays unchanged.#
 
-[[custom-message-resolution]]
+[[validationapi-message-customresolution]]
 
 ==== Custom message interpolation
 
@@ -1640,7 +1645,7 @@ myapp.creditcard.error=credit card number not valid
 |[classname]`@CreditCard(message={myapp.creditcard.error})`|credit card number not valid
 |===============
 
-Here is an approach to specify the [classname]`Locale` value to choose on a given [classname]`Validator` using a [classname]`Locale` aware [classname]`MessageInterpolator`. See <<bootstrapping>> for more details on the APIs.
+Here is an approach to specify the [classname]`Locale` value to choose on a given [classname]`Validator` using a [classname]`Locale` aware [classname]`MessageInterpolator`. See <<validationapi-bootstrapping>> for more details on the APIs.
 
 [[validationapi-message-examples-specificlocale]]
 
@@ -1893,7 +1898,7 @@ There are several reasons for delaying validation compared to other interceptors
 
 ====
 
-[[bootstrapping]]
+[[validationapi-bootstrapping]]
 
 === Bootstrapping
 
@@ -1920,6 +1925,7 @@ The main artifacts involved in the bootstrap process are:
 
 Let's first see the API in action through some examples before diving into the concrete definitions.
 
+[[validationapi-bootstrapping-examples]]
 ==== Examples
 
 The most simple approach is to initialize the default Bean Validation provider or the one defined in the XML configuration file. The [classname]`ValidatorFactory` is then ready to provide [classname]`Validator` instances.
@@ -2063,6 +2069,7 @@ In the same way, a custom [classname]`TraversableResolver` can be passed.
 
 We will now explore the various interfaces, their constraints and usage. We will go from the [classname]`ValidatorFactory` to the [classname]`Validation` class walking up the bootstrap chain.
 
+[[validationapi-bootstrapping-validatorfactory]]
 ==== ValidatorFactory
 
 [classname]`ValidatorFactory` objects build and provide initialized instances of [classname]`Validator` to Bean Validation clients. Each [classname]`Validator` instance is configured for a given context (message interpolator, traversable resolver etc.). Clients should cache [classname]`ValidatorFactory` objects and reuse them for optimal performances. The API is designed to allow implementors to share constraint metadata in [classname]`ValidatorFactory`. [classname]`ValidatorFactory` instances must be closed (by calling the [methodname]`close()` method) by its creator when no longer in use.
@@ -2138,6 +2145,7 @@ Validator validatorUsingCustomTraversable = factory
 
 See <<validationapi-message-examples-specificlocale>> for an example using [methodname]`ValidatorFactory.getMessageInterpolator()`.
 
+[[validationapi-bootstrapping-configuration]]
 ==== Configuration
 
 The responsibility of the [classname]`Configuration` is to collect configuration information, to determine the correct provider implementation and to delegate the [classname]`ValidatorFactory` creation to the seleced provider. More concretely [classname]`Configuration` lets you define:
@@ -2152,24 +2160,24 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 * whether or not [classname]`META-INF/validation.xml` is considered
 
 
-[tck-testable]#[classname]`Configuration` does provide a [classname]`MessageInterpolator` implementation following the default Bean Validation [classname]`MessageInterpolator` rules as defined in <<default-messageresolver>>. You can access it by calling [methodname]`getDefaultMessageInterpolator()`.# Such an implementation is useful to let a custom [classname]`MessageInterpolator` delegate to the standard [classname]`MessageInterpolator` (see <<custom-message-resolution>> and an example making use of [methodname]`getDefaultMessageInterpolator()` in <<validationapi-message-examples-jsflocale>>).
+[tck-testable]#[classname]`Configuration` does provide a [classname]`MessageInterpolator` implementation following the default Bean Validation [classname]`MessageInterpolator` rules as defined in <<validationapi-message-defaultmessageinterpolation>>. You can access it by calling [methodname]`getDefaultMessageInterpolator()`.# Such an implementation is useful to let a custom [classname]`MessageInterpolator` delegate to the standard [classname]`MessageInterpolator` (see <<validationapi-message-customresolution>> and an example making use of [methodname]`getDefaultMessageInterpolator()` in <<validationapi-message-examples-jsflocale>>).
 
 [tck-testable]#[classname]`Configuration` does provide a [classname]`TraversableResolver` implementation following the default Bean Validation [classname]`TraversableResolver` rules as defined in <<constraintdeclarationvalidationprocess-validationroutine-traversable>>. You can access it by calling [methodname]`getDefaultTraversableResolver()`.# Such an implementation is useful to let a custom [classname]`TraversableResolver` delegate to the standard [classname]`TraversableResolver`.
 
 [tck-testable]#[classname]`Configuration` does provide a [classname]`ConstraintValidatorFactory` implementation following the default Bean Validation [classname]`ConstraintValidatorFactory` rules as defined in <<constraintsdefinitionimplementation-constraintfactory>>. You can access it by calling [methodname]`getDefaultConstraintValidatorFactory()`.# Such an implementation is useful to let a custom [classname]`ConstraintValidatorFactory` delegate to the standard [classname]`ConstraintValidatorFactory`.
 
-[tck-testable]#[classname]`Configuration` does provide a [classname]`ParameterNameProvider` implementation following the default Bean Validation [classname]`ParameterNameProvider` rules as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters>>. You can access it by calling [methodname]`getDefaultParameterNameProvider()`.# Such an implementation is useful to let a custom [classname]`ParameterNameProvider` delegate to the standard [classname]`ParameterNameProvider`.
+[tck-testable]#[classname]`Configuration` does provide a [classname]`ParameterNameProvider` implementation following the default Bean Validation [classname]`ParameterNameProvider` rules as defined in <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>. You can access it by calling [methodname]`getDefaultParameterNameProvider()`.# Such an implementation is useful to let a custom [classname]`ParameterNameProvider` delegate to the standard [classname]`ParameterNameProvider`.
 
-[tck-testable]#[classname]`Configuration` does provide a [classname]`ClockProvider` implementation following the default Bean Validation [classname]`ClockProvider` rules as defined in <<constraintsdefinitionimplementation-validationimplementation-temporal-validators>>. You can access it by calling [methodname]`getDefaultClockProvider()`.#
+[tck-testable]#[classname]`Configuration` does provide a [classname]`ClockProvider` implementation following the default Bean Validation [classname]`ClockProvider` rules as defined in <<constraintsdefinitionimplementation-validationimplementation-temporalvalidators>>. You can access it by calling [methodname]`getDefaultClockProvider()`.#
 
-[tck-testable]#Via [classname]`getBootstrapConfiguration()`, [classname]`Configuration` also exposes data stored in [classname]`META-INF/validation.xml`# (see <<xml-config>>). This is particularly useful for containers wishing to control the instance creation and lifecycle (more information at <<bootstrapping-usageandcontainerexpectation>>).
+[tck-testable]#Via [classname]`getBootstrapConfiguration()`, [classname]`Configuration` also exposes data stored in [classname]`META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>). This is particularly useful for containers wishing to control the instance creation and lifecycle (more information at <<validationapi-bootstrapping-usageandcontainerexpectation>>).
 
 [NOTE]
 ====
 [methodname]`BootstrapConfiguration.getDefaultValidatedExecutableTypes()` and [methodname]`BootstrapConfiguration.isExecutableValidationEnabled()` are not used by the Bean Validation engine but exposed here for interception technologies - see <<integration-general-executable>>.
 ====
 
-[tck-testable]#Using [methodname]`addMapping()`, additional constraint mapping XML descriptors can be added to the configuration# (see <<xml-config>>). The given input streams should support the [methodname]`mark()` and [methodname]`reset()` methods defined by [classname]`java.io.InputStream`. [tck-testable]#Streams not supporting the [methodname]`mark()` and [methodname]`reset()` methods will be wrapped with an [classname]`InputStream` implementation supporting these methods by the Bean Validation provider in order to allow the streams to be read several times.#
+[tck-testable]#Using [methodname]`addMapping()`, additional constraint mapping XML descriptors can be added to the configuration# (see <<validationapi-bootstrapping-xmlconfiguration>>). The given input streams should support the [methodname]`mark()` and [methodname]`reset()` methods defined by [classname]`java.io.InputStream`. [tck-testable]#Streams not supporting the [methodname]`mark()` and [methodname]`reset()` methods will be wrapped with an [classname]`InputStream` implementation supporting these methods by the Bean Validation provider in order to allow the streams to be read several times.#
 
 Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the initialized [classname]`ValidatorFactory` instance. [tck-testable]#It is legal to invoke [methodname]`buildValidatorFactory()` several times, e.g. in order to retrieve several [classname]`ValidatorFactory` instances with a slightly different configuration (see <<using-configuration-several-times>>).#
 
@@ -2217,7 +2225,7 @@ public interface ACMEConfiguration
 
 ====
 
-When [methodname]`Configuration.buildValidatorFactory()` is called, the initialized [classname]`ValidatorFactory` is returned. More specifically, the requested Bean Validation provider is determined and the result of [code]`validationProvider.buildValidatorFactory(ConfigurationState)` is returned. [classname]`ConfigurationState` gives access to the configuration artifacts defined in [filename]`META-INF/validation.xml` (unless XML configuration is ignored) and provided programmatically to [classname]`Configuration`. Generally speaking, programmatically defined elements have priority over XML defined configuration elements (read the [classname]`Configuration` JavaDoc and see <<xml-config>> for more information).
+When [methodname]`Configuration.buildValidatorFactory()` is called, the initialized [classname]`ValidatorFactory` is returned. More specifically, the requested Bean Validation provider is determined and the result of [code]`validationProvider.buildValidatorFactory(ConfigurationState)` is returned. [classname]`ConfigurationState` gives access to the configuration artifacts defined in [filename]`META-INF/validation.xml` (unless XML configuration is ignored) and provided programmatically to [classname]`Configuration`. Generally speaking, programmatically defined elements have priority over XML defined configuration elements (read the [classname]`Configuration` JavaDoc and see <<validationapi-bootstrapping-xmlconfiguration>> for more information).
 
 [NOTE]
 ====
@@ -2241,7 +2249,7 @@ include::{validation-api-source-dir}javax/validation/spi/ConfigurationState.java
 The requested provider implementation is resolved according to the following rules in the following order:
 
 * Use the provider implementation requested if [classname]`Configuration` has been created from [classname]`Validation.byProvider(Class)`.
-* Use the provider implementation described in the XML configuration (under `validation-config.default-provider` see <<xml-config>>) if defined: the value of this element is the fully qualified class name of the [classname]`ValidationProvider` implementation uniquely identifying the provider.
+* Use the provider implementation described in the XML configuration (under `validation-config.default-provider` see <<validationapi-bootstrapping-xmlconfiguration>>) if defined: the value of this element is the fully qualified class name of the [classname]`ValidationProvider` implementation uniquely identifying the provider.
 * Use the first provider implementation returned by [classname]`validationProviderResolver.getValidationProviders()`.
 --
 
@@ -2300,10 +2308,12 @@ ValidatorFactory factory2 = configuration
 
 Here, [varname]`factory1` is set up using a custom message interpolator, while [varname]`factory2` is set up using the same message interpolator and additionally using a custom traversable resolver.
 
+[[validationapi-bootstrapping-validationprovider]]
 ==== ValidationProvider and ValidationProviderResolver
 
 [classname]`ValidationProvider` is the contract between the bootstrap process and a specific Bean Validation provider. [classname]`ValidationProviderResolver` implements the discovery mechanism for Bean Validation provider implementations. Any Bean Validation client can implement such a discovery mechanism but it is typically implemented by containers having specific classloader structures and restrictions.
 
+[[validationapi-bootstrapping-validationprovider-resolver]]
 ===== ValidationProviderResolver
 
 [tck-testable]#[classname]`ValidationProviderResolver` returns the list of Bean Validation providers available at runtime and more specifically a [classname]`ValidationProvider` instance for each provider available in the context.# This service can be customized by implementing [classname]`ValidationProviderResolver`. [tck-not-testable]#Implementations must be thread-safe.#
@@ -2349,8 +2359,7 @@ The default [classname]`ValidationProviderResolver` implementation will locate a
 
 The default [classname]`ValidationProviderResolver` can be accessed via [classname]`BootStrapState.getDefaultValidationProviderResolver()`. This method is typically used by the Bean Validation provider [classname]`Configuration` implementation.
 
-[[id-bootstrap-validationprovider]]
-
+[[validationapi-bootstrapping-validationprovider-provider]]
 ===== ValidationProvider
 
 [classname]`ValidationProvider` represents the SPI (Service Provider Interface) defining the contract between the provider discovery and initialization mechanism, and the provider. A [classname]`ValidationProvider` does:
@@ -2521,7 +2530,7 @@ The provider discovery mechanism uses the following algorithm:
 * invalid constraint declaration or definition
 
 
-[[boostrapping-validation]]
+[[validationapi-bootstrapping-validation]]
 
 ==== Validation
 
@@ -2736,7 +2745,7 @@ public interface ProviderSpecificBootstrap<T extends Configuration<T>> {
 
 ====
 
-[methodname]`ProviderSpecificBootstrap.configure()` must return the result of [methodname]`ValidationProvider.createSpecializedConfiguration(BootstrapState state)`. The state parameter holds the [classname]`ValidationProviderResolver` passed to [classname]`ProviderSpecificBootstrap`. The validation provider instance used is the one assignable to the type passed as a parameter in [methodname]`Validation.byProvider(Class)`. The validation provider is selected according to the algorithm described in <<id-bootstrap-validationprovider>>.
+[methodname]`ProviderSpecificBootstrap.configure()` must return the result of [methodname]`ValidationProvider.createSpecializedConfiguration(BootstrapState state)`. The state parameter holds the [classname]`ValidationProviderResolver` passed to [classname]`ProviderSpecificBootstrap`. The validation provider instance used is the one assignable to the type passed as a parameter in [methodname]`Validation.byProvider(Class)`. The validation provider is selected according to the algorithm described in <<validationapi-bootstrapping-validationprovider-provider>>.
 
 [tck-testable]#The [classname]`Validation` implementation must not contain any non private attribute or method aside from the three public static bootstrap methods:#
 
@@ -2749,7 +2758,7 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 
 [tck-testable]#When bootstrapping a Bean Validation provider, if the [classname]`ValidationProviderResolver` either fails or if the expected provider is not found, a [classname]`ValidationException` is raised.#
 
-[[xml-config]]
+[[validationapi-bootstrapping-xmlconfiguration]]
 
 ==== XML configuration: META-INF/validation.xml
 
@@ -2816,7 +2825,7 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 
 The XML schema is described in <<xml-config-xsd>>.
 
-[[bootstrapping-usageandcontainerexpectation]]
+[[validationapi-bootstrapping-usageandcontainerexpectation]]
 
 ==== Bootstrapping considerations
 

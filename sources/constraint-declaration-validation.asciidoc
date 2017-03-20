@@ -40,16 +40,16 @@ The JavaBeans specification specifies that a getter is a method whose
 The target of an annotation definition can be a field, property, type, constructor or method return value, constructor or method parameter or constructor or method cross-parameter provided that:
 
 * the constraint definition supports the specified target ([classname]`java.lang.annotation.Target`)
-* one of the [classname]``ConstraintValidator``s declared on the constraint supports the declared type of the target or in the case of cross-parameter, one cross-parameter [classname]`ConstraintValidator` is present (see <<typevalidatorresolution>> to learn about [classname]`ConstraintValidator` resolution).
+* one of the [classname]``ConstraintValidator``s declared on the constraint supports the declared type of the target or in the case of cross-parameter, one cross-parameter [classname]`ConstraintValidator` is present (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>> to learn about [classname]`ConstraintValidator` resolution).
 --
 
-[[constraintdeclarationvalidationprocess-requirements-object]]
+[[constraintdeclarationvalidationprocess-requirements-objectvalidation]]
 
 ==== Object validation
 
 [tck-testable]#Constraint declarations can be applied to a class or an interface.# [tck-testable]#Applying a constraint to a class or interface expresses a validation over the state of the class or the class implementing the interface.#
 
-[[constraintdeclarationvalidationprocess-requirements-property]]
+[[constraintdeclarationvalidationprocess-requirements-propertyvalidation]]
 
 ==== Field and property validation
 
@@ -117,6 +117,8 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
+
+[[constraintdeclarationvalidationprocess-constraintdeclaration]]
 
 === Constraint declaration
 
@@ -489,9 +491,6 @@ Group circularity in a group conversion are not problematic because:
 
 * only one rule is applied for a given cascade (rules are not applied recursively)
 * validation cascading is stopped when the same instance / property is validated with the same group in a given path (existing rule)
-
-
-
 ====
 
 [tck-testable]#[classname]`@ConvertGroup` and [classname]`@ConvertGroup.List` can only be placed where [classname]`@Valid` is present to ensure proper respect of the Liskov substitution principle:# if rules were to be defined on an overriding method of a method marked as cascading validation, the rules could end up altering the list of constraints validated by the super type and thus violating the Liskov substitution principle.
@@ -502,6 +501,7 @@ Group circularity in a group conversion are not problematic because:
 
 Group conversion is quite useful to facilitate object graph reuse without spreading the validation group definitions across several layers. Let's look at an example.
 
+[[constraintdeclarationvalidationprocess-groupsequence-groupconversion-examples]]
 ===== Group conversion examples
 
 In this example we will reuse the [classname]`Address` group split and match it to the [classname]`User` group split.
@@ -700,10 +700,12 @@ Method constraints are declared by adding constraint annotations directly to met
 
 Getters are not considered constrained methods by default (see <<integration-general-executable>>).
 
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-requirements]]
 ==== Requirements on methods to be validated
 
 [tck-not-testable]#Static methods are ignored by validation. Putting constraints on a static method is not portable.# No other restrictions exist from the perspective of this specification, however it is possible that technologies integrating with method validation impose further restrictions to methods for which a validation shall be applied. For instance certain integration technologies might require that methods to be validated must have [methodname]`public` visibility and/or must not be [methodname]`final`.
 
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints]]
 ==== Declaring parameter constraints
 
 [tck-testable]#Parameter constraints are declared by putting constraint annotations on method or constructor parameters.#
@@ -745,7 +747,7 @@ Note that declaring these constraints does not automatically cause their validat
 In order to use constraint annotations for method or constructor parameters, their element type must be [varname]`ElementType.PARAMETER`. In order to use constraint annotations for cross-parameter validation or on the return values of methods or constructors (see the following sections), their element type must be [varname]`ElementType.METHOD` respectively [varname]`ElementType.CONSTRUCTOR`. All built-in constraints support these element types and it is considered a best practice to do the same for custom constraints.
 ====
 
-[[constraintdeclarationvalidationprocess-crossparameterconstraints]]
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-crossparameterconstraints]]
 
 ===== Cross-parameter constraints
 
@@ -782,10 +784,9 @@ Cross-parameter constraints as well as return value constraints are declared dir
 
 [tck-testable]#It is not legal to declare a cross-parameter constraint on a method or constructor which has no parameters. A [classname]`ConstraintDeclarationException` is raised in this case.#
 
-Some constraints can target an executable's return value as well as its array of parameters. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such a constraint on an executable to target the parameters, one must set [methodname]`validationAppliesTo` if there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.PARAMETERS` as it improves readability.
+Some constraints can target an executable's return value as well as its array of parameters. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such a constraint on an executable to target the parameters, one must set [methodname]`validationAppliesTo` if there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-properties-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.PARAMETERS` as it improves readability.
 
-[[constraintdeclarationvalidationprocess-methodlevelconstraints-definingparameterconstraints-namingparameters]]
-
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters]]
 ===== Naming parameters
 
 In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). Bean Validation defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
@@ -838,15 +839,16 @@ A conforming Bean Validation implementation provides a default [classname]`Param
 
 Depending on whether the class file of the validated executable contains parameter name information or not, the actual parameter names as provided in the executable's definition will be returned or synthetic names in the form arg``PARAMETER_INDEX``, where `PARAMETER_INDEX` starts at 0 for the first parameter, e.g. [varname]`arg0`, [varname]`arg1` etc.
 
-Bean Validation providers and integrators are free to provide additional implementations (e.g. based on annotations specifying parameter names, debug symbols etc.). If a user wishes to use another parameter name provider than the default implementation, they may specify the provider to use with help of the bootstrap API (see <<bootstrapping>>) or the XML configuration (see <<xml-config>>).
+Bean Validation providers and integrators are free to provide additional implementations (e.g. based on annotations specifying parameter names, debug symbols etc.). If a user wishes to use another parameter name provider than the default implementation, they may specify the provider to use with help of the bootstrap API (see <<validationapi-bootstrapping>>) or the XML configuration (see <<validationapi-bootstrapping-xmlconfiguration>>).
 
 [tck-testable]#If an exception occurs during invocation of the [methodname]`getParameterNames()` methods, this exception is wrapped into a [classname]`ValidationException` by the Bean Validation engine.#
 
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-returnvalueconstraints]]
 ==== Declaring return value constraints
 
 [tck-testable]#Return value constraints are declared by putting constraint annotations directly on a method or constructor.#
 
-Some constraints can target both the return value and the array of parameters of an executable. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such constraint on an executable to target the return value, one must set [methodname]`validationAppliesTo` in case there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.RETURN_VALUE` as it improves readability.
+Some constraints can target both the return value and the array of parameters of an executable. [tck-testable]#They are known to be both generic and cross-parameter constraints. When using such constraint on an executable to target the return value, one must set [methodname]`validationAppliesTo` in case there is an ambiguity.# The set of ambiguities is described in <<constraintsdefinitionimplementation-constraintdefinition-properties-validationappliesto>>. Even without ambiguity, it is recommended to explicitly set [methodname]`validationAppliesTo` to `ConstraintTarget.RETURN_VALUE` as it improves readability.
 
 .Declaring return value constraints
 ====
@@ -890,6 +892,7 @@ Here the following postconditions are defined which are guaranteed to the caller
 
 Like parameter constraints, these return value constraints are not per-se validated upon method invocation, but instead an integration layer invoking the validation is required.
 
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-cascadedvalidation]]
 ==== Marking parameters and return values for cascaded validation
 
 [tck-testable]#The [classname]`@Valid` annotation is used to declare that a cascaded validation of the given method/constructor parameters or return values is performed by the Bean Validation provider. When marked, the parameter or return value is considered a bean object to validate.# The same rules as for standard object graph validation (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) apply, in particular
@@ -936,7 +939,6 @@ Here the following recursive validations will happen when validating the methods
 Again, solely marking parameters and return values for cascaded validation does not trigger the actual validation.
 
 [[constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance]]
-
 ==== Method constraints in inheritance hierarchies
 
 When defining method constraints within inheritance hierarchies (that is, class inheritance by extending base classes and interface inheritance by implementing or extending interfaces) one has to obey the link:$$http://en.wikipedia.org/wiki/Liskov_substitution_principle$$[Liskov substitution] principle which mandates that:
@@ -962,6 +964,7 @@ Therefore the following rules with respect to the definition of method level con
 
 [tck-testable]#The above rules do not apply when validating constructor constraints as constructors do not override one another. Parameter and return value constraints can be applied to any constructor in the type hierarchy, but only the constraints defined directly on the validated constructor are evaluated.#
 
+[[constraintdeclarationvalidationprocess-methodlevelconstraints-inheritance-examples]]
 ===== Examples
 
 This sections provides some examples of illegal constraint definitions which violate the rules stated above in one way or another.
@@ -1109,7 +1112,7 @@ Note that this implies that a given validation constraint will not be processed 
 --
 The object validation routine is described as such. For each constraint declaration:
 
-* determine for the constraint declaration, the appropriate [classname]`ConstraintValidator` to use (see <<typevalidatorresolution>>).
+* determine for the constraint declaration, the appropriate [classname]`ConstraintValidator` to use (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>>).
 * execute the [methodname]`isValid` operation (from the constraint validation implementation) on the appropriate data (see <<constraintsdefinitionimplementation-validationimplementation>>)
 * if [methodname]`isValid()` returns `true`, continue to the next constraint,
 * if [methodname]`isValid()` returns `false`, the Bean Validation provider populates [classname]`ConstraintViolation` object(s) according to the rules defined in <<constraintsdefinitionimplementation-validationimplementation>> and appends these objects to the list of constraint violations.
@@ -1264,6 +1267,7 @@ The default group sequence is redefined for the [classname]`Driver` as well as [
 
 In the second call to [methodname]`validate` the group [classname]`SequencedGroups` is requested which defines a sequence of [classname]`Minimal` followed by [classname]`Later`. In this case there is only one constraint violation. Again [classname]`@Min` on [property]`age` fails, but in this case the group [classname]`Minimal` gets propagated to [classname]`Car` which does not have any constraints defined against this group. Constraints belonging to the group [classname]`Later` won't get validated until all constraints belonging to [classname]`Minimal` pass.
 
+[[constraintdeclarationvalidationprocess-validationroutine-methodconstructorvalidation]]
 ==== Method and constructor validation
 
 [tck-testable]
@@ -1372,7 +1376,7 @@ public interface TraversableResolver {
 
 [tck-testable]#`traversableObject` is the object instance being evaluated. `null` if the check is triggered as part of a [methodname]`validateValue()` call.#
 
-[tck-testable]#`traversableProperty` is the [classname]`Node` representing the property hosted by the [methodname]`traversableObject` being considered for traversal. The name of a property is defined in <<constraintdeclarationvalidationprocess-requirements-property>>.#
+[tck-testable]#`traversableProperty` is the [classname]`Node` representing the property hosted by the [methodname]`traversableObject` being considered for traversal. The name of a property is defined in <<constraintdeclarationvalidationprocess-requirements-propertyvalidation>>.#
 
 [tck-testable]#`rootBeanType` is the class of the root being validated, i.e. either the type of the object passed to the [methodname]`validate` method or the type declaring the validated method/constructor in case of method validation.#
 
@@ -1436,7 +1440,7 @@ public class JPATraversableResolver implements TraversableResolver {
 
 ====
 
-See <<bootstrapping>> to learn how to pass a custom [classname]`TraversableResolver`.
+See <<validationapi-bootstrapping>> to learn how to pass a custom [classname]`TraversableResolver`.
 
 [[constraintdeclarationvalidationprocess-validationroutine-traversable-examples]]
 
@@ -1594,13 +1598,13 @@ When the Bean Validation provider is about to perform a cascaded validation of t
 * `elementType`: [classname]`ElementType.FIELD`. The [varname]`country` property is annotated on its field.
 
 
-[[typevalidatorresolution]]
+[[constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution]]
 
 ==== ConstraintValidator resolution algorithm
 
 A constraint is associated to one or more [classname]`ConstraintValidator` implementations. Each [classname]`ConstraintValidator<A, T>` accepts the type [classname]`T`. The [classname]`ConstraintValidator` executed depends on the type hosting the constraint. For a given constraint evaluation, a single [classname]`ConstraintValidator` is considered.
 
-[tck-testable]#The list of [classname]``ConstraintValidator``s can contain at most one which targets cross-parameter. If the constraint targets the parameters of an executable either implicitly or by the use of [methodname]`validationAppliesTo` in the constraint - see <<constraintsdefinitionimplementation-constraintdefinition-validationappliesto>>, then the cross-parameter [classname]`ConstraintValidator` is used. If none is present, a [classname]`ConstraintDefinitionException` is raised. If more than one cross-parameter [classname]`ConstraintValidator` is present, a [classname]`ConstraintDefinitionException` is raised.#
+[tck-testable]#The list of [classname]``ConstraintValidator``s can contain at most one which targets cross-parameter. If the constraint targets the parameters of an executable either implicitly or by the use of [methodname]`validationAppliesTo` in the constraint - see <<constraintsdefinitionimplementation-constraintdefinition-properties-validationappliesto>>, then the cross-parameter [classname]`ConstraintValidator` is used. If none is present, a [classname]`ConstraintDefinitionException` is raised. If more than one cross-parameter [classname]`ConstraintValidator` is present, a [classname]`ConstraintDefinitionException` is raised.#
 
 [tck-testable]#If the constraint is a generic constraint, the following rules apply. If the constraint declaration is hosted on a class or an interface, the targeted type is the class or the interface.# [tck-testable]#If the constraint is hosted on a class attribute, the type of the attribute is the targeted type.# [tck-testable]#If the constraint is hosted on a getter, the return type of the getter is the targeted type.# In other words, the resolution algorithm considers the type as defined in the method signature and not the runtime type of the value.
 
@@ -1687,6 +1691,7 @@ The resolutions shown in <<table-constraintvalidator-resolution>> occur.
               supertypes of [classname]`String`.
 |===============
 
+[[constraintdeclarationvalidationprocess-validationroutine-examples]]
 === Examples
 
 The first example demonstrates how beans, fields and getters are annotated to express some constraints.

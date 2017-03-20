@@ -9,9 +9,10 @@
 
 The Bean Validation specification provides a way to query the constraint repository. This API is expected to be used for tooling support as well as integration with other frameworks, libraries and JSRs. The Bean Validation specification aims to provide both a validation engine and a metadata repository for object constraints. Frameworks (EE or SE) in need for constraint definition, validation and metadata will be able to rely on the Bean Validation specification for these services avoiding any unnecessary duplication work from an application and infrastructure point of view.
 
+[[constraintmetadata-validator]]
 === Validator
 
-The main API to access all metadata related to a given object is [classname]`Validator` (see <<bootstrapping>> for more information on how to retrieve a [classname]`Validator` instance).
+The main API to access all metadata related to a given object is [classname]`Validator` (see <<validationapi-bootstrapping>> for more information on how to retrieve a [classname]`Validator` instance).
 
 A [classname]`Validator` instance hosts the method to access to the metadata repository for a given class. It is recommended to leave the caching of [classname]`Validator` instances to the [classname]`ValidatorFactory`. [classname]`Validator` implementations are thread-safe.
 
@@ -50,7 +51,7 @@ public interface Validator {
 
 ====
 
-[tck-testable]#[methodname]`getConstraintsForClass()` returns a [classname]`BeanDescriptor` object describing the bean level constraints (see <<constraintdeclarationvalidationprocess-requirements-object>>) and providing access to the property level constraints metadata.# [tck-testable]#An [classname]`IllegalArgumentException` is raised if the [varname]`clazz` parameter is null.#
+[tck-testable]#[methodname]`getConstraintsForClass()` returns a [classname]`BeanDescriptor` object describing the bean level constraints (see <<constraintdeclarationvalidationprocess-requirements-objectvalidation>>) and providing access to the property level constraints metadata.# [tck-testable]#An [classname]`IllegalArgumentException` is raised if the [varname]`clazz` parameter is null.#
 
 [tck-testable]#If a constraint definition or declaration hosted by the requested class (or any of its superclasses and interfaces according to the constraint propagation rules) is invalid, a [classname]`ValidationException` is raised.# This can be a subclass of [classname]`ValidationException` like [classname]`ConstraintDefinitionException`, [classname]`ConstraintDeclarationException` or [classname]`UnexpectedTypeException`.
 
@@ -342,6 +343,7 @@ assert 1 == constructorDescriptor.getParameterDescriptors()
 
 ====
 
+[[constraintmetadata-beandescriptor]]
 === BeanDescriptor
 
 The [classname]`BeanDescriptor` interface describes a constrained Java Bean. This interface is returned by [methodname]`Validator.getConstraintsForClass(Class<?>)`.
@@ -515,7 +517,7 @@ public enum MethodType {
 
 [tck-testable]#[methodname]`isBeanConstrained()` returns `true` if the given class (and superclasses and interfaces) has at least one class-level or property-level constraint or validation cascade.# If the method returns false, the Bean Validation engine can safely ignore the bean as it will not be impacted by validation.
 
-[tck-testable]#[methodname]`getConstraintsForProperty()` returns a [classname]`PropertyDescriptor` object describing the property level constraints (See <<constraintdeclarationvalidationprocess-requirements-property>>). The property is uniquely identified by its name as per the JavaBeans convention: field level and getter level constraints of the given name are all returned.# [tck-testable]#An [classname]`IllegalArgumentException` is raised if the [varname]`propertyName` parameter is null.#
+[tck-testable]#[methodname]`getConstraintsForProperty()` returns a [classname]`PropertyDescriptor` object describing the property level constraints (See <<constraintdeclarationvalidationprocess-requirements-propertyvalidation>>). The property is uniquely identified by its name as per the JavaBeans convention: field level and getter level constraints of the given name are all returned.# [tck-testable]#An [classname]`IllegalArgumentException` is raised if the [varname]`propertyName` parameter is null.#
 
 [tck-testable]#[methodname]`getConstrainedProperties()` returns the [classname]``PropertyDescriptor``s of the bean properties having at least one constraint or being cascaded ([classname]`@Valid` annotation).#
 
@@ -527,6 +529,7 @@ public enum MethodType {
 
 [tck-testable]#[methodname]`getConstrainedConstructors()` returns the [classname]``ConstructorDescriptor``s of the constructors having at least one constraint or cascaded parameter or return value.#
 
+[[constraintmetadata-cascadabledescriptor]]
 === CascadableDescriptor
 
 The [classname]`CascadableDescriptor` interface describes a cascadable element, i.e. an element which can be marked with [classname]`@Valid` in order to perform a cascaded validation of the element as described in <<constraintdeclarationvalidationprocess-requirements-graphvalidation>>.
@@ -566,6 +569,7 @@ public interface CascadableDescriptor {
 
 [tck-testable]#The method [methodname]`getGroupConversions()` returns a set with the group conversions declared for the cascadable element. An empty set will be returned if no group conversions are configured.#
 
+[[constraintmetadata-groupconversiondescriptor]]
 === GroupConversionDescriptor
 
 The [classname]`GroupConversionDescriptor` interface describes a group conversion rule configured for a cascadable element as described in <<constraintdeclarationvalidationprocess-groupsequence-groupconversion>>. It is returned by [methodname]`CascadableDescriptor.getGroupConversions()`.
@@ -605,6 +609,7 @@ public interface GroupConversionDescriptor {
 
 [tck-testable]#The [methodname]`getTo()` method returns the target of a group conversion rule.#
 
+[[constraintmetadata-propertydescriptor]]
 === PropertyDescriptor
 
 The [classname]`PropertyDescriptor` interface describes a constrained property of a Java Bean.
@@ -636,6 +641,7 @@ public interface PropertyDescriptor extends ElementDescriptor, CascadableDescrip
 
 [tck-testable]#[methodname]`getPropertyName()` returns the property name as described in <<validationapi-constraintviolation>>.#
 
+[[constraintmetadata-executabledescriptor]]
 === ExecutableDescriptor, MethodDescriptor and ConstructorDescriptor
 
 The [classname]`ExecutableDescriptor` interface describes a constrained method or constructor of a Java type.
@@ -812,6 +818,7 @@ public interface ConstructorDescriptor extends ExecutableDescriptor {
 
 [tck-testable]#None of the metadata API methods honor the XML configuration around executable validation nor the presence of [classname]`@ValidateOnExecution`. In other words, all constrained methods and constructors will be returned by the metadata API regardless of these settings.#
 
+[[constraintmetadata-parameterdescriptor]]
 === ParameterDescriptor
 
 The [classname]`ParameterDescriptor` interface describes a constrained parameter of a method or constructor.
@@ -852,6 +859,7 @@ public interface ParameterDescriptor extends ElementDescriptor, CascadableDescri
 
 [tck-testable]#[methodname]`getName()` returns the name of the represented parameter.#
 
+[[constraintmetadata-crossparameterdescriptor]]
 === CrossParameterDescriptor
 
 The [classname]`CrossParameterDescriptor` interface describes a element containing all cross-parameter constraints of a method or constructor.
@@ -880,6 +888,7 @@ public interface CrossParameterDescriptor extends ElementDescriptor {
 
 [tck-testable]#[methodname]`getElementClass()` returns [classname]`Object[]`.#
 
+[[constraintmetadata-returnvaluedescriptor]]
 === ReturnValueDescriptor
 
 The [classname]`ReturnValueDescriptor` interface describes the return value of a method or constructor.
@@ -1019,6 +1028,7 @@ public interface ConstraintDescriptor<T extends Annotation> {
 
 [tck-testable]#[methodname]`getConstraintValidatorClasses()` returns the [classname]`ConstraintValidator` classes associated with the constraint.#
 
+[[constraintmetadata-example]]
 === Example
 
 Assuming the following constraint definitions

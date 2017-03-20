@@ -33,6 +33,7 @@ Each of these error cases lead to a [classname]`ValidationException` or a subcla
 
 If a constraint definition or constraint declaration is invalid for a given class, the metadata API should raise the according exception.
 
+[[exception-errorreport]]
 === Error report: [classname]`ConstraintViolationException`
 
 Some frameworks or applications need to convey the result of a validation by raising an exception if the validation returns constraint violations.
@@ -98,6 +99,7 @@ Bean Validation never raises this exception itself. Other frameworks like Java P
 If this exception is meant to be sent remotely, [classname]`ConstraintViolation` objects should be [classname]`Serializable` as defined and explained in <<validationapi-constraintviolation>>.
 ====
 
+[[exception-constraintdefinition]]
 === Constraint definition: [classname]`ConstraintDefinitionException`
 
 [tck-testable]#If a constraint definition does not respect the Bean Validation rules or is inconsistent, a [classname]`ConstraintDefinitionException` is raised.# [classname]`ConstraintDefinitionException` is a subclass of [classname]`ValidationException`.
@@ -109,13 +111,14 @@ This exception can be raised during validation or when the metadata model for th
 These exception cases can be determined at compile time by a tool such as an annotation processor.
 ====
 
+[[exception-constraintdeclaration]]
 === Constraint declaration: [classname]`ConstraintDeclarationException` and [classname]`UnexpectedTypeException`
 
 [tck-not-testable]#When a constraint declaration is illegal, [classname]`ConstraintDeclarationException` is raised.# This includes amongst other things incorrect group conversion rules (definition or positioning) and illegal method constraint declarations (e.g. inheritance rules, cross-parameter constraint used in an illegal situation, improper use of [methodname]`validationAppliesTo`).
 
 [classname]`ConstraintDeclarationException` is a subclass of [classname]`ValidationException`.
 
-[tck-testable]#When the return type of a property cannot be processed for a given constraint, an [classname]`UnexpectedTypeException` is raised.# This problem typically arises when either no [classname]``ConstraintValidator``s or too many [classname]``ConstraintValidator``s match the return type (see <<typevalidatorresolution>>).
+[tck-testable]#When the return type of a property cannot be processed for a given constraint, an [classname]`UnexpectedTypeException` is raised.# This problem typically arises when either no [classname]``ConstraintValidator``s or too many [classname]``ConstraintValidator``s match the return type (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>>).
 
 [classname]`UnexpectedTypeException` is a subclass of [classname]`ConstraintDeclarationException`.
 
@@ -126,6 +129,7 @@ This exception can be raised during validation or when the metadata model for th
 These exception cases can be determined at compile time by a tool such as an annotation processor.
 ====
 
+[[exception-groupdefinition]]
 === Group definition: [classname]`GroupDefinitionException`
 
 [tck-testable]#When a group definition is illegal, a [classname]`GroupDefinitionException` is raised.# This typically arises when a cyclic group dependency is discovered, an illegal attribute overriding is defined etc.
@@ -137,6 +141,7 @@ These exception cases can be determined at compile time by a tool such as an ann
 These exception cases can be determined at compile time by a tool such as an annotation processor.
 ====
 
+[[exception-noprovider]]
 === No Bean Validation Provider detected: `NoProviderFoundException`
 
 [tck-not-testable]#When trying to bootstrap Bean Validation via `Validation.buildDefaultValidatorFactory()` or `Validation.byDefaultProvider().configure()` and no Bean Validation provider could be found, a `NoProviderFoundException` is raised.#

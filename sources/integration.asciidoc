@@ -15,6 +15,7 @@ In this chapter, integration points between Bean Validation and other technologi
 
 This section covers general requirements that should be followed by any container and interception technology integrating Bean Validation.
 
+[[integration-general-objectslifecycle]]
 ==== Objects lifecycle
 
 Generally speaking, containers and frameworks controlling the lifecycle of objects (such as Java EE, dependency injection frameworks or component frameworks) should:
@@ -29,7 +30,7 @@ Generally speaking, containers and frameworks controlling the lifecycle of objec
 
 [IMPORTANT]
 ====
-In this context, a default [classname]`ValidatorFactory` is a factory configured like the factory returned by [classname]`Validation.buildDefaultValidatorFactory` (see also <<boostrapping-validation>>) except for the enhancements described above. A default [classname]`Validator` instance is a [classname]`Validator` instance retrieved via [methodname]`getValidator()` from the default [classname]`ValidatorFactory`.
+In this context, a default [classname]`ValidatorFactory` is a factory configured like the factory returned by [classname]`Validation.buildDefaultValidatorFactory` (see also <<validationapi-bootstrapping-validation>>) except for the enhancements described above. A default [classname]`Validator` instance is a [classname]`Validator` instance retrieved via [methodname]`getValidator()` from the default [classname]`ValidatorFactory`.
 ====
 
 [[integration-general-executable]]
@@ -46,7 +47,7 @@ Bean Validation - via the interception technology - offers a way to customize wh
 
 * via the [classname]`@ValidateOnExecution` annotation on the executable (see <<example-validateonexecution>>)
 * via the [classname]`@ValidateOnExecution` annotation on the type declaring the executable
-* via a global configuration defined in [filename]`validation.xml`: `executable-validation` and `default-validated-executable-types`. See <<xml-config>> for more details.
+* via a global configuration defined in [filename]`validation.xml`: `executable-validation` and `default-validated-executable-types`. See <<validationapi-bootstrapping-xmlconfiguration>> for more details.
 
 
 [NOTE]
@@ -134,6 +135,7 @@ include::{validation-api-source-dir}javax/validation/executable/ExecutableType.j
 The proper selection of the validated executables is the responsibility of the integration between the interception technology and Bean Validation. Bean Validation engines ignore the XML configuration around executable validation and [classname]`@ValidateOnExecution` when validating executables and when providing metadata.
 ====
 
+[[integration-general-executable-examples]]
 ===== Examples
 
 The following example shows some of the way you can refine executable validation with [classname]`@ValidateOnExecution`.
@@ -212,6 +214,7 @@ Java EE must obey the rules defined above and make the following instances avail
 
 There are several integrations points between Bean Validation and CDI. If a Bean Validation provider integrates with CDI, it must follow the rules laid out in this section. In a Java EE container, a [tck-testable]#Bean Validation provider must integrate with CDI.#
 
+[[integration-cdi-validatorfactory]]
 ==== [classname]`ValidatorFactory` and [classname]`Validator`
 
 [tck-testable]#Similar to the Java EE integration via [classname]`@Resource` (see <<integration-javaee>>), a CDI container must support injection of built-in default [classname]`ValidatorFactory` and [classname]`Validator` beans via [classname]`@Inject`. These default beans are injectable via the [classname]`@Default` qualifier.#
@@ -236,9 +239,10 @@ Optionally, the CDI container can support injection of provider specific - as de
 Registration of the built-in default beans and the provider specific beans may be achieved using the CDI portable extension SPI or a vendor specific SPI.
 ====
 
+[[integration-cdi-customconfiguration]]
 ==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` and [classname]`TraversableResolver`
 
-[tck-testable]#If a custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` or [classname]`TraversableResolver` class is defined in the XML deployment descriptor (see <<xml-config>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
+[tck-testable]#If a custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` or [classname]`TraversableResolver` class is defined in the XML deployment descriptor (see <<validationapi-bootstrapping-xmlconfiguration>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
 
 [tck-testable]
 --
@@ -250,6 +254,7 @@ If no custom [classname]`ConstraintValidatorFactory` is requested by the user, t
 
 [tck-not-testable]#Using directly or indirectly a JPA [classname]`EntityManager` that might call back Bean Validation for validation is not allowed in the Bean Validation extension points and in [classname]`ConstraintValidator` instances. This would lead to infinite flush or unexpected behavior.#
 
+[[integration-cdi-methodconstructorvalidation]]
 ==== Method and constructor validation
 
 [tck-testable]#Bean Validation requires that CDI beans support constructor and method validation as defined in <<integration-general-executable>>. Validation must happen at the equivalent time an interceptor occurs when having priority `Interceptor.Priority.PLATFORM_AFTER+800`, in other words priority of `4800`.#
@@ -264,14 +269,17 @@ The CDI interceptor binding facility does not directly support this, but the eff
 It is recommended to only intercept methods and constructors that are both constrained and validated according to the rules defined at <<integration-general-executable>>. <<validationapi-triggeringmethodvalidation>> gives examples how the metadata API can be used to determine whether or not a method is constrained (regardless of the filtering rules of [classname]`@ValidateOnExecution`).
 ====
 
+[[integration-jpa]
 === Java Persistence 2.0 integration
 
 Integration with Java Persistence is described in the Java Persistence 2 specification (link:$$http://jcp.org/en/jsr/detail?id=317$$[JSR-317] and later link:$$http://jcp.org/en/jsr/detail?id=338$$[JSR-338]). Persistence frameworks are encouraged to mimic the integration work done with Java Persistence.
 
+[[integration-jsf]
 === Java Server Faces 2.0 integration
 
 Integration with Java Server Faces is described in the Java Server Faces 2 specification (link:$$http://jcp.org/en/jsr/detail?id=314$$[JSR-314] and later link:$$http://jcp.org/en/jsr/detail?id=338$$[JSR-344]). Presentation frameworks are encouraged to study the integration work done with JSF 2.
 
+[[integration-jaxrs]
 === JAX-RS 2 integration
 
 Integration with JAX-RS is described in the JAX-RS 2 specification (link:$$http://jcp.org/en/jsr/detail?id=339$$[JSR-339]).

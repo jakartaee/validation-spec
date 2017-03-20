@@ -50,7 +50,7 @@ Cross-parameter constraint annotations can target any of the following [classnam
 
 While other [classname]``ElementType``s are not forbidden, the provider does not have to recognize and process constraints placed on such types.
 
-Since a given constraint definition applies to one or more specific Java types, the JavaDoc for the constraint annotation should clearly state which types are supported. [tck-testable]#Applying a constraint annotation to an incompatible type will raise an [classname]`UnexpectedTypeException`.# Care should be taken on defining the list of [classname]``ConstraintValidator``s. The type resolution algorithm (see <<typevalidatorresolution>>) could lead to exceptions if the [classname]`ConstraintValidator` list leads to ambiguities.
+Since a given constraint definition applies to one or more specific Java types, the JavaDoc for the constraint annotation should clearly state which types are supported. [tck-testable]#Applying a constraint annotation to an incompatible type will raise an [classname]`UnexpectedTypeException`.# Care should be taken on defining the list of [classname]``ConstraintValidator``s. The type resolution algorithm (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>>) could lead to exceptions if the [classname]`ConstraintValidator` list leads to ambiguities.
 
 [tck-testable]#At most one [classname]`ConstraintValidator` supporting cross-parameter validation must be present for a given constraint. A [classname]`ConstraintDefinitionException` is raised otherwise.# The JavaDoc should clearly state if the constraint is a generic and / or a cross-parameter constraint.
 
@@ -67,7 +67,7 @@ Bean Validation defines rules for applying constraint annotations in inheritance
 
 [tck-testable]#A constraint definition may have attributes that are specified at the time the constraint is applied to a JavaBean.# The properties are mapped as annotation elements. The annotation element names `message`, `groups`, `validationAppliesTo` and `payload` are considered reserved names; [tck-testable]#annotation elements starting with `valid` are not allowed# ; a constraint may use any other element name for its attributes.
 
-[[constraintsdefinitionimplementation-constraintdefinition-parameters-message]]
+[[constraintsdefinitionimplementation-constraintdefinition-properties-message]]
 
 ===== message
 
@@ -82,7 +82,7 @@ The [methodname]`message` element value is used to create the error message. See
 
 Built-in Bean Validation constraints follow this convention.
 
-[[constraintsdefinitionimplementation-constraintdefinition-groups]]
+[[constraintsdefinitionimplementation-constraintdefinition-properties-groups]]
 
 ===== groups
 
@@ -101,7 +101,7 @@ See <<validationapi-validatorapi-groups>> for more information.
 
 Groups are typically used to control the order in which constraints are evaluated, or to perform validation of the partial state of a JavaBean.
 
-[[constraintsdefinitionimplementation-constraintdefinition-payload]]
+[[constraintsdefinitionimplementation-constraintdefinition-properties-payload]]
 
 ===== payload
 
@@ -165,7 +165,7 @@ public class Address {
 
 The `payload` information can be retrieved from error reports via the [classname]`ConstraintDescriptor` either accessed through the [classname]`ConstraintViolation` objects (see <<validationapi-constraintviolation>>) or through the metadata API (see <<constraintmetadata-constraintdescriptor>>).
 
-[[constraintsdefinitionimplementation-constraintdefinition-validationappliesto]]
+[[constraintsdefinitionimplementation-constraintdefinition-properties-validationappliesto]]
 
 ===== validationAppliesTo
 
@@ -200,10 +200,12 @@ include::{validation-api-source-dir}javax/validation/ConstraintTarget.java[lines
 
 Constraint users are encouraged to explicitly set the [classname]`ConstraintTarget` target when using a constraint supporting both on a method or constructor as it improves readability.
 
+[[constraintsdefinitionimplementation-constraintdefinition-properties-specific]]
 ===== Constraint specific parameter
 
 The constraint annotation definitions may define additional elements to parameterize the constraint. For example, a constraint that validates the length of a string can use an annotation element named `length` to specify the maximum length at the time the constraint is declared.
 
+[[constraintsdefinitionimplementation-constraintdefinition-examples]]
 ==== Examples
 
 [[example-definition-notnull]]
@@ -699,7 +701,7 @@ allowing to omit the implementation from validators that don't need to access an
 
 [tck-testable]#The [methodname]`isValid()` method is evaluated by the Bean Validation provider each time a given value is validated.# [tck-not-testable]#It returns `false` if the value is not valid, `true` otherwise.# [tck-not-testable]#`isValid()` implementations must be thread-safe.#
 
-[tck-testable]#If the property is of an unanticipated type, an `UnexpectedTypeException` is raised.# [classname]`ConstraintValidator` implementations raise this exception themselves if they receive an unsupported type. However, constraint designers are encouraged to make use of specialized [classname]`ConstraintValidator` implementations and delegate the type resolution to the Bean Validation provider (see the type matching algorithm described in <<typevalidatorresolution>>).
+[tck-testable]#If the property is of an unanticipated type, an `UnexpectedTypeException` is raised.# [classname]`ConstraintValidator` implementations raise this exception themselves if they receive an unsupported type. However, constraint designers are encouraged to make use of specialized [classname]`ConstraintValidator` implementations and delegate the type resolution to the Bean Validation provider (see the type matching algorithm described in <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>>).
 
 [tck-testable]#If an exception occurs either in the [methodname]`initialize()` or [methodname]`isValid()` method, the runtime exception is wrapped into a [classname]`ValidationException` by the Bean Validation engine.#
 
@@ -719,7 +721,7 @@ The [classname]`ConstraintValidatorContext` object passed to the [methodname]`is
 include::{validation-api-source-dir}javax/validation/ConstraintValidatorContext.java[lines=11..-1]
 ----
 
-The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (e.g. `getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporal-validators>> ).
+The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (e.g. `getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporalvalidators>> ).
 
 It also allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object.
 This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
@@ -817,7 +819,7 @@ context.buildConstraintViolationWithTemplate(
 
 [tck-testable]#If [methodname]`disableDefaultConstraintViolation()` is called, no custom error is added (using the error builder) and if the constraint is not valid, a [classname]`ValidationException` is raised.#
 
-[[constraintsdefinitionimplementation-validationimplementation-temporal-validators]]
+[[constraintsdefinitionimplementation-validationimplementation-temporalvalidators]]
 
 ==== Implementation of temporal constraint validators
 
@@ -832,7 +834,7 @@ include::{validation-api-source-dir}javax/validation/ClockProvider.java[lines=11
 A conforming Bean Validation implementation provides a default clock provider which returns a clock representing the current system time and default time zone.#
 It is recommended that implementations call `Clock#systemDefaultZone()` to obtain the clock.
 
-When bootstrapping a validator factory or validator, an alternative clock provider can be registered (see <<bootstrapping>>).
+When bootstrapping a validator factory or validator, an alternative clock provider can be registered (see <<validationapi-bootstrapping>>).
 This can be useful for testing, for applying the time zone of the currently logged in user in a multi-user, multi time zone application or for running batch applications with a logical date and time different from the actual current date and time.
 
 [[constraintsdefinitionimplementation-validationimplementation-example]]
@@ -1064,7 +1066,7 @@ public interface ConstraintValidatorFactory {
 
 ====
 
-[tck-testable]#The default [classname]`ConstraintValidatorFactory` provided by the Bean Validation provider implementation uses the public no-arg constructor of the [classname]`ConstraintValidator` class.# A custom [classname]`ConstraintValidatorFactory` can be provided; for example it may benefit from dependency injection control in constraint implementations (see <<bootstrapping-usageandcontainerexpectation>>). Any constraint implementation relying on [classname]`ConstraintValidatorFactory` behaviors specific to an implementation (dependency injection, no no-arg constructor and so on) is not portable, hence great care should be given before walking that path. Make sure to configure the Bean Validation provider to honor any specific needs your [classname]`ConstraintValidator` has. As constraint designer and writer, make sure to document any specific non compliant requirements.
+[tck-testable]#The default [classname]`ConstraintValidatorFactory` provided by the Bean Validation provider implementation uses the public no-arg constructor of the [classname]`ConstraintValidator` class.# A custom [classname]`ConstraintValidatorFactory` can be provided; for example it may benefit from dependency injection control in constraint implementations (see <<validationapi-bootstrapping-usageandcontainerexpectation>>). Any constraint implementation relying on [classname]`ConstraintValidatorFactory` behaviors specific to an implementation (dependency injection, no no-arg constructor and so on) is not portable, hence great care should be given before walking that path. Make sure to configure the Bean Validation provider to honor any specific needs your [classname]`ConstraintValidator` has. As constraint designer and writer, make sure to document any specific non compliant requirements.
 
 [classname]`ConstraintValidatorFactory` should not cache instances as the state of each instance can be altered in the [methodname]`initialize()` method.
 
