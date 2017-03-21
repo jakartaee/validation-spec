@@ -2,7 +2,9 @@
 //
 // License: Apache License, Version 2.0
 // See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
-
+:chapNum: {counter:chapter}
+:index: 0
+:tIndex: 0
 [[validationapi]]
 
 == Validation APIs
@@ -16,6 +18,8 @@ The default package for the Bean Validation APIs is [classname]`javax.validation
 The main Bean Validation API is the [classname]`javax.validation.Validator` interface.
 
 A [classname]`Validator` instance is able to validate instances of beans and their associated objects if any. It is recommended to leave the caching of [classname]`Validator` instances to the [classname]`ValidatorFactory`. [tck-not-testable]#[classname]`Validator` implementations must be thread-safe.#
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Validator interface
 ====
@@ -34,6 +38,8 @@ The methods [methodname]`validate()`, [methodname]`validateProperty()` and [meth
 [methodname]`getConstraintsForClass()` returns constraint-related metadata for given types and is described in detail in <<constraintmetadata>>.
 
 [methodname]`unwrap()` is provided as a way to access objects of a given type specific to a Bean Validation provider typically as a complement to the [classname]`Validator` contract. Using this method makes your code non portable.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Using unwrap to access a provider specific contract
 ====
@@ -157,6 +163,8 @@ validator.validateValue("city", "Paris").size() == 0
 ==== Methods for validating method and constructor constraints
 
 The methods for the validation of parameters and return values of methods and constructors can be found on the interface [classname]`javax.validation.executable.ExecutableValidator`.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .ExecutableValidator interface
 ====
@@ -687,6 +695,8 @@ The [methodname]`getLeafBean()` method returns the following object:
 
 [methodname]`unwrap()` is provided as a way to access objects of a given type specific to a Bean Validation provider typically as a complement to the [classname]`ConstraintViolation` contract. Using this method makes your code non portable.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Path, Node and ElementKind interfaces
 ====
 
@@ -784,6 +794,8 @@ Nodes are of the following possible types:
 
 
 It is possible to narrow a node instance to its precise type and extract node specific information by the use of [methodname]`Node.getKind()` and [methodname]`Node.as(Class<? extends Node>)`. [tck-testable]#In particular, [classname]`MethodNode` and [classname]`ConstructorNode` host [methodname]`getParameterTypes()` which return the method or constructor parameter list.# [tck-testable]#Likewise [classname]`ParameterNode` hosts [methodname]`getParameterIndex()` which returns the parameter index in the method or constructor parameter list.#
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Narrow a node to its specific type
 ====
@@ -904,6 +916,8 @@ From [methodname]`getRootBean()`, [methodname]`getPropertyPath()`, [methodname]`
 
 Let there be the following object definitions:
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Object model definition for examples
 ====
 
@@ -977,6 +991,7 @@ public class Library {
 Assuming a [classname]`Book` instance gets validated, the property paths to the different constraints would be as described in <<table-propertypath>>:
 
 [[table-propertypath]]
+[caption="Table {chapter}.{counter:tIndex}: "]
 
 .propertyPath examples
 [options="header"]
@@ -1013,6 +1028,7 @@ PropertyNode(name=rating,inIterable=false, index=null, key=null, kind=ElementKin
 Assuming the constructor and methods of the [classname]`Library` class are subject to method constraint validation, the following property paths would exist for the different constraints:
 
 [[table-method-level-propertypath]]
+[caption="Table {chapter}.{counter:tIndex}: "]
 
 .Property path examples for constrained methods or constructors
 [options="header"]
@@ -1111,6 +1127,8 @@ Set<ConstraintViolation> constraintViolations = validator.validate(book);
 [classname]`ConstraintViolations` is a set of size 2. One of the entries represents the failure of `@NotEmpty` (or more precisely [classname]`@Size(min=1)` a composing constraint of [classname]`@NotEmpty`) on the `title` property.
 
 The [classname]`ConstraintViolation` object for this failure passes the following assertions:
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Test assertions on ContraintViolation
 ====
@@ -1442,6 +1460,8 @@ A message interpolator is responsible for transforming the so called message des
 
 Below are two examples using message parameters and expressions. The second is evaluated using Expression Language as defined in <<message-expressions>>.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Message using parameters
 ====
 
@@ -1451,6 +1471,8 @@ Value must be between {min} and {max}
 ----
 
 ====
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Message using expressions
 ====
@@ -1628,6 +1650,7 @@ myapp.creditcard.error=credit card number not valid
 ----
 
 [[table-messageinterpolation]]
+[caption="Table {chapter}.{counter:tIndex}: "]
 
 .message interpolation
 |===============
@@ -1643,6 +1666,8 @@ myapp.creditcard.error=credit card number not valid
 Here is an approach to specify the [classname]`Locale` value to choose on a given [classname]`Validator` using a [classname]`Locale` aware [classname]`MessageInterpolator`. See <<bootstrapping>> for more details on the APIs.
 
 [[validationapi-message-examples-specificlocale]]
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Use MessageInterpolator to use a specific Locale value
 ====
@@ -1695,6 +1720,7 @@ Validator validator = validatorFactory.usingContext()
 Most of the time, however, the relevant [classname]`Locale` will be provided by your application framework transparently. This framework will implement its own version of [classname]`MessageInterpolator` and pass it during the [classname]`ValidatorFactory` configuration. The application will not have to set the [classname]`Locale` itself. This example shows how a container framework would implement [classname]`MessageInterpolator` to provide a user specific default locale.
 
 [[validationapi-message-examples-jsflocale]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Contextual container possible [classname]`MessageInterpolator` implementation
 ====
@@ -1765,6 +1791,8 @@ Integrators are encouraged to use Bean Validation's metadata API to find whether
 
 Here is an example of what such metadata usage would be:
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Using metadata API to figure out if method interception is required
 ====
 
@@ -1814,6 +1842,8 @@ public boolean requiresReturnValueValidation(Class<?> type, Method method) {
 ----
 
 ====
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Using metadata API to figure out if constructor interception is required
 ====
@@ -1924,6 +1954,8 @@ Let's first see the API in action through some examples before diving into the c
 
 The most simple approach is to initialize the default Bean Validation provider or the one defined in the XML configuration file. The [classname]`ValidatorFactory` is then ready to provide [classname]`Validator` instances.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Simple Bean Validation bootstrap sequence
 ====
 
@@ -1943,6 +1975,8 @@ factory.close();
 [tck-not-testable]#The [classname]`ValidatorFactory` object is thread-safe.# Building [classname]`Validator` instances is typically a cheap operation. Building a [classname]`ValidatorFactory` is typically more expensive. Make sure to check your Bean Validation implementation documentation for more accurate details.
 
 The second example shows how a container can customize some Bean Validator resource handling to match its own behavior.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Customize message resolution, traversable resolver, constraint validator factory, parameter name provider and clock provider implementation
 ====
@@ -1970,6 +2004,8 @@ factory.close();
 
 The third example shows how to bootstrap Bean Validation in an environment not following the traditional Java classloader strategies (such as tools or alternative service containers like OSGi). They can provide some alternative provider resolution strategy to discover Bean Validation providers.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Customize the Bean Validation provider resolution mechanism
 ====
 
@@ -1992,6 +2028,8 @@ factory.close();
 ====
 
 The next example shows how a client can choose a specific Bean Validation provider and configure provider specific properties programmatically in a type-safe way.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Use a specific provider and add specific configuration
 ====
@@ -2040,6 +2078,8 @@ public class ACMEProvider implements ValidationProvider<ACMEConfiguration> {
 
 The last example shows how a [classname]`Validator` can use a specific [classname]`MessageInterpolator` implementation.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Use a specific MessageInterpolator instance for a given Validator
 ====
 
@@ -2069,6 +2109,8 @@ We will now explore the various interfaces, their constraints and usage. We will
 
 [tck-not-testable]#[classname]`ValidatorFactory` implementations must be thread-safe.# [classname]`ValidatorFactory` implementations can cache [classname]`Validator` instances if needed.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .ValidatorFactory interface
 ====
 
@@ -2082,6 +2124,8 @@ include::{validation-api-source-dir}javax/validation/ValidatorFactory.java[lines
 A [classname]`ValidatorFactory` is provided by a [classname]`Configuration` object.
 
 [methodname]`unwrap()` is provided as a way to access objects of a given type specific to a Bean Validation provider typically as a complement to the [classname]`ValidatorFactory` contract. Using this method makes your code non portable.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Using unwrap to access a provider specific contract
 ====
@@ -2109,6 +2153,8 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [classname]`ValidatorContext` returned by [methodname]`usingContext()` can be used to customize the state in which the [classname]`Validator` must be initialized. This is used to customize the [classname]`MessageInterpolator`, the [classname]`TraversableResolver`, the [classname]`ParameterNameProvider`, the  [classname]`ClockProvider` or the [classname]`ConstraintValidatorFactory`.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .ValidatorContext interface
 ====
 
@@ -2120,6 +2166,8 @@ include::{validation-api-source-dir}javax/validation/ValidatorContext.java[lines
 ====
 
 [tck-testable]#The `MessageInterpolator`, the `TraversableResolver`, the `ConstraintValidatorFactory`, the `ParameterNameProvider` or the `ClockProvider` passed to the `ValidatorContext` are used instead of the ``ValidatorFactory``'s `MessageInterpolator`, `TraversableResolver`, `ConstraintValidatorFactory`, `ParameterNameProvider` or `ClockProvider` instances.#
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Use of ValidatorFactory
 ====
@@ -2173,6 +2221,8 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 
 Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the initialized [classname]`ValidatorFactory` instance. [tck-testable]#It is legal to invoke [methodname]`buildValidatorFactory()` several times, e.g. in order to retrieve several [classname]`ValidatorFactory` instances with a slightly different configuration (see <<using-configuration-several-times>>).#
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Configuration and BootstrapConfiguration interfaces
 ====
 
@@ -2193,6 +2243,7 @@ include::{validation-api-source-dir}javax/validation/BootstrapConfiguration.java
 To facilitate the use of provider specific configuration methods, [classname]`Configuration` uses generics: [classname]`Configuration<T extends Configuration<T>>` ; the generic return type [classname]`T` is returned by chaining methods. The provider specific sub interface must resolve the generic T as itself as shown in <<example-providerspecific-config>>.
 
 [[example-providerspecific-config]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Example of provider specific Configuration sub interface
 ====
@@ -2225,6 +2276,8 @@ A typical implementation of [classname]`Configuration` also implements [classnam
 ====
 
 [tck-not-testable]#Streams represented in the XML configuration and opened by the [classname]`Configuration` implementation must be closed by the [classname]`Configuration` implementation after the [classname]`ValidatorFactory` creation (or if an exception occurs).# Streams provided programmatically are the responsibility of the application.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .ConfigurationState interface
 ====
@@ -2263,6 +2316,8 @@ Other exception causes may occur.
 
 Here is an example of [classname]`Configuration` use.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .Use Configuration
 ====
 
@@ -2280,6 +2335,7 @@ ValidatorFactory factory = configuration
 The following shows an example of setting up a [classname]`Configuration`, retrieving a validator factory from it, subsequently altering the configuration and then retrieving another factory:
 
 [[using-configuration-several-times]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Using Configuration to create several validator factories
 ====
@@ -2307,6 +2363,8 @@ Here, [varname]`factory1` is set up using a custom message interpolator, while [
 ===== ValidationProviderResolver
 
 [tck-testable]#[classname]`ValidationProviderResolver` returns the list of Bean Validation providers available at runtime and more specifically a [classname]`ValidationProvider` instance for each provider available in the context.# This service can be customized by implementing [classname]`ValidationProviderResolver`. [tck-not-testable]#Implementations must be thread-safe.#
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .ValidationProviderResolver
 ====
@@ -2359,6 +2417,7 @@ The default [classname]`ValidationProviderResolver` can be accessed via [classna
 * Provide a provider specific [classname]`Configuration` implementation. This [classname]`Configuration` will specifically build [classname]`ValidatorFactory` instances of the provider it comes from.
 * Build a [classname]`ValidatorFactory` object from the configuration provided by [classname]`ConfigurationState`.
 
+[caption="Example {chapter}.{counter:index}: "]
 
 .ValidationProvider
 ====
@@ -2424,6 +2483,8 @@ public interface ValidationProvider<T extends Configuration<T>> {
 
 ====
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .BootstrapState interface
 ====
 
@@ -2462,6 +2523,8 @@ public interface BootstrapState {
 [tck-testable]#A client can request a specific Bean Validation provider by using [classname]`<T extends Configuration<T>, U extends ValidationProvider<T>> Validation.byProvider(Class<U>)` or by defining the provider in the XML configuration file.# The key uniquely identifying a Bean Validation provider is the [classname]`ValidationProvider` implementation specific to this provider.
 
 A [classname]`ValidationProvider` implementation is linked (via its generic parameter) to a specific sub interface of [classname]`Configuration`. The Bean Validation bootstrap API makes use of this link to return the specific [classname]`Configuration` subinterface implementation in a type-safe way when a specific provider is requested. The sub interface does not have to add any new methods but is the natural holder for provider specific configuration methods.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Example of provider specific Configuration sub interface
 ====
@@ -2526,6 +2589,8 @@ The provider discovery mechanism uses the following algorithm:
 ==== Validation
 
 The [classname]`Validation` class is the entry point used to bootstrap Bean Validation providers. [tck-testable]#The first entry point, [methodname]`buildDefaultValidatorFactory()`, is considered to be the default [classname]`ValidatorFactory` and is equivalent to the [classname]`ValidatorFactory` returned by [code]`Validation.byDefaultProvider().configure().buildValidatorFactory()`.#
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Validation methods available
 ====
@@ -2672,6 +2737,8 @@ public class Validation {
 
 [tck-testable]#The second entry point lets the client provide a custom [classname]`ValidationProviderResolver` instance. This instance is passed to [classname]`GenericBootstrap`. [classname]`GenericBootstrap` builds a generic [classname]`Configuration` using the first [classname]`ValidationProvider` returned by [classname]`ValidationProviderResolution` and calling [code]`ValidationProvider.createGenericConfiguration(BootstrapState state)`.# [classname]`BootstrapState` holds the [classname]`ValidationProviderResolution` instance passed to [classname]`GenericBootstrap` and will be used by the [classname]`Configuration` instance when resolving the provider to use. Note that [code]`ValidationProvider.createGenericConfiguration` returns a [classname]`Configuration` object not bound to any particular provider.
 
+[caption="Example {chapter}.{counter:index}: "]
+
 .GenericBootstrap interface
 ====
 
@@ -2685,6 +2752,8 @@ include::{validation-api-source-dir}javax/validation/bootstrap/GenericBootstrap.
 [tck-testable]#The last entry point lets the client define the specific Bean Validation provider requested as well as a custom [classname]`ValidationProviderResolver` implementation if needed. The entry point method, [methodname]`Validation.byProvider(Class<U> providerType)`, takes the provider specific [classname]`ValidationProvider` implementation type and returns a [classname]`ProviderSpecificBootstrap` object that guarantees to return an instance of the specific [classname]`Configuration` sub interface.# Thanks to the use of generics, the client API does not have to cast to the [classname]`Configuration` sub interface.
 
 A [classname]`ProviderSpecificBootstrap` object can optionally receive a [classname]`ValidationProviderResolver` instance.
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .ProviderSpecificBootstrap interface
 ====
@@ -2780,6 +2849,8 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 [tck-testable]#All these top level elements are optional.#
 
 [tck-testable]#If a public no-arg constructor is missing on any of the classes referenced by the relevant XML elements, a [classname]`ValidationException` is raised during the [methodname]`Configuration.buildValidatorFactory()` call.#
+
+[caption="Example {chapter}.{counter:index}: "]
 
 .Example of META-INF/validation.xml file
 ====

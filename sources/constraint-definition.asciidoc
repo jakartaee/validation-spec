@@ -2,7 +2,9 @@
 //
 // License: Apache License, Version 2.0
 // See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
-
+:chapNum: {counter:chapter}
+:index: 0
+:tIndex: 0
 [[constraintsdefinitionimplementation]]
 
 == Constraint Definition
@@ -139,7 +141,7 @@ Payloads are typically used by validation clients to associate some metadata inf
 One use case for payload shown in <<example-payload>> is to associate a severity to a constraint. This severity can be exploited by a presentation framework to adjust how a constraint failure is displayed.
 
 [[example-payload]]
-
+[caption="Example {chapter}.{counter:index}: "]
 .Use of payload to associate severity to a constraint
 ====
 
@@ -175,6 +177,7 @@ The `payload` information can be retrieved from error reports via the [classname
 
 [tck-testable]#The type of the `validationAppliesTo` parameter is [classname]`ConstraintTarget`. The default value must be [classname]`ConstraintTarget.IMPLICIT`.#
 
+[caption="Example {chapter}.{counter:index}: "]
 .validationAppliesTo and ConstraintTarget
 ====
 
@@ -207,6 +210,7 @@ The constraint annotation definitions may define additional elements to paramete
 ==== Examples
 
 [[example-definition-notnull]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Simple constraint definition
 ====
@@ -225,6 +229,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 <<example-definition-notnull>> marks a [classname]`String` as a well-formed order number. The constraint validator is implemented by [classname]`OrderNumberValidator`.
 
 [[example-definition-crossparameter]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Simple cross-parameter constraint definition
 ====
@@ -244,6 +249,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 <<example-definition-crossparameter>> shows a cross-parameter constraint which ensures that two date parameters of a method are in the correct order. The constraint validator is implemented by [classname]`DateParametersConsistentValidator`.
 
 [[example-definition-genericandcrossparameter]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Constraint that is both generic and cross parameter
 ====
@@ -273,6 +279,7 @@ public User createUser(String email, String password, String repeatPassword) { [
 <<example-definition-genericandcrossparameter>> shows a constraint that can be applied both on the annotated element and across parameters of a method or a constructor. Note in this case the presence of [methodname]`validationAppliesTo`.
 
 [[example-definition-length]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Constraint definition with default parameter
 ====
@@ -289,6 +296,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 <<example-definition-length>> ensures that a given frequency is within the scope of human ears. The constraint definition includes an optional parameter that may be specified when the constraint is applied.
 
 [[example-definition-mandatory]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Constraint definition with mandatory parameter
 ====
@@ -317,6 +325,7 @@ Each constraint annotation type should be meta-annotated with [classname]`java.l
 This marks the constraint annotation type as repeatable and lets users specify the constraint several times without explicitly using the [classname]`List` annotation.
 All built-in annotations follow this pattern.
 
+[caption="Example {chapter}.{counter:index}: "]
 .Multi-valued constraint definition
 ====
 [source, JAVA, indent=0]
@@ -325,6 +334,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 ----
 ====
 
+[caption="Example {chapter}.{counter:index}: "]
 .Multi-valued constraint declaration
 ====
 [source, JAVA, indent=0]
@@ -336,6 +346,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 In this example, both constraints apply to the [methodname]`zipCode` field but with different groups and with different error messages.
 It is also possible to specify a constraint several times by explicitly using the [classname]`@List` annotation (though simply repeating the annotation is the preferred idiom as of Bean Validation 2.0 and Java 8):
 
+[caption="Example {chapter}.{counter:index}: "]
 .Multi-valued constraint declaration using explicit [classname]`@List` annotation
 ====
 [source, JAVA, indent=0]
@@ -360,6 +371,7 @@ Constraint composition is useful in several ways:
 
 Composition is done by annotating a constraint annotation with the composing constraint annotations.
 
+[caption="Example {chapter}.{counter:index}: "]
 .Composition is done by annotating the composed constraint
 ====
 
@@ -378,6 +390,7 @@ Annotating an element with [classname]`@FrenchZipCode` (the composed annotation)
 
 It is possible to ensure that composing annotations do not raise individual error reports. In this scenario, if one or more composing annotations are invalid, the main constraint is automatically considered invalid and the corresponding error report is generated. To mark a constraint as raising a single constraint error report if either the composed or one of the composing constraints fail, use the [classname]`@ReportAsSingleViolation` annotation.
 
+[caption="Example {chapter}.{counter:index}: "]
 .If any of the composing constraints fail, the error report corresponding to [classname]`@FrenchZipCode` is raised and none other.
 ====
 
@@ -399,6 +412,7 @@ include::{validation-api-source-dir}javax/validation/ReportAsSingleViolation.jav
 
 [tck-testable]#Composing annotations can define the value of `message` and custom attributes (excluding [methodname]`groups`, [methodname]`payload` and [methodname]`validationAppliesTo`) but these are fixed in the composed constraint definition.#
 
+[caption="Example {chapter}.{counter:index}: "]
 .Composing annotations can use attributes. They are fixed for a given main annotation. All [classname]`@FrenchZipCode` constraints have a [classname]`@Size` restricted to 5.
 ====
 
@@ -417,6 +431,7 @@ Such an attribute is annotated with one or more `@OverridesAttribute` annotation
 --
 
 [[example-composing-overridden]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Attributes from composing annotations can be overridden by attributes from the composed annotation
 ====
@@ -473,6 +488,7 @@ A `ConstraintDeclarationException` will be raised in this case.
 
 [tck-testable]#If `index` is undefined, the single constraint declaration is targeted.#
 
+[caption="Example {chapter}.{counter:index}: "]
 .Use of constraintIndex in @OverridesAttribute
 ====
 
@@ -539,6 +555,7 @@ This restriction is not a theoretical limitation and a future version of the spe
 
 [tck-testable]#By default, a [classname]`ConstraintValidator` targets the (returned) element annotated by the constraint. You can make a [classname]`ConstraintValidator` target the array of parameters of a method or constructor (aka cross-parameter) by annotating the validator implementation with [classname]`@SupportedValidationTarget`.#
 
+[caption="Example {chapter}.{counter:index}: "]
 .@SupportedValidationTarget annotation and ValidationTarget enum
 ====
 
@@ -602,6 +619,7 @@ public enum ValidationTarget {
 
 [tck-testable]#If a [classname]`ConstraintValidator` targets array of parameters (cross-parameter), [classname]`T` must resolve to [classname]`Object[]` (or [classname]`Object`) in order to have the array of parameter values passed to the [methodname]`isValid()` method. A [classname]`ConstraintDefinitionException` is raised otherwise.#
 
+[caption="Example {chapter}.{counter:index}: "]
 .Example of cross parameter ConstraintValidator
 ====
 
@@ -627,6 +645,7 @@ public class ScriptAssertValidator implements ConstraintValidator<ScriptAssert,O
 
 [[example-constraintsdefinitionimplementation-validationimplementation-validdef]]
 
+[caption="Example {chapter}.{counter:index}: "]
 .Valid ConstraintValidator definitions
 ====
 
@@ -666,6 +685,7 @@ public class ELScriptValidator implements ConstraintValidator<ELScript, Object> 
 And some invalid definitions in <<example-constraintsdefinitionimplementation-validationimplementation-invaliddef>>.
 
 [[example-constraintsdefinitionimplementation-validationimplementation-invaliddef]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Invalid ConstraintValidator definitions
 ====
@@ -731,6 +751,7 @@ This object is built from the default constraint message template as defined by 
 <<example-constraintsdefinitionimplementation-validationimplementation-errorbuilder>> shows a few examples.
 
 [[example-constraintsdefinitionimplementation-validationimplementation-errorbuilder]]
+[caption="Example {chapter}.{counter:index}: "]
 
 .Using the fluent API to build custom constraint violations
 ====
@@ -839,6 +860,7 @@ This can be useful for testing, for applying the time zone of the currently logg
 
 ==== Examples
 
+[caption="Example {chapter}.{counter:index}: "]
 .ConstraintValidator implementation
 ====
 
@@ -880,6 +902,7 @@ This [classname]`ConstraintValidator` checks that a text is within the accepted 
 
 The following listing shows a validator implementing the validation logic for a cross-parameter constraint.
 
+[caption="Example {chapter}.{counter:index}: "]
 .Cross-parameter validator implementation
 ====
 
@@ -919,6 +942,7 @@ public class DateParametersConsistentValidator implements<DateParametersConsiste
 
 The following listing shows a validator implementing the validation logic for a constraint that is both generic and cross-parameter.
 
+[caption="Example {chapter}.{counter:index}: "]
 .Generic and cross-parameter validator implementation
 ====
 
@@ -945,6 +969,7 @@ public class ELScriptValidator implements<ELScript, Object> {
 
 The next example shows how to use [classname]`ConstraintValidatorContext`.
 
+[caption="Example {chapter}.{counter:index}: "]
 .Use of ConstraintValidatorContext
 ====
 
@@ -1004,6 +1029,7 @@ The default error message is disabled and replaced by a specific error message d
 
 The following example shows how to obtain the current date and time via the `ClockProvider` when validating a temporal constraint such as `@Past`:
 
+[caption="Example {chapter}.{counter:index}: "]
 .Validation of a temporal constraint
 ====
 
@@ -1027,6 +1053,7 @@ The lifecycle of [classname]`ConstraintValidator` instances is fully dependent o
 [classname]`ConstraintValidator` instances created by the [classname]`ValidatorFactory` -level [classname]`ConstraintValidatorFactory` can be released when the [classname]`ValidatorFactory` is being closed.
 ====
 
+[caption="Example {chapter}.{counter:index}: "]
 .ConstraintValidatorFactory interface
 ====
 
