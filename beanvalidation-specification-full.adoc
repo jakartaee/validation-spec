@@ -10,10 +10,10 @@ Gunnar Morling
 :anchor:
 :toc: left
 :toclevels: 3
-:sectnums:
-:sectnumlevels: 4
+:sectnumlevels: 5
 :docinfo:
 :docinfodir: ../docinfo
+:title-logo-image: image:beanvalidation_logo.png[align=left,pdfwidth=20%]
 
 [preface]
 
@@ -54,7 +54,7 @@ Other than this limited license, you acquire no right, para or interest in or to
 
 TRADEMARKS
 
-No right, para, or interest in or to any trademarks, service marks, or trade names of Red Hat Inc. or Red Hat's licensors is granted hereunder. Java and Java-related logos, marks and names are trademarks or registered trademarks of Sun Microsystems, Inc. in the U.S. and other countries.
+No right, para, or interest in or to any trademarks, service marks, or trade names of Red Hat Inc. or Red Hat's licensors is granted hereunder. Java and Java-related logos, marks and names are trademarks or registered trademarks of Oracle and/or its affiliates in the U.S. and other countries.
 
 DISCLAIMER OF WARRANTIES
 
@@ -5387,6 +5387,7 @@ The [methodname]`getLeafBean()` method returns the following object:
  *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
+ * @author Guillaume Smet
  */
 public interface Path extends Iterable<Path.Node> {
 
@@ -5457,6 +5458,7 @@ public interface Path extends Iterable<Path.Node> {
          *     <li>{@link ElementKind#PARAMETER}: {@link ParameterNode}</li>
          *     <li>{@link ElementKind#CROSS_PARAMETER}: {@link CrossParameterNode}</li>
          *     <li>{@link ElementKind#RETURN_VALUE}: {@link ReturnValueNode}</li>
+         *     <li>{@link ElementKind#CONTAINER_ELEMENT}: {@link ContainerElementNode}</li>
          * </ul>
          * <p>
          * This is useful to narrow down the {@code Node} type and access node specific
@@ -5567,6 +5569,22 @@ public interface Path extends Iterable<Path.Node> {
      * @since 1.1
      */
     interface BeanNode extends Node {
+
+        /**
+         * @return the type of the container the node is placed in, if contained in a container type such as
+         * {@code Optional}, {@code List} or an array, {@code null} otherwise
+         *
+         * @since 2.0
+         */
+        Class<?> getContainerClass();
+
+        /**
+         * @return the index of the type parameter affected by the violated constraint, if contained in a generic
+         * container type such as {@code Optional}, {@code List} or {@code Map}.
+         *
+         * @since 2.0
+         */
+        Integer getTypeArgumentIndex();
     }
 
     /**
@@ -5575,6 +5593,40 @@ public interface Path extends Iterable<Path.Node> {
      * @since 1.1
      */
     interface PropertyNode extends Node {
+
+        /**
+         * @return the type of the container the node is placed in, if contained in a container type such as
+         * {@code Optional}, {@code List} or an array, {@code null} otherwise
+         *
+         * @since 2.0
+         */
+        Class<?> getContainerClass();
+
+        /**
+         * @return the index of the type parameter affected by the violated constraint, if contained in a generic
+         * container type such as {@code Optional}, {@code List} or {@code Map}, {@code null} otherwise
+         * @since 2.0
+         */
+        Integer getTypeArgumentIndex();
+    }
+
+    /**
+     * Node representing an element in a container such as {@code Optional}, {@code List} or an array
+     *
+     * @since 2.0
+     */
+    interface ContainerElementNode extends Node {
+
+        /**
+         * @return the type of the container the node is placed in
+         */
+        Class<?> getContainerClass();
+
+        /**
+         * @return the index of the type parameter affected by the violated constraint, if contained in a generic
+         * container type such as {@code Optional}, {@code List} or {@code Map}, {@code null} if contained in an array
+         */
+        Integer getTypeArgumentIndex();
     }
 }
 ----
@@ -7611,8 +7663,10 @@ public interface Configuration<T extends Configuration<T>> {
      * Returns an implementation of the {@link ClockProvider}
      * interface following the default {@code ClockProvider}
      * defined in the specification:
-     *
-     * TODO BVAL-496 paste definition of the specification
+     * <ul>
+     *     <li>returns a clock representing the current system time and default time
+     *     zone.</li>
+     * </ul>
      *
      * @return default {@code ClockProvider} implementation compliant with
      *         the specification
@@ -11992,7 +12046,7 @@ These exception cases can be determined at compile time by a tool such as an ann
 
 === No Bean Validation Provider detected: `NoProviderFoundException`
 
-[tck-testable]#When trying to bootstrap Bean Validation via `Validation.buildDefaultValidatorFactory()` or `Validation.byDefaultProvider().configure()` and no Bean Validation provider could be found, a `NoProviderFoundException` is raised.#
+[tck-not-testable]#When trying to bootstrap Bean Validation via `Validation.buildDefaultValidatorFactory()` or `Validation.byDefaultProvider().configure()` and no Bean Validation provider could be found, a `NoProviderFoundException` is raised.#
 
 `NoProviderFoundException` is a subclass of `ValidationException`.
 
@@ -12364,7 +12418,7 @@ If no custom [classname]`ConstraintValidatorFactory` is requested by the user, t
 
 [tck-testable]#Bean Validation requires that CDI beans support constructor and method validation as defined in <<integration-general-executable>>. Validation must happen at the equivalent time an interceptor occurs when having priority `Interceptor.Priority.PLATFORM_AFTER+800`, in other words priority of `4800`.#
 
-[tck-not-testable]#For maximum portability, it is recommended to mark CDI bean interfaces and classes involved in executable validation with [classname]`@ValidateOnExecution` (defaults to `IMPLICIT`). This helps some implementations to be more efficient. Most CDI - Bean Validation integration implementations do not need such marker. In particular this marker should not be needed on validated beans annotated with constraint annotations, [classname]`@Valid` or [classname]`@ValidateOnExecution` anywhere in the class. Such limitation will be removed in a future version of this specification.#
+[tck-not-testable]#For maximum portability, it is recommended to mark CDI bean interfaces and classes involved in executable validation with [classname]`@ValidateOnExecution` (defaults to `IMPLICIT`). This helps some implementations to bind the method validation interceptor. Most CDI - Bean Validation integration implementations do not need such marker. In particular this marker should not be needed on validated beans annotated with constraint annotations, [classname]`@Valid` or [classname]`@ValidateOnExecution` anywhere in the class. Such limitation will be removed in a future version of this specification.#
 
 [NOTE]
 .Discussion on possible implementations
@@ -12512,7 +12566,7 @@ class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
 
 The right callback methods (`indexedValue()`, `keyedValue()` etc.) must be called in order to allow for proper construction of the property path as per the rules laid out in the BV 1.1 spec.
 
-If a non-null value is passed for `nodeName`, a path node of type `TYPE_ARGUMENT` will be appended to the property path.
+If a non-null value is passed for `nodeName`, a path node of type `CONTAINER_ELEMENT` will be appended to the property path.
 That's desirable for collection types for instance. If null is passed, no node will be appended,
 resulting in the same path as if the constraint had been given on the element itself instead of a type parameter.
 That's desirable for pure "wrapper types" such as `Optional`.
@@ -12603,21 +12657,27 @@ This helps to avoid object allocations and allows to handle the case of a single
 
 ==== Extensions to `Node`
 
-There is a new `javax.validation.ElementKind`, `TYPE_ARGUMENT`.
-There is also a new `Node` sub-type, `TypeArgumentNode`:
+There is a new `javax.validation.ElementKind`, `CONTAINER_ELEMENT`.
+There is also a new `Node` sub-type, `ContainerElementNode`:
 
 [source,java]
 ----
-interface TypeArgumentNode extends Node {
+interface ContainerElementNode extends Node {
 
     /**
-     * Returns type parameter affected by the violated constraint.
+     * @return the type of the container the node is placed in, if contained in a container type such as
+     * {@code Optional}, {@code List} or an array, {@code null} otherwise
      */
-    TypeVariable<?> getTypeParameter();
+    Class<?> getContainerClass();
+
+    /**
+     * @return the index of the type parameter affected by the violated constraint in the container class
+     */
+    Integer getTypeArgumentIndex();
 }
 ----
 
-`getTypeParameter()` also needs to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
+`getContainerClass()` and `getTypeArgumentIndex()` also need to be added to `BeanNode` and `PropertyNode` and will return the affected type parameter when violating a class-level or property constraint in the course of cascaded validation of a generic type, such as `List` or `Map`.
 
 ==== Default extractors
 
@@ -12628,35 +12688,54 @@ Compatible implementations provide extractors for the following types out of the
 Both will cause the validation of all the array elements
 ** If a constraint given for an array's component type is validated, a node with the following properties will be added to the path:
 *** name: "<iterable element>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `false`
 *** index: the element's index
 *** key: `null`
-* `java.util.Iterable`
-** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatability with BV 1.1
+*** containerClass: in the case of an array of ``Object``s, `Object[]`, in the case of an array of primitives, the type of the array (e.g. `int[]`)
+*** typeArgumentIndex: `null`
+* `java.util.Iterable` - excluding the case of `java.util.List` described below
+** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
 ** When validating a type argument constraint for `Iterable`, a node with the following properties will be added to the path:
 *** name: "<iterable element>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: the element's index if the iterable is of type `List` or a subtype thereof; `null` otherwise
 *** key: `null`
+*** containerClass: `Iterable`
+*** typeArgumentIndex: `0`
+* `java.util.List`
+** When `@Valid` is given on the iterable element itself, the element and all its entries will be validated; this is to grant backwards compatibility with BV 1.1
+** When `@Valid` is given on the type parameter of an iterable element, all the entries will be validated.
+** When validating a type argument constraint for `List`, a node with the following properties will be added to the path:
+*** name: "<iterable element>"
+*** kind: `CONTAINER_ELEMENT`
+*** isInIterable: `true`
+*** index: the element's index
+*** key: `null`
+*** containerClass: `List`
+*** typeArgumentIndex: `0`
 * `java.util.Map`
-** When `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatability with BV 1.1
+** When `@Valid` is given on the map element itself, the element and all its values will be validated; this is to grant backwards compatibility with BV 1.1
 ** When `@Valid` is given on the key type parameter, the map keys will be validated
 ** When `@Valid` is given on the value type parameter, the map values will be validated
 ** When validating a constraint on the key type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map key>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: `null`
 *** key: key
+*** containerClass: `Map`
+*** typeArgumentIndex: `0`
 ** When validating a constraint on the value type argument of `Map`, a node with the following properties will be added to the path:
 *** name: "<map value>"
-*** kind: `TYPE_ARGUMENT`
+*** kind: `CONTAINER_ELEMENT`
 *** isInIterable: `true`
 *** index: `null`
 *** key: key
+*** containerClass: `Map`
+*** typeArgumentIndex: `1`
 * `java.util.Optional`
 ** No node will be appended to the path when validating type argument constraints on `Optional`
 * `javafx.beans.observable.ObservableValue`
@@ -13344,7 +13423,7 @@ assertThat( node.getIndex() ).isNull();
 
 node = path.next();
 assertThat( node.getName() ).isEqualTo( "<table cell>" );
-assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKind() ).isEqualTo( ElementKind.CONTAINER_ELEMENT );
 assertThat( node.getKey() ).isEqualTo( new CellKey(Year.of( 2015 ), "cds") );
 assertThat( node.getIndex() ).isNull();
 
@@ -13415,7 +13494,7 @@ assertThat( node.getTypeParameter() ).isNull();
 
 node = path.next();
 assertThat( node.getName() ).isEqualTo( "<map value>" );
-assertThat( node.getKind() ).isEqualTo( ElementKind.TYPE_ARGUMENT );
+assertThat( node.getKind() ).isEqualTo( ElementKind.CONTAINER_ELEMENT );
 assertThat( node.getKey() ).isEqualTo( new OrderType( "RETAIL" ) );
 assertThat( node.getIndex() ).isNull();
 assertThat( node.getTypeParameter().getName() ).isEqualTo( "V" );
@@ -13423,7 +13502,7 @@ assertThat( node.getTypeParameter().getName() ).isEqualTo( "V" );
 assertThat( path.hasNext() ).isFalse();
 ----
 
-1. Revisit the names of nodes of kind `TYPE_ARGUMENT`;
+1. Revisit the names of nodes of kind `CONTAINER_ELEMENT`;
 instead of `<iterable element>`, `<map value>` etc. should it be the names of the type parameters in question, i.e. `<E>`, `<V>` etc.?
 
 <<<
