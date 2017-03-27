@@ -116,22 +116,9 @@ Class<? extends Payload>[] payload() default {};
 
 [tck-testable]#Each attachable payload extends [classname]`Payload`.#
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Payload type that can be attached to a given
- * constraint declaration.
- * <p/>
- * Payloads are typically used to carry on metadata information
- * consumed by a validation client.
- * </p>
- * Use of payloads is not considered portable.
- *
- * @author Emmanuel Bernard
- * @author Gerhard Petracek
- */
-public interface Payload {
-}
+include::{validation-api-source-dir}javax/validation/Payload.java[lines=7..-1]
 ----
 
 Payloads are typically used by validation clients to associate some metadata information with a given constraint declaration. Payloads are typically non-portable. Describing payloads as interface extensions as opposed to a string-based approach allows an easier and more type-safe approach.
@@ -544,58 +531,14 @@ This restriction is not a theoretical limitation and a future version of the spe
 .@SupportedValidationTarget annotation and ValidationTarget enum
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-package javax.validation.constraintvalidation;
-
-/**
- * Defines the target(s) a {@link ConstraintValidator} can validate.
- * <p/>
- * A {@code ConstraintValidator} can target the (returned) element
- * annotated by the constraint, the array of parameters of a method
- * or constructor (aka cross-parameter) or both.
- * <p/>
- * If {@code @SupportedValidationTarget} is not present, the
- * {@code ConstraintValidator} targets the (returned) element annotated
- * by the constraint.
- * <p/>
- * A {@code ConstraintValidator} targeting cross-parameter must accept
- * {@code Object[]} (or {@code Object}) as the type of object it validates.
- *
- * @author Emmanuel Bernard
- * @since 1.1
- */
-@Documented
-@Target({ TYPE })
-@Retention(RUNTIME)
-public @interface SupportedValidationTarget {
-
-    ValidationTarget[] value();
-}
+include::{validation-api-source-dir}javax/validation/constraintvalidation/SupportedValidationTarget.java[lines=7..8;17..-1]
 ----
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-package javax.validation.constraintvalidation;
-
-/**
- * List of possible targets for a {@link ConstraintValidator}.
- *
- * @author Emmanuel Bernard
- * @since 1.1
- */
-public enum ValidationTarget {
-
-    /**
-     * (Returned) element annotated by the constraint.
-     */
-    ANNOTATED_ELEMENT,
-
-    /**
-     * Array of parameters of the annotated method or constructor (aka cross-parameter).
-     */
-    PARAMETERS
-}
+include::{validation-api-source-dir}javax/validation/constraintvalidation/ValidationTarget.java[lines=7..8;11..-1]
 ----
 
 ====
@@ -1032,36 +975,9 @@ The lifecycle of [classname]`ConstraintValidator` instances is fully dependent o
 .ConstraintValidatorFactory interface
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Instantiates a {@link ConstraintValidator} instance based off its class.
- * The {@code ConstraintValidatorFactory} is <b>not</b> responsible
- * for calling {@link ConstraintValidator#initialize(java.lang.annotation.Annotation)}.
- *
- * @author Dhanji R. Prasanna
- * @author Emmanuel Bernard
- * @author Hardy Ferentschik
- */
-public interface ConstraintValidatorFactory {
-
-    /**
-     * @param key The class of the constraint validator to instantiate
-     *
-     * @return A new constraint validator instance of the specified class
-     */
-    <T extends ConstraintValidator<?, ?>> T getInstance(Class<T> key);
-
-    /**
-     * Signals {@code ConstraintValidatorFactory} that the instance is no longer
-     * being used by the Bean Validation provider.
-     *
-     * @param instance validator being released
-     *
-     * @since 1.1
-     */
-    void releaseInstance(ConstraintValidator<?, ?> instance);
-}
+include::{validation-api-source-dir}javax/validation/ConstraintValidatorFactory.java[lines=7..-1]
 ----
 
 ====

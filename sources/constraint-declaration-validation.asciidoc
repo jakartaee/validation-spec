@@ -78,23 +78,9 @@ In addition to supporting instance validation, validation of graphs of objects i
 .[classname]`@Valid` annotation
 
 ====
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Marks a property, method parameter or method return type for validation cascading.
- * <p/>
- * Constraints defined on the object and its properties are be validated when the
- * property, method parameter or method return type is validated.
- * <p/>
- * This behavior is applied recursively.
- *
- * @author Emmanuel Bernard
- * @author Hardy Ferentschik
- */
-@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER })
-@Retention(RUNTIME)
-public @interface Valid {
-}
+include::{validation-api-source-dir}javax/validation/Valid.java[lines=7..8;20..-1]
 ----
 
 ====
@@ -193,24 +179,9 @@ public class User {
 
 [classname]`Default` is a group predefined by the specification.
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-package javax.validation.groups;
-
-/**
- * Default Bean Validation group.
- * <p/>
- * Unless a list of groups is explicitly defined:
- * <ul>
- *     <li>constraints belong to the {@code Default} group</li>
- *     <li>validation applies to the {@code Default} group</li>
- * </ul>
- * Most structural constraints should belong to the default group.
- *
- * @author Emmanuel Bernard
- */
-public interface Default {
-}
+include::{validation-api-source-dir}javax/validation/groups/Default.java[lines=7..-1]
 ----
 
 [[constraintdeclarationvalidationprocess-groupsequence-groupinheritance]]
@@ -792,41 +763,9 @@ Some constraints can target an executable's return value as well as its array of
 In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). Bean Validation defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
 
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Provides names for method and constructor parameters.
- * <p/>
- * Used by the Bean Validation runtime when creating constraint violation
- * objects for violated method constraints.
- * <p/>
- * Implementations must be thread-safe.
- *
- * @author Gunnar Morling
- * @since 1.1
- */
-public interface ParameterNameProvider {
-
-    /**
-     * Returns the names of the parameters of the given constructor.
-     *
-     * @param constructor the constructor for which the parameter names shall be
-     *        retrieved; never {@code null}
-     * @return a list containing the names of the parameters of the given
-     *         constructor; may be empty but never {@code null}
-     */
-    List<String> getParameterNames(Constructor<?> constructor);
-
-    /**
-     * Returns the names of the parameters of the given method.
-     *
-     * @param method the method for which the parameter names shall be retrieved;
-     *        never {@code null}
-     * @return a list containing the names of the parameters of the given method;
-     *         may be empty but never {@code null}
-     */
-    List<String> getParameterNames(Method method);
-}
+include::{validation-api-source-dir}javax/validation/ParameterNameProvider.java[lines=7..8;13..-1]
 ----
 
 [tck-testable]
@@ -1305,64 +1244,7 @@ Likewise, it is sometimes undesirable to cascade validation despite the use of [
 
 [source, JAVA]
 ----
-/**
- * Contract determining if a property can be accessed by the Bean Validation provider.
- * This contract is called for each property that is being either validated or cascaded.
- * <p/>
- * A traversable resolver implementation must be thread-safe.
- *
- * @author Emmanuel Bernard
- */
-public interface TraversableResolver {
-    /**
-     * Determines if the Bean Validation provider is allowed to reach the property state.
-     *
-     * @param traversableObject object hosting {@code traversableProperty}
-     *        or {@code null} if {@code validateValue} is called
-     * @param traversableProperty the traversable property
-     * @param rootBeanType type of the root object passed to the Validator
-     *        or hosting the method or constructor validated
-     * @param pathToTraversableObject path from the root object to
-     *        {@code traversableObject}
-     *        (using the path specification defined by Bean Validator)
-     * @param elementType either {@code FIELD} or {@code METHOD}
-     * @return {@code true} if the Bean Validation provider is allowed to
-     *         reach the property state, {@code false} otherwise
-     */
-    boolean isReachable(Object traversableObject,
-                        Node traversableProperty,
-                        Class<?> rootBeanType,
-                        Path pathToTraversableObject,
-                        ElementType elementType);
-
-    /**
-     * Determines if the Bean Validation provider is allowed to cascade validation on
-     * the bean instance returned by the property value
-     * marked as {@code @Valid}.
-     * <p/>
-     * Note that this method is called only if
-     * {@link #isReachable(Object, javax.validation.Path.Node, Class, Path, java.lang.annotation.ElementType)}
-     * returns {@code true} for the same set of arguments and if the property
-     * is marked as {@link Valid}.
-     *
-     * @param traversableObject object hosting {@code traversableProperty}
-     *        or {@code null} if {@code validateValue} is called
-     * @param traversableProperty the traversable property
-     * @param rootBeanType type of the root object passed to the Validator
-     *        or hosting the method or constructor validated
-     * @param pathToTraversableObject path from the root object to
-     *        {@code traversableObject}
-     *        (using the path specification defined by Bean Validator)
-     * @param elementType either {@code FIELD} or {@code METHOD}
-     * @return {@code true} if the Bean Validation provider is allowed to
-     *         cascade validation, {@code false} otherwise
-     */
-    boolean isCascadable(Object traversableObject,
-                         Node traversableProperty,
-                         Class<?> rootBeanType,
-                         Path pathToTraversableObject,
-                         ElementType elementType);
-}
+include::{validation-api-source-dir}javax/validation/TraversableResolver.java[lines=7..8;13..-1]
 ----
 
 [tck-testable]#[methodname]`isReachable()` is called for every property about to be accessed either for validation or for cascading.# A property is _reachable_ if this method returns `true`.
