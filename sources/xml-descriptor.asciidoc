@@ -663,6 +663,12 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
 [source, XML]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Bean Validation API
+  ~
+  ~ License: Apache License, Version 2.0
+  ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+  -->
 <xs:schema attributeFormDefault="unqualified"
            elementFormDefault="qualified"
            targetNamespace="http://xmlns.jcp.org/xml/ns/validation/mapping"
@@ -767,6 +773,26 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
         </xs:sequence>
         <xs:attribute type="xs:string" name="name" use="required"/>
     </xs:complexType>
+    <xs:complexType name="containerElementTypeType">
+        <xs:sequence>
+            <xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/>
+            <xs:element type="map:constraintType"
+                        name="constraint"
+                        maxOccurs="unbounded"
+                        minOccurs="0"/>
+            <xs:element type="map:containerElementTypeType"
+                        name="containerElementType"
+                        maxOccurs="unbounded"
+                        minOccurs="0"/>
+        </xs:sequence>
+        <xs:attribute name="typeArgumentIndex" use="optional">
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="0" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="classType">
         <xs:sequence>
             <xs:element type="map:groupSequenceType"
@@ -820,6 +846,10 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
+            <xs:element type="map:containerElementTypeType"
+                        name="containerElementType"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
@@ -870,6 +900,10 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
+            <xs:element type="map:containerElementTypeType"
+                        name="containerElementType"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
@@ -883,6 +917,10 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
             <xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/>
             <xs:element type="map:groupConversionType"
                         name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
+            <xs:element type="map:containerElementTypeType"
+                        name="containerElementType"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element type="map:constraintType"
@@ -915,6 +953,10 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
+            <xs:element type="map:containerElementTypeType"
+                        name="containerElementType"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element type="map:constraintType"
                         name="constraint"
                         minOccurs="0"
@@ -940,6 +982,12 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
 [source, XML]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Bean Validation API
+  ~
+  ~ License: Apache License, Version 2.0
+  ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+  -->
 <xs:schema attributeFormDefault="unqualified"
            elementFormDefault="qualified"
            targetNamespace="http://xmlns.jcp.org/xml/ns/validation/configuration"
@@ -982,6 +1030,7 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
             <xs:element type="xs:string" name="constraint-validator-factory" minOccurs="0"/>
             <xs:element type="xs:string" name="parameter-name-provider" minOccurs="0"/>
             <xs:element type="xs:string" name="clock-provider" minOccurs="0"/>
+            <xs:element type="xs:string" name="value-extractor" maxOccurs="unbounded" minOccurs="0"/>
             <xs:element type="config:executable-validationType" name="executable-validation" minOccurs="0"/>
             <xs:element type="xs:string" name="constraint-mapping" maxOccurs="unbounded" minOccurs="0"/>
             <xs:element type="config:propertyType" name="property" maxOccurs="unbounded" minOccurs="0"/>
