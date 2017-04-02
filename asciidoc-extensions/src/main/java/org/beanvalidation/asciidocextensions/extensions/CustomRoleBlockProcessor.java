@@ -4,7 +4,7 @@
  * License: Apache License, Version 2.0
  * See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
  */
-package org.beanvalidation.asciidocextensions;
+package org.beanvalidation.asciidocextensions.extensions;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,7 +27,7 @@ public class CustomRoleBlockProcessor extends BlockProcessor {
 
 	public CustomRoleBlockProcessor(String name, Map<String, Object> config) {
 		//Override the config map as we can't configure it using the ANT task
-		super( name, initialConfig() );
+		super( name, initialConfig( config ) );
 	}
 
 	@Override
@@ -38,17 +38,17 @@ public class CustomRoleBlockProcessor extends BlockProcessor {
 		DocumentRuby document = parent.getDocument();
 		String attr = String.valueOf( document.getAttr( "backend" ) );
 
-		if ( ! "pdf".equals( attr ) ) {
+		if ( !"pdf".equals( attr ) ) {
 			//'paragraph' generates simple-para: you can't nest them when rendering PDF.
 			attributes.put( "role", getName() );
-			return createBlock( parent, "paragraph", lines, attributes, options );
+			AbstractBlock block = createBlock( parent, "paragraph", lines, attributes, options );
+			return block;
 		}
 		//.. so use an 'open' block for PDF.
 		return createBlock( parent, "open", lines, attributes, options );
 	}
 
-	private static Map<String, Object> initialConfig() {
-		HashMap<String, Object> config = new HashMap<>();
+	private static Map<String, Object> initialConfig(Map<String, Object> config) {
 		config.put( "contexts", Arrays.asList( ":open", ":compound", ":simple", ":verbatim", ":paragraph", ":role" ) );
 		return config;
 	}
