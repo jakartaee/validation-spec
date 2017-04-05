@@ -1,11 +1,13 @@
-package org.beanvalidation.asciidocextensions;
+package org.beanvalidation.asciidocextensions.extensions;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.asciidoctor.ast.Document;
@@ -20,7 +22,8 @@ import org.asciidoctor.extension.PreprocessorReader;
  */
 public class SavePreprocessedOutputPreprocessor extends Preprocessor {
 
-	private static final String OUTPUT_FILE = "target/preprocessed/beanvalidation-specification-full.adoc";
+	private static final String OUTPUT_FILE_NAME = "beanvalidation-specification-full.adoc";
+	private static final String OUTPUT_FILE_DIRECTORY = "target/preprocessed/";
 
 	private static final List<String> FILTER_LICENSE_MARKERS = Arrays.asList( "[preface]", "<<<" );
 	private static final String COMMENT_MARKER = "//";
@@ -33,12 +36,14 @@ public class SavePreprocessedOutputPreprocessor extends Preprocessor {
 
 	@Override
 	public PreprocessorReader process(Document document, PreprocessorReader reader) {
+		Path filePath = Paths.get( OUTPUT_FILE_DIRECTORY, OUTPUT_FILE_NAME );
 		try {
-			Files.write( Paths.get( OUTPUT_FILE ), filterLines( reader.readLines() ) );
+			Files.createDirectories( Paths.get( OUTPUT_FILE_DIRECTORY ) );
+			Files.write( filePath, filterLines( reader.readLines() ) );
 			return reader;
 		}
 		catch (IOException e) {
-			throw new RuntimeException( "Unable to write the preprocessed file " + OUTPUT_FILE, e );
+			throw new RuntimeException( String.format( Locale.ENGLISH, "Unable to write the preprocessed file %s", filePath.toAbsolutePath() ), e );
 		}
 	}
 

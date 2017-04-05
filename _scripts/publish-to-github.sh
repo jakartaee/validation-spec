@@ -6,7 +6,7 @@ if [[ $rc != 0 ]] ; then
     exit $rc
 fi
 
-pushd target
+pushd documentation/target
 # clone hibernate.github.io in _tmp if not present
 if [ ! -d "beanvalidation.github.io" ];
 then
@@ -23,7 +23,7 @@ git fetch origin
 git reset --hard origin/master
 
 # Synchronize the content with the latest-draft folder of the site
-rsync -av --delete --exclude ".git" ../html/ latest-draft/spec/
+rsync -av --delete --exclude ".git" ../html5/ latest-draft/spec/
 rc=$?
 if [[ $rc != 0 ]] ; then
     echo "ERROR: Latest-draft sync failed!"

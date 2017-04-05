@@ -26,7 +26,7 @@ git fetch $remote
 git worktree add -B $branch $workingDir $remote/$branch
 
 echo "Generating full spec document"
-ant generate-preprocessed
+mvn clean package -Ppreprocessed
 
 echo "Updating $branch branch"
 cd $workingDir && git add --all && git commit -m "Publishing to $branch (create_full_spec_document.sh)"
