@@ -494,7 +494,8 @@ include::{validation-api-source-dir}javax/validation/ElementKind.java[lines=7..-
 ** The parameter named as defined by the [classname]`ParameterNameProvider` (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>) for a method or constructor parameter.
 ** The literal `<cross-parameter>` for a method or constructor cross-parameter.
 ** The literal `<return value>` for a method or constructor return value.
-
+** The name set by the applied value extractor for a container element constraint,
+e.g. `<map value>` if the default value extractor for map values is applied
 
 * [tck-testable]#[methodname]`isInIterable()` returns `true` if the node represents an object contained in an [classname]`Iterable` or in a [classname]`Map`, `false` otherwise.#
 * [tck-testable]#[methodname]`getIndex()` returns the index of the node if it is contained in an array or [classname]`List`. Returns `null` otherwise.#
@@ -511,9 +512,18 @@ Nodes are of the following possible types:
 * [classname]`ParameterNode`
 * [classname]`CrossParameterNode`
 * [classname]`ReturnValueNode`
+* [classname]`ContainerElementNode`
 
+It is possible to narrow a node instance to its precise type and extract node specific information by the use of [methodname]`Node.getKind()` and [methodname]`Node.as(Class<? extends Node>)`.
 
-It is possible to narrow a node instance to its precise type and extract node specific information by the use of [methodname]`Node.getKind()` and [methodname]`Node.as(Class<? extends Node>)`. [tck-testable]#In particular, [classname]`MethodNode` and [classname]`ConstructorNode` host [methodname]`getParameterTypes()` which return the method or constructor parameter list.# [tck-testable]#Likewise [classname]`ParameterNode` hosts [methodname]`getParameterIndex()` which returns the parameter index in the method or constructor parameter list.#
+[tck-testable]#In particular, [classname]`MethodNode` and [classname]`ConstructorNode` host [methodname]`getParameterTypes()` which return the method or constructor parameter list.#
+[tck-testable]#Likewise [classname]`ParameterNode` hosts [methodname]`getParameterIndex()` which returns the parameter index in the method or constructor parameter list.#
+[tck-testable]
+--
+`BeanNode`, `PropertyNode` and `ContainerElementNode` host `getContainerClass()` and `getTypeArgumentIndex()`.
+The former returns the class of the container in case the constrained element is contained in a container type such as `Optional`, `List` or an array.
+The latter returns the index of the affected type argument in case the constrained element is contained in a generic type such as `Optional`, `List` or `Map`.
+--
 
 .Narrow a node to its specific type
 ====
@@ -536,6 +546,11 @@ case CONSTRUCTOR:
     break;
 case PARAMETER:
     arg = node.as(ParameterNode.class).getParameterIndex();
+    break;
+case CONTAINER_ELEMENT:
+    ContainerElementNode containerElementNode = node.as(ContainerEleemntNode.class);
+    containerClass = containerElementNode.getContainerClass();
+    typeArgumentIndex = containerElementNode.getTypeArgumentIndex();
     break;
 case CROSS_PARAMETER:
     [...]
@@ -561,7 +576,8 @@ case PROPERTY:
 ** [tck-testable]#if the association is a [classname]`List` or an array, the following [classname]`Node` object added contains the index value in [methodname]`getIndex()`.#
 ** [tck-testable]#if the association is a [classname]`Map`, the following [classname]`Node` object added (representing a given map entry) contains the key value in [methodname]`getKey()`#
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`)#
-
+** [tck-testable]#if the traversed object is a container type (e.g. a `List`, `Map`, `Optional` or array), the following `Node` object added returns the type of the traversed container via `getContainerType()`#
+** [tck-testable]#if the traversed object is generic container type (e.g. a `List` or `Map`, `Optional`), the following `Node` object added returns the index of the type argument to which the constraint applies via `getTypeArgumentIndex()`#
 
 [tck-testable]
 --
@@ -595,8 +611,16 @@ case PROPERTY:
 ** [tck-testable]#if the parameter/return value is a [classname]`Map`, the following [classname]`Node` object added (representing a given map entry) contains the key value in [methodname]`getKey()`.#
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`).#
 
+[tck-testable]
+--
+* For a container element constraint:
 
-
+** a [classname]`ContainerElementNode` object is added to [classname]`Path` whose `name` is the node name produced by the corresponding value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>).
+The [classname]`ElementKind` of the node is [varname]`ElementKind.CONTAINER_ELEMENT`.
+`getContainerClass()` returns the type of the container hosting the constraint.
+`getTypeArgumentIndex()` returns the index of the type argument hosting the constraint, if the element is stored in a generic container.
+** the property path is considered complete
+--
 
 [tck-testable]
 --
@@ -1608,9 +1632,9 @@ factory.close();
 
 [tck-not-testable]#The [classname]`ValidatorFactory` object is thread-safe.# Building [classname]`Validator` instances is typically a cheap operation. Building a [classname]`ValidatorFactory` is typically more expensive. Make sure to check your Bean Validation implementation documentation for more accurate details.
 
-The second example shows how a container can customize some Bean Validator resource handling to match its own behavior.
+The second example shows how a container can customize aspects like message interpolation, constraint validator instantiation and others.
 
-.Customize message resolution, traversable resolver, constraint validator factory, parameter name provider and clock provider implementation
+.Customize message resolution, traversable resolver etc.
 ====
 
 [source, JAVA]
@@ -1623,6 +1647,8 @@ ValidatorFactory factory = Validation
           .traversableResolver( new JPAAwareTraversableResolver() )
           .parameterNameProvider( new AnnotationBasedParameterNameProvider() )
           .clockProvider( new BatchJobClockProvider() )
+          .addValueExtractor( new TableValueExtractor() )
+          .addValueExtractor( new MultiMapValueExtractor() )
           .buildValidatorFactory();
 
 //cache the factory somewhere
@@ -1815,6 +1841,7 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 * the constraint validator factory instance
 * the parameter name provider instance
 * the clock provider instance
+* one or more value extractor instance(s)
 * XML constraint mappings
 * provider specific properties
 * whether or not [classname]`META-INF/validation.xml` is considered
@@ -1836,6 +1863,10 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 ====
 [methodname]`BootstrapConfiguration.getDefaultValidatedExecutableTypes()` and [methodname]`BootstrapConfiguration.isExecutableValidationEnabled()` are not used by the Bean Validation engine but exposed here for interception technologies - see <<integration-general-executable>>.
 ====
+
+Via `addValueExtractor()`, additional value extractor implementations can be added to the configuration.
+A value extractor for a given type and type parameter takes precedence over any extractor for the same type and type parameter
+detected through the service loader or given in the XML configuration.
 
 [tck-testable]#Using [methodname]`addMapping()`, additional constraint mapping XML descriptors can be added to the configuration# (see <<validationapi-bootstrapping-xmlconfiguration>>). The given input streams should support the [methodname]`mark()` and [methodname]`reset()` methods defined by [classname]`java.io.InputStream`. [tck-testable]#Streams not supporting the [methodname]`mark()` and [methodname]`reset()` methods will be wrapped with an [classname]`InputStream` implementation supporting these methods by the Bean Validation provider in order to allow the streams to be read several times.#
 
@@ -2277,7 +2308,6 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 [tck-testable]#When bootstrapping a Bean Validation provider, if the [classname]`ValidationProviderResolver` either fails or if the expected provider is not found, a [classname]`ValidationException` is raised.#
 
 [[validationapi-bootstrapping-xmlconfiguration]]
-
 ==== XML configuration: META-INF/validation.xml
 
 [tck-testable]#Unless explicitly ignored by calling [classname]`Configuration.ignoreXMLConfiguration()`, a [classname]`Configuration` takes into account the configuration available in [filename]`META-INF/validation.xml`.# [tck-testable]#This configuration file is optional# but can be used by applications to refine some of the Bean Validation behavior. [tck-not-testable]#If more than one [filename]`META-INF/validation.xml` file is found in the classpath, a [classname]`ValidationException` is raised.#
@@ -2295,6 +2325,15 @@ The bootstrap API is designed to allow complete portability amongst Bean Validat
 [tck-testable]#`parameter-name-provider`: represents the fully qualified class name of the [classname]`ParameterNameProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
 
 [tck-testable]#`clock-provider`: represents the fully qualified class name of the [classname]`ClockProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
+
+[tck-testable]
+--
+`value-extractor`: represents the fully qualified class name of a [classname]`ValueExtractor` implementation.
+When defined in XML, the implementation must have a public no-arg constructor.
+`value-extractor` can be given several times for declaring multiple extractors.
+An extractor for a given type and type parameter configured via XML takes precedence
+over any extractor for the same type and type parameter detected through the service loader or provided by the Bean Validation implementation itself.
+--
 
 [tck-testable]#`executable-validation`: allows to disable executable validation entirely via its attribute [code]`enabled="false"` and optionally contains `default-validated-executable-types`. `enabled` defaults to `true`.#
 

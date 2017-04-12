@@ -11,6 +11,9 @@ The Bean Validation specification defines a framework for declaring constraints 
 
 Bean Validation also offers a way to declare constructor and method constraints where parameters and return values are the constrained elements. We will discuss method constraints declaration in detail in <<constraintdeclarationvalidationprocess-methodlevelconstraints>>.
 
+Furthermore, constraints can be applied to the elements of generic container types such as `Map`, `List` or `Optional`.
+Container element constraints are discussed in detail in <<constraintdeclarationvalidationprocess-containerelementconstraints>>.
+
 [[constraintdeclarationvalidationprocess-requirements]]
 
 === Requirements on classes to be validated
@@ -37,10 +40,20 @@ The JavaBeans specification specifies that a getter is a method whose
 
 [tck-testable]
 --
-The target of an annotation definition can be a field, property, type, constructor or method return value, constructor or method parameter or constructor or method cross-parameter provided that:
+The target of an annotation definition can be a
+
+* type
+* field or property
+* constructor or method return value
+* constructor or method parameter
+* constructor or method cross-parameter
+* container element
+
+provided that:
 
 * the constraint definition supports the specified target ([classname]`java.lang.annotation.Target`)
-* one of the [classname]``ConstraintValidator``s declared on the constraint supports the declared type of the target or in the case of cross-parameter, one cross-parameter [classname]`ConstraintValidator` is present (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>> to learn about [classname]`ConstraintValidator` resolution).
+* one of the [classname]``ConstraintValidator``s declared on the constraint supports the declared type of the target or in the case of cross-parameter, one cross-parameter [classname]`ConstraintValidator` is present (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>> to learn about [classname]`ConstraintValidator` resolution)
+* in the case of container element constraints, a corresponding value extractor exists (see <<constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution>> for the details of value extractor resolution)
 --
 
 [[constraintdeclarationvalidationprocess-requirements-objectvalidation]]
@@ -85,9 +98,7 @@ include::{validation-api-source-dir}javax/validation/Valid.java[lines=7..8;20..-
 
 ====
 
-
-
-[tck-testable]#Consider the situation where bean [classname]`X` contains a field of type [classname]`Y`. By annotating field [classname]`Y` with the [classname]`@Valid` annotation, the Validator will validate [classname]`Y` (and its properties) when [classname]`X` is validated.# [tck-testable]#The exact type [classname]`Z` of the value contained in the field declared of type [classname]`Y` (subclass, implementation) is determined at runtime. The constraint definitions of [classname]`Z` are used.# This ensures proper polymorphic behavior for associations marked [classname]`@Valid`.
+[tck-testable]#Consider the situation where bean [classname]`X` contains a field of type [classname]`Y`. By annotating field [classname]`Y` with the [classname]`@Valid` annotation, the Validator will validate [classname]`Y` (and its properties) when [classname]`X` is validated.# [tck-testable]#The exact type [classname]`Z` of the value contained in the field declared of type [classname]`Y` (subclass, implementation) is determined at runtime. The constraint definitions of [classname]`Z` are used.# This ensures proper polymorphic behavior for associations marked with [classname]`@Valid`.
 
 Collection-valued, array-valued and generally [classname]`Iterable` fields and properties may also be decorated with the [classname]`@Valid` annotation. This causes the contents of the iterator to be validated. [tck-testable]#Any object implementing [classname]`java.lang.Iterable` is supported.# This includes specifically:
 
@@ -102,7 +113,49 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
+As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
+provided a value extractor implementation (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>) for that container type is present.
+Amongst others, there are built-in value extractors for the generic collection types listed above (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-builtinvalueextractors>>).
+In addition, there is a built-in extractor for the key objects of maps.
+
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
+
+===== Examples
+
+.Making elements of a list subject to graph validation
+====
+[source, JAVA]
+----
+public class User {
+
+    @Valid
+    private List<PhoneNumber> phoneNumbers;
+}
+----
+====
+
+.Making values of a map subject to graph validation
+====
+[source, JAVA]
+----
+public class User {
+
+    @Valid
+    private Map<AddressType, Address> addressesByType;
+}
+----
+====
+
+.Making keys and values of a map subject to graph validation
+====
+[source, JAVA]
+----
+public class User {
+
+    private Map<@Valid AddressType, @Valid Address> addressesByType;
+}
+----
+====
 
 [[constraintdeclarationvalidationprocess-constraintdeclaration]]
 
@@ -1026,6 +1079,300 @@ public class SimpleOrderService extends OrderService {
 
 The return value constraints in [classname]`DefaultOrderService` are legal, as they strengthen the postconditions of the [methodname]`placeOrder()` method as constituted by the super class [classname]`OrderService` but don't weaken them.
 
+[[constraintdeclarationvalidationprocess-containerelementconstraints]]
+=== Container element constraints
+
+Constraints can be applied to the elements of container types, e.g. `List`, `Map`, `Optional` or arrays.
+This is done by annotating type arguments in the case of generic container types and by annotating the component type in the case of arrays.
+Container element constraints can be applied to containers that are
+
+* fields,
+* properties,
+* method or constructor parameters or
+* method return values.
+
+.Container element constraints
+====
+[source, JAVA]
+----
+private List<@Email String> emails;
+
+public Optional<@Email String> getEmail() {
+    [...]
+}
+
+public Map<@NotNull String, @ValidAddress Address> getAddressesByType() {
+    [...]
+}
+
+public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) String> searchTerms) {
+    [...]
+}
+
+public Person(String @Email @NotNull [] emails) {
+    [...]
+}
+----
+====
+
+When a field, property, executable parameter or method return value is validated,
+any container element constraints of that element will be validated alongside any other other constraints hosted by that element.
+
+When a container element constraint is detected, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
+which retrieves the value(s) from the container so they can be validated.
+This may be a single value - e.g. in the case of `Optional` which wraps exactly one value if the `Optional` is not empty -
+or multiple values in the case of collection types or arrays.
+
+Container element constraints can be applied to nested container types:
+
+.Container element constraints on nested containers
+====
+[source, JAVA]
+----
+private Map<String, @NotEmpty List<@ValidAddress Address>> addressesByType;
+----
+====
+
+In such case multiple value extractors will be invoked.
+In the example above,
+
+* the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
+* for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
+* the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
+
+[[constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping]]
+==== Implicit unwrapping of containers
+
+Besides specifying container element constraints on type arguments, it is also possible to declare container element constraints on non-generic container types.
+This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its elements.
+An example are JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
+
+.Implicit unwrapping of container elements
+====
+[source, JAVA]
+----
+@Size(max=10) private StringProperty name;
+@Positive private IntegerProperty positiveInt;
+----
+====
+
+Here the `@Size` and `@Positive` constraints don't apply to the annotated `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
+
+For this to work, an unambiguously resolvable value extractor must be defined which carries the `@UnwrapByDefault` annotation (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-unwrapbydefault>>).
+
+If needed, the target (container or container element) of a constraint declared on a container can be explictly specified via the `Unwrap` and `Skip` payload definitions:
+
+.`Payload` types for unwrapping control
+====
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.java[lines=7..8;11..-1]
+----
+====
+
+This is useful for applying a constraint given on a non-generic container to
+
+* the container element if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
+* the container itself in case there is a value extractor marked with `@UnwrapByDefault` (by using `Skip`)
+
+For instance the `@NotNull` constraint is applied to the `StringProperty` container:
+
+[source,java]
+----
+@NotNull(payload = Unwrapping.Skip.class) StringProperty name;
+----
+
+[NOTE]
+====
+For the sake of readability, when applying constraints to the elements of a generic container,
+it is strongly recommended to put the constraints to the type argument instead of the container itself in conjunction with `Unwrapping.Unwrap`.
+I.e. you should prefer
+
+[source,java]
+----
+List<@Email String> emails;
+----
+
+over
+
+[source,java]
+----
+@Email(payload = Unwrapping.Unwrap.class)
+List<String> emails;
+----
+====
+
+[[constraintdeclarationvalidationprocess-valueextractordefinitions]]
+=== Value extractor definitions
+
+Validation of container element constraints as well as cascaded validation of generic container types requires access to the values stored in the container.
+The retrieval of values stored in a container is handled via implementations of the `ValueExtractor` interface:
+
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/ValueExtractor.java[lines=7..8;15..-1]
+----
+
+The validation engine passes the container instance and a value receiver object to the `extractValues()` method.
+Value extractor implementations must invoke one of the `ValueReceiver` methods for each element contained in the container, passing the element value and, optionally, a node name.
+When calling
+
+* `value()`, the given value will be passed to the validation engine;
+* `iterableValue()`, the given value will be passed to the validation engine and the corresponding property path node (see <<validationapi-constraintviolation>>) will be marked as iterable, i.e. `Node#isInIterable()` returns `true`;
+* `indexedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given index, i.e. `Node#getIndex()` returns the given index value;
+* `keyedValue()`, the given value will be passed to the validation engine and the corresponding property path node will  be marked as iterable and it will have set the given key, i.e. `Node#getKey()` returns the given key value
+
+When passing a non-null node name to any of the receiver methods and the extractor is called in the course of container element validation (and not during cascaded validation),
+a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.
+If null is passed as node name, no node will be appended to the property path in this case.
+The resulting property path will then be the same as if the constraint had been given on container instead of a container element.
+That is desirable for pure wrapper types such as `Optional`.
+
+The container value passed to a value extractor is retrieved from the element that hosts the type argument carrying the constraint or `@Valid` annotation:
+
+[source,java]
+----
+private Map<String, @Valid @RetailOrder Order> ordersByName;
+
+public Map<@NotNull String, Order> getOrdersByName() {
+    return ordersByName;
+}
+----
+
+When validating the `@NotNull` constraint, the map as returned by the getter will be passed to the map key extractor in order to obtain the map keys.
+When validating the `@RetailOrder` constraint and performing cascaded validation,
+the map as obtained directly from the field will be passed to the map value extractor in order to obtain the map values.
+
+[[constraintdeclarationvalidationprocess-valueextractordefinitions-extractedvalue]]
+==== @ExtractedValue
+
+The `@ExtractedValue` annotation is used to denote the element extracted by a given value extractor:
+
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/ExtractedValue.java[lines=7..8;15..-1]
+----
+
+The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.
+
+For generic container types `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
+For array container types `@ExtractedValue` is to be specified on the array component type as used in the extractor definition.
+
+When defined for a generic type, only wildcard type arguments may be annotated with `@ExtractedValue`.
+
+[NOTE]
+====
+This implies that there may not be more than one extractor for a given generic type.
+I.e. there can be an extractor for `List<?>`, but not one for `List<String>` and one for `List<Integer>`.
+====
+
+In case an illegal value extractor definition is detected, a `ValueExtractorDefinitionException` is raised.
+
+[[constraintdeclarationvalidationprocess-valueextractordefinitions-unwrapbydefault]]
+==== @UnwrapByDefault
+
+Value extractor definitions can be marked with the `@UnwrapByDefault` annotation.
+This causes constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>):
+
+.`@UnwrapByDefault` annotation
+====
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/UnwrapByDefault.java[lines=7..8;16..-1]
+----
+====
+
+[source,java]
+----
+@UnwrapByDefault
+class WrapperExtractor implements ValueExtractor<Wrapper<@ExtractedValue ?>> {
+
+	@Override
+	public void extractValues(Wrapper originalValue, ValueReceiver receiver) {
+		// ...
+	}
+}
+----
+
+[[constraintdeclarationvalidationprocess-valueextractordefinitions-builtinvalueextractors]]
+==== Built-in value extractors
+
+Compatible implementations provide value extractors for the following types out of the box:
+
+* Arrays of objects and arrays of all primitive Java data types (`boolean[]`, `int[]` etc.); `indexedValue()` must be invoked for each array element, passing the literal `<iterable element>` as node name
+* `java.util.Iterable`; `iterableValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
+* `java.util.List`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
+* `java.util.Map`; both, map keys and map values, are to be supported;
+`keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
+`keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
+* `java.util.Optional`; `value()` must be invoked if a value is present, passing `null` as node name
+* `javafx.beans.observable.ObservableValue`; `value()` must be invoked for the observable's value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
+* `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
+* `javafx.beans.property.ReadOnlyMapProperty` and `javafx.beans.property.MapProperty`; both, map keys and map values, are to be supported;
+`keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
+`keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
+
+Additional value extractors (amending or overriding the set of built-in extractors) can be registered when bootstrapping the validation engine (see <<constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-registering>>).
+
+==== Examples
+
+A value extractor for the elements of `java.util.List`:
+
+[source,java]
+----
+class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
+
+	@Override
+	public void extractValues(List<?> originalValue, ValueReceiver receiver) {
+		for ( int i = 0; i < originalValue.size(); i++ ) {
+			receiver.indexedValue( "<iterable element>", i, originalValue.get( i ) );
+		}
+	}
+}
+----
+
+A value extractor for the elements of an array of `int`:
+
+[source,java]
+----
+class IntArrayValueExtractor implements ValueExtractor<int @ExtractedValue[]> {
+
+	@Override
+	public void extractValues(int[] originalValue, ValueReceiver receiver) {
+		for ( int i = 0; i < originalValue.length; i++ ) {
+			receiver.indexedValue( "<iterable element>", i, originalValue[i] );
+		}
+	}
+}
+----
+
+A value extractor for `java.util.Optional`:
+
+[source,java]
+----
+public class OptionalValueExtractor implements ValueExtractor<Optional<@ExtractedValue ?>> {
+
+	@Override
+	public void extractValues(Optional<?> originalValue, ValueExtractor.ValueReceiver receiver) {
+		receiver.value( null, originalValue.isPresent() ? originalValue.get() : null );
+	}
+}
+----
+
+The following extractor definition is illegal as it specifies `@ExtractedValue` more than once:
+
+[source,java]
+----
+public class IllegalMapExtractor implements ValueExtractor<Map<@ExtractedValue ?, @ExtractedValue ?>> { ... }
+----
+
+The following extractor definition is illegal as it specifies `@ExtractedValue` on a non-wildcard type argument:
+
+[source,java]
+----
+public class StringListValueExtractor implements ValueExtractor<List<@ExtractedValue String>> { ... }
+----
+
 [[constraintdeclarationvalidationprocess-validationroutine]]
 
 === Validation routine
@@ -1573,7 +1920,195 @@ The resolutions shown in <<table-constraintvalidator-resolution>> occur.
               supertypes of [classname]`String`.
 |===============
 
-[[constraintdeclarationvalidationprocess-validationroutine-examples]]
+[[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution]]
+==== ValueExtractor resolution
+
+When detecting a container element constraint or a container element marked with `@Valid`, the value extractor for obtaining the container's elements must be determined.
+
+A value extractor handles one container type and - in the case of a generic container type - one type parameter of that container type.
+The applicable extractor is identified based on the container type and - in the case of a generic container type - the type argument hosting the container element constraint or `@Valid`.
+
+Exactly one value extractor must be identified when processing a container element constraint or container element marked with `@Valid`.
+
+[[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-registering]]
+===== Registering ValueExtractor implementations
+
+Value extractors can be registered with the validation engine in the following ways (in increasing order of priority):
+
+* Provided by the validation engine itself (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-builtinvalueextractors>>)
+* Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/javax.validation.valueextraction.ValueExtractor_ must be provided,
+with the fully-qualified name(s) of one or more extractor implementations as its contents
+* By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml` (see <<validationapi-bootstrapping-xmlconfiguration>>)
+* By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
+* By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
+
+A value extractor for a given type and type parameter specified at a higher level overrides any other extractors for the same type and type parameter given at lower levels.
+If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
+it will take precedence over any other value extractor implementing `List<@ExtractedValue ?>` given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
+_META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for `List` values.
+
+[[constraintdeclarationvalidationprocess-validationroutine-algorithm-constraints]]
+===== ValueExtractor resolution algorithm for container element constraints
+
+For a container with the declared type `C` whose element type is hosting a constraint, the following resolution rules apply for identifying the value extractor:
+
+* A `ValueExtractor<T>` is said to be _type-compliant_ with `C`, if `C` is a subtype of `T`
+(according to the http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10[Java Language Specification 3rd edition chapter 4.10 Subtyping]).
+Note that `C` is a subtype of `T` if `C` = `T`.
+* A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`,
+** if `C` is a generic container type and the value extractor implementation handles a type parameter that maps to the constrained type argument
+** if `C` is an array container type and the value extractor implementation is type-compliant with `C`
+* If no `ValueExtractor` type-compliant and container-element-compliant with `C` is found amongst the available value extractors, a `UnexpectedTypeException` is raised.
+* A `ValueExtractor<U>` type-compliant with `C` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C` if `U` is a strict subtype of `V`.
+`U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
+* A `ValueExtractor<U>` type-compliant with `C` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C` is strictly more specific than `ValueExtractor<U>`.
+* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, an `UnexpectedTypeException` is raised.
+
+[NOTE]
+.Implementation note
+====
+Extractor retrieval for container element constraints is based on the declared type of constrained elements,
+hence it is recommended that implemenations perform the resolution once and then cache the value extractor for a given constraint.
+====
+
+[[constraintdeclarationvalidationprocess-validationroutine-algorithm-cascaded]]
+===== ValueExtractor resolution algorithm for cascaded validation
+
+For a container with the declared type `C` and the runtime type `C'` whose element type is marked for cascaded validation, the following resolution rules apply for identifying the value extractor:
+
+* A `ValueExtractor<T>` is said to be _type-compliant_ with `C'`, if `C'` is a subtype of `T`.
+Note that `C'` is a subtype of `T` if `C'` = `T`.
+* A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if it handles a type parameter that maps to the type argument marked with `@Valid`
+* If no `ValueExtractor` type-compliant with `C'` and container-element-compliant with `C` is found amongst the available value extractors, a `UnexpectedTypeException` is raised.
+* A `ValueExtractor<U>` type-compliant with `C'` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C'` if `U` is a strict subtype of `V`.
+`U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
+* A `ValueExtractor<U>` type-compliant with `C'` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C'` is strictly more specific than `ValueExtractor<U>`.
+* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, an `UnexpectedTypeException` is raised.
+
+[NOTE]
+.Implementation note
+====
+Extractor retrieval for container element constraints is based on the runtime type of the elements marked with `@Valid`
+(this is to be consistent with the semantics of property paths for cascaded validation defined in Bean Validation 1.x),
+hence it is not possible to perform the extractor resolution only once and cache the result.
+It is recommend though that implementations perform a pre-analysis of applicable extractors based on the declared type,
+requiring to process only a sub-set of all available extractors at runtime.
+====
+
+[[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-implicitunwrapping]]
+===== ValueExtractor resolution algorithm for constraints on non-generic containers
+
+When detecting a constraint given as a _declaration annotation_ and not as a _type annotation_ (i.e. it is given on field, parameter etc. and not given on an a type argument of a generic type), the applicable value extractor, if any, is determined as follows:
+
+* If the constraint carries the `Unwrapping.Skip` payload, no value extractor is applied
+* If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one most-specific type-compliant value extractor, this extractor is applied;
+if there is no type-compliant extractor or multiple most-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised
+* If the constraint carries neither the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
+** If there is exactly one most-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied
+** Otherwise, no value extractor is applied
+
+[[constraintdeclarationvalidationprocess-validationroutine-algorithm-examples]]
+===== Examples
+
+Let's consider a couple of value extractor definitions and their respective `ValueExtractor` resolution against container element constraint declarations:
+
+.`ValueExtractor` resolution
+====
+[source, JAVA]
+----
+public interface ConcurrentList<T> {
+    [...]
+}
+
+public class MyList<T> implements List<T>, ConcurrentList<T> {
+    [...]
+}
+
+public interface Table<R, C, V> {
+    [...]
+}
+
+interface ConfusingMap<K, V> extends Map<V, K> {
+    [...]
+}
+
+interface SingleTypeMap<T> extends Map<T, T> {
+    [...]
+}
+
+interface StringMap extends Map<String, String> {
+    [...]
+}
+
+interface Property<T> {
+    [...]
+}
+
+class StringProperty implements Property<String> {
+    [...]
+}
+
+public class IterableValueExtractor implements ValueExtractor<Iterable<@ExtractedValue ?>> {
+    [...]
+}
+
+public class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
+    [...]
+}
+
+public class ConcurrentListValueExtractor implements ValueExtractor<ConcurrentList<@ExtractedValue ?>> {
+    [...]
+}
+
+public class IntArrayValueExtractor implements ValueExtractor<int @ExtractedValue []> {
+    [...]
+}
+
+public class LongArrayValueExtractor implements ValueExtractor<long @ExtractedValue []> {
+    [...]
+}
+
+public class MapKeyExtractor implements ValueExtractor<Map<@ExtractedValue ?, ?>> {
+    [...]
+}
+
+public class MapValueExtractor implements ValueExtractor<Map<?, @ExtractedValue ?>> {
+    [...]
+}
+
+public class TableValueExtractor implements ValueExtractor<Table<?, ?, @ExtractedValue ?>> {
+    [...]
+}
+
+@UnwrapByDefault
+public class PropertyValueExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
+    [...]
+}
+----
+====
+
+The following value extractor resolutions occur:
+
+[[table-valueextractor-resolution]]
+
+.Resolution of `ValueExtractor` for various container element constraints
+[options="header"]
+|===============
+|Declaration|Resolution
+|`List<@Email String> emails`|`ListValueExtractor`; strictly more specific than `IterableValueExtractor`
+|`Iterable<@Valid Address> addresses = new ArrayList<>()`|`ListValueExtractor` (the runtime type `ArrayList` is used for resolving value extractors for cascaded validation)
+|`Map<@Email String, String> emails`|`MapKeyExtractor`; equally specific as `MapValueExtractor`, but the latter isn't container-element-compliant
+|`int Min(1) [] positiveInts`|`IntArrayExtractor`
+|`ConfusingMap<@Email String, String> map`|`MapValueExtractor`; the constrained type argument maps to the type parameter `V` of `Map`
+|`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed
+|`Optional<@Email String> getEmail() {...}`|`UnexpectedTypeException`; no compliant extractor exists
+|`Table<@Min(1) String, String, String> table`|`UnexpectedTypeException`; `TableValueExtractor` is type-compliant but not container-element-compliant
+|`MyList<@Email String> emails`|`UnexpectedTypeException`; `ListValueExtractor` and `ConcurrentListValueExtractor` are equally specific
+|`SingleTypeMap<@NotEmpty String> map`|`UnexpectedTypeException`; `MapKeyExtractor` and `MapValueExtractor` are equally specific and both container-element-compliant
+|`@NotEmpty(payload=Unwrapping.Unwrap.class) StringMap`|`UnexpectedTypeException`; more than one most-specific extractor is found (`MapKeyExtractor` and `MapValueExtractor`)
+|===============
+
+[[constraintdeclarationvalidationprocess-examples]]
 === Examples
 
 The first example demonstrates how beans, fields and getters are annotated to express some constraints.
