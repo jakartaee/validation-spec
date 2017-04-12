@@ -361,6 +361,64 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 
 ====
 
+[[xml-mapping-constraintdeclarationinxml-containerelementconstraints]]
+===== Container-element overriding
+
+For applying constraints to the elements of generic container types or marking the same for cascaded validation, the `containerElementType` element is used.
+
+`containerElementType` can be used within the `field`, `getter`, `parameter` and `return-value` elements.
+The `typeArgumentIndex` is used to specify the index of the configured type argument.
+The `ignore-annotations` settings effectively applying for the encapsulating element (`field`, `getter` etc.) are applied for `containerElementType`, too.
+The `containerElementType` element can be nested for configuring nested generic containers such as `List<List<String>>`.
+Constraints are applied by adding `constraint` elements to `containerElementType`.
+Whether or not to perform cascaded validation is controlled using the `valid` element.
+Group conversion rules for cascaded validation are specified using the convert-group element.
+
+.Container-element declaration
+====
+[source, XML]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<constraint-mappings
+        xmlns="http://xmlns.jcp.org/xml/ns/validation/mapping"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation=
+            "http://xmlns.jcp.org/xml/ns/validation/mapping validation-mapping-2.0.xsd"
+        version="2.0">
+    <default-package>com.acme.app.domain</default-package>
+    <bean class="Customer" ignore-annotations="false">
+        <!-- Map<String, Address> -->
+        <field name="addressesByType" ignore-annotations="true">
+            <containerElementType typeArgumentIndex="0">
+                [...]
+            </containerElementType>
+            <containerElementType typeArgumentIndex="1">
+                <valid/>
+                [...]
+            </containerElementType>
+            [...]
+        </field>
+
+        <!-- setContactsByType(Map<String, List<String>>) -->
+        <method name="setContactsByType" ignore-annotations="true">
+            <parameter type="java.util.Map">
+                <containerElementType typeArgumentIndex="1">
+                    <valid/>
+                    <containerElementType typeArgumentIndex="0">
+                        <valid/>
+                        [...]
+                    </containerElementType>
+                    [...]
+                </containerElementType>
+                [...]
+            </parameter>
+            [...]
+        </method>
+
+    </bean>
+</constraint-mappings>
+----
+====
 
 [[xml-mapping-constraintdeclarationinxml-constraintdeclaration]]
 ===== Constraint declaration
