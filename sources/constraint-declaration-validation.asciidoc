@@ -115,8 +115,9 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 
 As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
 provided a value extractor implementation (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>) for that container type is present.
-Amongst others, there are built-in value extractors for the generic collection types listed above (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-builtinvalueextractors>>).
+There are built-in value extractors for the generic collection types listed above.
 In addition, there is a built-in extractor for the key objects of maps.
+See <<constraintdeclarationvalidationprocess-valueextractordefinitions-builtinvalueextractors>> for the complete list of built-in value extractors.
 
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
 
@@ -128,6 +129,10 @@ In addition, there is a built-in extractor for the key objects of maps.
 ----
 public class User {
 
+    // preferred style as of Bean Validation 2
+    private List<@Valid PhoneNumber> phoneNumbers;
+
+    // traditional style; continues to be supported
     @Valid
     private List<PhoneNumber> phoneNumbers;
 }
@@ -140,6 +145,10 @@ public class User {
 ----
 public class User {
 
+    // preferred style as of Bean Validation 2
+    private Map<AddressType, @Valid Address> addressesByType;
+
+    // traditional style; continues to be supported
     @Valid
     private Map<AddressType, Address> addressesByType;
 }
@@ -1160,7 +1169,7 @@ Here the `@Size` and `@Positive` constraints don't apply to the annotated `Strin
 
 For this to work, an unambiguously resolvable value extractor must be defined which carries the `@UnwrapByDefault` annotation (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-unwrapbydefault>>).
 
-If needed, the target (container or container element) of a constraint declared on a container can be explictly specified via the `Unwrap` and `Skip` payload definitions:
+If needed, the target (container or container element) of a constraint declared on a container can be explicitly specified via the `Unwrap` and `Skip` payload definitions:
 
 .`Payload` types for unwrapping control
 ====
@@ -1224,8 +1233,8 @@ When calling
 
 When passing a non-null node name to any of the receiver methods and the extractor is called in the course of container element validation (and not during cascaded validation),
 a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.
-If null is passed as node name, no node will be appended to the property path in this case.
-The resulting property path will then be the same as if the constraint had been given on container instead of a container element.
+If null is passed as node name, no node will be appended to the property path.
+The resulting property path will then be the same as if the constraint had been given on the container instead of a container element.
 That is desirable for pure wrapper types such as `Optional`.
 
 The container value passed to a value extractor is retrieved from the element that hosts the type argument carrying the constraint or `@Valid` annotation:
@@ -1272,7 +1281,7 @@ In case an illegal value extractor definition is detected, a `ValueExtractorDefi
 ==== @UnwrapByDefault
 
 Value extractor definitions can be marked with the `@UnwrapByDefault` annotation.
-This causes constraints are automatically applied to the wrapped value if a constraint is found for an element handled by that extractor (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>):
+This causes constraints to be automatically applied to the wrapped value if a constraint is found for an element handled by that extractor (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>):
 
 .`@UnwrapByDefault` annotation
 ====
@@ -1306,7 +1315,7 @@ Compatible implementations provide value extractors for the following types out 
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
 * `java.util.Optional`; `value()` must be invoked if a value is present, passing `null` as node name
-* `javafx.beans.observable.ObservableValue`; `value()` must be invoked for the observable's value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
+* `javafx.beans.observable.ObservableValue`; `value()` must be invoked with the observable value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
 * `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
 * `javafx.beans.property.ReadOnlyMapProperty` and `javafx.beans.property.MapProperty`; both, map keys and map values, are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
@@ -1947,7 +1956,7 @@ If e.g. a value extractor defined as `class MyListValueExtractor implements Valu
 it will take precedence over any other value extractor implementing `List<@ExtractedValue ?>` given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
 _META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for `List` values.
 
-[[constraintdeclarationvalidationprocess-validationroutine-algorithm-constraints]]
+[[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-algorithm-constraints]]
 ===== ValueExtractor resolution algorithm for container element constraints
 
 For a container with the declared type `C` whose element type is hosting a constraint, the following resolution rules apply for identifying the value extractor:
@@ -1958,20 +1967,20 @@ Note that `C` is a subtype of `T` if `C` = `T`.
 * A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`,
 ** if `C` is a generic container type and the value extractor implementation handles a type parameter that maps to the constrained type argument
 ** if `C` is an array container type and the value extractor implementation is type-compliant with `C`
-* If no `ValueExtractor` type-compliant and container-element-compliant with `C` is found amongst the available value extractors, a `UnexpectedTypeException` is raised.
+* If no `ValueExtractor` type-compliant and container-element-compliant with `C` is found among the available value extractors, a `ConstraintDeclarationException` is raised.
 * A `ValueExtractor<U>` type-compliant with `C` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C` if `U` is a strict subtype of `V`.
 `U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
 * A `ValueExtractor<U>` type-compliant with `C` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C` is strictly more specific than `ValueExtractor<U>`.
-* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, an `UnexpectedTypeException` is raised.
+* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, a `ConstraintDeclarationException` is raised.
 
 [NOTE]
 .Implementation note
 ====
 Extractor retrieval for container element constraints is based on the declared type of constrained elements,
-hence it is recommended that implemenations perform the resolution once and then cache the value extractor for a given constraint.
+hence it is recommended that implementations perform the resolution once and then cache the value extractor for a given constraint.
 ====
 
-[[constraintdeclarationvalidationprocess-validationroutine-algorithm-cascaded]]
+[[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-algorithm-cascaded]]
 ===== ValueExtractor resolution algorithm for cascaded validation
 
 For a container with the declared type `C` and the runtime type `C'` whose element type is marked for cascaded validation, the following resolution rules apply for identifying the value extractor:
@@ -1979,11 +1988,11 @@ For a container with the declared type `C` and the runtime type `C'` whose eleme
 * A `ValueExtractor<T>` is said to be _type-compliant_ with `C'`, if `C'` is a subtype of `T`.
 Note that `C'` is a subtype of `T` if `C'` = `T`.
 * A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if it handles a type parameter that maps to the type argument marked with `@Valid`
-* If no `ValueExtractor` type-compliant with `C'` and container-element-compliant with `C` is found amongst the available value extractors, a `UnexpectedTypeException` is raised.
+* If no `ValueExtractor` type-compliant with `C'` and container-element-compliant with `C` is found amongst the available value extractors, a `ConstraintDeclarationException` is raised.
 * A `ValueExtractor<U>` type-compliant with `C'` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C'` if `U` is a strict subtype of `V`.
 `U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
 * A `ValueExtractor<U>` type-compliant with `C'` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C'` is strictly more specific than `ValueExtractor<U>`.
-* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, an `UnexpectedTypeException` is raised.
+* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, a `ConstraintDeclarationException` is raised.
 
 [NOTE]
 .Implementation note
@@ -1991,7 +2000,7 @@ Note that `C'` is a subtype of `T` if `C'` = `T`.
 Extractor retrieval for container element constraints is based on the runtime type of the elements marked with `@Valid`
 (this is to be consistent with the semantics of property paths for cascaded validation defined in Bean Validation 1.x),
 hence it is not possible to perform the extractor resolution only once and cache the result.
-It is recommend though that implementations perform a pre-analysis of applicable extractors based on the declared type,
+It is recommended though that implementations perform a pre-analysis of applicable extractors based on the declared type,
 requiring to process only a sub-set of all available extractors at runtime.
 ====
 
@@ -2001,10 +2010,10 @@ requiring to process only a sub-set of all available extractors at runtime.
 When detecting a constraint given as a _declaration annotation_ and not as a _type annotation_ (i.e. it is given on field, parameter etc. and not given on an a type argument of a generic type), the applicable value extractor, if any, is determined as follows:
 
 * If the constraint carries the `Unwrapping.Skip` payload, no value extractor is applied
-* If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one most-specific type-compliant value extractor, this extractor is applied;
-if there is no type-compliant extractor or multiple most-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised
+* If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one maximally-specific type-compliant value extractor, this extractor is applied;
+if there is no type-compliant extractor or multiple maximally-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised
 * If the constraint carries neither the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
-** If there is exactly one most-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied
+** If there is exactly one maximally-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied
 ** Otherwise, no value extractor is applied
 
 [[constraintdeclarationvalidationprocess-validationroutine-algorithm-examples]]
@@ -2105,7 +2114,7 @@ The following value extractor resolutions occur:
 |`Table<@Min(1) String, String, String> table`|`UnexpectedTypeException`; `TableValueExtractor` is type-compliant but not container-element-compliant
 |`MyList<@Email String> emails`|`UnexpectedTypeException`; `ListValueExtractor` and `ConcurrentListValueExtractor` are equally specific
 |`SingleTypeMap<@NotEmpty String> map`|`UnexpectedTypeException`; `MapKeyExtractor` and `MapValueExtractor` are equally specific and both container-element-compliant
-|`@NotEmpty(payload=Unwrapping.Unwrap.class) StringMap`|`UnexpectedTypeException`; more than one most-specific extractor is found (`MapKeyExtractor` and `MapValueExtractor`)
+|`@NotEmpty(payload=Unwrapping.Unwrap.class) StringMap`|`UnexpectedTypeException`; more than one maximally-specific extractor is found (`MapKeyExtractor` and `MapValueExtractor`)
 |===============
 
 [[constraintdeclarationvalidationprocess-examples]]
