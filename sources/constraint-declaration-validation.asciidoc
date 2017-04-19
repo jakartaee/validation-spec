@@ -1091,8 +1091,8 @@ The return value constraints in [classname]`DefaultOrderService` are legal, as t
 [[constraintdeclarationvalidationprocess-containerelementconstraints]]
 === Container element constraints
 
-Constraints can be applied to the elements of container types, e.g. `List`, `Map`, `Optional` or arrays.
-This is done by annotating type arguments in the case of generic container types and by annotating the component type in the case of arrays.
+Constraints can be applied to the elements of generic containers, e.g. `List`, `Map` or `Optional`.
+This is done by putting constraint annotations to the type arguments of such containers.
 Container element constraints can be applied to containers that are
 
 * fields,
@@ -1117,10 +1117,6 @@ public Map<@NotNull String, @ValidAddress Address> getAddressesByType() {
 public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) String> searchTerms) {
     [...]
 }
-
-public Person(String @Email @NotNull [] emails) {
-    [...]
-}
 ----
 ====
 
@@ -1130,7 +1126,7 @@ any container element constraints of that element will be validated alongside an
 When a container element constraint is detected, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
 which retrieves the value(s) from the container so they can be validated.
 This may be a single value - e.g. in the case of `Optional` which wraps exactly one value if the `Optional` is not empty -
-or multiple values in the case of collection types or arrays.
+or multiple values in the case of collection types.
 
 Container element constraints can be applied to nested container types:
 
@@ -1264,10 +1260,8 @@ include::{validation-api-source-dir}javax/validation/valueextraction/ExtractedVa
 
 The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.
 
-For generic container types `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
-For array container types `@ExtractedValue` is to be specified on the array component type as used in the extractor definition.
-
-When defined for a generic type, only wildcard type arguments may be annotated with `@ExtractedValue`.
+`@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
+Only wildcard type arguments may be annotated with `@ExtractedValue`.
 
 [NOTE]
 ====
@@ -1308,7 +1302,6 @@ class WrapperExtractor implements ValueExtractor<Wrapper<@ExtractedValue ?>> {
 
 Compatible implementations provide value extractors for the following types out of the box:
 
-* Arrays of objects and arrays of all primitive Java data types (`boolean[]`, `int[]` etc.); `indexedValue()` must be invoked for each array element, passing the literal `<iterable element>` as node name
 * `java.util.Iterable`; `iterableValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
 * `java.util.List`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
 * `java.util.Map`; both, map keys and map values, are to be supported;
@@ -1335,21 +1328,6 @@ class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
 	public void extractValues(List<?> originalValue, ValueReceiver receiver) {
 		for ( int i = 0; i < originalValue.size(); i++ ) {
 			receiver.indexedValue( "<iterable element>", i, originalValue.get( i ) );
-		}
-	}
-}
-----
-
-A value extractor for the elements of an array of `int`:
-
-[source,java]
-----
-class IntArrayValueExtractor implements ValueExtractor<int @ExtractedValue[]> {
-
-	@Override
-	public void extractValues(int[] originalValue, ValueReceiver receiver) {
-		for ( int i = 0; i < originalValue.length; i++ ) {
-			receiver.indexedValue( "<iterable element>", i, originalValue[i] );
 		}
 	}
 }
@@ -1964,9 +1942,7 @@ For a container with the declared type `C` whose element type is hosting a const
 * A `ValueExtractor<T>` is said to be _type-compliant_ with `C`, if `C` is a subtype of `T`
 (according to the http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10[Java Language Specification 3rd edition chapter 4.10 Subtyping]).
 Note that `C` is a subtype of `T` if `C` = `T`.
-* A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`,
-** if `C` is a generic container type and the value extractor implementation handles a type parameter that maps to the constrained type argument
-** if `C` is an array container type and the value extractor implementation is type-compliant with `C`
+* A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if `C` is a generic container type and the value extractor implementation handles a type parameter that maps to the constrained type argument
 * If no `ValueExtractor` type-compliant and container-element-compliant with `C` is found among the available value extractors, a `ConstraintDeclarationException` is raised.
 * A `ValueExtractor<U>` type-compliant with `C` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C` if `U` is a strict subtype of `V`.
 `U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
@@ -2069,14 +2045,6 @@ public class ConcurrentListValueExtractor implements ValueExtractor<ConcurrentLi
     [...]
 }
 
-public class IntArrayValueExtractor implements ValueExtractor<int @ExtractedValue []> {
-    [...]
-}
-
-public class LongArrayValueExtractor implements ValueExtractor<long @ExtractedValue []> {
-    [...]
-}
-
 public class MapKeyExtractor implements ValueExtractor<Map<@ExtractedValue ?, ?>> {
     [...]
 }
@@ -2107,7 +2075,6 @@ The following value extractor resolutions occur:
 |`List<@Email String> emails`|`ListValueExtractor`; strictly more specific than `IterableValueExtractor`
 |`Iterable<@Valid Address> addresses = new ArrayList<>()`|`ListValueExtractor` (the runtime type `ArrayList` is used for resolving value extractors for cascaded validation)
 |`Map<@Email String, String> emails`|`MapKeyExtractor`; equally specific as `MapValueExtractor`, but the latter isn't container-element-compliant
-|`int Min(1) [] positiveInts`|`IntArrayExtractor`
 |`ConfusingMap<@Email String, String> map`|`MapValueExtractor`; the constrained type argument maps to the type parameter `V` of `Map`
 |`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed
 |`Optional<@Email String> getEmail() {...}`|`UnexpectedTypeException`; no compliant extractor exists
