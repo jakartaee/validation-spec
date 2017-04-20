@@ -38,7 +38,7 @@ together with `tck-testable` and `tck-not-testable`: `[tck-testable tck-needs-up
 The TCK audit file is an XML file containing all assertions of the TCK. This file is generated with
 help of an XSL transformation (for that purpose the spec is converted into DocBook).
 
-The generation is executed by running `ant createTckAuditFile`. This is required whenever tagged
+The generation is executed by running `ant create-tck-audit-file`. This is required whenever tagged
 elements have been added, updated, removed or changed their position within all tagged elements of
 a section.
 
