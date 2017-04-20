@@ -541,8 +541,6 @@ In this example we will reuse the [classname]`Address` group split and match it 
 
 .Example of group conversion
 ====
-
-
 [source, JAVA]
 ----
 public interface Complete extends Default {}
@@ -564,17 +562,31 @@ public class Address {
 
 public class User {
     @Valid
-    @ConvertGroup.List( {
-        @ConvertGroup(from=Default.class, to=BasicPostal.class),
-        @ConvertGroup(from=Complete.class, to=FullPostal.class)
-    } )
+    @ConvertGroup(from=Default.class, to=BasicPostal.class)
+    @ConvertGroup(from=Complete.class, to=FullPostal.class)
     Set<Address> getAddresses() { [...] }
 }
 ----
-
 ====
 
 When validating an instance of [classname]`User` with the [classname]`Default` group, the associated addresses are validated with the [classname]`BasicPostal` group. When validating an instance of [classname]`User` with the [classname]`Complete` group, the associated addresses are validated with the [classname]`FullPostal` group.
+
+Group conversions can also be applied during container element validation:
+
+.Example of container element validation with group conversion
+====
+[source, JAVA]
+----
+public class User {
+    Set<
+        @Valid
+        @ConvertGroup(from=Default.class, to=BasicPostal.class)
+        @ConvertGroup(from=Complete.class, to=FullPostal.class)
+        Address
+    > getAddresses() { [...] }
+}
+----
+====
 
 The following example shows an illegal declaration of a group conversion rule on a method's return value:
 
@@ -1122,6 +1134,7 @@ public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) Str
 
 When a field, property, executable parameter or method return value is validated,
 any container element constraints of that element will be validated alongside any other other constraints hosted by that element.
+For container element constraints the same rules for validation groups and group sequences apply as for any other constraint on the same element.
 
 When a container element constraint is detected, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
 which retrieves the value(s) from the container so they can be validated.
@@ -1304,13 +1317,13 @@ Compatible implementations provide value extractors for the following types out 
 
 * `java.util.Iterable`; `iterableValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
 * `java.util.List`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
-* `java.util.Map`; both, map keys and map values, are to be supported;
+* `java.util.Map`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
 * `java.util.Optional`; `value()` must be invoked if a value is present, passing `null` as node name
 * `javafx.beans.observable.ObservableValue`; `value()` must be invoked with the observable value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
 * `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
-* `javafx.beans.property.ReadOnlyMapProperty` and `javafx.beans.property.MapProperty`; both, map keys and map values, are to be supported;
+* `javafx.beans.property.ReadOnlyMapProperty` and `javafx.beans.property.MapProperty`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
 

@@ -367,12 +367,14 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 For applying constraints to the elements of generic container types or marking the same for cascaded validation, the `container-element-type` element is used.
 
 `container-element-type` can be used within the `field`, `getter`, `parameter` and `return-value` elements.
+
 The `type-argument-index` is used to specify the index of the configured type argument.
 The `ignore-annotations` settings effectively applying for the encapsulating element (`field`, `getter` etc.) are applied for `container-element-type`, too.
 The `container-element-type` element can be nested for configuring nested generic containers such as `List<List<String>>`.
+
 Constraints are applied by adding `constraint` elements to `container-element-type`.
 Whether or not to perform cascaded validation is controlled using the `valid` element.
-Group conversion rules for cascaded validation are specified using the convert-group element.
+Group conversion rules for cascaded validation are specified using the `convert-group` element.
 
 .Container-element declaration
 ====
@@ -496,6 +498,17 @@ Other custom elements of an annotation are represented by `element`. [tck-testab
             </constraint>
 
 
+        </field>
+
+        <!-- Map<@NotBlank String, @Valid PhoneNumber>
+         -->
+        <field name="phoneNumbersByType">
+            <container-element-type type-argument-index="0">
+                <constraint annotation="javax.validation.constraints.NotBlank"/>
+            </container-element-type>
+            <container-element-type type-argument-index="1">
+                <valid/>
+            </container-element-type>
         </field>
 
         <getter name="orders">
