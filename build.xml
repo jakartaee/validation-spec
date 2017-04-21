@@ -154,7 +154,7 @@
 	</target>
 
 	<target name="render-docbook" depends="clean-docbook-output, have-dependencies, docbook-output-dir-exists, compile-asciidoc-extensions">
-		<renderer outputDirectory="target/docbook" backend="docbook" sourceHighlighter="coderay" />
+		<renderer-docbook outputDirectory="target/docbook" sourceHighlighter="coderay" />
 	</target>
 
 	<target name="render-pdf" depends="clean-pdf-output, have-dependencies, pdf-output-dir-exists, compile-asciidoc-extensions">
@@ -170,9 +170,6 @@
 			outputDirectory="target/preprocessed"
 			backend="html"
 			imagesDir="${hibernate-asciidoctor-theme.sourcedir}/images">
-				<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-				<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-				<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
 				<preProcessor className="org.beanvalidation.asciidocextensions.SavePreprocessedOutputPreprocessor" />
 
 				<attribute key="license" value="${license}" />
@@ -251,15 +248,39 @@
 				outputDirectory="@{outputdirectory}"
 				backend="@{backend}"
 				imagesDir="${hibernate-asciidoctor-theme.sourcedir}/images">
-					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.CustomRoleBlockProcessor" />
-
 					<attribute key="license" value="${license}" />
 					<attribute key="tabsize" value="4" />
 					<attribute key="pdf-stylesdir" value="${hibernate-asciidoctor-theme.sourcedir}/theme" />
 					<attribute key="pdf-style" value="hibernate" />
 					<attribute key="pdf-fontsdir" value="${hibernate-asciidoctor-theme.sourcedir}/theme/fonts" />
+
+					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
+					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
+					<attribute key="bv-version" value="${bv.version}" />
+					<attribute key="bv-version-qualifier" value="${bv.version.qualifier}" />
+					<attribute key="bv-revdate" value="${bv.revdate}" />
+			</asciidoctor:convert>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="renderer-docbook">
+		<attribute name="outputDirectory" />
+		<attribute name="sourceHighlighter" />
+		<sequential>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar:target/asciidocextensions"/>
+			<asciidoctor:convert
+				sourceDocumentName="index.asciidoc"
+				sourceDirectory="sources"
+				sourceHighlighter="@{sourceHighlighter}"
+				outputDirectory="@{outputdirectory}"
+				backend="docbook"
+				imagesDir="${hibernate-asciidoctor-theme.sourcedir}/images">
+					<blockProcessor blockName="tck-testable" className="org.beanvalidation.asciidocextensions.DocBookCustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-not-testable" className="org.beanvalidation.asciidocextensions.DocBookCustomRoleBlockProcessor" />
+					<blockProcessor blockName="tck-ignore" className="org.beanvalidation.asciidocextensions.DocBookCustomRoleBlockProcessor" />
+
+					<attribute key="license" value="${license}" />
+					<attribute key="tabsize" value="4" />
 
 					<attribute key="validation-api-source-dir" value="../${validation-api.sourcedir}/" />
 					<attribute key="spec-examples-source-dir" value="../${spec-examples.sourcedir}/" />
