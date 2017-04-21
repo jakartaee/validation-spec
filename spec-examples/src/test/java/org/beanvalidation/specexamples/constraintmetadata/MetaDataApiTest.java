@@ -1,5 +1,5 @@
 /*
- * Bean Validation API
+ * Bean Validation: constrain once, validate everywhere.
  *
  * License: Apache License, Version 2.0
  * See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
@@ -13,7 +13,6 @@ import javax.validation.Validator;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-import javax.validation.examples.metadata.Book.SecondLevelCheck;
 import javax.validation.groups.Default;
 import javax.validation.metadata.BeanDescriptor;
 import javax.validation.metadata.ConstraintDescriptor;
@@ -26,6 +25,8 @@ import javax.validation.metadata.MethodType;
 import javax.validation.metadata.ParameterDescriptor;
 import javax.validation.metadata.PropertyDescriptor;
 import javax.validation.metadata.ReturnValueDescriptor;
+
+import org.beanvalidation.specexamples.constraintmetadata.Book.SecondLevelCheck;
 
 /**
  * Example used in 6.12 (metadata example).
