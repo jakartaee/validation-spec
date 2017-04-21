@@ -10,6 +10,7 @@ import java.util.Set;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.validation.examples.metadata.Book.SecondLevelCheck;
@@ -17,6 +18,7 @@ import javax.validation.groups.Default;
 import javax.validation.metadata.BeanDescriptor;
 import javax.validation.metadata.ConstraintDescriptor;
 import javax.validation.metadata.ConstructorDescriptor;
+import javax.validation.metadata.ContainerElementTypeDescriptor;
 import javax.validation.metadata.CrossParameterDescriptor;
 import javax.validation.metadata.GroupConversionDescriptor;
 import javax.validation.metadata.MethodDescriptor;
@@ -44,25 +46,24 @@ public class MetaDataApiTest {
 		assert bookDescriptor.isBeanConstrained();
 		assert bookDescriptor.getConstrainedMethods( MethodType.NON_GETTER ).size() > 0;
 
-
 		assert bookDescriptor.getConstraintDescriptors().size() == 0; //no bean-level constraint
 
-		//more specifically "author" and "title"
+		//more specifically "author", "title" and "keywordsPerChapter"
 		assert bookDescriptor.getConstrainedProperties().size() == 2;
 
 		//not a property
-		assert bookDescriptor.getConstraintsForProperty("doesNotExist") == null;
+		assert bookDescriptor.getConstraintsForProperty( "doesNotExist" ) == null;
 
 		//property with no constraint
-		assert bookDescriptor.getConstraintsForProperty("description") == null;
+		assert bookDescriptor.getConstraintsForProperty( "description" ) == null;
 
-		PropertyDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty("title");
+		PropertyDescriptor propertyDescriptor = bookDescriptor.getConstraintsForProperty( "title" );
 		assert propertyDescriptor.getConstraintDescriptors().size() == 2;
 		assert "title".equals( propertyDescriptor.getPropertyName() );
 
 		//assuming the implementation returns the @NotEmpty constraint first
 		ConstraintDescriptor<?> constraintDescriptor = propertyDescriptor.getConstraintDescriptors()
-		                                                              .iterator().next();
+				.iterator().next();
 		assert constraintDescriptor.getAnnotation().annotationType().equals( NotEmpty.class );
 		assert constraintDescriptor.getGroups().size() == 2; //FirstLevelCheck and Default
 		assert constraintDescriptor.getComposingConstraints().size() == 2;
@@ -71,21 +72,42 @@ public class MetaDataApiTest {
 		//@NotEmpty cannot be null
 		boolean notNullPresence = false;
 		for ( ConstraintDescriptor<?> composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
-		    if ( composingDescriptor.getAnnotation().annotationType().equals( NotNull.class ) ) {
-		        notNullPresence = true;
-		    }
+			if ( composingDescriptor.getAnnotation().annotationType().equals( NotNull.class ) ) {
+				notNullPresence = true;
+			}
 		}
 		assert notNullPresence;
 
 		//assuming the implementation returns the Size constraint second
 		constraintDescriptor = propertyDescriptor.getConstraintDescriptors().iterator().next();
 		assert constraintDescriptor.getAnnotation().annotationType().equals( Size.class );
-		assert constraintDescriptor.getAttributes().get("max") == Integer.valueOf( 30 );
+		assert constraintDescriptor.getAttributes().get( "max" ) == Integer.valueOf( 30 );
 		assert constraintDescriptor.getGroups().size() == 1;
 
-		propertyDescriptor = bookDescriptor.getConstraintsForProperty("author");
+		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "author" );
 		assert propertyDescriptor.getConstraintDescriptors().size() == 1;
 		assert propertyDescriptor.isCascaded();
+
+		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "keywordsPerChapter" );
+
+		// @Valid on the map key
+		ContainerElementTypeDescriptor mapKeyElementDescriptor = propertyDescriptor.getConstraintsForContainerElementType( 0 );
+		assert mapKeyElementDescriptor.isCascaded() == true;
+
+		// @Size on the map value
+		ContainerElementTypeDescriptor mapValueElementDescriptor = propertyDescriptor.getConstraintsForContainerElementType( 1 );
+		Set<ConstraintDescriptor<?>> mapKeyConstraints = mapValueElementDescriptor.getConstraintDescriptors();
+		assert mapKeyConstraints.size() == 1;
+		assert mapKeyConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
+
+		// @NotBlank on the nested list elements
+		ContainerElementTypeDescriptor listElementDescriptor = mapValueElementDescriptor.getConstraintsForContainerElementType( 0 );
+		Set<ConstraintDescriptor<?>> listElementConstraints = listElementDescriptor.getConstraintDescriptors();
+		assert listElementConstraints.size() == 1;
+		assert listElementConstraints.iterator().next().getAnnotation().annotationType() == NotBlank.class;
+
+		// no further nested container element constraints
+		assert listElementDescriptor.getConstrainedContainerElementTypes().isEmpty();
 
 		//getTitle() and addChapter()
 		assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() == 2;
@@ -94,7 +116,7 @@ public class MetaDataApiTest {
 		assert bookDescriptor.getConstrainedConstructors().size() == 1;
 
 		ConstructorDescriptor constructorDescriptor = bookDescriptor.getConstraintsForConstructor(
-		    String.class, String.class, Author.class
+				String.class, String.class, Author.class
 		);
 		assert constructorDescriptor.getName().equals( "Book" );
 		assert constructorDescriptor.getElementClass() == Book.class;
@@ -128,7 +150,7 @@ public class MetaDataApiTest {
 
 		//group conversion on "author" parameter
 		GroupConversionDescriptor groupConversion =
-		    parameterDescriptor.getGroupConversions().iterator().next();
+				parameterDescriptor.getGroupConversions().iterator().next();
 		assert groupConversion.getFrom() == Default.class;
 		assert groupConversion.getTo() == SecondLevelCheck.class;
 
@@ -152,7 +174,7 @@ public class MetaDataApiTest {
 
 		//void method which has a cross-parameter constraint
 		methodDescriptor = bookDescriptor.getConstraintsForMethod(
-		    "addChapter", String.class, int.class, int.class
+				"addChapter", String.class, int.class, int.class
 		);
 		assert methodDescriptor.getElementClass() == void.class;
 		assert methodDescriptor.hasConstrainedParameters() == true;
@@ -169,7 +191,7 @@ public class MetaDataApiTest {
 		assert crossParameterDescriptor.hasConstraints() == true;
 
 		ConstraintDescriptor<?> crossParameterConstraint =
-		    crossParameterDescriptor.getConstraintDescriptors().iterator().next();
+				crossParameterDescriptor.getConstraintDescriptors().iterator().next();
 		assert crossParameterConstraint.getAnnotation().annotationType() == ValidInterval.class;
 		//end::include[]
 	}
