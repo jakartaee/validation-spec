@@ -71,7 +71,8 @@ public class MetaDataApiTest {
 
 		//@NotEmpty cannot be null
 		boolean notNullPresence = false;
-		for ( ConstraintDescriptor<?> composingDescriptor : constraintDescriptor.getComposingConstraints() ) {
+		for ( ConstraintDescriptor<?> composingDescriptor :
+					constraintDescriptor.getComposingConstraints() ) {
 			if ( composingDescriptor.getAnnotation().annotationType().equals( NotNull.class ) ) {
 				notNullPresence = true;
 			}
@@ -95,22 +96,28 @@ public class MetaDataApiTest {
 		assert mapKeyElementDescriptor.isCascaded() == true;
 
 		// @Size on the map value
-		ContainerElementTypeDescriptor mapValueElementDescriptor = propertyDescriptor.getConstraintsForContainerElementType( 1 );
-		Set<ConstraintDescriptor<?>> mapKeyConstraints = mapValueElementDescriptor.getConstraintDescriptors();
+		ContainerElementTypeDescriptor mapValueElementDescriptor =
+				propertyDescriptor.getConstraintsForContainerElementType( 1 );
+		Set<ConstraintDescriptor<?>> mapKeyConstraints =
+				mapValueElementDescriptor.getConstraintDescriptors();
 		assert mapKeyConstraints.size() == 1;
 		assert mapKeyConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
 
 		// @NotBlank on the nested list elements
-		ContainerElementTypeDescriptor listElementDescriptor = mapValueElementDescriptor.getConstraintsForContainerElementType( 0 );
-		Set<ConstraintDescriptor<?>> listElementConstraints = listElementDescriptor.getConstraintDescriptors();
+		ContainerElementTypeDescriptor listElementDescriptor =
+				mapValueElementDescriptor.getConstraintsForContainerElementType( 0 );
+		Set<ConstraintDescriptor<?>> listElementConstraints =
+				listElementDescriptor.getConstraintDescriptors();
 		assert listElementConstraints.size() == 1;
-		assert listElementConstraints.iterator().next().getAnnotation().annotationType() == NotBlank.class;
+		assert listElementConstraints.iterator().next().getAnnotation().annotationType() ==
+				NotBlank.class;
 
 		// no further nested container element constraints
 		assert listElementDescriptor.getConstrainedContainerElementTypes().isEmpty();
 
 		//getTitle() and addChapter()
-		assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() == 2;
+		assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() ==
+				2;
 
 		//the constructor accepting title, description and author
 		assert bookDescriptor.getConstrainedConstructors().size() == 1;
@@ -132,7 +139,8 @@ public class MetaDataApiTest {
 		assert constructorDescriptor.getParameterDescriptors().size() == 3;
 
 		//"description" parameter
-		ParameterDescriptor parameterDescriptor = constructorDescriptor.getParameterDescriptors().get( 1 );
+		ParameterDescriptor parameterDescriptor = constructorDescriptor.getParameterDescriptors()
+				.get( 1 );
 
 		//Assuming the default parameter name provider
 		assert parameterDescriptor.getName().equals( "arg1" );
@@ -140,7 +148,8 @@ public class MetaDataApiTest {
 		assert parameterDescriptor.getIndex() == 1;
 		assert parameterDescriptor.hasConstraints() == true;
 
-		Set<ConstraintDescriptor<?>> parameterConstraints = parameterDescriptor.getConstraintDescriptors();
+		Set<ConstraintDescriptor<?>> parameterConstraints =
+				parameterDescriptor.getConstraintDescriptors();
 		assert parameterConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
 
 		//"author" parameter
@@ -186,7 +195,8 @@ public class MetaDataApiTest {
 		assert methodDescriptor.getReturnValueDescriptor().getElementClass() == void.class;
 
 		//cross-parameter descriptor
-		CrossParameterDescriptor crossParameterDescriptor = methodDescriptor.getCrossParameterDescriptor();
+		CrossParameterDescriptor crossParameterDescriptor =
+				methodDescriptor.getCrossParameterDescriptor();
 		assert crossParameterDescriptor.getElementClass() == Object[].class;
 		assert crossParameterDescriptor.hasConstraints() == true;
 
