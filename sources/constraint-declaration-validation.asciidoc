@@ -732,8 +732,137 @@ When the [classname]`Default` group of a given class [classname]`X` is overridde
 A group [classname]`G` sequenced (directly or indirectly) to be executed before itself is not considered a circular reference.
 ====
 
-[[constraintdeclarationvalidationprocess-methodlevelconstraints]]
+[[constraintdeclarationvalidationprocess-containerelementconstraints]]
+=== Container element constraints
 
+Constraints can be applied to the elements of generic containers, e.g. `List`, `Map` or `Optional`.
+This is done by putting constraint annotations to the type arguments of such containers.
+Container element constraints can be applied to containers that are
+
+* fields,
+* properties,
+* method or constructor parameters or
+* method return values.
+
+.Container element constraints
+====
+[source, JAVA]
+----
+private List<@Email String> emails;
+
+public Optional<@Email String> getEmail() {
+    [...]
+}
+
+public Map<@NotNull String, @ValidAddress Address> getAddressesByType() {
+    [...]
+}
+
+public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) String> searchTerms) {
+    [...]
+}
+----
+====
+
+When a field, property, executable parameter or method return value is validated,
+any container element constraints of that element will be validated alongside any other constraints hosted by that element.
+For container element constraints, the same rules for validation groups and group sequences apply as for any other constraint on the same element.
+
+When a container element constraint is detected, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
+which retrieves the value(s) from the container so they can be validated.
+This may be a single value - e.g. in the case of `Optional` which wraps exactly one value if the `Optional` is not empty -
+or multiple values in the case of collection types.
+
+Container element constraints can be applied to nested container types:
+
+.Container element constraints on nested containers
+====
+[source, JAVA]
+----
+private Map<String, @NotEmpty List<@ValidAddress Address>> addressesByType;
+----
+====
+
+In such case multiple value extractors will be invoked.
+In the example above,
+
+* the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
+* for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
+* the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
+
+Container element constraints must not be put to wildcard type arguments (with or without bounds), i.e. the following usage is disallowed:
+
+.Disallowed usage of a container element constraint on a wildcard type argument
+====
+[source, JAVA]
+----
+private List<@NotEmpty ?> list;
+----
+====
+
+[[constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping]]
+==== Implicit unwrapping of containers
+
+Besides specifying container element constraints on type arguments, it is also possible to declare container element constraints on non-generic container types.
+This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its elements.
+An example are JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
+
+.Implicit unwrapping of container elements
+====
+[source, JAVA]
+----
+@Size(max=10) private StringProperty name;
+@Positive private IntegerProperty positiveInt;
+----
+====
+
+Here the `@Size` and `@Positive` constraints don't apply to the annotated `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
+
+For this to work, an unambiguously resolvable value extractor must be defined which carries the `@UnwrapByDefault` annotation (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-unwrapbydefault>>).
+
+If needed, the target (container or container element) of a constraint declared on a container can be explicitly specified via the `Unwrap` and `Skip` payload definitions:
+
+.`Payload` types for unwrapping control
+====
+[source, JAVA, indent=0]
+----
+include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.java[lines=7..8;11..-1]
+----
+====
+
+This is useful for applying a constraint given on a non-generic container to
+
+* the container element if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
+* the container itself in case there is a value extractor marked with `@UnwrapByDefault` (by using `Skip`)
+
+For instance the `@NotNull` constraint is applied to the `StringProperty` container:
+
+[source,java]
+----
+@NotNull(payload = Unwrapping.Skip.class) StringProperty name;
+----
+
+[NOTE]
+====
+For the sake of readability, when applying constraints to the elements of a generic container,
+it is strongly recommended to put the constraints to the type argument instead of the container itself in conjunction with `Unwrapping.Unwrap`.
+I.e. you should prefer
+
+[source,java]
+----
+List<@Email String> emails;
+----
+
+over
+
+[source,java]
+----
+@Email(payload = Unwrapping.Unwrap.class)
+List<String> emails;
+----
+====
+
+[[constraintdeclarationvalidationprocess-methodlevelconstraints]]
 === Method and constructor constraints
 
 [NOTE]
@@ -1099,136 +1228,6 @@ public class SimpleOrderService extends OrderService {
 ====
 
 The return value constraints in [classname]`DefaultOrderService` are legal, as they strengthen the postconditions of the [methodname]`placeOrder()` method as constituted by the super class [classname]`OrderService` but don't weaken them.
-
-[[constraintdeclarationvalidationprocess-containerelementconstraints]]
-=== Container element constraints
-
-Constraints can be applied to the elements of generic containers, e.g. `List`, `Map` or `Optional`.
-This is done by putting constraint annotations to the type arguments of such containers.
-Container element constraints can be applied to containers that are
-
-* fields,
-* properties,
-* method or constructor parameters or
-* method return values.
-
-.Container element constraints
-====
-[source, JAVA]
-----
-private List<@Email String> emails;
-
-public Optional<@Email String> getEmail() {
-    [...]
-}
-
-public Map<@NotNull String, @ValidAddress Address> getAddressesByType() {
-    [...]
-}
-
-public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) String> searchTerms) {
-    [...]
-}
-----
-====
-
-When a field, property, executable parameter or method return value is validated,
-any container element constraints of that element will be validated alongside any other constraints hosted by that element.
-For container element constraints, the same rules for validation groups and group sequences apply as for any other constraint on the same element.
-
-When a container element constraint is detected, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
-which retrieves the value(s) from the container so they can be validated.
-This may be a single value - e.g. in the case of `Optional` which wraps exactly one value if the `Optional` is not empty -
-or multiple values in the case of collection types.
-
-Container element constraints can be applied to nested container types:
-
-.Container element constraints on nested containers
-====
-[source, JAVA]
-----
-private Map<String, @NotEmpty List<@ValidAddress Address>> addressesByType;
-----
-====
-
-In such case multiple value extractors will be invoked.
-In the example above,
-
-* the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
-* for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
-* the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
-
-Container element constraints must not be put to wildcard type arguments (with or without bounds), i.e. the following usage is disallowed:
-
-.Disallowed usage of a container element constraint on a wildcard type argument
-====
-[source, JAVA]
-----
-private List<@NotEmpty ?> list;
-----
-====
-
-[[constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping]]
-==== Implicit unwrapping of containers
-
-Besides specifying container element constraints on type arguments, it is also possible to declare container element constraints on non-generic container types.
-This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its elements.
-An example are JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
-
-.Implicit unwrapping of container elements
-====
-[source, JAVA]
-----
-@Size(max=10) private StringProperty name;
-@Positive private IntegerProperty positiveInt;
-----
-====
-
-Here the `@Size` and `@Positive` constraints don't apply to the annotated `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
-
-For this to work, an unambiguously resolvable value extractor must be defined which carries the `@UnwrapByDefault` annotation (see <<constraintdeclarationvalidationprocess-valueextractordefinitions-unwrapbydefault>>).
-
-If needed, the target (container or container element) of a constraint declared on a container can be explicitly specified via the `Unwrap` and `Skip` payload definitions:
-
-.`Payload` types for unwrapping control
-====
-[source, JAVA, indent=0]
-----
-include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.java[lines=7..8;11..-1]
-----
-====
-
-This is useful for applying a constraint given on a non-generic container to
-
-* the container element if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
-* the container itself in case there is a value extractor marked with `@UnwrapByDefault` (by using `Skip`)
-
-For instance the `@NotNull` constraint is applied to the `StringProperty` container:
-
-[source,java]
-----
-@NotNull(payload = Unwrapping.Skip.class) StringProperty name;
-----
-
-[NOTE]
-====
-For the sake of readability, when applying constraints to the elements of a generic container,
-it is strongly recommended to put the constraints to the type argument instead of the container itself in conjunction with `Unwrapping.Unwrap`.
-I.e. you should prefer
-
-[source,java]
-----
-List<@Email String> emails;
-----
-
-over
-
-[source,java]
-----
-@Email(payload = Unwrapping.Unwrap.class)
-List<String> emails;
-----
-====
 
 [[constraintdeclarationvalidationprocess-valueextractordefinitions]]
 === Value extractor definitions
