@@ -737,7 +737,7 @@ A group [classname]`G` sequenced (directly or indirectly) to be executed before 
 
 Constraints can be applied to the elements of generic containers, e.g. `List`, `Map` or `Optional`.
 This is done by putting constraint annotations to the type arguments of such containers.
-Container element constraints can be applied to containers that are
+Container element constraints can be used within the following declarations:
 
 * fields,
 * properties,
@@ -764,11 +764,11 @@ public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) Str
 ----
 ====
 
-When a field, property, executable parameter or method return value is validated,
+When a field, property, executable parameter or method return value which is of a container type gets validated, then all values contained in the container will be validated provided that their container element is constrained.
 any container element constraints of that element will be validated alongside any other constraints hosted by that element.
 For container element constraints, the same rules for validation groups and group sequences apply as for any other constraint on the same element.
 
-When a container element constraint is detected, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
+When a container element is constrained, the validation engine invokes a value extractor (see <<constraintdeclarationvalidationprocess-valueextractordefinitions>>)
 which retrieves the value(s) from the container so they can be validated.
 This may be a single value - e.g. in the case of `Optional` which wraps exactly one value if the `Optional` is not empty -
 or multiple values in the case of collection types.
@@ -790,9 +790,9 @@ In the example above,
 * for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
 * the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
 
-Container element constraints must not be put to wildcard type arguments (with or without bounds), i.e. the following usage is disallowed:
+Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported:
 
-.Disallowed usage of a container element constraint on a wildcard type argument
+.Unsupported usage of a container element constraint on a wildcard type argument
 ====
 [source, JAVA]
 ----
@@ -1247,9 +1247,9 @@ When calling
 * `value()`, the given value will be passed to the validation engine;
 * `iterableValue()`, the given value will be passed to the validation engine and the corresponding property path node (see <<validationapi-constraintviolation>>) will be marked as iterable, i.e. `Node#isInIterable()` returns `true`;
 * `indexedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given index, i.e. `Node#getIndex()` returns the given index value;
-* `keyedValue()`, the given value will be passed to the validation engine and the corresponding property path node will  be marked as iterable and it will have set the given key, i.e. `Node#getKey()` returns the given key value.
+* `keyedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given key, i.e. `Node#getKey()` returns the given key value.
 
-When passing a non-null node name to any of the receiver methods and the extractor is called in the course of container element validation (and not during cascaded validation),
+When passing a non-null node name to any of the receiver methods and when the extractor is called in the course of container element validation (not during cascaded validation),
 a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.
 If null is passed as node name, no node will be appended to the property path.
 The resulting property path will then be the same as if the constraint had been given on the container instead of a container element.
@@ -1325,13 +1325,13 @@ class WrapperExtractor implements ValueExtractor<Wrapper<@ExtractedValue ?>> {
 Compatible implementations provide value extractors for the following types out of the box:
 
 * `java.util.Iterable`; `iterableValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
-* `java.util.List`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
+* `java.util.List`; `indexedValue()` must be invoked for each contained element, passing the string literal `<list element>` as node name
 * `java.util.Map`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
 * `java.util.Optional`; `value()` must be invoked if a value is present, passing `null` as node name
 * `javafx.beans.observable.ObservableValue`; `value()` must be invoked with the observable value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
-* `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
+* `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<list element>` as node name
 * `javafx.beans.property.ReadOnlyMapProperty` and `javafx.beans.property.MapProperty`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
@@ -1951,7 +1951,7 @@ with the fully-qualified name(s) of one or more extractor implementations as its
 * By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
 * By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
 
-A value extractor for a given type and type parameter specified at a higher level overrides any other extractors for the same type and type parameter given at lower levels.
+A value extractor for a given type and type parameter specified at a higher priority overrides any other extractors for the same type and type parameter given at lower priorities.
 If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
 it will take precedence over any other value extractor implementing `List<@ExtractedValue ?>` given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
 _META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for `List` values.
@@ -1996,10 +1996,8 @@ Note that `C'` is a subtype of `T` if `C'` = `T`.
 .Implementation note
 ====
 Extractor retrieval for container element constraints is based on the runtime type of the elements marked with `@Valid`
-(this is to be consistent with the semantics of property paths for cascaded validation defined in Bean Validation 1.x),
-hence it is not possible to perform the extractor resolution only once and cache the result.
-It is recommended though that implementations perform a pre-analysis of applicable extractors based on the declared type,
-requiring to process only a sub-set of all available extractors at runtime.
+(this is to be consistent with the semantics of property paths for cascaded validation),
+hence it is not possible to perform the extractor resolution only once per usage of `@Valid` and cache the result.
 ====
 
 [[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-implicitunwrapping]]
