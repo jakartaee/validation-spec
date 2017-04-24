@@ -108,7 +108,6 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 * [tck-testable]#[classname]`java.util.List`#
 * [tck-testable]#[classname]`java.util.Map`# (special treatment see below)
 
-
 [tck-testable]#Each object provided by the iterator is validated.# [tck-testable]#For [classname]`Map`, the value (retrieved by [methodname]`getValue`) of each [classname]`Map.Entry` is validated (the key is not validated).#
 
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
@@ -165,6 +164,22 @@ public class User {
 }
 ----
 ====
+
+.Making a nested collection subject to graph validation
+====
+[source, JAVA]
+----
+public class User {
+    private Map<String, List<@Valid Address>> addressesByType;
+}
+----
+====
+
+In the last example, all `Address` objects contained in the lists of the `addressesByType` map will be validated.
+Two value extractors are invoked for this:
+
+* the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
+* for each extracted list of addresses, the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
 
 [[constraintdeclarationvalidationprocess-constraintdeclaration]]
 
