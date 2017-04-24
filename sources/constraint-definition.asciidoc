@@ -618,12 +618,12 @@ And some invalid definitions in <<example-constraintsdefinitionimplementation-va
 [source, JAVA]
 ----
 //parameterized type
-public class SizeValidatorForString implements<Size, Collection<String>> {
+public class SizeValidatorForString implements ConstraintValidator<Size, Collection<String>> {
     [...]
 }
 
 //parameterized type using bounded wildcard
-public class SizeValidatorForCollection implements<Size, Collection<? extends Address>> {
+public class SizeValidatorForCollection implements ConstraintValidator<Size, Collection<? extends Address>> {
     [...]
 }
 
@@ -787,36 +787,9 @@ This can be useful for testing, for applying the time zone of the currently logg
 .ConstraintValidator implementation
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Check that a text is within the authorized syntax
- */
-public class SyntaxValidator implements ConstraintValidator<Syntax, String> {
-    private Set<Format> allowedFormats;
-
-    /**
-     * Configure the constraint validator based on the elements
-     * specified at the time it was defined.
-     * @param constraint the constraint definition
-     */
-    public void initialize(Syntax constraint) {
-        allowedFormats = new HashSet( Arrays.asList( constraint.value() ) );
-    }
-
-    /**
-     * Validate a specified value.
-     * returns false if the specified value does not conform to the definition
-     */
-    public boolean isValid(String value, ConstraintValidatorContext context) {
-        if ( value == null ) return true;
-
-        return allowedFormats.size() == 0
-            || (! Collections.disjoint( guessFormat(value), allowedFormats ) );
-    }
-
-    Set<Format> guessFormats(String text) { [...] }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/validator/SyntaxValidator.java[tags=include]
 ----
 
 ====
@@ -828,36 +801,9 @@ The following listing shows a validator implementing the validation logic for a 
 .Cross-parameter validator implementation
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Check that two date parameters of a method are in the expected order. Expects the
- * 2nd and 3rd parameter of the validated method to be of type java.util.Date.
- */
-@SupportedValidationTarget(ValidationTarget.PARAMETERS)
-public class DateParametersConsistentValidator implements<DateParametersConsistent, Object[]> {
-
-    /**
-     * Configure the constraint validator based on the elements
-     * specified at the time it was defined.
-     * @param constraint the constraint definition
-     */
-    public void initialize(DateParametersConsistent constraint) {
-    }
-
-    /**
-     * Validate a specified value.
-     * returns false if the specified value does not conform to the definition
-     */
-    public boolean isValid(Object[] value, ConstraintValidatorContext context) {
-        if ( value.length != 3 ) {
-            throw new IllegalStateException( "Unexpected method signature" );
-        }
-        // one or both limits are unbounded => always consistent
-        if ( value[1] == null || value[2] == null ) return true;
-        return ( (Date) value[1] ).before( (Date) value[2] );
-    }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/validator/DateParametersConsistentValidator.java[tags=include]
 ----
 
 ====
@@ -874,7 +820,7 @@ The following listing shows a validator implementing the validation logic for a 
  * provided by the constraint.
  */
 @SupportedValidationTarget({ValidationTarget.ANNOTATED_ELEMENT, ValidationTarget.PARAMETERS})
-public class ELScriptValidator implements<ELScript, Object> {
+public class ELScriptValidator implements ConstraintValidator<ELScript, Object> {
 
     public void initialize(ELScript constraint) {
         [...]
@@ -893,54 +839,9 @@ The next example shows how to use [classname]`ConstraintValidatorContext`.
 .Use of ConstraintValidatorContext
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-/**
- * Check that a text is within the authorized syntax
- * Error messages are using either key:
- *  - com.acme.constraint.Syntax.unknown if no particular syntax is detected
- *  - com.acme.constraint.Syntax.unauthorized if the syntax is not allowed
- */
-public class FineGrainedSyntaxValidator implements ConstraintValidator<Syntax, String> {
-    private Set<Format> allowedFormats;
-
-    /**
-     * Configure the constraint validator based on the elements
-     * specified at the time it was defined.
-     * @param constraint the constraint definition
-     */
-    public void initialize(Syntax constraint) {
-        allowedFormats = new HashSet( Arrays.asList( constraint.value() ) );
-    }
-
-    /**
-     * Validate a specified value.
-     * returns false if the specified value does not conform to the definition
-     */
-    public boolean isValid(String value, ConstraintValidatorContext context) {
-        if ( value == null ) return true;
-        Set<Format> guessedFormats = guessFormats(value);
-
-        context.disableDefaultConstraintViolation();
-        if ( guessedFormats.size() == 0 ) {
-            String unknown = "{com.acme.constraint.Syntax.unknown}";
-            context.buildConstraintViolationWithTemplate(unknown)
-                       .addConstraintViolation();
-            return false;
-        }
-        if ( allowedFormats.size() != 0
-            && Collections.disjoint( guessedFormats, allowedFormats ) ) {
-
-            String unauthorized = "{com.acme.constraint.Syntax.unauthorized}";
-            context.buildConstraintViolationWithTemplate(unauthorized)
-                       .addConstraintViolation();
-            return false;
-        }
-        return true;
-    }
-
-    Set<Format> guessFormats(String text) { [...] }
-}
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdefinition/validator/FineGrainedSyntaxValidator.java[tags=include]
 ----
 
 ====
