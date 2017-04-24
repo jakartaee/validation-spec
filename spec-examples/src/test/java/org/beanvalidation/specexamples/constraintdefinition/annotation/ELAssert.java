@@ -33,7 +33,7 @@ import javax.validation.Payload;
 @Retention(RUNTIME)
 public @interface ELAssert {
 
-	String message() default "{com.acme.constraint.DateParametersConsistent.message}";
+	String message() default "{com.acme.constraint.ELAssert.message}";
 
 	Class<?>[] groups() default {};
 
