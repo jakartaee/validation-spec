@@ -19,10 +19,6 @@ import javax.validation.constraints.Past;
 public class PastValidatorForZonedDateTime implements ConstraintValidator<Past, ZonedDateTime> {
 
 	@Override
-	public void initialize(Past constraintAnnotation) {
-	}
-
-	@Override
 	public boolean isValid(ZonedDateTime value, ConstraintValidatorContext context) {
 		if ( value == null ) {
 			return true;
