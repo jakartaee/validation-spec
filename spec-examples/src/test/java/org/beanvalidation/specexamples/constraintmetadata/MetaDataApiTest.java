@@ -33,6 +33,7 @@ import org.beanvalidation.specexamples.constraintmetadata.Book.SecondLevelCheck;
  *
  * @author Emmanuel Bernard
  * @author Gunnar Morling
+ * @author Guillaume Smet
  */
 public class MetaDataApiTest {
 
@@ -90,23 +91,35 @@ public class MetaDataApiTest {
 		assert propertyDescriptor.getConstraintDescriptors().size() == 1;
 		assert propertyDescriptor.isCascaded();
 
+		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "title" );
+
+		// no container element types
+		assert propertyDescriptor.getContainerElementTypes().isEmpty();
+
 		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "keywordsPerChapter" );
 
+		// 2 container element types: one for the map key and one for the map value
+		assert propertyDescriptor.getContainerElementTypes().size() == 2;
+
 		// @Valid on the map key
-		ContainerElementTypeDescriptor mapKeyElementDescriptor = propertyDescriptor.getConstraintsForContainerElementType( 0 );
+		ContainerElementTypeDescriptor mapKeyElementDescriptor =
+				propertyDescriptor.getContainerElementTypes().get( 0 );
 		assert mapKeyElementDescriptor.isCascaded() == true;
 
 		// @Size on the map value
 		ContainerElementTypeDescriptor mapValueElementDescriptor =
-				propertyDescriptor.getConstraintsForContainerElementType( 1 );
+				propertyDescriptor.getContainerElementTypes().get( 1 );
 		Set<ConstraintDescriptor<?>> mapKeyConstraints =
 				mapValueElementDescriptor.getConstraintDescriptors();
 		assert mapKeyConstraints.size() == 1;
 		assert mapKeyConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
 
+		// 1 container element type for the nested list
+		assert mapValueElementDescriptor.getContainerElementTypes().size() == 1;
+
 		// @NotBlank on the nested list elements
 		ContainerElementTypeDescriptor listElementDescriptor =
-				mapValueElementDescriptor.getConstraintsForContainerElementType( 0 );
+				mapValueElementDescriptor.getContainerElementTypes().get( 0 );
 		Set<ConstraintDescriptor<?>> listElementConstraints =
 				listElementDescriptor.getConstraintDescriptors();
 		assert listElementConstraints.size() == 1;
@@ -114,7 +127,7 @@ public class MetaDataApiTest {
 				NotBlank.class;
 
 		// no further nested container element constraints
-		assert listElementDescriptor.getConstrainedContainerElementTypes().isEmpty();
+		assert listElementDescriptor.getContainerElementTypes().isEmpty();
 
 		//getTitle() and addChapter()
 		assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() ==
