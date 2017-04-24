@@ -189,6 +189,8 @@ This document describes each aspect of the Bean Validation specification in a se
 
 <<constraintsdefinitionimplementation>> describes how constraints are defined.
 
+<<valueextractordefinition>> describes how extractors for the values of container types are defined.
+
 <<constraintdeclarationvalidationprocess>> describes how a JavaBean class is decorated with annotations to describe constraints.
 
 <<validationapi>> describes how to programmatically validate a JavaBean.
@@ -2371,10 +2373,6 @@ The following example shows how to obtain the current date and time via the `Clo
 public class PastValidatorForZonedDateTime implements ConstraintValidator<Past, ZonedDateTime> {
 
     @Override
-    public void initialize(Past constraintAnnotation) {
-    }
-
-    @Override
     public boolean isValid(ZonedDateTime value, ConstraintValidatorContext context) {
         if ( value == null ) {
             return true;
@@ -2407,8 +2405,6 @@ The lifecycle of [classname]`ConstraintValidator` instances is fully dependent o
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Instantiates a {@link ConstraintValidator} instance based off its class.
  * The {@code ConstraintValidatorFactory} is <b>not</b> responsible
@@ -2688,7 +2684,7 @@ class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
     @Override
     public void extractValues(List<?> originalValue, ValueReceiver receiver) {
         for ( int i = 0; i < originalValue.size(); i++ ) {
-            receiver.indexedValue( "<iterable element>", i, originalValue.get( i ) );
+            receiver.indexedValue( "<list element>", i, originalValue.get( i ) );
         }
     }
 }
@@ -3815,8 +3811,6 @@ In case the validation of a parameter constraint fails, the concerned parameter 
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Provides names for method and constructor parameters.
  * <p>
@@ -4327,8 +4321,6 @@ Likewise, it is sometimes undesirable to cascade validation despite the use of [
 
 [source, JAVA]
 ----
-package javax.validation;
-
 /**
  * Contract determining if a property can be accessed by the Bean Validation provider.
  * This contract is called for each property that is being either validated or cascaded.
@@ -5940,8 +5932,6 @@ If the group definition is invalid, a [classname]`GroupDefinitionException` is r
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Describes a constraint violation. This object exposes the constraint
  * violation context as well as the message describing the violation.
@@ -6111,8 +6101,6 @@ The [methodname]`getLeafBean()` method returns the following object:
 
 [source, JAVA]
 ----
-package javax.validation;
-
 /**
  * Represents the navigation path from an object to another
  * in an object graph.
@@ -6369,8 +6357,6 @@ public interface Path extends Iterable<Path.Node> {
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Enum of possible kinds of elements encountered in Bean Validation.
  * <p>
@@ -6524,7 +6510,7 @@ case PROPERTY:
 ** [tck-testable]#if the association is a [classname]`List` or an array, the following [classname]`Node` object added contains the index value in [methodname]`getIndex()`.#
 ** [tck-testable]#if the association is a [classname]`Map`, the following [classname]`Node` object added (representing a given map entry) contains the key value in [methodname]`getKey()`#
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`)#
-** [tck-testable]#if the traversed object is of a container type (e.g. a `List`, `Map` or `Optional`), the following `Node` object added returns the type of the traversed container via `getContainerClass()` and the index of the type argument to which the constraint applies via `getTypeArgumentIndex()#
+** [tck-testable]#if the traversed object is of a container type (e.g. a `List` or `Map`), the following `Node` object added returns the type of the traversed container via `getContainerClass()` and the index of the type argument to which the constraint applies via `getTypeArgumentIndex()#
 
 [tck-testable]
 --
@@ -7317,8 +7303,6 @@ A custom message interpolator may be provided (e.g., to interpolate contextual d
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Interpolates a given constraint violation message.
  * <p>
@@ -8021,9 +8005,6 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [source, JAVA]
 ----
-import javax.validation.valueextraction.ValueExtractor;
-import javax.validation.valueextraction.ValueExtractorDeclarationException;
-
 /**
  * Represents the context that is used to create {@link Validator}
  * instances.
@@ -8191,8 +8172,6 @@ Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the
 
 [source, JAVA]
 ----
-import javax.validation.valueextraction.ValueExtractorDeclarationException;
-
 /**
  * Receives configuration information, selects the appropriate
  * Bean Validation provider and builds the appropriate {@link ValidatorFactory}.
@@ -8483,8 +8462,6 @@ public interface Configuration<T extends Configuration<T>> {
 
 [source, JAVA]
 ----
-import javax.validation.valueextraction.ValueExtractor;
-
 /**
  * Represents the user specified default configuration in
  * {@code META-INF/validation.xml}.
@@ -8901,8 +8878,6 @@ Here, [varname]`factory1` is set up using a custom message interpolator, while [
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Determines the list of Bean Validation providers available in the runtime environment
  * <p>
@@ -12829,12 +12804,7 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
 [source, XML]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Bean Validation API
-  ~
-  ~ License: Apache License, Version 2.0
-  ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
-  -->
+
 <xs:schema attributeFormDefault="unqualified"
            elementFormDefault="qualified"
            targetNamespace="http://xmlns.jcp.org/xml/ns/validation/mapping"
@@ -12939,14 +12909,18 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
         </xs:sequence>
         <xs:attribute type="xs:string" name="name" use="required"/>
     </xs:complexType>
-    <xs:complexType name="container-element-typeType">
+    <xs:complexType name="containerElementTypeType">
         <xs:sequence>
             <xs:element type="xs:string" name="valid" minOccurs="0" fixed=""/>
+            <xs:element type="map:groupConversionType"
+                        name="convert-group"
+                        minOccurs="0"
+                        maxOccurs="unbounded"/>
             <xs:element type="map:constraintType"
                         name="constraint"
                         maxOccurs="unbounded"
                         minOccurs="0"/>
-            <xs:element type="map:container-element-typeType"
+            <xs:element type="map:containerElementTypeType"
                         name="container-element-type"
                         maxOccurs="unbounded"
                         minOccurs="0"/>
@@ -13012,7 +12986,7 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
-            <xs:element type="map:container-element-typeType"
+            <xs:element type="map:containerElementTypeType"
                         name="container-element-type"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
@@ -13066,7 +13040,7 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
-            <xs:element type="map:container-element-typeType"
+            <xs:element type="map:containerElementTypeType"
                         name="container-element-type"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
@@ -13085,7 +13059,7 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
-            <xs:element type="map:container-element-typeType"
+            <xs:element type="map:containerElementTypeType"
                         name="container-element-type"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
@@ -13119,7 +13093,7 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
-            <xs:element type="map:container-element-typeType"
+            <xs:element type="map:containerElementTypeType"
                         name="container-element-type"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
@@ -13148,12 +13122,7 @@ XML Configuration is set in [filename]`META-INF/validation.xml`. The file is opt
 [source, XML]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Bean Validation API
-  ~
-  ~ License: Apache License, Version 2.0
-  ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
-  -->
+
 <xs:schema attributeFormDefault="unqualified"
            elementFormDefault="qualified"
            targetNamespace="http://xmlns.jcp.org/xml/ns/validation/configuration"
@@ -13864,17 +13833,17 @@ The CDI interceptor binding facility does not directly support this, but the eff
 It is recommended to only intercept methods and constructors that are both constrained and validated according to the rules defined at <<integration-general-executable>>. <<validationapi-triggeringmethodvalidation>> gives examples how the metadata API can be used to determine whether or not a method is constrained (regardless of the filtering rules of [classname]`@ValidateOnExecution`).
 ====
 
-[[integration-jpa]
+[[integration-jpa]]
 === Java Persistence 2.0 integration
 
 Integration with Java Persistence is described in the Java Persistence 2 specification (link:$$http://jcp.org/en/jsr/detail?id=317$$[JSR-317] and later link:$$http://jcp.org/en/jsr/detail?id=338$$[JSR-338]). Persistence frameworks are encouraged to mimic the integration work done with Java Persistence.
 
-[[integration-jsf]
+[[integration-jsf]]
 === Java Server Faces 2.0 integration
 
 Integration with Java Server Faces is described in the Java Server Faces 2 specification (link:$$http://jcp.org/en/jsr/detail?id=314$$[JSR-314] and later link:$$http://jcp.org/en/jsr/detail?id=338$$[JSR-344]). Presentation frameworks are encouraged to study the integration work done with JSF 2.
 
-[[integration-jaxrs]
+[[integration-jaxrs]]
 === JAX-RS 2 integration
 
 Integration with JAX-RS is described in the JAX-RS 2 specification (link:$$http://jcp.org/en/jsr/detail?id=339$$[JSR-339]).
