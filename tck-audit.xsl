@@ -154,7 +154,8 @@
             <xsl:attribute name="id"><xsl:value-of select="@xml:id" /></xsl:attribute>
             <xsl:attribute name="title"><xsl:value-of select="normalize-space(translate(title, '’', $apos))" /></xsl:attribute>
             <xsl:attribute name="level"><xsl:value-of select="count(ancestor::section) + 1" /></xsl:attribute>
-            <xsl:comment><xsl:text> </xsl:text><xsl:value-of select="@sectionNum" /><xsl:text> </xsl:text></xsl:comment>
+            <xsl:variable name="sectionIdConstant"><xsl:call-template name="section-id-to-constant"><xsl:with-param name="sectionId" select="@xml:id" /></xsl:call-template></xsl:variable>
+            <xsl:comment><xsl:text> </xsl:text><xsl:value-of select="@sectionNum" /><xsl:text> - </xsl:text><xsl:value-of select="$sectionIdConstant" /><xsl:text> </xsl:text></xsl:comment>
 
             <!-- get all assertions directly under chapter, without a section -->
             <xsl:apply-templates select="*[not(local-name() = 'section')]" mode="createAuditFile"/>
@@ -223,6 +224,13 @@
                 Error: section <xsl:value-of select="$sectionNum" /><xsl:text> - </xsl:text><xsl:value-of select="$sectionId" /> seems to be automatically generated: it starts with an underscore.
             </xsl:message>
         </xsl:if>
+    </xsl:template>
+
+    <xsl:template name="section-id-to-constant">
+        <xsl:param name="sectionId" />
+        <xsl:variable name="smallcase" select="'abcdefghijklmnopqrstuvwxyz-'" />
+        <xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'" />
+        <xsl:value-of select="translate($sectionId, $smallcase, $uppercase)" />
     </xsl:template>
 
 </xsl:stylesheet>
