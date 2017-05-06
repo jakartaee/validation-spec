@@ -4,7 +4,7 @@
   ~ License: Apache License, Version 2.0
   ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
   -->
-<project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant">
+<project name="Documentation" default="all.doc" xmlns:asciidoctor="antlib:org.asciidoctor.ant" xmlns:if="ant:if" xmlns:unless="ant:unless">
 
 	<tstamp>
 		<format property="current.date" pattern="yyyy-MM-dd"/>
@@ -88,72 +88,22 @@
 		<fail message="You need a Maven installation in your path." />
 	</target>
 
-	<!-- we update the dependency every time we build as it might have changed on disk -->
-	<target name="detect-validation-api-in-m2">
-		<available file="${m2-repository.path}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" property="validation-api-in-m2"></available>
-	</target>
-	<target name="unzip-validation-api-from-repo" depends="validation-api-dir-exists, detect-validation-api-in-m2" unless="validation-api-in-m2">
-		<download-maven-dependency groupId="javax.validation" artifactId="validation-api" version="${bv.version}" qualifier="jar:sources" />
-		<unzip dest="${validation-api.sourcedir}">
-			<fileset dir="${downloaded-jars.dir}">
-				<include name="validation-api-*-sources.jar" />
-			</fileset>
-		</unzip>
-	</target>
-	<target name="unzip-validation-api-from-m2" depends="validation-api-dir-exists, detect-validation-api-in-m2" if="validation-api-in-m2">
-		<unzip src="${m2-repository.path}/javax/validation/validation-api/${bv.version}/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}"></unzip>
-	</target>
-	<target name="have-validation-api" depends="unzip-validation-api-from-repo, unzip-validation-api-from-m2">
+	<target name="have-validation-api-sources" depends="validation-api-dir-exists, have-mvn">
+		<add-maven-dependency groupId="javax.validation" groupDirectory="javax/validation" artifactId="validation-api" version="${bv.version}" qualifier="jar:sources" dotExtension="-sources.jar" />
+		<unzip src="${downloaded-jars.dir}/validation-api-${bv.version}-sources.jar" dest="${validation-api.sourcedir}" />
 	</target>
 
-	<!-- we update the dependency every time we build as it might have changed on disk -->
-	<target name="detect-hibernate-asciidoctor-theme-in-m2">
-		<available file="${m2-repository.path}/org/hibernate/infra/hibernate-asciidoctor-theme/${hibernate-asciidoctor-theme.version}/hibernate-asciidoctor-theme-${hibernate-asciidoctor-theme.version}.zip" property="hibernate-asciidoctor-theme-in-m2"></available>
-	</target>
-	<target name="unzip-hibernate-asciidoctor-theme-from-repo" depends="hibernate-asciidoctor-theme-dir-exists, detect-hibernate-asciidoctor-theme-in-m2" unless="hibernate-asciidoctor-theme-in-m2">
-		<download-maven-dependency groupId="org.hibernate.infra" artifactId="hibernate-asciidoctor-theme" version="${hibernate-asciidoctor-theme.version}" qualifier="zip" />
-		<unzip dest="target"><!-- the zip contains the base directory -->
-			<fileset dir="${downloaded-jars.dir}">
-				<include name="hibernate-asciidoctor-theme-*.zip" />
-			</fileset>
-		</unzip>
-	</target>
-	<target name="unzip-hibernate-asciidoctor-theme-from-m2" depends="hibernate-asciidoctor-theme-dir-exists, detect-hibernate-asciidoctor-theme-in-m2" if="hibernate-asciidoctor-theme-in-m2">
-		<unzip src="${m2-repository.path}/org/hibernate/infra/hibernate-asciidoctor-theme/${hibernate-asciidoctor-theme.version}/hibernate-asciidoctor-theme-${hibernate-asciidoctor-theme.version}.zip" dest="target"></unzip>
-	</target>
-	<target name="copy-bean-validation-logo-to-hibernate-asciidoctor-theme">
+	<target name="have-hibernate-asciidoctor-theme" depends="hibernate-asciidoctor-theme-dir-exists, have-mvn">
+		<add-maven-dependency groupId="org.hibernate.infra" groupDirectory="org/hibernate/infra" artifactId="hibernate-asciidoctor-theme" version="${hibernate-asciidoctor-theme.version}" qualifier="zip" dotExtension=".zip" />
+		<unzip src="${downloaded-jars.dir}/hibernate-asciidoctor-theme-${hibernate-asciidoctor-theme.version}.zip" dest="target" />
 		<copy todir="${hibernate-asciidoctor-theme.sourcedir}" overwrite="true">
 			<fileset dir="resources" />
 		</copy>
 	</target>
-	<target name="have-hibernate-asciidoctor-theme" depends="unzip-hibernate-asciidoctor-theme-from-repo, unzip-hibernate-asciidoctor-theme-from-m2, copy-bean-validation-logo-to-hibernate-asciidoctor-theme">
-	</target>
 
-	<target name="detect-asciidoctor-ant-in-m2">
-		<available file="${m2-repository.path}/org/asciidoctor/asciidoctor-ant/${asciidoctor-ant.version}/asciidoctor-ant-${asciidoctor-ant.version}.jar" property="asciidoctor-ant-in-m2"></available>
-	</target>
-	<target name="download-asciidoctor-ant-from-repo" depends="lib-dir-exists, detect-asciidoctor-ant-in-m2" unless="asciidoctor-ant-in-m2">
-		<download-maven-dependency groupId="org.asciidoctor" artifactId="asciidoctor-ant" version="${asciidoctor-ant.version}" qualifier="jar" outputDirectory="lib" />
-	</target>
-	<target name="copy-asciidoctor-ant-from-m2" depends="lib-dir-exists, detect-asciidoctor-ant-in-m2" if="asciidoctor-ant-in-m2">
-		<copy file="${m2-repository.path}/org/asciidoctor/asciidoctor-ant/${asciidoctor-ant.version}/asciidoctor-ant-${asciidoctor-ant.version}.jar" todir="lib" />
-	</target>
-	<target name="have-asciidoctor" depends="download-asciidoctor-ant-from-repo, copy-asciidoctor-ant-from-m2">
-	</target>
-
-	<target name="detect-hibernate-asciidoctor-extensions-in-m2">
-		<available file="${m2-repository.path}/org/hibernate/infra/hibernate-asciidoctor-extensions/${hibernate-asciidoctor-extensions.version}/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar" property="hibernate-asciidoctor-extensions-in-m2"></available>
-	</target>
-	<target name="download-hibernate-asciidoctor-extensions-from-repo" depends="lib-dir-exists, detect-hibernate-asciidoctor-extensions-in-m2" unless="hibernate-asciidoctor-extensions-in-m2">
-		<download-maven-dependency groupId="org.hibernate.infra" artifactId="hibernate-asciidoctor-extensions" version="${hibernate-asciidoctor-extensions.version}" qualifier="jar" outputDirectory="lib" />
-	</target>
-	<target name="copy-hibernate-asciidoctor-extensions-from-m2" depends="lib-dir-exists, detect-hibernate-asciidoctor-extensions-in-m2" if="hibernate-asciidoctor-extensions-in-m2">
-		<copy file="${m2-repository.path}/org/hibernate/infra/hibernate-asciidoctor-extensions/${hibernate-asciidoctor-extensions.version}/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar" todir="lib" />
-	</target>
-	<target name="have-hibernate-asciidoctor-extensions" depends="download-hibernate-asciidoctor-extensions-from-repo, copy-hibernate-asciidoctor-extensions-from-m2">
-	</target>
-
-	<target name="have-dependencies" depends="downloaded-jars-dir-clean, have-mvn, have-asciidoctor, have-validation-api, have-hibernate-asciidoctor-theme, have-hibernate-asciidoctor-extensions">
+	<target name="have-dependencies" depends="have-mvn, have-validation-api-sources, have-hibernate-asciidoctor-theme">
+		<add-maven-dependency groupId="org.hibernate.infra" groupDirectory="org/hibernate/infra" artifactId="hibernate-asciidoctor-extensions" version="${hibernate-asciidoctor-extensions.version}" outputDirectory="lib" />
+		<add-maven-dependency groupId="org.asciidoctor" groupDirectory="org/asciidoctor" artifactId="asciidoctor-ant" version="${asciidoctor-ant.version}" outputDirectory="lib" />
 	</target>
 
 	<target name="render-html" depends="clean-html-output, have-dependencies, html-output-dir-exists">
@@ -285,6 +235,41 @@
 					<attribute key="bv-version-qualifier" value="${bv.version.qualifier}" />
 					<attribute key="bv-revdate" value="${bv.revdate}" />
 			</asciidoctor:convert>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="add-maven-dependency">
+		<attribute name="groupId" />
+		<attribute name="groupDirectory" />
+		<attribute name="artifactId" />
+		<attribute name="version" />
+		<attribute name="qualifier" default="jar" />
+		<attribute name="dotExtension" default=".jar" />
+		<attribute name="outputDirectory" default="${downloaded-jars.dir}" />
+
+		<sequential>
+			<local name="artifactFileName" />
+			<local name="isSnapshot" />
+			<local name="isAlreadyPresent" />
+			<local name="isInM2" />
+			<local name="isDownloaded" />
+
+			<property name="artifactFileName" value="@{artifactId}-@{version}@{dotExtension}" />
+
+			<condition property="isSnapshot">
+				<contains string="@{version}" substring="-SNAPSHOT" casesensitive="true" />
+			</condition>
+			<available file="@{outputDirectory}/${artifactFileName}" property="isAlreadyPresent" unless:true="${isSnapshot}" />
+			<delete file="@{outputDirectory}/${artifactFileName}" if:true="${isSnapshot}" />
+			<available file="${m2-repository.path}/@{groupDirectory}/@{artifactId}/@{version}/${artifactFileName}" property="isInM2" unless:true="${isAlreadyPresent}"></available>
+			<copy file="${m2-repository.path}/@{groupDirectory}/@{artifactId}/@{version}/${artifactFileName}" todir="@{outputDirectory}" if:true="${isInM2}" />
+			<condition property="isDownloaded">
+				<or>
+					<istrue value="${isAlreadyPresent}" />
+					<istrue value="${isInM2}" />
+				</or>
+			</condition>
+			<download-maven-dependency groupId="@{groupId}" artifactId="@{artifactId}" version="@{version}" qualifier="@{qualifier}" outputDirectory="@{outputDirectory}" unless:true="${isDownloaded}" />
 		</sequential>
 	</macrodef>
 
