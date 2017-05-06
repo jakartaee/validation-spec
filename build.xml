@@ -14,9 +14,13 @@
 	<property name="bv.version.qualifier" value="" /><!-- e.g. ' (Early Draft 1)' - be careful about the space before the qualifier -->
 	<property name="bv.revdate" value="${current.date}" /> <!-- Replace with fixed date when releasing -->
 	<property name="license" value="license-evaluation" />
-	<property name="asciidoctor-ant.version" value="1.5.3" />
+	<property name="asciidoctor-ant.version" value="1.6.0-alpha.3" />
+	<property name="asciidoctorj.version" value="1.6.0-alpha.3" />
+	<property name="asciidoctorj-pdf.version" value="1.5.0-alpha.15" />
+	<property name="jruby.version" value="9.1.8.0" />
+	<property name="jcommander.version" value="1.35" />
 	<property name="hibernate-asciidoctor-theme.version" value="1.0.1.Final" />
-	<property name="hibernate-asciidoctor-extensions.version" value="1.0.0.Final" />
+	<property name="hibernate-asciidoctor-extensions.version" value="1.0.1.Final" />
 	<property name="maven-dependency-plugin.version" value="2.10" />
 	<property name="pdf.name" value="bean-validation-specification.pdf"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
@@ -103,7 +107,11 @@
 
 	<target name="have-dependencies" depends="have-mvn, have-validation-api-sources, have-hibernate-asciidoctor-theme">
 		<add-maven-dependency groupId="org.hibernate.infra" groupDirectory="org/hibernate/infra" artifactId="hibernate-asciidoctor-extensions" version="${hibernate-asciidoctor-extensions.version}" outputDirectory="lib" />
-		<add-maven-dependency groupId="org.asciidoctor" groupDirectory="org/asciidoctor" artifactId="asciidoctor-ant" version="${asciidoctor-ant.version}" outputDirectory="lib" />
+		<add-maven-dependency groupId="org.asciidoctor" groupDirectory="org/asciidoctor" artifactId="asciidoctor-ant" version="${asciidoctor-ant.version}" qualifier="jar:core" dotExtension="-core.jar" outputDirectory="lib" />
+		<add-maven-dependency groupId="org.asciidoctor" groupDirectory="org/asciidoctor" artifactId="asciidoctorj" version="${asciidoctorj.version}" qualifier="jar" outputDirectory="lib" />
+		<add-maven-dependency groupId="org.asciidoctor" groupDirectory="org/asciidoctor" artifactId="asciidoctorj-pdf" version="${asciidoctorj-pdf.version}" qualifier="jar" outputDirectory="lib" />
+		<add-maven-dependency groupId="org.jruby" groupDirectory="org/jruby" artifactId="jruby-complete" version="${jruby.version}" qualifier="jar" outputDirectory="lib" />
+		<add-maven-dependency groupId="com.beust" groupDirectory="com/beust" artifactId="jcommander" version="${jcommander.version}" qualifier="jar" outputDirectory="lib" />
 	</target>
 
 	<target name="render-html" depends="clean-html-output, have-dependencies, html-output-dir-exists">
@@ -119,7 +127,12 @@
 	</target>
 
 	<target name="generate-preprocessed" depends="have-dependencies, preprocessed-output-dir-exists">
-		<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar:lib/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar"/>
+		<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/jruby-complete-${jruby.version}.jar:
+			lib/jcommander-${jcommander.version}.jar:
+			lib/asciidoctorj-${asciidoctorj.version}.jar:
+			lib/asciidoctorj-pdf-${asciidoctorj-pdf.version}.jar:
+			lib/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar:
+			lib/asciidoctor-ant-${asciidoctor-ant.version}-core.jar" />
 		<asciidoctor:convert
 			sourceDocumentName="index.asciidoc"
 			sourceDirectory="sources"
@@ -187,7 +200,12 @@
 		<attribute name="backend" />
 		<attribute name="sourceHighlighter" />
 		<sequential>
-			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar:lib/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar"/>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/jruby-complete-${jruby.version}.jar:
+				lib/jcommander-${jcommander.version}.jar:
+				lib/asciidoctorj-${asciidoctorj.version}.jar:
+				lib/asciidoctorj-pdf-${asciidoctorj-pdf.version}.jar:
+				lib/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar:
+				lib/asciidoctor-ant-${asciidoctor-ant.version}-core.jar" />
 			<asciidoctor:convert
 				sourceDocumentName="index.asciidoc"
 				sourceDirectory="sources"
@@ -214,7 +232,12 @@
 		<attribute name="outputDirectory" />
 		<attribute name="sourceHighlighter" />
 		<sequential>
-			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/asciidoctor-ant-${asciidoctor-ant.version}.jar:lib/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar"/>
+			<taskdef uri="antlib:org.asciidoctor.ant" resource="org/asciidoctor/ant/antlib.xml" classpath="lib/jruby-complete-${jruby.version}.jar:
+				lib/jcommander-${jcommander.version}.jar:
+				lib/asciidoctorj-${asciidoctorj.version}.jar:
+				lib/asciidoctorj-pdf-${asciidoctorj-pdf.version}.jar:
+				lib/hibernate-asciidoctor-extensions-${hibernate-asciidoctor-extensions.version}.jar:
+				lib/asciidoctor-ant-${asciidoctor-ant.version}-core.jar" />
 			<asciidoctor:convert
 				sourceDocumentName="index.asciidoc"
 				sourceDirectory="sources"
