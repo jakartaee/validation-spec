@@ -139,11 +139,5 @@ For the API, in particular the JavaDoc, follow the conventions described at
 
 ## Showing tck assertion coverage
 
-TODO: This information refers to the previous DocBook version of the spec. Can we have something similar for AsciiDoc?
-
-You can update the CSS file to show what is covered and what is not covered by
+You can update the file `docinfo/index-docinfo.html` to show what is covered and what is not covered by
 the TCK assertion coverage.
-
-    .tck-testable, .tck-testable tt { color: blue; }
-    .tck-not-testable, .tck-not-testable tt { color: BlueViolet; }
-    .tck-ignore, .tck-ignore tt { color: black; }
