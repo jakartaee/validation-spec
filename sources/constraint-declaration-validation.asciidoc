@@ -118,6 +118,9 @@ There are built-in value extractors for the generic collection types listed abov
 In addition, there is a built-in extractor for the key objects of maps.
 See <<valueextractordefinition-builtinvalueextractors>> for the complete list of built-in value extractors.
 
+For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of container,
+but not both (in order to prevent the container elements from being validated twice).
+
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
 
 [[constraintdeclarationvalidationprocess-requirements-graphvalidation-examples]]
@@ -135,6 +138,11 @@ public class User {
     // traditional style; continues to be supported
     @Valid
     private List<PhoneNumber> phoneNumbers;
+
+    // discouraged; either the container or the type argument(s) should be
+    // annotated with @Valid, but not both
+    @Valid
+    private List<@Valid PhoneNumber> phoneNumbers;
 }
 ----
 ====
@@ -151,6 +159,11 @@ public class User {
     // traditional style; continues to be supported
     @Valid
     private Map<AddressType, Address> addressesByType;
+
+    // discouraged; either the map or the map value type argument should be
+    // annotated with @Valid, but not both
+    @Valid
+    private Map<AddressType, @Valid Address> addressesByType;
 }
 ----
 ====
