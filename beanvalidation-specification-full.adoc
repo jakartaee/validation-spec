@@ -2479,7 +2479,7 @@ The retrieval of values stored in a container is handled via implementations of 
 package javax.validation.valueextraction;
 
 /**
- * Defines the logic used to extract the values to validate from an object of type {@code T}.
+ * Defines the logic used to extract the values from a container object of type {@code T}.
  * <p>
  * A value extractor is tied to one specific type parameter of {@code T}. The {@link ExtractedValue} annotation
  * is used to mark that type parameter.
@@ -2522,7 +2522,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an object.
          *
-         * @param nodeName the name of the node to be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
          * @param object the value to validate
          */
         void value(String nodeName, Object object);
@@ -2530,7 +2530,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an {@link Iterable} object that is not indexed (e.g. a {@link Set}).
          *
-         * @param nodeName the name of the node to be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
          * @param object the value to validate
          */
         void iterableValue(String nodeName, Object object);
@@ -2538,7 +2538,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an indexed object (e.g. a {@link List} or an array).
          *
-         * @param nodeName the name of the node to be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
          * @param i the index of the value in the original object
          * @param object the value to validate
          */
@@ -2547,7 +2547,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from a keyed object (e.g. a {@link Map}).
          *
-         * @param nodeName the name of the node to be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
          * @param key the key of the value in the original object
          * @param object the value to validate
          */
@@ -2595,17 +2595,35 @@ The `@ExtractedValue` annotation is used to denote the element extracted by a gi
 ----
 package javax.validation.valueextraction;
 
- * Annotation used to mark the type parameter to which a {@link ValueExtractor} is tied.
+/**
+ * Marks the type parameter of a container type to which a {@link ValueExtractor} is tied.
  * <p>
  * Must be given exactly once for a value extractor type.
  *
  * @author Gunnar Morling
  * @author Guillaume Smet
+ *
+ * @see ValueExtractor
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE_USE)
 @Documented
 public @interface ExtractedValue {
+
+    /**
+     * Returns the type of the value extracted by the {@link ValueExtractor}. If not set, returns
+     * {@code Void.class}, meaning the type will be automatically inferred from the type argument
+     * of the parameterized type.
+     * <p>
+     * Used to define value extractors for non-generic wrapper types e.g. {@link OptionalInt}.
+     * <p>
+     * May not be used when {@code ExtractedValue} is defined on the type parameter of
+     * a generic wrapper type. A {@code ValueExtractorDefinitionException} will be thrown in
+     * this case.
+     *
+     * @return the type of the value extracted by the value extractor
+     */
+    Class<?> type() default Void.class;
 
 }
 ----
@@ -2639,9 +2657,17 @@ This causes constraints to be automatically applied to the wrapped value if a co
 package javax.validation.valueextraction;
 
 /**
- * Annotation used on a {@link ValueExtractor} to indicate that the value should be unwrapped by default.
+ * Marks a {@link ValueExtractor} definition so that it is applied automatically when detecting constraints declared on
+ * the container type supported by the extractor, causing the constraints to be applied to the container's elements
+ * instead of the container.
  * <p>
- * This behavior can be changed per constraint using {@code &#064;Constraint(validateWrappedValue = NO )}.
+ * If needed, this behavior can be changed per constraint using {@link Unwrapping.Skip}, causing the constraints to be
+ * applied to the container itself:
+ *
+ * <pre>
+ * &#064;SomeConstraint(payload = Unwrapping.Skip.class)
+ * SomeContainerType container;
+ * </pre>
  *
  * @author Guillaume Smet
  * @since 2.0
@@ -6452,8 +6478,7 @@ public enum ElementKind {
     RETURN_VALUE,
 
     /**
-     * An element stored in a container, e.g. the value wrapped by {@code Optional}, a value stored in a {@code List} or
-     * a value stored in an array.
+     * An element stored in a container, e.g. a key or value of a {@code Map} or an element of a {@code List}.
      *
      * @since 2.0
      */
@@ -10399,8 +10424,6 @@ The `ContainerDescriptor` interface describes those elements that can host conta
 ----
 package javax.validation.metadata;
 
-import javax.validation.Valid;
-
 /**
  * Represents an element that might be a container, thus allowing container element constraints.
  *
@@ -10410,25 +10433,15 @@ import javax.validation.Valid;
 public interface ContainerDescriptor {
 
     /**
-     * Returns the container element type descriptor for a given type argument.
-     * <p>
-     * Returns {@code null} if the container element type does not exist or has no constraint nor is marked as cascaded
-     * (see {@link #getConstrainedContainerElementTypes()})
+     * Returns the list of descriptors representing the container element
+     * types (e.g. type arguments of a generic type) of this container, if any,
+     * in the order of their declaration.
      *
-     * @param typeArgumentIndex type argument index evaluated
-     * @return the container element type descriptor
+     * @return the list of descriptors representing the container element types of
+     *         this container; an empty list will be returned if there are  no
+     *         container element types, but never {@code null}
      */
-    ContainerElementTypeDescriptor getConstraintsForContainerElementType(int typeArgumentIndex);
-
-    /**
-     * Returns a set of container element type descriptors having at least one constraint defined or marked as cascaded
-     * ({@link Valid}).
-     * <p>
-     * If no container element type matches, an empty set is returned.
-     *
-     * @return the set of {@link ContainerElementTypeDescriptor}s
-     */
-    Set<ContainerElementTypeDescriptor> getConstrainedContainerElementTypes();
+    List<ContainerElementTypeDescriptor> getContainerElementTypes();
 }
 ----
 
