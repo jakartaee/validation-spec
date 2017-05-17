@@ -280,7 +280,7 @@ The integration points with Context and Dependency Injection (CDI) have been inc
 [[whatsnew-11-groupconversion]]
 ==== Group conversion
 
-The specification offers a way to alter the targeted group when validation cascading in happening. This feature is particularly useful to reuse a given object (graph) and to avoid leaking groups between various object subgraphs. It also makes for more readable constraints.
+The specification offers a way to alter the targeted group when validation cascading is happening. This feature is particularly useful to reuse a given object (graph) and to avoid leaking groups between various object subgraphs. It also makes for more readable constraints.
 
 [[whatsnew-11-expressionlanguage]]
 ==== Message interpolation via the unified expression language
@@ -694,7 +694,7 @@ package com.acme.constraint;
 @Retention(RUNTIME)
 public @interface ELAssert {
 
-    String message() default "{com.acme.constraint.DateParametersConsistent.message}";
+    String message() default "{com.acme.constraint.ELAssert.message}";
 
     Class<?>[] groups() default {};
 
@@ -1461,12 +1461,12 @@ And some invalid definitions in <<example-constraintsdefinitionimplementation-va
 [source, JAVA]
 ----
 //parameterized type
-public class SizeValidatorForString implements<Size, Collection<String>> {
+public class SizeValidatorForString implements ConstraintValidator<Size, Collection<String>> {
     [...]
 }
 
 //parameterized type using bounded wildcard
-public class SizeValidatorForCollection implements<Size, Collection<? extends Address>> {
+public class SizeValidatorForCollection implements ConstraintValidator<Size, Collection<? extends Address>> {
     [...]
 }
 
@@ -2104,6 +2104,7 @@ context.buildConstraintViolationWithTemplate( "this detail is wrong" )
 //under the "home" key in the map
 context.buildConstraintViolationWithTemplate( "Incorrect home address" )
             .addBeanNode()
+                .inContainer( Map.class, 0 )
                 .inIterable().atKey( "home" )
             .addConstraintViolation();
 
@@ -2113,6 +2114,7 @@ context.buildConstraintViolationWithTemplate( "Incorrect home address" )
 context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addPropertyNode( "addresses" )
             .addPropertyNode( "country" )
+                .inContainer( Map.class, 0 )
                 .inIterable().atKey( "home" )
             .addPropertyNode( "name" )
             .addConstraintViolation();
@@ -2133,6 +2135,7 @@ context.buildConstraintViolationWithTemplate(
         "Map entry home present in both and does not match" )
             .addParameterNode( 1 )
             .addBeanNode()
+                .inContainer( Map.class, 0 )
                 .inIterable().atKey( "home" )
             .addConstraintViolation();
 
@@ -2145,6 +2148,7 @@ context.buildConstraintViolationWithTemplate(
         "Map entry home present in both but city does not match" )
             .addParameterNode( 1 )
             .addPropertyNode( "city" )
+                .inContainer( Map.class, 0 )
                 .inIterable().atKey( "home" )
             .addConstraintViolation();
 ----
@@ -2200,35 +2204,46 @@ This can be useful for testing, for applying the time zone of the currently logg
 .ConstraintValidator implementation
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
- * Check that a text is within the authorized syntax
+ * Check that a text is within the authorized syntax.
  */
 public class SyntaxValidator implements ConstraintValidator<Syntax, String> {
+
     private Set<Format> allowedFormats;
 
     /**
-     * Configure the constraint validator based on the elements
-     * specified at the time it was defined.
+     * Configure the constraint validator based on the elements specified at the time it was defined.
+     *
      * @param constraint the constraint definition
      */
+    @Override
     public void initialize(Syntax constraint) {
-        allowedFormats = new HashSet( Arrays.asList( constraint.value() ) );
+        allowedFormats = convertToFormatSet( constraint.value() );
     }
 
     /**
-     * Validate a specified value.
-     * returns false if the specified value does not conform to the definition
+     * Validate a specified value. returns false if the specified value does not conform to the definition
      */
+    @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if ( value == null ) return true;
+        if ( value == null )
+            return true;
 
         return allowedFormats.size() == 0
-            || (! Collections.disjoint( guessFormat(value), allowedFormats ) );
+                || ( !Collections.disjoint( guessFormats( value ), allowedFormats ) );
     }
 
-    Set<Format> guessFormats(String text) { [...] }
+    private Set<Format> convertToFormatSet(String[] value) {
+        // [...]
+        return null;
+    }
+
+    private Set<Format> guessFormats(String text) {
+        // [...]
+        return null;
+    }
 }
 ----
 
@@ -2241,33 +2256,27 @@ The following listing shows a validator implementing the validation logic for a 
 .Cross-parameter validator implementation
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
- * Check that two date parameters of a method are in the expected order. Expects the
- * 2nd and 3rd parameter of the validated method to be of type java.util.Date.
+ * Check that two date parameters of a method are in the expected order. Expects the 2nd and 3rd parameter of the
+ * validated method to be of type java.util.Date.
  */
 @SupportedValidationTarget(ValidationTarget.PARAMETERS)
-public class DateParametersConsistentValidator implements<DateParametersConsistent, Object[]> {
+public class DateParametersConsistentValidator implements ConstraintValidator<DateParametersConsistent, Object[]> {
 
     /**
-     * Configure the constraint validator based on the elements
-     * specified at the time it was defined.
-     * @param constraint the constraint definition
+     * Validate a specified value. returns false if the specified value does not conform to the definition
      */
-    public void initialize(DateParametersConsistent constraint) {
-    }
-
-    /**
-     * Validate a specified value.
-     * returns false if the specified value does not conform to the definition
-     */
+    @Override
     public boolean isValid(Object[] value, ConstraintValidatorContext context) {
         if ( value.length != 3 ) {
-            throw new IllegalStateException( "Unexpected method signature" );
+            throw new IllegalArgumentException( "Unexpected method signature" );
         }
         // one or both limits are unbounded => always consistent
-        if ( value[1] == null || value[2] == null ) return true;
+        if ( value[1] == null || value[2] == null ) {
+            return true;
+        }
         return ( (Date) value[1] ).before( (Date) value[2] );
     }
 }
@@ -2287,7 +2296,7 @@ The following listing shows a validator implementing the validation logic for a 
  * provided by the constraint.
  */
 @SupportedValidationTarget({ValidationTarget.ANNOTATED_ELEMENT, ValidationTarget.PARAMETERS})
-public class ELScriptValidator implements<ELScript, Object> {
+public class ELScriptValidator implements ConstraintValidator<ELScript, Object> {
 
     public void initialize(ELScript constraint) {
         [...]
@@ -2306,53 +2315,66 @@ The next example shows how to use [classname]`ConstraintValidatorContext`.
 .Use of ConstraintValidatorContext
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
 /**
- * Check that a text is within the authorized syntax
+ * Check that a text is within the authorized syntax.
+ * <p>
  * Error messages are using either key:
- *  - com.acme.constraint.Syntax.unknown if no particular syntax is detected
- *  - com.acme.constraint.Syntax.unauthorized if the syntax is not allowed
+ * <ul>
+ *   <li>com.acme.constraint.Syntax.unknown if no particular syntax is detected</li>
+ *   <li>com.acme.constraint.Syntax.unauthorized if the syntax is not allowed</li>
+ * </ul>
  */
 public class FineGrainedSyntaxValidator implements ConstraintValidator<Syntax, String> {
+
     private Set<Format> allowedFormats;
 
     /**
-     * Configure the constraint validator based on the elements
-     * specified at the time it was defined.
+     * Configure the constraint validator based on the elements specified at the time it was defined.
+     *
      * @param constraint the constraint definition
      */
+    @Override
     public void initialize(Syntax constraint) {
-        allowedFormats = new HashSet( Arrays.asList( constraint.value() ) );
+        allowedFormats = convertToFormatSet( constraint.value() );
     }
 
     /**
-     * Validate a specified value.
-     * returns false if the specified value does not conform to the definition
+     * Validate a specified value. returns false if the specified value does not conform to the definition
      */
+    @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        if ( value == null ) return true;
-        Set<Format> guessedFormats = guessFormats(value);
+        if ( value == null )
+            return true;
+        Set<Format> guessedFormats = guessFormats( value );
 
         context.disableDefaultConstraintViolation();
         if ( guessedFormats.size() == 0 ) {
             String unknown = "{com.acme.constraint.Syntax.unknown}";
-            context.buildConstraintViolationWithTemplate(unknown)
-                       .addConstraintViolation();
+            context.buildConstraintViolationWithTemplate( unknown )
+                    .addConstraintViolation();
             return false;
         }
         if ( allowedFormats.size() != 0
-            && Collections.disjoint( guessedFormats, allowedFormats ) ) {
-
+                && Collections.disjoint( guessedFormats, allowedFormats ) ) {
             String unauthorized = "{com.acme.constraint.Syntax.unauthorized}";
-            context.buildConstraintViolationWithTemplate(unauthorized)
-                       .addConstraintViolation();
+            context.buildConstraintViolationWithTemplate( unauthorized )
+                    .addConstraintViolation();
             return false;
         }
         return true;
     }
 
-    Set<Format> guessFormats(String text) { [...] }
+    private Set<Format> convertToFormatSet(String[] value) {
+        // [...]
+        return null;
+    }
+
+    private Set<Format> guessFormats(String text) {
+        // [...]
+        return null;
+    }
 }
 ----
 
@@ -2457,7 +2479,7 @@ The retrieval of values stored in a container is handled via implementations of 
 package javax.validation.valueextraction;
 
 /**
- * Defines the logic used to extract the values from a container object of type {@code T}.
+ * Defines the logic used to extract the values to validate from an object of type {@code T}.
  * <p>
  * A value extractor is tied to one specific type parameter of {@code T}. The {@link ExtractedValue} annotation
  * is used to mark that type parameter.
@@ -2500,7 +2522,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an object.
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node to be added to the {@link Path}
          * @param object the value to validate
          */
         void value(String nodeName, Object object);
@@ -2508,7 +2530,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an {@link Iterable} object that is not indexed (e.g. a {@link Set}).
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node to be added to the {@link Path}
          * @param object the value to validate
          */
         void iterableValue(String nodeName, Object object);
@@ -2516,7 +2538,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an indexed object (e.g. a {@link List} or an array).
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node to be added to the {@link Path}
          * @param i the index of the value in the original object
          * @param object the value to validate
          */
@@ -2525,7 +2547,7 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from a keyed object (e.g. a {@link Map}).
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node to be added to the {@link Path}
          * @param key the key of the value in the original object
          * @param object the value to validate
          */
@@ -2547,7 +2569,7 @@ When passing a non-null node name to any of the receiver methods and when the ex
 a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.
 If null is passed as node name, no node will be appended to the property path.
 The resulting property path will then be the same as if the constraint had been given on the container instead of a container element.
-That is desirable for pure wrapper types such as `Optional`.
+That is desirable for pure wrapper types such as `Optional`, `OptionalInt` etc.
 
 The container value passed to a value extractor is retrieved from the element that hosts the type argument carrying the constraint or `@Valid` annotation:
 
@@ -2573,15 +2595,12 @@ The `@ExtractedValue` annotation is used to denote the element extracted by a gi
 ----
 package javax.validation.valueextraction;
 
-/**
- * Marks the type parameter of a container type to which a {@link ValueExtractor} is tied.
+ * Annotation used to mark the type parameter to which a {@link ValueExtractor} is tied.
  * <p>
  * Must be given exactly once for a value extractor type.
  *
  * @author Gunnar Morling
  * @author Guillaume Smet
- *
- * @see ValueExtractor
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE_USE)
@@ -2593,14 +2612,17 @@ public @interface ExtractedValue {
 
 The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.
 
-`@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
-Only wildcard type arguments are supported as target for `@ExtractedValue`.
+For generic container types (e.g. `java.util.List`), `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
+Only wildcard type arguments are supported as target for `@ExtractedValue` in this case.
 
 [NOTE]
 ====
 This implies that only one extractor is supported for a given generic type.
 I.e. there can be an extractor for `List<?>`, but not one for `List<String>` and one for `List<Integer>`.
 ====
+
+For non-generic container types (e.g. `java.util.OptionalInt`), `@ExtractedValue` is to be specified on the container type as used in the extractor definition.
+The type of the wrapped element(s) must be specified using `@ExtractedValue#type()` in this case.
 
 In case an illegal value extractor definition is detected, a `ValueExtractorDefinitionException` is raised.
 
@@ -2617,17 +2639,9 @@ This causes constraints to be automatically applied to the wrapped value if a co
 package javax.validation.valueextraction;
 
 /**
- * Marks a {@link ValueExtractor} definition so that it is applied automatically when detecting constraints declared on
- * the container type supported by the extractor, causing the constraints to be applied to the container's elements
- * instead of the container.
+ * Annotation used on a {@link ValueExtractor} to indicate that the value should be unwrapped by default.
  * <p>
- * If needed, this behavior can be changed per constraint using {@link Unwrapping.Skip}, causing the constraints to be
- * applied to the container itself:
- *
- * <pre>
- * &#064;SomeConstraint(payload = Unwrapping.Skip.class)
- * SomeContainerType container;
- * </pre>
+ * This behavior can be changed per constraint using {@code &#064;Constraint(validateWrappedValue = NO )}.
  *
  * @author Guillaume Smet
  * @since 2.0
@@ -2663,9 +2677,11 @@ Compatible implementations provide value extractors for the following types out 
 * `java.util.Map`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
-* `java.util.Optional`; `value()` must be invoked if a value is present, passing `null` as node name
+* `java.util.Optional`; `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name
+* `java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
 * `javafx.beans.observable.ObservableValue`; `value()` must be invoked with the observable value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
 * `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<list element>` as node name
+* `javafx.beans.property.ReadOnlySetProperty` and `javafx.beans.property.SetProperty`; `iterableValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
 * `javafx.beans.property.ReadOnlyMapProperty` and `javafx.beans.property.MapProperty`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
@@ -2698,7 +2714,21 @@ public class OptionalValueExtractor implements ValueExtractor<Optional<@Extracte
 
     @Override
     public void extractValues(Optional<?> originalValue, ValueExtractor.ValueReceiver receiver) {
-        receiver.value( null, originalValue.isPresent() ? originalValue.get() : null );
+        receiver.value( null, originalValue.orElse( null ) );
+    }
+}
+----
+
+A value extractor for `java.util.OptionalInt`:
+
+[source,java]
+----
+@UnwrapByDefault
+public class OptionalIntValueExtractor implements ValueExtractor<@ExtractedValue(type = Integer.class) OptionalInt> {
+
+    @Override
+    public void extractValues(OptionalInt originalValue, ValueReceiver receiver) {
+        receiver.value( null, originalValue.isPresent() ? originalValue.getAsInt() : null );
     }
 }
 ----
@@ -2710,7 +2740,7 @@ The following extractor definition is illegal as it specifies `@ExtractedValue` 
 public class IllegalMapExtractor implements ValueExtractor<Map<@ExtractedValue ?, @ExtractedValue ?>> { ... }
 ----
 
-The following extractor definition is illegal as it specifies `@ExtractedValue` on a non-wildcard type argument:
+The following extractor definition is unsupported as it specifies `@ExtractedValue` on a non-wildcard type argument:
 
 [source,java]
 ----
@@ -2809,8 +2839,6 @@ In addition to supporting instance validation, validation of graphs of objects i
 ====
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Marks a property, method parameter or method return type for validation cascading.
  * <p>
@@ -2851,6 +2879,9 @@ There are built-in value extractors for the generic collection types listed abov
 In addition, there is a built-in extractor for the key objects of maps.
 See <<valueextractordefinition-builtinvalueextractors>> for the complete list of built-in value extractors.
 
+For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of container,
+but not both (in order to prevent the container elements from being validated twice).
+
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
 
 [[constraintdeclarationvalidationprocess-requirements-graphvalidation-examples]]
@@ -2868,6 +2899,11 @@ public class User {
     // traditional style; continues to be supported
     @Valid
     private List<PhoneNumber> phoneNumbers;
+
+    // discouraged; either the container or the type argument(s) should be
+    // annotated with @Valid, but not both
+    @Valid
+    private List<@Valid PhoneNumber> phoneNumbers;
 }
 ----
 ====
@@ -2884,6 +2920,11 @@ public class User {
     // traditional style; continues to be supported
     @Valid
     private Map<AddressType, Address> addressesByType;
+
+    // discouraged; either the map or the map value type argument should be
+    // annotated with @Valid, but not both
+    @Valid
+    private Map<AddressType, @Valid Address> addressesByType;
 }
 ----
 ====
@@ -3618,18 +3659,19 @@ private List<@NotEmpty ?> list;
 
 Besides specifying container element constraints on type arguments, it is also possible to declare container element constraints on non-generic container types.
 This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its elements.
-An example are JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
+Examples for types being subject to implicit unwrapping are `java.util.OptionalInt`, `OptionalLong` and `OptionalDouble` as well as JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
 
 .Implicit unwrapping of container elements
 ====
 [source, JAVA]
 ----
+@Min(1) private OptionalInt optionalNumber;
 @Size(max=10) private StringProperty name;
 @Positive private IntegerProperty positiveInt;
 ----
 ====
 
-Here the `@Size` and `@Positive` constraints don't apply to the annotated `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
+Here the `@Min`, `@Size` and `@Positive` constraints don't apply to the annotated `OptionalInt`, `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
 
 For this to work, an unambiguously resolvable value extractor must be defined which carries the `@UnwrapByDefault` annotation (see <<valueextractordefinition-unwrapbydefault>>).
 
@@ -4622,7 +4664,14 @@ A constraint is associated to one or more [classname]`ConstraintValidator` imple
 
 [tck-testable]#The list of [classname]``ConstraintValidator``s can contain at most one which targets cross-parameter. If the constraint targets the parameters of an executable either implicitly or by the use of [methodname]`validationAppliesTo` in the constraint - see <<constraintsdefinitionimplementation-constraintdefinition-properties-validationappliesto>>, then the cross-parameter [classname]`ConstraintValidator` is used. If none is present, a [classname]`ConstraintDefinitionException` is raised. If more than one cross-parameter [classname]`ConstraintValidator` is present, a [classname]`ConstraintDefinitionException` is raised.#
 
-[tck-testable]#If the constraint is a generic constraint, the following rules apply. If the constraint declaration is hosted on a class or an interface, the targeted type is the class or the interface.# [tck-testable]#If the constraint is hosted on a class attribute, the type of the attribute is the targeted type.# [tck-testable]#If the constraint is hosted on a getter, the return type of the getter is the targeted type.# In other words, the resolution algorithm considers the type as defined in the method signature and not the runtime type of the value.
+[tck-testable]#If the constraint is a generic constraint, the following rules apply. If the constraint declaration is hosted on a class or an interface, the targeted type is the class or the interface.#
+[tck-testable]#If the constraint is hosted on a class attribute, the type of the attribute is the targeted type.#
+[tck-testable]#If the constraint is hosted on a method (getter or non-getter) or constructor, the return type is the targeted type.#
+[tck-testable]#If the constraint is hosted on a method or constructor parameter, the parameter type is the targeted type.#
+[tck-testable]#If the constraint is hosted on a type argument of a generic type (i.e. a container element constraint, see <<constraintdeclarationvalidationprocess-containerelementconstraints>>), the type argument's type is the targeted type.#
+[tck-testable]#If the constraint is subject to implicit unwrapping (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>) and the applicable value extractor is defined for a generic type (e.g. `javafx.beans.value.ObservableValue`), the targeted type is the type captured for the type parameter handled by the value extractor (e.g. `String` if the constraint is placed on a `StringProperty`).#
+[tck-testable]#If the constraint is subject to implicit unwrapping and the applicable value extractor is defined for a non-generic type, the targeted type is the type defined by the extractor via `@ExtractedValue#type()` (e.g. `Integer` if the constraint is placed on a `java.util.OptionalInt`).#
+In other words, the resolution algorithm considers the type as defined in the source code and not the runtime type of the value.
 
 The rules written below describe formally the following statement: [tck-testable]#the [classname]`ConstraintValidator` chosen to validate the generic constraint on a declared type [classname]`T` is the one where the [classname]`ConstraintValidator` targets the annotated element, where the type supported by the [classname]`ConstraintValidator` is a supertype of [classname]`T` and where there is no other [classname]`ConstraintValidator` whose supported type is a supertype of [classname]`T` and not a supertype of the chosen [classname]`ConstraintValidator` supported type.#
 
@@ -5072,10 +5121,6 @@ public @interface NotEmpty {
     }
 
     class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
-
-        @Override
-        public void initialize(NotEmpty constraintAnnotation) {
-        }
 
         @Override
         public boolean isValid(String value, ConstraintValidatorContext context) {
@@ -6510,7 +6555,7 @@ case PROPERTY:
 ** [tck-testable]#if the association is a [classname]`List` or an array, the following [classname]`Node` object added contains the index value in [methodname]`getIndex()`.#
 ** [tck-testable]#if the association is a [classname]`Map`, the following [classname]`Node` object added (representing a given map entry) contains the key value in [methodname]`getKey()`#
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`)#
-** [tck-testable]#if the traversed object is of a container type (e.g. a `List` or `Map`), the following `Node` object added returns the type of the traversed container via `getContainerClass()` and the index of the type argument to which the constraint applies via `getTypeArgumentIndex()#
+** [tck-testable]#if the traversed object is of a container type (e.g. a `List` or `Map`), the following `Node` object added returns the type of the traversed container via `getContainerClass()` and the index of the type argument to which the constraint applies via `getTypeArgumentIndex()`#
 
 [tck-testable]
 --
@@ -6566,9 +6611,11 @@ If additional path nodes are added in a constraint validator implementation usin
 ** [tck-testable]#A [classname]`PropertyNode` is appended in case [methodname]`addPropertyNode(String)` is invoked. The node name is equal to the name provided. The [classname]`ElementKind` of the node is `ElementKind.PROPERTY`.#
 ** [tck-testable]#A [classname]`BeanNode` is appended in case [methodname]`addBeanNode()` is invoked. The node name is `null`. The [classname]`ElementKind` of the node is `ElementKind.BEAN`.#
 ** [tck-testable]#A [classname]`ParameterNode` is appended in case [methodname]`addParameterNode(int)` is invoked. The node name is equal to the parameter name at the provided index. The name is determined by the current parameter name provider. The [classname]`ElementKind` of the node is `ElementKind.PARAMETER`. The previous node (removed) must be a [classname]`CrossParameterNode`.#
-** [tck-testable]#if [methodname]`inIterable()` is invoked, the node returns `true` for [methodname]`isInIterable()`, `false` otherwise.#
-** [tck-testable]#if [methodname]`atIndex(Integer)` is invoked, the node returns the provided integer for [methodname]`getIndex()`, `null` otherwise.#
-** [tck-testable]#if [methodname]`atKey(Object)` is invoked, the node returns the provided object for [methodname]`getKey()`, `null` otherwise.#
+** [tck-testable]#A [classname]`ContainerElementNode` is appended in case [methodname]`addContainerElementNode(String, Class, Integer)` is invoked. The name, container type and type argument index of the node are equal to the values provided. The [classname]`ElementKind` of the node is `ElementKind.CONTAINER_ELEMENT`.#
+** [tck-testable]#If [methodname]`inIterable()` is invoked, the node returns `true` for [methodname]`isInIterable()`, `false` otherwise.#
+** [tck-testable]#If [methodname]`inContainer(Class, Integer)` is invoked, the node returns the passed container type and type argument index from `getContainerClass()` and `getTypeArgumentIndex()`, respectively.#
+** [tck-testable]#If [methodname]`atIndex(Integer)` is invoked, the node returns the provided integer for [methodname]`getIndex()`, `null` otherwise.#
+** [tck-testable]#If [methodname]`atKey(Object)` is invoked, the node returns the provided object for [methodname]`getKey()`, `null` otherwise.#
 --
 
 [NOTE]
@@ -6797,10 +6844,6 @@ public @interface NotEmpty {
     }
 
     class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
-
-        @Override
-        public void initialize(NotEmpty constraintAnnotation) {
-        }
 
         @Override
         public boolean isValid(String value, ConstraintValidatorContext context) {
@@ -10356,6 +10399,8 @@ The `ContainerDescriptor` interface describes those elements that can host conta
 ----
 package javax.validation.metadata;
 
+import javax.validation.Valid;
+
 /**
  * Represents an element that might be a container, thus allowing container element constraints.
  *
@@ -10365,15 +10410,25 @@ package javax.validation.metadata;
 public interface ContainerDescriptor {
 
     /**
-     * Returns the list of descriptors representing the container element
-     * types (e.g. type arguments of a generic type) of this container, if any,
-     * in the order of their declaration.
+     * Returns the container element type descriptor for a given type argument.
+     * <p>
+     * Returns {@code null} if the container element type does not exist or has no constraint nor is marked as cascaded
+     * (see {@link #getConstrainedContainerElementTypes()})
      *
-     * @return the list of descriptors representing the container element types of
-     *         this container; an empty set will be returned if this executable has
-     *         no container element types, but never {@code null}
+     * @param typeArgumentIndex type argument index evaluated
+     * @return the container element type descriptor
      */
-    List<ContainerElementTypeDescriptor> getContainerElementTypes();
+    ContainerElementTypeDescriptor getConstraintsForContainerElementType(int typeArgumentIndex);
+
+    /**
+     * Returns a set of container element type descriptors having at least one constraint defined or marked as cascaded
+     * ({@link Valid}).
+     * <p>
+     * If no container element type matches, an empty set is returned.
+     *
+     * @return the set of {@link ContainerElementTypeDescriptor}s
+     */
+    Set<ContainerElementTypeDescriptor> getConstrainedContainerElementTypes();
 }
 ----
 
@@ -10595,10 +10650,6 @@ public @interface NotEmpty {
     }
 
     class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
-
-        @Override
-        public void initialize(NotEmpty constraintAnnotation) {
-        }
 
         @Override
         public boolean isValid(String value, ConstraintValidatorContext context) {
@@ -13804,9 +13855,9 @@ Registration of the built-in default beans and the provider specific beans may b
 ====
 
 [[integration-cdi-customconfiguration]]
-==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` and [classname]`TraversableResolver`
+==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`, [classname]`TraversableResolver` and `ValueExtractor`
 
-[tck-testable]#If a custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` or [classname]`TraversableResolver` class is defined in the XML deployment descriptor (see <<validationapi-bootstrapping-xmlconfiguration>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
+[tck-testable]#If custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`, [classname]`TraversableResolver` or `ValueExtractor` classes are defined in the XML deployment descriptor (see <<validationapi-bootstrapping-xmlconfiguration>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
 
 [tck-testable]
 --
@@ -13997,6 +14048,18 @@ This is not an endorsement of the Java Persistence expert group or the Bean Vali
 
 <<<
 
+[[appendix-module-name]]
+
+[appendix]
+== Module name
+
+While not specified by this specification, Bean Validation providers are encouraged to use the module name `java.validation`
+in case they provide the Bean Validation API as a module for the Java Platform Module System (as defined by JSR 376).
+
+A mandatory module name - which may be `java.validation` or another one - will be defined in a future revision of this specification.
+
+<<<
+
 [[changelog]]
 
 
@@ -14008,6 +14071,30 @@ This is not an endorsement of the Java Persistence expert group or the Bean Vali
 
 [source]
 ....
+2.0.0.Beta1 (Public Review Draft 1, 2017-04-24)
+-----------------------------------------------
+
+** Improvement
+    * [BVAL-598] - Use the license-maven-plugin to check the presence of the license
+    * [BVAL-596] - Move ValidateUnwrappedValue to javax.validation.metadata
+    * [BVAL-595] - Adding missing @since tags
+
+** New Feature
+    * [BVAL-594] - Extend meta-data API to cover container element constraints
+    * [BVAL-593] - Allow to configure group conversions for container elements in XML
+    * [BVAL-591] - Dissolve "container element validation" appendix into spec sections
+    * [BVAL-589] - Document release process of the spec
+    * [BVAL-549] - Nested cascaded validation
+
+** Task
+    * [BVAL-602] - Check that every section has an id
+    * [BVAL-599] - Remove metadata usage example from API
+    * [BVAL-585] - Add descriptions of build goals to beanvalidation-spec/README.md
+    * [BVAL-584] - Use short license headers
+    * [BVAL-581] - Discuss with Java EE EG whether it's actually WEB-INF/validation.xml
+    * [BVAL-577] - Proof-read "3.3. Constraint composition" on "composing" vs. "composed"
+    * [BVAL-575] - Update documentation of Configuration#getDefaultParameterNameProvider()
+
 2.0.0.Alpha2 (2017-03-28)
 -------------------------
 
