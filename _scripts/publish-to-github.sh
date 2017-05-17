@@ -1,5 +1,5 @@
 #! /bin/bash
-ant render-html
+ant deep-clean render-html
 rc=$?
 if [[ $rc != 0 ]] ; then
     echo "ERROR: Specification build failed!"
