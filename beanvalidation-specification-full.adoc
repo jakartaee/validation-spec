@@ -2104,7 +2104,7 @@ context.buildConstraintViolationWithTemplate( "this detail is wrong" )
 //under the "home" key in the map
 context.buildConstraintViolationWithTemplate( "Incorrect home address" )
             .addBeanNode()
-                .inContainer( Map.class, 0 )
+                .inContainer( Map.class, 1 )
                 .inIterable().atKey( "home" )
             .addConstraintViolation();
 
@@ -2114,9 +2114,18 @@ context.buildConstraintViolationWithTemplate( "Incorrect home address" )
 context.buildConstraintViolationWithTemplate( "this detail is wrong" )
             .addPropertyNode( "addresses" )
             .addPropertyNode( "country" )
-                .inContainer( Map.class, 0 )
+                .inContainer( Map.class, 1 )
                 .inIterable().atKey( "home" )
             .addPropertyNode( "name" )
+            .addConstraintViolation();
+
+//From a class level constraint on User
+//Build a constraint violation on the default path + addresses["home"].<map key>
+//i.e. a container element constraint violation for the map key
+context.buildConstraintViolationWithTemplate( "the map key is invalid" )
+            .addPropertyNode( "addresses" )
+            .addContainerElementNode( "<map key>", Map.class, 0 )
+                .inIterable().atKey( "invalid" )
             .addConstraintViolation();
 
 //To create a subnode representing a method parameter from a cross-parameter constraint violation
@@ -2135,7 +2144,7 @@ context.buildConstraintViolationWithTemplate(
         "Map entry home present in both and does not match" )
             .addParameterNode( 1 )
             .addBeanNode()
-                .inContainer( Map.class, 0 )
+                .inContainer( Map.class, 1 )
                 .inIterable().atKey( "home" )
             .addConstraintViolation();
 
@@ -2148,7 +2157,7 @@ context.buildConstraintViolationWithTemplate(
         "Map entry home present in both but city does not match" )
             .addParameterNode( 1 )
             .addPropertyNode( "city" )
-                .inContainer( Map.class, 0 )
+                .inContainer( Map.class, 1 )
                 .inIterable().atKey( "home" )
             .addConstraintViolation();
 ----
