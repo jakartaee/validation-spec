@@ -32,6 +32,7 @@
 	<property name="m2-repository.path" value="${user.home}/.m2/repository" />
 	<property name="maven-central.url" value="http://repo.maven.apache.org/maven2" />
 	<property name="maven-settings.path">settings-example.xml</property>
+	<property name="ci-user">jenkins</property>
 
 	<!-- Needed for the quick preview only -->
 	<property name="browser" location="/usr/bin/google-chrome"/>
@@ -278,6 +279,11 @@
 			<local name="isAlreadyPresent" />
 			<local name="isInM2" />
 			<local name="isDownloaded" />
+			<local name="isCI" />
+
+			<condition property="isCI">
+				<equals arg1="${env.USER}" arg2="${ci-user}" />
+			</condition>
 
 			<property name="artifactFileName" value="@{artifactId}-@{version}@{dotExtension}" />
 
@@ -289,11 +295,21 @@
 			<available file="${m2-repository.path}/@{groupDirectory}/@{artifactId}/@{version}/${artifactFileName}" property="isInM2" unless:true="${isAlreadyPresent}"></available>
 			<copy file="${m2-repository.path}/@{groupDirectory}/@{artifactId}/@{version}/${artifactFileName}" todir="@{outputDirectory}" if:true="${isInM2}" />
 			<condition property="isDownloaded">
-				<or>
-					<istrue value="${isAlreadyPresent}" />
-					<istrue value="${isInM2}" />
-				</or>
+				<and>
+					<or>
+						<istrue value="${isAlreadyPresent}" />
+						<istrue value="${isInM2}" />
+					</or>
+					<not>
+						<!-- if we are on CI, we download a fresh version anyway -->
+						<istrue value="${isCI}" />
+					</not>
+				</and>
 			</condition>
+
+			<!-- if we are on CI, we clean up the artifact potentially present -->
+			<delete file="@{outputDirectory}/${artifactFileName}" if:true="${isCI}" quiet="true" />
+
 			<download-maven-dependency groupId="@{groupId}" artifactId="@{artifactId}" version="@{version}" qualifier="@{qualifier}" outputDirectory="@{outputDirectory}" unless:true="${isDownloaded}" />
 		</sequential>
 	</macrodef>
