@@ -27,7 +27,7 @@ When passing a non-null node name to any of the receiver methods and when the ex
 a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.
 If null is passed as node name, no node will be appended to the property path.
 The resulting property path will then be the same as if the constraint had been given on the container instead of a container element.
-That is desirable for pure wrapper types such as `Optional`.
+That is desirable for pure wrapper types such as `Optional`, `OptionalInt` etc.
 
 The container value passed to a value extractor is retrieved from the element that hosts the type argument carrying the constraint or `@Valid` annotation:
 
@@ -56,14 +56,17 @@ include::{validation-api-source-dir}javax/validation/valueextraction/ExtractedVa
 
 The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.
 
-`@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
-Only wildcard type arguments are supported as target for `@ExtractedValue`.
+For generic container types (e.g. `java.util.List`), `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
+Only wildcard type arguments are supported as target for `@ExtractedValue` in this case.
 
 [NOTE]
 ====
 This implies that only one extractor is supported for a given generic type.
 I.e. there can be an extractor for `List<?>`, but not one for `List<String>` and one for `List<Integer>`.
 ====
+
+For non-generic container types (e.g. `java.util.OptionalInt`), `@ExtractedValue` is to be specified on the container type as used in the extractor definition.
+The type of the wrapped element(s) must be specified using `@ExtractedValue#type()` in this case.
 
 In case an illegal value extractor definition is detected, a `ValueExtractorDefinitionException` is raised.
 
@@ -104,6 +107,7 @@ Compatible implementations provide value extractors for the following types out 
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name
 * `java.util.Optional`; `value()` must be invoked if a value is present, passing `null` as node name
+* `java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; `value()` must be invoked if a value is present, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
 * `javafx.beans.observable.ObservableValue`; `value()` must be invoked with the observable value, passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`
 * `javafx.beans.property.ReadOnlyListProperty` and `javafx.beans.property.ListProperty`; `indexedValue()` must be invoked for each contained element, passing the string literal `<list element>` as node name
 * `javafx.beans.property.ReadOnlySetProperty` and `javafx.beans.property.SetProperty`; `iterableValue()` must be invoked for each contained element, passing the string literal `<iterable element>` as node name
@@ -139,7 +143,21 @@ public class OptionalValueExtractor implements ValueExtractor<Optional<@Extracte
 
 	@Override
 	public void extractValues(Optional<?> originalValue, ValueExtractor.ValueReceiver receiver) {
-		receiver.value( null, originalValue.isPresent() ? originalValue.get() : null );
+		receiver.value( null, originalValue.orElse( null ) );
+	}
+}
+----
+
+A value extractor for `java.util.OptionalInt`:
+
+[source,java]
+----
+@UnwrapByDefault
+public class OptionalIntValueExtractor implements ValueExtractor<@ExtractedValue(type = Integer.class) OptionalInt> {
+
+	@Override
+	public void extractValues(OptionalInt originalValue, ValueReceiver receiver) {
+		receiver.value( null, originalValue.isPresent() ? originalValue.getAsInt() : null );
 	}
 }
 ----
