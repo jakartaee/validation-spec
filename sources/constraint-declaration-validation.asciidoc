@@ -112,8 +112,8 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
-As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
-provided a value extractor implementation (see <<valueextractordefinition>>) for that container type is present.
+[tck-testable]#As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
+provided a value extractor implementation (see <<valueextractordefinition>>) for that container type is present.#
 There are built-in value extractors for the generic collection types listed above.
 In addition, there is a built-in extractor for the key objects of maps.
 See <<valueextractordefinition-builtinvalueextractors>> for the complete list of built-in value extractors.
@@ -600,7 +600,7 @@ public class User {
 
 When validating an instance of [classname]`User` with the [classname]`Default` group, the associated addresses are validated with the [classname]`BasicPostal` group. When validating an instance of [classname]`User` with the [classname]`Complete` group, the associated addresses are validated with the [classname]`FullPostal` group.
 
-Group conversions can also be applied during container element validation:
+[tck-testable]#Group conversions can also be applied during container element validation#:
 
 .Example of container element validation with group conversion
 ====
@@ -763,15 +763,17 @@ A group [classname]`G` sequenced (directly or indirectly) to be executed before 
 
 [[constraintdeclarationvalidationprocess-containerelementconstraints]]
 === Container element constraints
-
-Constraints can be applied to the elements of generic containers, e.g. `List`, `Map` or `Optional`.
-This is done by putting constraint annotations to the type arguments of such containers.
+[tck-testable]#Constraints can be applied to the elements of generic containers, e.g. `List`, `Map` or `Optional`.
+This is done by putting constraint annotations to the type arguments of such containers.#
+[tck-testable]
+--
 Container element constraints can be used within the following declarations:
 
 * fields,
 * properties,
 * method or constructor parameters or
 * method return values.
+--
 
 .Container element constraints
 ====
@@ -793,16 +795,16 @@ public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) Str
 ----
 ====
 
-When a field, property, executable parameter or method return value which is of a container type gets validated, then all values contained in the container will be validated provided that their container element is constrained.
-any container element constraints of that element will be validated alongside any other constraints hosted by that element.
-For container element constraints, the same rules for validation groups and group sequences apply as for any other constraint on the same element.
+[tck-testable]#When a field, property, executable parameter or method return value which is of a container type gets validated, then all values contained in the container will be validated provided that their container element is constrained.#
+[tck-testable]#Any container element constraints of that element will be validated alongside any other constraints hosted by that element.#
+[tck-testable]#For container element constraints, the same rules for validation groups and group sequences apply as for any other constraint on the same element.#
 
 When a container element is constrained, the validation engine invokes a value extractor (see <<valueextractordefinition>>)
 which retrieves the value(s) from the container so they can be validated.
 This may be a single value - e.g. in the case of `Optional` which wraps exactly one value if the `Optional` is not empty -
 or multiple values in the case of collection types.
 
-Container element constraints can be applied to nested container types:
+[tck-testable]#Container element constraints can be applied to nested container types#:
 
 .Container element constraints on nested containers
 ====
@@ -813,13 +815,17 @@ private Map<String, @NotEmpty List<@ValidAddress Address>> addressesByType;
 ====
 
 In such case multiple value extractors will be invoked.
+
+[tck-testable]
+--
 In the example above,
 
 * the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
 * for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
 * the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
+--
 
-Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported:
+[tck-testable]#Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported#:
 
 .Unsupported usage of a container element constraint on a wildcard type argument
 ====
@@ -860,10 +866,13 @@ include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.
 ----
 ====
 
+[tck-testable]
+--
 This is useful for applying a constraint given on a non-generic container to
 
 * the container element if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
 * the container itself in case there is a value extractor marked with `@UnwrapByDefault` (by using `Skip`)
+--
 
 For instance the `@NotNull` constraint is applied to the `StringProperty` container:
 
@@ -1828,13 +1837,13 @@ Exactly one value extractor must be identified when processing a container eleme
 Value extractors can be registered with the validation engine in the following ways (in increasing order of priority):
 
 * Provided by the validation engine itself (see <<valueextractordefinition-builtinvalueextractors>>)
-* Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/javax.validation.valueextraction.ValueExtractor_ must be provided,
+* [tck-testable]#Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/javax.validation.valueextraction.ValueExtractor_ must be provided#,
 with the fully-qualified name(s) of one or more extractor implementations as its contents
-* By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml` (see <<validationapi-bootstrapping-xmlconfiguration>>)
-* By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)
-* By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)
+* [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>)
+* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)#
+* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)#
 
-A value extractor for a given type and type parameter specified at a higher priority overrides any other extractors for the same type and type parameter given at lower priorities.
+[tck-testable]#A value extractor for a given type and type parameter specified at a higher priority overrides any other extractors for the same type and type parameter given at lower priorities.#
 If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
 it will take precedence over any other value extractor implementing `List<@ExtractedValue ?>` given via `Configuration#addValueExtractor(ValueExtractor<?>)`,
 _META-INF/validation.xml_ or the service loader mechanism as well as the built-in extractor for `List` values.
@@ -1844,15 +1853,15 @@ _META-INF/validation.xml_ or the service loader mechanism as well as the built-i
 
 For a container with the declared type `C` whose element type is hosting a constraint, the following resolution rules apply for identifying the value extractor:
 
-* A `ValueExtractor<T>` is said to be _type-compliant_ with `C`, if `C` is a subtype of `T`
+* [tck-testable]#A `ValueExtractor<T>` is said to be _type-compliant_ with `C`, if `C` is a subtype of `T`
 (according to the http://java.sun.com/docs/books/jls/third_edition/html/typesValues.html#4.10[Java Language Specification 3rd edition chapter 4.10 Subtyping]).
-Note that `C` is a subtype of `T` if `C` = `T`.
-* A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if `C` is a generic container type and the value extractor implementation handles a type parameter that maps to the constrained type argument.
-* If no `ValueExtractor` type-compliant and container-element-compliant with `C` is found among the available value extractors, a `ConstraintDeclarationException` is raised.
-* A `ValueExtractor<U>` type-compliant with `C` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C` if `U` is a strict subtype of `V`.
+Note that `C` is a subtype of `T` if `C` = `T`.#
+* [tck-testable]#A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if `C` is a generic container type and the value extractor implementation handles a type parameter that maps to the constrained type argument.#
+* [tck-testable]#If no `ValueExtractor` type-compliant and container-element-compliant with `C` is found among the available value extractors, a `ConstraintDeclarationException` is raised.#
+* [tck-testable]#A `ValueExtractor<U>` type-compliant with `C` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C` if `U` is a strict subtype of `V`.#
 `U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
 * A `ValueExtractor<U>` type-compliant with `C` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C` is strictly more specific than `ValueExtractor<U>`.
-* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, a `ConstraintDeclarationException` is raised.
+* [tck-testable]#If more than one maximally specific and container-element-compliant `ValueExtractor` is found, a `ConstraintDeclarationException` is raised.#
 
 [NOTE]
 .Implementation note
@@ -1866,14 +1875,14 @@ hence it is recommended that implementations perform the resolution once and the
 
 For a container with the declared type `C` and the runtime type `C'` whose element type is marked for cascaded validation, the following resolution rules apply for identifying the value extractor:
 
-* A `ValueExtractor<T>` is said to be _type-compliant_ with `C'`, if `C'` is a subtype of `T`.
+* [tck-testable]#A `ValueExtractor<T>` is said to be _type-compliant_ with `C'`, if `C'` is a subtype of `T`.#
 Note that `C'` is a subtype of `T` if `C'` = `T`.
-* A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if it handles a type parameter that maps to the type argument marked with `@Valid`.
-* If no `ValueExtractor` type-compliant with `C'` and container-element-compliant with `C` is found among the available value extractors, a `ConstraintDeclarationException` is raised.
-* A `ValueExtractor<U>` type-compliant with `C'` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C'` if `U` is a strict subtype of `V`.
+* [tck-testable]#A `ValueExtractor` implementation is said to be _container-element-compliant_ with `C`, if it handles a type parameter that maps to the type argument marked with `@Valid`.#
+* [tck-testable]#If no `ValueExtractor` type-compliant with `C'` and container-element-compliant with `C` is found among the available value extractors, a `ConstraintDeclarationException` is raised.#
+* [tck-testable]#A `ValueExtractor<U>` type-compliant with `C'` is considered _strictly more specific_ than a `ValueExtractor<V>` compliant with `C'` if `U` is a strict subtype of `V`.#
 `U` is a strict subtype of `V` if `U` is a subtype of `V` and `U` != `V`.
-* A `ValueExtractor<U>` type-compliant with `C'` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C'` is strictly more specific than `ValueExtractor<U>`.
-* If more than one maximally specific and container-element-compliant `ValueExtractor` is found, a `ConstraintDeclarationException` is raised.
+* [tck-testable]#A `ValueExtractor<U>` type-compliant with `C'` is considered maximally specific if no other `ValueExtractor<V>` type-compliant with `C'` is strictly more specific than `ValueExtractor<U>`.#
+* [tck-testable]#If more than one maximally specific and container-element-compliant `ValueExtractor` is found, a `ConstraintDeclarationException` is raised.#
 
 [NOTE]
 .Implementation note
@@ -1888,12 +1897,12 @@ hence it is not possible to perform the extractor resolution only once per usage
 
 When detecting a constraint given as a _declaration annotation_ and not as a _type annotation_ (i.e. it is given on field, parameter etc. and not given on an a type argument of a generic type), the applicable value extractor, if any, is determined as follows:
 
-* If the constraint carries the `Unwrapping.Skip` payload, no value extractor is applied.
-* If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one maximally-specific type-compliant value extractor, this extractor is applied;
-if there is no type-compliant extractor or multiple maximally-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised.
+* [tck-testable]#If the constraint carries the `Unwrapping.Skip` payload, no value extractor is applied.#
+* [tck-testable]#If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one maximally-specific type-compliant value extractor, this extractor is applied;#
+[tck-testable]#type-compliant extractor or multiple maximally-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised.#
 * If the constraint carries neither the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
-** If there is exactly one maximally-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied;
-** Otherwise, no value extractor is applied.
+** [tck-testable]#If there is exactly one maximally-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied;#
+** [tck-testable]#Otherwise, no value extractor is applied.#
 
 [[constraintdeclarationvalidationprocess-validationroutine-algorithm-examples]]
 ===== Examples
