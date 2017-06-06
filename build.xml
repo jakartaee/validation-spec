@@ -162,9 +162,18 @@
 		</exec>
 	</target>
 
+	<target name="determine-git-revision" description="Stores the current git revision in ${repository.version}">
+	    <exec executable="git" outputproperty="repository.revision" failifexecutionfails="true" errorproperty="">
+	        <arg value="describe"/>
+	        <arg value="--tags"/>
+	        <arg value="--always"/>
+	        <arg value="HEAD"/>
+	    </exec>
+	</target>
+
 	<!-- Creates the tck-audit.xml file; Run after updates to the spec and copy+commit to the beanvalidation-tck repository -->
 	<!-- Converts the spec to DocBook before as that's the input format for the audit file creation -->
-	<target name="create-tck-audit-file" depends="render-docbook">
+	<target name="create-tck-audit-file" depends="determine-git-revision, render-docbook">
 		<tstamp>
 			<format property="NOW" pattern="yyyy-MM-dd HH:mm" locale="en"/>
 		</tstamp>
@@ -175,6 +184,7 @@
 			force="true"
 			style="tck-audit.xsl">
 			<param name="currentDate" expression="${NOW}"/>
+			<param name="repositoryRevision" expression="${repository.revision}" />
 		</xslt>
 	</target>
 
