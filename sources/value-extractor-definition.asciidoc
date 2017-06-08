@@ -84,18 +84,6 @@ include::{validation-api-source-dir}javax/validation/valueextraction/UnwrapByDef
 ----
 ====
 
-[source,java]
-----
-@UnwrapByDefault
-class WrapperExtractor implements ValueExtractor<Wrapper<@ExtractedValue ?>> {
-
-	@Override
-	public void extractValues(Wrapper originalValue, ValueReceiver receiver) {
-		// ...
-	}
-}
-----
-
 [[valueextractordefinition-builtinvalueextractors]]
 === Built-in value extractors
 
@@ -138,6 +126,9 @@ class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> {
 }
 ----
 
+This extractor passes each element contained in the given list to the receiver object,
+using the literal `<list element>` as a node name.
+
 A value extractor for `java.util.Optional`:
 
 [source,java]
@@ -150,6 +141,11 @@ public class OptionalValueExtractor implements ValueExtractor<Optional<@Extracte
 	}
 }
 ----
+
+This extractor passes the element wrapped by the given `Optional` to the receiver object, if present.
+`null` is passed as a node name, causing no node to be appended to the resulting property path.
+I.e. when the constraint the `@Size` constraint in `private Optional<@Size(min=1) String name;` is violated,
+the resulting property path will be the same as if a constraint hosted on the `name` field itself was violated.
 
 A value extractor for `java.util.OptionalInt`:
 
@@ -164,6 +160,11 @@ public class OptionalIntValueExtractor implements ValueExtractor<@ExtractedValue
 	}
 }
 ----
+
+This extractor passes the `int` value wrapped by the given `OptionalInt` to the receiver object, if present.
+`null` is passed as a node name, causing no node to be appended to the resulting property path.
+As the extractor is marked with `@UnwrapByDefault`,
+any constraint declared on an element of type `OptionalInt` will implicitly be applied to the wrapped `int` value instead of the `OptionalInt` itself.
 
 [tck-testable]#The following extractor definition is illegal as it specifies `@ExtractedValue` more than once:#
 

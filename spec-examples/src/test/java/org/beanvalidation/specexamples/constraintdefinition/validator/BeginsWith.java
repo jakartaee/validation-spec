@@ -8,7 +8,10 @@ package org.beanvalidation.specexamples.constraintdefinition.validator;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
@@ -19,14 +22,14 @@ import javax.validation.Constraint;
 import javax.validation.Payload;
 
 @Documented
-@Constraint(validatedBy = SyntaxValidator.class)
-@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
+@Constraint(validatedBy = BeginsWithValidator.class)
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface Syntax {
+public @interface BeginsWith {
 
 	String[] value();
 
-	String message() default "{com.acme.constraint.Syntax.message}";
+	String message() default "{com.acme.constraint.BeginsWith.message}";
 
 	Class<?>[] groups() default {};
 
