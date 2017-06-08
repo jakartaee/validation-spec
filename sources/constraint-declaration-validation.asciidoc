@@ -1729,13 +1729,16 @@ A constraint is associated to one or more [classname]`ConstraintValidator` imple
 
 [tck-testable]#The list of [classname]``ConstraintValidator``s can contain at most one which targets cross-parameter. If the constraint targets the parameters of an executable either implicitly or by the use of [methodname]`validationAppliesTo` in the constraint - see <<constraintsdefinitionimplementation-constraintdefinition-properties-validationappliesto>>, then the cross-parameter [classname]`ConstraintValidator` is used. If none is present, a [classname]`ConstraintDefinitionException` is raised. If more than one cross-parameter [classname]`ConstraintValidator` is present, a [classname]`ConstraintDefinitionException` is raised.#
 
-[tck-testable]#If the constraint is a generic constraint, the following rules apply. If the constraint declaration is hosted on a class or an interface, the targeted type is the class or the interface.#
-[tck-testable]#If the constraint is hosted on a class attribute, the type of the attribute is the targeted type.#
-[tck-testable]#If the constraint is hosted on a method (getter or non-getter) or constructor, the return type is the targeted type.#
-[tck-testable]#If the constraint is hosted on a method or constructor parameter, the parameter type is the targeted type.#
-[tck-testable]#If the constraint is hosted on a type argument of a generic type (i.e. a container element constraint, see <<constraintdeclarationvalidationprocess-containerelementconstraints>>), the type argument's type is the targeted type.#
-[tck-testable]#If the constraint is subject to implicit unwrapping (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>) and the applicable value extractor is defined for a generic type (e.g. `javafx.beans.value.ObservableValue`), the targeted type is the type captured for the type parameter handled by the value extractor (e.g. `String` if the constraint is placed on a `StringProperty`).#
-[tck-testable]#If the constraint is subject to implicit unwrapping and the applicable value extractor is defined for a non-generic type, the targeted type is the type defined by the extractor via `@ExtractedValue#type()` (e.g. `Integer` if the constraint is placed on a `java.util.OptionalInt`).#
+If the constraint is a generic constraint, the following rules apply:
+
+* [tck-testable]#If the constraint declaration is hosted on a class or an interface, the targeted type is the class or the interface.#
+* [tck-testable]#If the constraint is hosted on a class attribute, the type of the attribute is the targeted type.#
+* [tck-testable]#If the constraint is hosted on a method (getter or non-getter) or constructor, the return type is the targeted type.#
+* [tck-testable]#If the constraint is hosted on a method or constructor parameter, the parameter type is the targeted type.#
+* [tck-testable]#If the constraint is hosted on a type argument of a generic type (i.e. a container element constraint, see <<constraintdeclarationvalidationprocess-containerelementconstraints>>), the type argument's type is the targeted type.#
+* [tck-testable]#If the constraint is subject to implicit unwrapping (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>) and the applicable value extractor is defined for a generic type (e.g. `javafx.beans.value.ObservableValue`), the targeted type is the type captured for the type parameter handled by the value extractor (e.g. `String` if the constraint is placed on a `StringProperty`).#
+* [tck-testable]#If the constraint is subject to implicit unwrapping and the applicable value extractor is defined for a non-generic type, the targeted type is the type defined by the extractor via `@ExtractedValue#type()` (e.g. `Integer` if the constraint is placed on a `java.util.OptionalInt`).#
+
 In other words, the resolution algorithm considers the type as defined in the source code and not the runtime type of the value.
 
 The rules written below describe formally the following statement: [tck-testable]#the [classname]`ConstraintValidator` chosen to validate the generic constraint on a declared type [classname]`T` is the one where the [classname]`ConstraintValidator` targets the annotated element, where the type supported by the [classname]`ConstraintValidator` is a supertype of [classname]`T` and where there is no other [classname]`ConstraintValidator` whose supported type is a supertype of [classname]`T` and not a supertype of the chosen [classname]`ConstraintValidator` supported type.#
@@ -1824,7 +1827,7 @@ The resolutions shown in <<table-constraintvalidator-resolution>> occur.
 [[constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution]]
 ==== ValueExtractor resolution
 
-When detecting a container element constraint or a container element marked with `@Valid`, the value extractor for obtaining the container's elements must be determined.
+When detecting a container element constraint or a container element marked with `@Valid`, a value extractor must be determined so that the elements can be obtained from that container.
 
 A value extractor handles one container type and - in the case of a generic container type - one type parameter of that container type.
 The applicable extractor is identified based on the container type and - in the case of a generic container type - the type argument hosting the container element constraint or `@Valid`.
@@ -1840,8 +1843,8 @@ Value extractors can be registered with the validation engine in the following w
 * [tck-testable]#Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/javax.validation.valueextraction.ValueExtractor_ must be provided#,
 with the fully-qualified name(s) of one or more extractor implementations as its contents
 * [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>)
-* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validation factory level)#
-* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator`)#
+* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validator factory level)#
+* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator` instance)#
 
 [tck-testable]#A value extractor for a given type and type parameter specified at a higher priority overrides any other extractors for the same type and type parameter given at lower priorities.#
 If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
