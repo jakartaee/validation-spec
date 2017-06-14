@@ -695,12 +695,30 @@ public class Book {
     @Valid
     private Review pickedReview;
 
+    private List<@NotBlank String> tags;
+
+    private Map<Integer, List<@NotBlank String>> tagsByChapter;
+
+    private List<@Valid Category> categories;
+
+    private Map<Integer, List<@Valid Author>> authorsByChapter;
+
     [...]
 }
 
 public class Review {
-    @Min(0) private int rating;
+
+    @Min(0)
+    private int rating;
     [...]
+}
+
+public class Category {
+
+	@Size(min=3)
+	private String name;
+
+	// [...]
 }
 
 public class Library {
@@ -763,6 +781,22 @@ PropertyNode(name=rating,inIterable=true, index=null, key="Consumer Report", con
             [classname]`Review.rating`|PropertyNode(name=pickedReview,inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
 PropertyNode(name=rating,inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+|`@NotBlank` on the second tag, `Book.tags`|PropertyNode(name=tags, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+ContainerElementNode(name=<list element>, inIterable=true, index=1, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.CONTAINER_ELEMENT)
+|`@NotBlank` on the third tag of chapter 4, `Book.tagsByChapter`|PropertyNode(name=tagsByChapter, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+ContainerElementNode(name=<map value>, inIterable=true, index=null, key=4, containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.CONTAINER_ELEMENT)
+
+ContainerElementNode(name=<list element>, inIterable=true, index=2, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.CONTAINER_ELEMENT)
+|`@Size` on the name of the second category, `Category.name`|PropertyNode(name=categories, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+PropertyNode(name=name, inIterable=true, index=1, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
+|`@NotEmpty` on the last name of the third author of chapter 4, `Author.lastname`|PropertyNode(name=authorsByChapter, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+ContainerElementNode(name=<map value>, inIterable=true, index=null, key=4, containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.CONTAINER_ELEMENT)
+
+PropertyNode(name=lastName, inIterable=true, index=2, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
 |===============
 
 Assuming the constructor and methods of the [classname]`Library` class are subject to method constraint validation, the following property paths would exist for the different constraints:
