@@ -156,8 +156,9 @@ public class MetaDataApiTest {
 		ParameterDescriptor parameterDescriptor = constructorDescriptor.getParameterDescriptors()
 				.get( 1 );
 
-		//Assuming the default parameter name provider
-		assert parameterDescriptor.getName().equals( "arg1" );
+		//assuming the default parameter name provider is used and parameter names can
+		//can be obtained
+		assert parameterDescriptor.getName().equals( "description" );
 		assert parameterDescriptor.getElementClass() == String.class;
 		assert parameterDescriptor.getIndex() == 1;
 		assert parameterDescriptor.hasConstraints() == true;
