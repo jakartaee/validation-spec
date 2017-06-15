@@ -1857,10 +1857,11 @@ Value extractors can be registered with the validation engine in the following w
 
 * Provided by the validation engine itself (see <<valueextractordefinition-builtinvalueextractors>>)
 * [tck-testable]#Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/javax.validation.valueextraction.ValueExtractor_ must be provided#,
-with the fully-qualified name(s) of one or more extractor implementations as its contents
-* [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>)
-* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validator factory level)#
-* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator` instance)#
+with the fully-qualified name(s) of one or more extractor implementations as its contents.
+It is undefined which value extractor will be selected if multiple extractors for the same type and type parameter are registered via the service loader mechanism.
+* [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>). Not more than one extractor for the same type and type parameter may be given.
+* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validator factory level).#  Not more than one extractor for the same type and type parameter may be passed.
+* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator` instance).# Not more than one extractor for the same type and type parameter may be passed.
 
 [tck-testable]#A value extractor for a given type and type parameter specified at a higher priority overrides any other extractors for the same type and type parameter given at lower priorities.#
 If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
