@@ -113,10 +113,12 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
 [tck-testable]#As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
-provided a value extractor implementation (see <<valueextractordefinition>>) for that container type is present.#
+provided a value extractor implementation (see <<valueextractordefinition>>) for that container type and the targeted type argument is present.#
 There are built-in value extractors for the generic collection types listed above.
 In addition, there is a built-in extractor for the key objects of maps.
 See <<valueextractordefinition-builtinvalueextractors>> for the complete list of built-in value extractors.
+
+[tck-testable]#`@Valid` also allows the validation of the elements of nested generic containers. `@Valid` must be put to a type argument of that nested container type in order to trigger validation of the elements of all the nested containers.#
 
 For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of container,
 but not both (in order to prevent the container elements from being validated twice).
@@ -179,7 +181,7 @@ public class User {
 ----
 ====
 
-.Making a nested collection subject to graph validation
+.Making elements of a nested list subject to graph validation
 ====
 [source, JAVA]
 ----
@@ -189,11 +191,28 @@ public class User {
 ----
 ====
 
-In the last example, all `Address` objects contained in the lists of the `addressesByType` map will be validated.
+In this example, all `Address` objects contained in the lists of the `addressesByType` map will be validated.
 Two value extractors are invoked for this:
 
 * the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
 * for each extracted list of addresses, the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
+
+.Making keys and values of a nested map subject to graph validation
+====
+[source, JAVA]
+----
+public class User {
+    private Map<String, Map<@Valid AddressType, @Valid Address>> addressesByUserAndType;
+}
+----
+====
+
+In this example, all `AddressType` objects and all `Address` objects contained in the maps of the `addressesByUserAndType` map will be validated.
+The following value extractors are invoked for this:
+
+* the extractor for `Map` values will be invoked to obtain all map values (maps of addresses by address type)
+* for each extracted map, the extractor for `Map` keys will be invoked, providing the `AddressType` objects from each of the nested maps
+* for each extracted map, the extractor for `Map` values will be invoked, providing the `Address` objects from each of the nested maps
 
 [[constraintdeclarationvalidationprocess-constraintdeclaration]]
 
