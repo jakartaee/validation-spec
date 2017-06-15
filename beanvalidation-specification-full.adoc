@@ -1197,7 +1197,7 @@ public @interface OverridesAttribute {
      *
      * @return name of constraint attribute overridden
      */
-    String name();
+    String name() default "";
 
     /**
      * The index of the targeted constraint declaration when using
@@ -2775,20 +2775,27 @@ The retrieval of values stored in a container is handled via implementations of 
 ----
 package javax.validation.valueextraction;
 
+/**
+ * Defines the logic used to extract the values from a container object of type {@code T}.
  * <p>
- * A value extractor is tied to one specific type parameter of {@code T}. The {@link ExtractedValue} annotation
- * is used to mark that type parameter.
+ * A value extractor for a generic type such as {@link Optional}, {@link List} or {@link Map} is
+ * tied to one specific type parameter of {@code T}. The {@link ExtractedValue} annotation is
+ * used to mark that type parameter. A value extractor for a non-generic type such as
+ * {@link OptionalInt} needs to declare the type of the wrapped element using
+ * {@link ExtractedValue#type()}.
  * <p>
  * The extracted values are passed to the corresponding method of the {@link ValueReceiver}.
  * <p>
- * A typical value extractor implementation for {@link List} may look like this:
+ * A typical value extractor implementation for {@code List} may look like this:
+ *
  * <pre>
- * public class ListValueExtractor implements ValueExtractor&lt;List&lt;&#064;ExtractedValue ?&gt;&gt; {
+ * public class ListValueExtractor implements
+ *         ValueExtractor&lt;List&lt;&#064;ExtractedValue ?&gt;&gt; {
  *
  *     &#064;Override
  *     public void extractValues(List&lt;?&gt; originalValue, ValueReceiver receiver) {
  *         for ( int i = 0; i &lt; originalValue.size(); i++ ) {
- *             receiver.indexedValue( "&lt;iterable element&gt;", i, originalValue.get( i ) );
+ *             receiver.indexedValue( "&lt;list element&gt;", i, originalValue.get( i ) );
  *         }
  *     }
  * }
@@ -2796,13 +2803,16 @@ package javax.validation.valueextraction;
  *
  * @author Gunnar Morling
  * @author Guillaume Smet
+ * @see ExtractedValue
+ * @see UnwrapByDefault
  */
 public interface ValueExtractor<T> {
 
     /**
      * Extracts the values to validate from the original object.
      *
-     * @param originalValue the original value from which we want to extract the values to validate
+     * @param originalValue the original value from which to extract the values, never
+     * {@code null}
      * @param receiver the corresponding {@code ValueReceiver}
      */
     void extractValues(T originalValue, ValueReceiver receiver);
@@ -2810,22 +2820,26 @@ public interface ValueExtractor<T> {
     /**
      * Provides a set of methods receiving value extracted by the {@link ValueExtractor}.
      * <p>
-     * The value has to be passed to the method corresponding best to the type of the original value.
+     * The value has to be passed to the method corresponding best to the type of the original
+     * value.
      */
     interface ValueReceiver {
 
         /**
          * Receives the value extracted from an object.
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. If not
+         * {@code null}, a node with that name will be added to the {@link Path}
          * @param object the value to validate
          */
         void value(String nodeName, Object object);
 
         /**
-         * Receives the value extracted from an {@link Iterable} object that is not indexed (e.g. a {@link Set}).
+         * Receives the value extracted from an {@link Iterable} object that is not indexed (e.g.
+         * a {@link Set}).
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. If not
+         * {@code null}, a node with that name will be added to the {@link Path}
          * @param object the value to validate
          */
         void iterableValue(String nodeName, Object object);
@@ -2833,7 +2847,8 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from an indexed object (e.g. a {@link List} or an array).
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. If not
+         * {@code null}, a node with that  name will be added to the {@link Path}
          * @param i the index of the value in the original object
          * @param object the value to validate
          */
@@ -2842,7 +2857,8 @@ public interface ValueExtractor<T> {
         /**
          * Receives the value extracted from a keyed object (e.g. a {@link Map}).
          *
-         * @param nodeName the name of the node representing the container element. It will be added to the {@link Path}
+         * @param nodeName the name of the node representing the container element. If not
+         * {@code null}, a node with that name will be added to the {@link Path}
          * @param key the key of the value in the original object
          * @param object the value to validate
          */
@@ -2988,7 +3004,7 @@ Compatible implementations provide value extractors for the following types out 
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name#
 * [tck-testable]#`java.util.Optional`; `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name#
-* [tck-testable]#`java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name; the extractor must be marked with `@UnwrapByDefault`#
+* [tck-testable]#`java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; the extracted value types must be `java.lang.Integer`, `java.lang.Long` and `java.lang.Double`, respectively. `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name. The extractors must be marked with `@UnwrapByDefault`.#
 
 In environments where http://docs.oracle.com/javase/8/javafx/get-started-tutorial/jfx-overview.htm#JFXST784[JavaFX] is present, compatible implementations additionally provide extractors for the following types out of the box:
 
@@ -3200,10 +3216,12 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
 [tck-testable]#As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
-provided a value extractor implementation (see <<valueextractordefinition>>) for that container type is present.#
+provided a value extractor implementation (see <<valueextractordefinition>>) for that container type and the targeted type argument is present.#
 There are built-in value extractors for the generic collection types listed above.
 In addition, there is a built-in extractor for the key objects of maps.
 See <<valueextractordefinition-builtinvalueextractors>> for the complete list of built-in value extractors.
+
+[tck-testable]#`@Valid` also allows the validation of the elements of nested generic containers. `@Valid` must be put to a type argument of that nested container type in order to trigger validation of the elements of all the nested containers.#
 
 For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of container,
 but not both (in order to prevent the container elements from being validated twice).
@@ -3266,7 +3284,7 @@ public class User {
 ----
 ====
 
-.Making a nested collection subject to graph validation
+.Making elements of a nested list subject to graph validation
 ====
 [source, JAVA]
 ----
@@ -3276,11 +3294,28 @@ public class User {
 ----
 ====
 
-In the last example, all `Address` objects contained in the lists of the `addressesByType` map will be validated.
+In this example, all `Address` objects contained in the lists of the `addressesByType` map will be validated.
 Two value extractors are invoked for this:
 
 * the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
 * for each extracted list of addresses, the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
+
+.Making keys and values of a nested map subject to graph validation
+====
+[source, JAVA]
+----
+public class User {
+    private Map<String, Map<@Valid AddressType, @Valid Address>> addressesByUserAndType;
+}
+----
+====
+
+In this example, all `AddressType` objects and all `Address` objects contained in the maps of the `addressesByUserAndType` map will be validated.
+The following value extractors are invoked for this:
+
+* the extractor for `Map` values will be invoked to obtain all map values (maps of addresses by address type)
+* for each extracted map, the extractor for `Map` keys will be invoked, providing the `AddressType` objects from each of the nested maps
+* for each extracted map, the extractor for `Map` values will be invoked, providing the `Address` objects from each of the nested maps
 
 [[constraintdeclarationvalidationprocess-constraintdeclaration]]
 
@@ -3967,16 +4002,13 @@ private Map<String, @NotEmpty List<@ValidAddress Address>> addressesByType;
 
 In such case multiple value extractors will be invoked.
 
-[tck-testable]
---
 In the example above,
 
 * the extractor for `Map` values will be invoked to obtain all map values (lists of `Address`)
 * for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
 * the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
---
 
-[tck-testable]#Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported#:
+[tck-not-testable]#Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported#:
 
 .Unsupported usage of a container element constraint on a wildcard type argument
 ====
@@ -5111,10 +5143,11 @@ Value extractors can be registered with the validation engine in the following w
 
 * Provided by the validation engine itself (see <<valueextractordefinition-builtinvalueextractors>>)
 * [tck-testable]#Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/javax.validation.valueextraction.ValueExtractor_ must be provided#,
-with the fully-qualified name(s) of one or more extractor implementations as its contents
-* [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>)
-* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validator factory level)#
-* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator` instance)#
+with the fully-qualified name(s) of one or more extractor implementations as its contents.
+It is undefined which value extractor will be selected if multiple extractors for the same type and type parameter are registered via the service loader mechanism.
+* [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>). Not more than one extractor for the same type and type parameter may be given.
+* [tck-testable]#By invoking the method `Configuration#addValueExtractor(ValueExtractor<?>)` (to apply it at the validator factory level).#  Not more than one extractor for the same type and type parameter may be passed.
+* [tck-testable]#By invoking the method `ValidatorContext#addValueExtractor(ValueExtractor<?>)` (to apply it for a single `Validator` instance).# Not more than one extractor for the same type and type parameter may be passed.
 
 [tck-testable]#A value extractor for a given type and type parameter specified at a higher priority overrides any other extractors for the same type and type parameter given at lower priorities.#
 If e.g. a value extractor defined as `class MyListValueExtractor implements ValueExtractor<List<@ExtractedValue ?>> { ... }` is given via `ValidatorContext#addValueExtractor(ValueExtractor<?>)`,
@@ -5226,7 +5259,9 @@ public class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?
     [...]
 }
 
-public class ConcurrentListValueExtractor implements ValueExtractor<ConcurrentList<@ExtractedValue ?>> {
+public class ConcurrentListValueExtractor implements ValueExtractor<
+        ConcurrentList<@ExtractedValue ?>> {
+
     [...]
 }
 
@@ -5246,6 +5281,13 @@ public class TableValueExtractor implements ValueExtractor<Table<?, ?, @Extracte
 public class PropertyValueExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
     [...]
 }
+
+@UnwrapByDefault
+public class OptionalIntValueExtractor implements ValueExtractor<
+        @ExtractedValue(type = Integer.class) OptionalInt> {
+
+    [...]
+}
 ----
 ====
 
@@ -5262,6 +5304,7 @@ The following value extractor resolutions occur:
 |`Map<@Email String, String> emails`|`MapKeyExtractor`; equally specific as `MapValueExtractor`, but the latter isn't container-element-compliant
 |`ConfusingMap<@Email String, String> map`|`MapValueExtractor`; the constrained type argument maps to the type parameter `V` of `Map`
 |`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed
+|`@Min(1) OptionalInt`|`OptionalIntValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed; `Integer` as given via `@ExtractedValue#type()` will be used for validator resolution
 |`Optional<@Email String> getEmail() {...}`|`ConstraintDeclarationException`; no compliant extractor exists
 |`Table<@Min(1) String, String, String> table`|`ConstraintDeclarationException`; `TableValueExtractor` is type-compliant but not container-element-compliant
 |`MyList<@Email String> emails`|`ConstraintDeclarationException`; `ListValueExtractor` and `ConcurrentListValueExtractor` are equally specific
@@ -6893,6 +6936,12 @@ case PROPERTY:
 ** [tck-testable]#if the association is a [classname]`Map`, the following [classname]`Node` object added (representing a given map entry) contains the key value in [methodname]`getKey()`#
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`)#
 ** [tck-testable]#if the traversed object is of a container type (e.g. a `List` or `Map`), the following `Node` object added returns the declared type of the traversed container via `getContainerClass()` and the index of the affected type argument via `getTypeArgumentIndex()`#
+* When a nested container is traversed (e.g. when traversing into the elements of the lists in `Map<String, List<@Valid Address>>`):
+** [tck-testable]#a `ContainerElementNode` object whose `name` equals the name produced by the value extractor of the outer container is added to `Path`. The `ElementKind` of the node is `ElementKind.CONTAINER_ELEMENT`#
+** [tck-testable]#if the container is a `List`, the following `Node` object added contains the index value in `getIndex()`#
+** [tck-testable]#if the container is a `Map`, the following `Node` object added (representing a given map entry) contains the key value in `getKey()`#
+** [tck-testable]#for all `Iterable` or `Map`, the following `Node` object added is marked as `inIterable` (`isInIterable()`)#
+** [tck-testable]#the following `Node` object added returns the declared type of the traversed container via `getContainerClass()` and the index of the affected type argument via `getTypeArgumentIndex()`#
 
 [tck-testable]
 --
@@ -6990,7 +7039,10 @@ public class Author {
     [...]
 
     @OldAndNewPasswordsDifferent @NewPasswordsIdentical
-    public void renewPassword(String oldPassword, String newPassword, String retypedNewPassword);
+    public void renewPassword(
+            String oldPassword, String newPassword, String retypedNewPassword) {
+        [...]
+    }
 }
 
 @AvailableInStore(groups={Availability.class})
@@ -7008,12 +7060,30 @@ public class Book {
     @Valid
     private Review pickedReview;
 
+    private List<@NotBlank String> tags;
+
+    private Map<Integer, List<@NotBlank String>> tagsByChapter;
+
+    private List<@Valid Category> categories;
+
+    private Map<Integer, List<@Valid Author>> authorsByChapter;
+
     [...]
 }
 
 public class Review {
-    @Min(0) private int rating;
+
+    @Min(0)
+    private int rating;
     [...]
+}
+
+public class Category {
+
+    @Size(min=3)
+    private String name;
+
+    // [...]
 }
 
 public class Library {
@@ -7050,35 +7120,66 @@ Assuming a [classname]`Book` instance gets validated, the property paths to the 
 [options="header"]
 |===============
 |Constraint|propertyPath
-|[classname]`@AvailableInStore`  on
-            [classname]`Book`|BeanNode(name=null,inIterable=false, index=null, key=null, kind=ElementKind.BEAN)
-|[classname]`@NotEmpty`  on
-            [classname]`Book.title`|PropertyNode(name=title,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
-|[classname]`@NotNull`  on
-            [classname]`Book.authors`|PropertyNode(name=authors,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
-|[classname]`@SecurityChecking`  on the fourth
-            author, [classname]`Author`|PropertyNode(name=authors,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+|[classname]`@AvailableInStore`  on [classname]`Book`|
+BeanNode(name=null, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.BEAN)
 
-BeanNode(name=null,inIterable=true, index=3, key=null, kind=ElementKind.BEAN)
-|[classname]`@Size`  on the fourth author,
-            [classname]`Author.lastname`|PropertyNode(name=authors,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+|[classname]`@NotEmpty`  on [classname]`Book.title`|
+PropertyNode(name=title, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
-PropertyNode(name=lastname,inIterable=true, index=4, key=null, kind=ElementKind.PROPERTY)
-|[classname]`@NotEmpty`  on the first author,
-            [classname]`Author.company`|PropertyNode(name=authors,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+|[classname]`@NotNull`  on [classname]`Book.authors`|
+PropertyNode(name=authors, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
-PropertyNode(name=company,inIterable=true, index=0, key=null, kind=ElementKind.PROPERTY)
-|[classname]`@Min`  on the review associated to
-            Consumer Report, [classname]`Review.rating`|PropertyNode(name=reviewsPerSource,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+|[classname]`@SecurityChecking`  on the fourth author, [classname]`Author`|
+PropertyNode(name=authors, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
-PropertyNode(name=rating,inIterable=true, index=null, key="Consumer Report", kind=ElementKind.PROPERTY)
-|[classname]`@Min`  on the picked review,
-            [classname]`Review.rating`|PropertyNode(name=pickedReview,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+BeanNode(name=null, inIterable=true, index=3, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.BEAN)
 
-PropertyNode(name=rating,inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+|[classname]`@NotEmpty`  on the fourth author, [classname]`Author.lastname`|
+PropertyNode(name=authors, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+PropertyNode(name=lastName, inIterable=true, index=3, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
+
+|[classname]`@Size`  on the first author, [classname]`Author.company`|
+PropertyNode(name=authors, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+PropertyNode(name=company, inIterable=true, index=0, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
+
+|[classname]`@Min`  on the review associated to Consumer Report, [classname]`Review.rating`|
+PropertyNode(name=reviewsPerSource, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+PropertyNode(name=rating, inIterable=true, index=null, key="Consumer Report", containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.PROPERTY)
+
+|[classname]`@Min`  on the picked review, [classname]`Review.rating`|
+PropertyNode(name=pickedReview, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+PropertyNode(name=rating, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+|`@NotBlank` on the second tag, `Book.tags`|
+PropertyNode(name=tags, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+ContainerElementNode(name=<list element>, inIterable=true, index=1, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.CONTAINER_ELEMENT)
+
+|`@NotBlank` on the third tag of chapter 4, `Book.tagsByChapter`|
+PropertyNode(name=tagsByChapter, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+ContainerElementNode(name=<map value>, inIterable=true, index=null, key=4, containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.CONTAINER_ELEMENT)
+
+ContainerElementNode(name=<list element>, inIterable=true, index=2, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.CONTAINER_ELEMENT)
+
+|`@Size` on the name of the second category, `Category.name`|
+PropertyNode(name=categories, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+PropertyNode(name=name, inIterable=true, index=1, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
+
+|`@NotEmpty` on the last name of the third author of chapter 4, `Author.lastname`|
+PropertyNode(name=authorsByChapter, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
+
+ContainerElementNode(name=<map value>, inIterable=true, index=null, key=4, containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.CONTAINER_ELEMENT)
+
+PropertyNode(name=lastName, inIterable=true, index=2, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
 |===============
 
-Assuming the constructor and methods of the [classname]`Library` class are subject to method constraint validation, the following property paths would exist for the different constraints:
+Assuming the constructor and methods of the [classname]`Library` class are subject to method constraint validation and parameter names can be obtained for them, the following property paths would exist for the different constraints:
 
 [[table-method-level-propertypath]]
 
@@ -7088,25 +7189,25 @@ Assuming the constructor and methods of the [classname]`Library` class are subje
 |Constraint|propertyPath
 |[classname]`@NotNull`  on the [varname]`location` parameter of the constructor|ConstructorNode(name=Library, inIterable=false, index=null, key=null, kind=ElementKind.CONSTRUCTOR, parameterTypes=[String.class,String.class])
 
-ParameterNode(name=arg1, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=1)
+ParameterNode(name=location, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=1)
 |[classname]`@NotNull` on the [varname]`book` parameter of the [methodname]`addBook()`
               method|MethodNode(name=addBook, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[Book.class])
 
-ParameterNode(name=arg0, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
+ParameterNode(name=book, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
 |[classname]`@NotEmpty`  on
               [classname]`Book.title`  during validation of
               [methodname]`addBook()`|MethodNode(name=addBook, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[Book.class])
 
-ParameterNode(name=arg0, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
+ParameterNode(name=book, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
 
-PropertyNode(name=title, inIterable=false, index=null, key=null, kind=ElementKind.PROPERTY)
+PropertyNode(name=title, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 |[classname]`@NotEmpty`  on fourth book,
               [classname]`Book.title`  during validation of
               [methodname]`addAllBooks()`|MethodNode(name=addAllBooks, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[List.class])
 
-ParameterNode(name=arg0, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
+ParameterNode(name=books, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
 
-PropertyNode(name=title,inIterable=true, index=3, key=null, kind=ElementKind.PROPERTY)
+PropertyNode(name=title, inIterable=true, index=3, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
 |[classname]`@NotNull`  on the return value of
               the [methodname]`getLocation()`  method|MethodNode(name=getLocation, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[])
 
@@ -7118,7 +7219,7 @@ ReturnValueNode(name=<return value>, inIterable=false, index=null, key=null, kin
 
 ReturnValueNode(name=<return value>, inIterable=false, index=null, key=null, kind=ElementKind.RETURN_VALUE)
 
-PropertyNode(name=title,inIterable=true, index=null, key=Author(firstName=John, lastName=Doe), kind=ElementKind.PROPERTY)
+PropertyNode(name=title, inIterable=true, index=null, key=Author(firstName=John, lastName=Doe), containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.PROPERTY)
 |[classname]`@OldAndNewPasswordsDifferent`  when
               executing [methodname]`Author.renewPassword()`  with
               `oldPassword`, `newPassword`
@@ -7136,10 +7237,8 @@ CrossParameterNode(name=<cross-parameter>, inIterable=false, index=null, key=nul
               cross-parameter constraint creating a constraint violation on
               the `retypedNewPassword`  parameter.|MethodNode(name=renewPassword, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[String.class, String.class, String.class])
 
-ParameterNode(name=arg2, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=2)
+ParameterNode(name=retypedNewPassword, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=2)
 |===============
-
-
 
 [NOTE]
 ====
@@ -7383,8 +7482,9 @@ assert "addBook".equals( node.getName() );
 assert ElementKind.METHOD.equals( node.getKind() );
 
 node = nodeIter.next();
-//assuming the default parameter name provider is used
-assert "arg0".equals( node.getName() );
+//assuming the default parameter name provider is used and parameter names can
+//be obtained
+assert "book".equals( node.getName() );
 assert ElementKind.PARAMETER.equals( node.getKind() );
 
 assert false == nodeIter.hasNext();
@@ -7419,8 +7519,9 @@ assert "addBook".equals( node.getName() );
 assert ElementKind.METHOD.equals( node.getKind() );
 
 node = nodeIter.next();
-//assuming the default parameter name provider is used
-assert "arg0".equals( node.getName() );
+//assuming the default parameter name provider is used and parameter names can
+//be obtained
+assert "book".equals( node.getName() );
 assert ElementKind.PARAMETER.equals( node.getKind() );
 
 node = nodeIter.next();
@@ -7492,8 +7593,9 @@ assert "Library".equals( node.getName() );
 assert ElementKind.CONSTRUCTOR.equals( node.getKind() );
 
 node = nodeIter.next();
-//assuming the default parameter name provider is used
-assert "arg0".equals( node.getName() );
+//assuming the default parameter name provider is used and parameter names can
+//be obtained
+assert "books".equals( node.getName() );
 assert ElementKind.PARAMETER.equals( node.getKind() );
 
 assert false == nodeIter.hasNext();
@@ -8489,6 +8591,7 @@ public interface ValidatorContext {
 ====
 
 [tck-testable]#The `MessageInterpolator`, the `TraversableResolver`, the `ConstraintValidatorFactory`, the `ParameterNameProvider` or the `ClockProvider` passed to the `ValidatorContext` are used instead of the ``ValidatorFactory``'s `MessageInterpolator`, `TraversableResolver`, `ConstraintValidatorFactory`, `ParameterNameProvider` or `ClockProvider` instances.#
+[tck-testable]#A `ValueExtractorDeclarationException` is raised if more than one extractor for the same type and type parameter is added via `addValueExtractor()`.#
 
 .Use of ValidatorFactory
 ====
@@ -8542,6 +8645,7 @@ The responsibility of the [classname]`Configuration` is to collect configuration
 [tck-testable]#Via `addValueExtractor()`, additional value extractor implementations can be added to the configuration.
 A value extractor for a given type and type parameter takes precedence over any extractor for the same type and type parameter
 detected through the service loader or given in the XML configuration.#
+[tck-testable]#A `ValueExtractorDeclarationException` is raised if more than one extractor for the same type and type parameter is added.#
 
 [tck-testable]#Using [methodname]`addMapping()`, additional constraint mapping XML descriptors can be added to the configuration# (see <<validationapi-bootstrapping-xmlconfiguration>>). The given input streams should support the [methodname]`mark()` and [methodname]`reset()` methods defined by [classname]`java.io.InputStream`. [tck-testable]#Streams not supporting the [methodname]`mark()` and [methodname]`reset()` methods will be wrapped with an [classname]`InputStream` implementation supporting these methods by the Bean Validation provider in order to allow the streams to be read several times.#
 
@@ -9750,15 +9854,12 @@ The bootstrap API is designed to allow complete portability among Bean Validatio
 
 [tck-testable]#`clock-provider`: represents the fully qualified class name of the [classname]`ClockProvider` implementation. When defined in XML, the implementation must have a public no-arg constructor.#
 
-[tck-testable]
---
-`value-extractor`: represents the fully qualified class name of a [classname]`ValueExtractor` implementation.
-When defined in XML, the implementation must have a public no-arg constructor.
-`value-extractor` can be given several times for declaring multiple extractors.
-An extractor for a given type and type parameter configured via XML takes precedence
-over any extractor for the same type and type parameter detected through the service loader or provided by the Bean Validation implementation itself.
-If more than one value extractor for the same type and type parameter is configured via XML, a `ValidationException` is raised.
---
+[tck-testable]#`value-extractor`: represents the fully qualified class name of a [classname]`ValueExtractor` implementation.#
+[tck-testable]#`value-extractor` can be given several times for declaring multiple extractors.#
+[tck-testable]#When defined in XML, the implementation must have a public no-arg constructor.#
+[tck-testable]#An extractor for a given type and type parameter configured via XML takes precedence
+over any extractor for the same type and type parameter detected through the service loader or provided by the Bean Validation implementation itself.#
+[tck-testable]#If more than one value extractor for the same type and type parameter is configured via XML, a `ValueExtractorDeclarationException` is raised.#
 
 [tck-testable]#`executable-validation`: allows to disable executable validation entirely via its attribute [code]`enabled="false"` and optionally contains `default-validated-executable-types`. `enabled` defaults to `true`.#
 
@@ -11247,8 +11348,9 @@ The following assertions are true.
         ParameterDescriptor parameterDescriptor = constructorDescriptor.getParameterDescriptors()
                 .get( 1 );
 
-        //Assuming the default parameter name provider
-        assert parameterDescriptor.getName().equals( "arg1" );
+        //assuming the default parameter name provider is used and parameter names can
+        //be obtained
+        assert parameterDescriptor.getName().equals( "description" );
         assert parameterDescriptor.getElementClass() == String.class;
         assert parameterDescriptor.getIndex() == 1;
         assert parameterDescriptor.hasConstraints() == true;
@@ -11829,6 +11931,16 @@ public @interface Negative {
 
 ====
 
+.[tck-testable]#@NegativeOrZero constraint#
+====
+
+[source, JAVA, indent=0]
+----
+Unresolved directive in sources/builtin-constraints.asciidoc - include::../target/validation-api/javax/validation/constraints/NegativeOrZero.java[lines=7..8;26..-1]
+----
+
+====
+
 .[tck-testable]#@Positive constraint#
 ====
 
@@ -11886,6 +11998,16 @@ public @interface Positive {
         Positive[] value();
     }
 }
+----
+
+====
+
+.[tck-testable]#@PositiveOrZero constraint#
+====
+
+[source, JAVA, indent=0]
+----
+Unresolved directive in sources/builtin-constraints.asciidoc - include::../target/validation-api/javax/validation/constraints/PositiveOrZero.java[lines=7..8;26..-1]
 ----
 
 ====
@@ -12815,12 +12937,21 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 [tck-testable]#`container-element-type` can be used within the `field`, `getter`, `parameter` and `return-value` elements.#
 
 [tck-testable]#The `type-argument-index` is used to specify the index of the configured type argument.#
+[tck-testable]#The `type-argument-index` can be omitted, if the container element type has exactly one type argument.#
 [tck-testable]#The `ignore-annotations` settings effectively applying for the encapsulating element (`field`, `getter` etc.) are applied for `container-element-type`, too.#
 [tck-testable]#The `container-element-type` element can be nested for configuring nested generic containers such as `List<List<String>>`.#
 
 [tck-testable]#Constraints are applied by adding `constraint` elements to `container-element-type`.#
 [tck-testable]#Whether or not to perform cascaded validation is controlled using the `valid` element.#
 [tck-testable]#Group conversion rules for cascaded validation are specified using the `convert-group` element.#
+
+If an invalid container type element configuration is detected, a `ValidationException` is raised.
+This includes the following configuration errors:
+
+* [tck-testable]#The type of the surrounding element (field, getter etc.) has no type arguments.#
+* [tck-testable]#The type of the surrounding element has no type argument with the index given via `type-argument-index`.#
+* [tck-testable]#The type of the surrounding element has multiple type arguments and no index is given via `type-argument-index`.#
+* [tck-testable]#The same type argument of the surrounding element is configured multiple times.#
 
 .Container-element declaration
 ====
@@ -14183,6 +14314,7 @@ Registration of the built-in default beans and the provider specific beans may b
 ==== [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`, [classname]`TraversableResolver` and `ValueExtractor`
 
 [tck-testable]#If custom [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`, [classname]`TraversableResolver` or `ValueExtractor` classes are defined in the XML deployment descriptor (see <<validationapi-bootstrapping-xmlconfiguration>>), the [classname]`ValidatorFactory` must be configured with CDI managed beans representing the requested classes. Services like dependency injection, interception and decoration must thus be made available to these instances by the container.#
+[tck-testable]#The same applies to value extractors discovered through the service loader mechanism (see <<constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-registering>>).#
 
 [tck-testable]
 --
@@ -14279,7 +14411,9 @@ javax.validation.constraints.Future.message=must be a future date
 javax.validation.constraints.Max.message=must be less than or equal to {value}
 javax.validation.constraints.Min.message=must be greater than or equal to {value}
 javax.validation.constraints.Negative.message=\
-    must be less than ${strict == true ? '' : 'or equal to '}0
+    must be less than 0
+javax.validation.constraints.NegativeOrZero.message=\
+    must be less than or equal to 0
 javax.validation.constraints.NotBlank.message=must not be blank
 javax.validation.constraints.NotEmpty.message=must not be empty
 javax.validation.constraints.NotNull.message=must not be null
@@ -14288,7 +14422,9 @@ javax.validation.constraints.Past.message=must be a past date
 javax.validation.constraints.Pattern.message=\
     must match the following regular expression: {regexp}
 javax.validation.constraints.Positive.message=\
-    must be greater than ${strict == true ? '' : 'or equal to '}0
+    must be greater than 0
+javax.validation.constraints.PositiveOrZero.message=\
+    must be greater than or equal to 0
 javax.validation.constraints.Size.message=size must be between {min} and {max}
 ----
 
