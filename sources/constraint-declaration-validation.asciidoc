@@ -1972,7 +1972,9 @@ public class ListValueExtractor implements ValueExtractor<List<@ExtractedValue ?
     [...]
 }
 
-public class ConcurrentListValueExtractor implements ValueExtractor<ConcurrentList<@ExtractedValue ?>> {
+public class ConcurrentListValueExtractor implements ValueExtractor<
+        ConcurrentList<@ExtractedValue ?>> {
+
     [...]
 }
 
@@ -1992,6 +1994,13 @@ public class TableValueExtractor implements ValueExtractor<Table<?, ?, @Extracte
 public class PropertyValueExtractor implements ValueExtractor<Property<@ExtractedValue ?>> {
     [...]
 }
+
+@UnwrapByDefault
+public class OptionalIntValueExtractor implements ValueExtractor<
+        @ExtractedValue(type = Integer.class) OptionalInt> {
+
+    [...]
+}
 ----
 ====
 
@@ -2008,6 +2017,7 @@ The following value extractor resolutions occur:
 |`Map<@Email String, String> emails`|`MapKeyExtractor`; equally specific as `MapValueExtractor`, but the latter isn't container-element-compliant
 |`ConfusingMap<@Email String, String> map`|`MapValueExtractor`; the constrained type argument maps to the type parameter `V` of `Map`
 |`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed
+|`@Min(1) OptionalInt`|`OptionalIntValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed; `Integer` as given via `@ExtractedValue#type()` will be used for validator resolution
 |`Optional<@Email String> getEmail() {...}`|`ConstraintDeclarationException`; no compliant extractor exists
 |`Table<@Min(1) String, String, String> table`|`ConstraintDeclarationException`; `TableValueExtractor` is type-compliant but not container-element-compliant
 |`MyList<@Email String> emails`|`ConstraintDeclarationException`; `ListValueExtractor` and `ConcurrentListValueExtractor` are equally specific
