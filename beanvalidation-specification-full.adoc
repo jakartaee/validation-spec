@@ -2423,7 +2423,7 @@ context.buildConstraintViolationWithTemplate( "this detail is wrong" )
 context.buildConstraintViolationWithTemplate( "the map key is invalid" )
             .addPropertyNode( "addresses" )
             .addContainerElementNode( "<map key>", Map.class, 0 )
-                .inIterable().atKey( "invalid" )
+                .inIterable().atKey( "home" )
             .addConstraintViolation();
 
 //To create a subnode representing a method parameter from a cross-parameter constraint violation
@@ -2835,8 +2835,8 @@ public interface ValueExtractor<T> {
         void value(String nodeName, Object object);
 
         /**
-         * Receives the value extracted from an {@link Iterable} object that is not indexed (e.g.
-         * a {@link Set}).
+         * Receives the value extracted from an iterable object that is not indexed (e.g.
+         * a {@link Iterable}, {@link Set} or a {@link Map}).
          *
          * @param nodeName the name of the node representing the container element. If not
          * {@code null}, a node with that name will be added to the {@link Path}
@@ -2845,7 +2845,7 @@ public interface ValueExtractor<T> {
         void iterableValue(String nodeName, Object object);
 
         /**
-         * Receives the value extracted from an indexed object (e.g. a {@link List} or an array).
+         * Receives the value extracted from an indexed object (e.g. a {@link List}).
          *
          * @param nodeName the name of the node representing the container element. If not
          * {@code null}, a node with that  name will be added to the {@link Path}
@@ -6855,7 +6855,7 @@ public enum ElementKind {
 ** The name set by the applied value extractor for a container element constraint,
 e.g. `<map value>` if the default value extractor for map values is applied
 
-* [tck-testable]#[methodname]`isInIterable()` returns `true` if the node represents an object contained in an [classname]`Iterable` or in a [classname]`Map`, `false` otherwise.#
+* [tck-testable]#[methodname]`isInIterable()` returns `true` if the node represents an object contained in an array, [classname]`Iterable` or in a [classname]`Map`, `false` otherwise.#
 * [tck-testable]#[methodname]`getIndex()` returns the index of the node if it is contained in an array or [classname]`List`. Returns `null` otherwise.#
 * [tck-testable]#[methodname]`getKey()` returns the key of the node if it is contained in a [classname]`Map`. Returns `null` otherwise.#
 * [tck-testable]#[methodname]`getKind()` returns the [classname]`ElementKind` corresponding to the actual node type. This can be used in conjunction with the method [methodname]`as()` to narrow the type and access node specific methods#
@@ -10271,6 +10271,7 @@ The [classname]`BeanDescriptor` interface describes a constrained Java Bean. Thi
 ----
 package javax.validation.metadata;
 
+
 /**
  * Describes a constrained Java Bean and the constraints associated to it. All
  * objects returned by the methods of this descriptor (and associated objects
@@ -10381,7 +10382,7 @@ public interface BeanDescriptor extends ElementDescriptor {
      * or at least one parameter or return value marked for cascaded validation.
      *
      * @return a set with descriptors for the constrained constructor of this
-     *         bean; will be empty if this bea has no constrained constructor
+     *         bean; will be empty if this bean has no constrained constructor
      *         but never {@code null}
      *
      * @since 1.1
@@ -11877,7 +11878,7 @@ public @interface DecimalMax {
 package javax.validation.constraints;
 
 /**
- * The annotated element must be a negative number.
+ * The annotated element must be a strictly negative number (i.e. 0 is considered as an invalid value).
  * <p>
  * Supported types are:
  * <ul>
@@ -11906,14 +11907,6 @@ public @interface Negative {
     Class<? extends Payload>[] payload() default { };
 
     /**
-     * Whether the annotated element must be strictly negative (0 is considered as an invalid value) or not (0 is a
-     * valid value).
-     *
-     * @return whether the annotated element must be strictly negative
-     */
-    boolean strict() default false;
-
-    /**
      * Defines several {@link Negative} constraints on the same element.
      *
      * @see Negative
@@ -11935,7 +11928,50 @@ public @interface Negative {
 
 [source, JAVA, indent=0]
 ----
-Unresolved directive in sources/builtin-constraints.asciidoc - include::../target/validation-api/javax/validation/constraints/NegativeOrZero.java[lines=7..8;26..-1]
+package javax.validation.constraints;
+
+/**
+ * The annotated element must be a negative number or 0.
+ * <p>
+ * Supported types are:
+ * <ul>
+ *     <li>{@code BigDecimal}</li>
+ *     <li>{@code BigInteger}</li>
+ *     <li>{@code byte}, {@code short}, {@code int}, {@code long}, {@code float}, {@code double} and their respective
+ *     wrappers</li>
+ * </ul>
+ * <p>
+ * {@code null} elements are considered valid.
+ *
+ * @author Gunnar Morling
+ * @since 2.0
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+@Retention(RUNTIME)
+@Repeatable(List.class)
+@Documented
+@Constraint(validatedBy = { })
+public @interface NegativeOrZero {
+
+    String message() default "{javax.validation.constraints.NegativeOrZero.message}";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default { };
+
+    /**
+     * Defines several {@link NegativeOrZero} constraints on the same element.
+     *
+     * @see NegativeOrZero
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+
+        NegativeOrZero[] value();
+    }
+}
 ----
 
 ====
@@ -11948,7 +11984,7 @@ Unresolved directive in sources/builtin-constraints.asciidoc - include::../targe
 package javax.validation.constraints;
 
 /**
- * The annotated element must be a positive number.
+ * The annotated element must be a strictly positive number (i.e. 0 is considered as an invalid value).
  * <p>
  * Supported types are:
  * <ul>
@@ -11977,14 +12013,6 @@ public @interface Positive {
     Class<? extends Payload>[] payload() default { };
 
     /**
-     * Whether the annotated element must be strictly positive (0 is considered as an invalid value) or not (0 is a
-     * valid value).
-     *
-     * @return whether the annotated element must be strictly positive
-     */
-    boolean strict() default false;
-
-    /**
      * Defines several {@link Positive} constraints on the same element.
      *
      * @see Positive
@@ -12006,7 +12034,50 @@ public @interface Positive {
 
 [source, JAVA, indent=0]
 ----
-Unresolved directive in sources/builtin-constraints.asciidoc - include::../target/validation-api/javax/validation/constraints/PositiveOrZero.java[lines=7..8;26..-1]
+package javax.validation.constraints;
+
+/**
+ * The annotated element must be a positive number or 0.
+ * <p>
+ * Supported types are:
+ * <ul>
+ *     <li>{@code BigDecimal}</li>
+ *     <li>{@code BigInteger}</li>
+ *     <li>{@code byte}, {@code short}, {@code int}, {@code long}, {@code float}, {@code double} and their respective
+ *     wrappers</li>
+ * </ul>
+ * <p>
+ * {@code null} elements are considered valid.
+ *
+ * @author Gunnar Morling
+ * @since 2.0
+ */
+@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+@Retention(RUNTIME)
+@Repeatable(List.class)
+@Documented
+@Constraint(validatedBy = { })
+public @interface PositiveOrZero {
+
+    String message() default "{javax.validation.constraints.PositiveOrZero.message}";
+
+    Class<?>[] groups() default { };
+
+    Class<? extends Payload>[] payload() default { };
+
+    /**
+     * Defines several {@link PositiveOrZero} constraints on the same element.
+     *
+     * @see PositiveOrZero
+     */
+    @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
+    @Retention(RUNTIME)
+    @Documented
+    @interface List {
+
+        PositiveOrZero[] value();
+    }
+}
 ----
 
 ====
@@ -12430,6 +12501,7 @@ public @interface Pattern {
 ----
 package javax.validation.constraints;
 
+/**
  * The annotated element must not be {@code null} nor empty. Supported types are:
  * <ul>
  * <li>{@code CharSequence} (length of character sequence is evaluated)</li>
@@ -12479,6 +12551,7 @@ public @interface NotEmpty {
 ----
 package javax.validation.constraints;
 
+/**
  * The annotated element must not be {@code null} nor empty after removing any leading or trailing
  * whitespace. Accepts {@code CharSequence}.
  *
@@ -12522,6 +12595,8 @@ public @interface NotBlank {
 ----
 package javax.validation.constraints;
 
+/**
+ * The string has to be a well-formed email address. Exact semantics of what makes up a valid email
  * address are left to Bean Validation providers. Accepts {@code CharSequence}.
  *
  * @author Emmanuel Bernard
