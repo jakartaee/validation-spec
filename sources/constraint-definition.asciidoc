@@ -7,7 +7,7 @@
 
 == Constraint definition
 
-Constraints are defined by the combination of a constraint annotation and a list of constraint validation implementations. The constraint annotation is applied on types, fields, methods, constructors, parameters or other constraint annotations in case of composition.
+Constraints are defined by the combination of a constraint annotation and a list of constraint validation implementations. The constraint annotation is applied on types, fields, methods, constructors, parameters, container elements or other constraint annotations in case of composition.
 
 Unless stated otherwise the default package name for the Bean Validation APIs is [classname]`javax.validation`.
 
@@ -30,8 +30,8 @@ Generic constraint annotations can target any of the following [classname]``Elem
 
 * `FIELD` for constrained attributes
 * `METHOD` for constrained getters and constrained method return values
-* [classname]`CONSTRUCTOR` for constrained constructor return values
-* [classname]`PARAMETER` for constrained method and constructor parameters
+* `CONSTRUCTOR` for constrained constructor return values
+* `PARAMETER` for constrained method and constructor parameters
 * `TYPE` for constrained beans
 * `ANNOTATION_TYPE` for constraints composing other constraints
 * `TYPE_USE` for container element constraints
@@ -118,7 +118,7 @@ Class<? extends Payload>[] payload() default {};
 
 [source, JAVA, indent=0]
 ----
-include::{validation-api-source-dir}javax/validation/Payload.java[lines=7..-1]
+include::{validation-api-source-dir}javax/validation/Payload.java[lines=9..-1]
 ----
 
 Payloads are typically used by validation clients to associate some metadata information with a given constraint declaration. Payloads are typically non-portable. Describing payloads as interface extensions as opposed to a string-based approach allows an easier and more type-safe approach.
@@ -519,7 +519,6 @@ Some restrictions apply on the generic type [classname]`T` (used in the [methodn
 
 * resolve to a non parameterized type (i.e. because the type is not using generics or because the raw type is used instead of the generic version)
 * or generic parameters of [classname]`T` must be unbounded wildcard types (i.e. `<?>`).
-
 --
 
 [NOTE]
@@ -668,11 +667,11 @@ include::{validation-api-source-dir}javax/validation/ConstraintValidatorContext.
 The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (e.g. `getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporalvalidators>> ).
 
 It also allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object.
-This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
+This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter, executable return value or container element).#
 
 [tck-testable]#The [classname]`ConstraintValidatorContext` methods let the constraint implementation disable the default [classname]`ConstraintViolation` generation and create one or more custom ones.# [tck-testable]#The non-interpolated message passed as a parameter is used to build the [classname]`ConstraintViolation` message (the message interpolation operation is applied to it).#
 
-[tck-testable]#By default, the [classname]`Path` exposed on the [classname]`ConstraintViolation` represents the path to the bean, property, parameter, cross-parameter or return value hosting the constraint (see <<validationapi-constraintviolation>> for more information).# [tck-testable]#You can point it to a subpath of this default path by using the constraint violation builder fluent API.#
+[tck-testable]#By default, the [classname]`Path` exposed on the [classname]`ConstraintViolation` represents the path to the bean, property, parameter, cross-parameter, return value or container element hosting the constraint (see <<validationapi-constraintviolation>> for more information).# [tck-testable]#You can point it to a subpath of this default path by using the constraint violation builder fluent API.#
 
 <<example-constraintsdefinitionimplementation-validationimplementation-errorbuilder>> shows a few examples.
 
@@ -743,7 +742,7 @@ context.buildConstraintViolationWithTemplate( "the map key is invalid" )
 //Cross-parameter constraint on method createUser(String password, String passwordRepeat)
 //Build a constraint violation on the default path + "passwordRepeat"
 context.buildConstraintViolationWithTemplate("Passwords do not match")
-            .addParameterNode(1)
+            .addParameterNode( 1 )
             .addConstraintViolation();
 
 //Cross-parameter constraint on a method

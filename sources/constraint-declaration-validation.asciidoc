@@ -11,7 +11,7 @@ The Bean Validation specification defines a framework for declaring constraints 
 
 Bean Validation also offers a way to declare constructor and method constraints where parameters and return values are the constrained elements. We will discuss method constraints declaration in detail in <<constraintdeclarationvalidationprocess-methodlevelconstraints>>.
 
-Furthermore, constraints can be applied to the elements of generic container types such as `Map`, `List` or `Optional`.
+Furthermore, constraints can be applied to the elements of generic container types such as `Map`, `List` or `Optional` or of non-generic container types such as `OptionalInt`.
 Container element constraints are discussed in detail in <<constraintdeclarationvalidationprocess-containerelementconstraints>>.
 
 [[constraintdeclarationvalidationprocess-requirements]]
@@ -120,7 +120,7 @@ See <<valueextractordefinition-builtinvalueextractors>> for the complete list of
 
 [tck-testable]#`@Valid` also allows the validation of the elements of nested generic containers. `@Valid` must be put to a type argument of that nested container type in order to trigger validation of the elements of all the nested containers.#
 
-For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of container,
+For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of the container,
 but not both (in order to prevent the container elements from being validated twice).
 
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
@@ -134,7 +134,7 @@ but not both (in order to prevent the container elements from being validated tw
 ----
 public class User {
 
-    // preferred style as of Bean Validation 2
+    // preferred style as of Bean Validation 2.0
     private List<@Valid PhoneNumber> phoneNumbers;
 
     // traditional style; continues to be supported
@@ -155,7 +155,7 @@ public class User {
 ----
 public class User {
 
-    // preferred style as of Bean Validation 2
+    // preferred style as of Bean Validation 2.0
     private Map<AddressType, @Valid Address> addressesByType;
 
     // traditional style; continues to be supported
@@ -862,9 +862,14 @@ Examples for types being subject to implicit unwrapping are `java.util.OptionalI
 ====
 [source, JAVA]
 ----
-@Min(1) private OptionalInt optionalNumber;
-@Size(max=10) private StringProperty name;
-@Positive private IntegerProperty positiveInt;
+@Min(1)
+private OptionalInt optionalNumber;
+
+@Size(max=10)
+private StringProperty name;
+
+@Positive
+private IntegerProperty positiveInt;
 ----
 ====
 
@@ -894,7 +899,8 @@ For instance the `@NotNull` constraint is applied to the `StringProperty` contai
 
 [source,java]
 ----
-@NotNull(payload = Unwrapping.Skip.class) StringProperty name;
+@NotNull(payload = Unwrapping.Skip.class)
+private StringProperty name;
 ----
 
 [tck-testable]#If both `Unwrap` and `Skip` are present in the definition of a payload, a `ConstraintDeclarationException` is raised.#
@@ -1596,9 +1602,12 @@ The following example assumes the object graph defined in <<example-ognav-defini
 [source, JAVA]
 ----
 public class Country {
-    @NotNull private String name;
-    @Size(max=2) private String ISO2Code;
-    @Size(max=3) private String ISO3Code;
+    @NotNull
+    private String name;
+    @Size(max=2)
+    private String ISO2Code;
+    @Size(max=3)
+    private String ISO3Code;
 
     public String getName() {
         return name;
@@ -1773,7 +1782,7 @@ When validating a generic constraint [classname]`A` placed on a target declaring
 
 [NOTE]
 ====
-While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or a Java 6 annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages Bean Validation providers to provide such a tool to their users.
+While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or an annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages Bean Validation providers to provide such a tool to their users.
 ====
 
 Let's see a couple of declarations and their respective [classname]`ConstraintValidator` resolution. Assuming the definitions shown in <<example-constraintvalidator-resolution>>:
@@ -1908,7 +1917,7 @@ Note that `C'` is a subtype of `T` if `C'` = `T`.
 [NOTE]
 .Implementation note
 ====
-Extractor retrieval for container element constraints is based on the runtime type of the elements marked with `@Valid`
+Extractor retrieval for cascaded validation is based on the runtime type of the elements marked with `@Valid`
 (this is to be consistent with the semantics of property paths for cascaded validation),
 hence it is not possible to perform the extractor resolution only once per usage of `@Valid` and cache the result.
 ====
@@ -2103,8 +2112,10 @@ The second example demonstrates object graph validation.
 public class Country {
     @NotNull
     private String name;
-    @Size(max=2) private String ISO2Code;
-    @Size(max=3) private String ISO3Code;
+    @Size(max=2)
+    private String ISO2Code;
+    @Size(max=3)
+    private String ISO3Code;
 
     public String getName() {
         return name;
@@ -2401,7 +2412,7 @@ As both [methodname]`title` and [methodname]`author.lastname` are checked as par
 [source, JAVA]
 ----
 book.setTitle( "Les fleurs du mal" );
-author.setCompany("Some random publisher with a very very very long name");
+author.setCompany( "Some random publisher with a very very very long name" );
 ----
 
 the validation routine will return the following failures:
