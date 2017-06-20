@@ -180,7 +180,7 @@ As of version 1.1, Bean Validation constraints can also be applied to the parame
 [[introduction-requirements]]
 === Required Java version
 
-The specification uses Java 8.0 language features. There is no requirement that implementations be compatible with Java language versions prior to 8.0.
+The specification uses Java 8 language features. There is no requirement that implementations be compatible with Java language versions prior to 8.
 
 [[introduction-documentorganization]]
 === How this document is organized
@@ -236,7 +236,7 @@ this also includes:
 ** Support for custom container types by plugging in additional value extractors (see <<valueextractordefinition>>)
 * Support for the new date/time data types for `@Past` and `@Future` (see <<builtinconstraints>>);
 fine-grained control over the current time and time zone used for validation (see <<constraintsdefinitionimplementation-validationimplementation-temporalvalidators>>)
-* New built-in constraints, e.g. `@Email`, `@NotEmpty` and `@NotBlank` (see <<builtinconstraints>>)
+* New built-in constraints, e.g. `@Email`, `@NotEmpty`, `@NotBlank`, `@Positive`, `@PositiveOrZero`, `@Negative` and `@NegativeOrZero` (see <<builtinconstraints>>)
 * All built-in constraints are marked as repeatable now
 * Parameter names are retrieved using reflection (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>)
 * `ConstraintValidator#initialize()` is a default method (see <<constraintsdefinitionimplementation-validationimplementation>>)
@@ -298,7 +298,7 @@ Many more minor changes have been done. Check out the change log for more detail
 
 == Constraint definition
 
-Constraints are defined by the combination of a constraint annotation and a list of constraint validation implementations. The constraint annotation is applied on types, fields, methods, constructors, parameters or other constraint annotations in case of composition.
+Constraints are defined by the combination of a constraint annotation and a list of constraint validation implementations. The constraint annotation is applied on types, fields, methods, constructors, parameters, container elements or other constraint annotations in case of composition.
 
 Unless stated otherwise the default package name for the Bean Validation APIs is [classname]`javax.validation`.
 
@@ -394,8 +394,8 @@ Generic constraint annotations can target any of the following [classname]``Elem
 
 * `FIELD` for constrained attributes
 * `METHOD` for constrained getters and constrained method return values
-* [classname]`CONSTRUCTOR` for constrained constructor return values
-* [classname]`PARAMETER` for constrained method and constructor parameters
+* `CONSTRUCTOR` for constrained constructor return values
+* `PARAMETER` for constrained method and constructor parameters
 * `TYPE` for constrained beans
 * `ANNOTATION_TYPE` for constraints composing other constraints
 * `TYPE_USE` for container element constraints
@@ -482,8 +482,6 @@ Class<? extends Payload>[] payload() default {};
 
 [source, JAVA, indent=0]
 ----
-package javax.validation;
-
 /**
  * Payload type that can be attached to a given
  * constraint declaration.
@@ -1318,7 +1316,6 @@ Some restrictions apply on the generic type [classname]`T` (used in the [methodn
 
 * resolve to a non parameterized type (i.e. because the type is not using generics or because the raw type is used instead of the generic version)
 * or generic parameters of [classname]`T` must be unbounded wildcard types (i.e. `<?>`).
-
 --
 
 [NOTE]
@@ -2356,11 +2353,11 @@ public interface ConstraintValidatorContext {
 The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (e.g. `getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporalvalidators>> ).
 
 It also allows redefinition of the default constraint message generated when a constraint is not valid. [tck-testable]#By default, each invalid constraint leads to the generation of one error object represented by a [classname]`ConstraintViolation` object.
-This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter or executable return value).#
+This object is built from the default constraint message template as defined by the constraint declaration and the context in which the constraint declaration is placed (bean, property, executable parameter, cross-parameter, executable return value or container element).#
 
 [tck-testable]#The [classname]`ConstraintValidatorContext` methods let the constraint implementation disable the default [classname]`ConstraintViolation` generation and create one or more custom ones.# [tck-testable]#The non-interpolated message passed as a parameter is used to build the [classname]`ConstraintViolation` message (the message interpolation operation is applied to it).#
 
-[tck-testable]#By default, the [classname]`Path` exposed on the [classname]`ConstraintViolation` represents the path to the bean, property, parameter, cross-parameter or return value hosting the constraint (see <<validationapi-constraintviolation>> for more information).# [tck-testable]#You can point it to a subpath of this default path by using the constraint violation builder fluent API.#
+[tck-testable]#By default, the [classname]`Path` exposed on the [classname]`ConstraintViolation` represents the path to the bean, property, parameter, cross-parameter, return value or container element hosting the constraint (see <<validationapi-constraintviolation>> for more information).# [tck-testable]#You can point it to a subpath of this default path by using the constraint violation builder fluent API.#
 
 <<example-constraintsdefinitionimplementation-validationimplementation-errorbuilder>> shows a few examples.
 
@@ -2431,7 +2428,7 @@ context.buildConstraintViolationWithTemplate( "the map key is invalid" )
 //Cross-parameter constraint on method createUser(String password, String passwordRepeat)
 //Build a constraint violation on the default path + "passwordRepeat"
 context.buildConstraintViolationWithTemplate("Passwords do not match")
-            .addParameterNode(1)
+            .addParameterNode( 1 )
             .addConstraintViolation();
 
 //Cross-parameter constraint on a method
@@ -2901,7 +2898,7 @@ the map as obtained directly from the field will be passed to the map value extr
 [[valueextractordefinition-extractedvalue]]
 === @ExtractedValue
 
-The `@ExtractedValue` annotation is used to denote the element extracted by a given value extractor:
+[tck-testable]#The `@ExtractedValue` annotation is used to denote the element extracted by a given value extractor#:
 
 [source, JAVA, indent=0]
 ----
@@ -2942,7 +2939,7 @@ public @interface ExtractedValue {
 
 [tck-testable]#The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.#
 
-For generic container types (e.g. `java.util.List`), `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.
+[tck-testable]#For generic container types (e.g. `java.util.List`), `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.#
 [tck-not-testable]#Only wildcard type arguments are supported as target for `@ExtractedValue` in this case.#
 
 [NOTE]
@@ -3045,7 +3042,7 @@ A value extractor for `java.util.Optional`:
 public class OptionalValueExtractor implements ValueExtractor<Optional<@ExtractedValue ?>> {
 
     @Override
-    public void extractValues(Optional<?> originalValue, ValueExtractor.ValueReceiver receiver) {
+    public void extractValues(Optional<?> originalValue, ValueReceiver receiver) {
         receiver.value( null, originalValue.orElse( null ) );
     }
 }
@@ -3053,7 +3050,7 @@ public class OptionalValueExtractor implements ValueExtractor<Optional<@Extracte
 
 This extractor passes the element wrapped by the given `Optional` to the receiver object, if present.
 `null` is passed as a node name, causing no node to be appended to the resulting property path.
-I.e. when the constraint the `@Size` constraint in `private Optional<@Size(min=1) String name;` is violated,
+I.e. when the `@Size` constraint in `private Optional<@Size(min=1) String name;` is violated,
 the resulting property path will be the same as if a constraint hosted on the `name` field itself was violated.
 
 A value extractor for `java.util.OptionalInt`:
@@ -3099,7 +3096,7 @@ The Bean Validation specification defines a framework for declaring constraints 
 
 Bean Validation also offers a way to declare constructor and method constraints where parameters and return values are the constrained elements. We will discuss method constraints declaration in detail in <<constraintdeclarationvalidationprocess-methodlevelconstraints>>.
 
-Furthermore, constraints can be applied to the elements of generic container types such as `Map`, `List` or `Optional`.
+Furthermore, constraints can be applied to the elements of generic container types such as `Map`, `List` or `Optional` or of non-generic container types such as `OptionalInt`.
 Container element constraints are discussed in detail in <<constraintdeclarationvalidationprocess-containerelementconstraints>>.
 
 [[constraintdeclarationvalidationprocess-requirements]]
@@ -3223,7 +3220,7 @@ See <<valueextractordefinition-builtinvalueextractors>> for the complete list of
 
 [tck-testable]#`@Valid` also allows the validation of the elements of nested generic containers. `@Valid` must be put to a type argument of that nested container type in order to trigger validation of the elements of all the nested containers.#
 
-For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of container,
+For a given container, the `@Valid` annotation should either be put to the container itself _or_ to the type argument(s) of the container,
 but not both (in order to prevent the container elements from being validated twice).
 
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
@@ -3237,7 +3234,7 @@ but not both (in order to prevent the container elements from being validated tw
 ----
 public class User {
 
-    // preferred style as of Bean Validation 2
+    // preferred style as of Bean Validation 2.0
     private List<@Valid PhoneNumber> phoneNumbers;
 
     // traditional style; continues to be supported
@@ -3258,7 +3255,7 @@ public class User {
 ----
 public class User {
 
-    // preferred style as of Bean Validation 2
+    // preferred style as of Bean Validation 2.0
     private Map<AddressType, @Valid Address> addressesByType;
 
     // traditional style; continues to be supported
@@ -4029,9 +4026,14 @@ Examples for types being subject to implicit unwrapping are `java.util.OptionalI
 ====
 [source, JAVA]
 ----
-@Min(1) private OptionalInt optionalNumber;
-@Size(max=10) private StringProperty name;
-@Positive private IntegerProperty positiveInt;
+@Min(1)
+private OptionalInt optionalNumber;
+
+@Size(max=10)
+private StringProperty name;
+
+@Positive
+private IntegerProperty positiveInt;
 ----
 ====
 
@@ -4091,8 +4093,11 @@ For instance the `@NotNull` constraint is applied to the `StringProperty` contai
 
 [source,java]
 ----
-@NotNull(payload = Unwrapping.Skip.class) StringProperty name;
+@NotNull(payload = Unwrapping.Skip.class)
+private StringProperty name;
 ----
+
+[tck-testable]#If both `Unwrap` and `Skip` are present in the definition of a payload, a `ConstraintDeclarationException` is raised.#
 
 [NOTE]
 ====
@@ -4880,9 +4885,12 @@ The following example assumes the object graph defined in <<example-ognav-defini
 [source, JAVA]
 ----
 public class Country {
-    @NotNull private String name;
-    @Size(max=2) private String ISO2Code;
-    @Size(max=3) private String ISO3Code;
+    @NotNull
+    private String name;
+    @Size(max=2)
+    private String ISO2Code;
+    @Size(max=3)
+    private String ISO3Code;
 
     public String getName() {
         return name;
@@ -5057,7 +5065,7 @@ When validating a generic constraint [classname]`A` placed on a target declaring
 
 [NOTE]
 ====
-While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or a Java 6 annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages Bean Validation providers to provide such a tool to their users.
+While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or an annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages Bean Validation providers to provide such a tool to their users.
 ====
 
 Let's see a couple of declarations and their respective [classname]`ConstraintValidator` resolution. Assuming the definitions shown in <<example-constraintvalidator-resolution>>:
@@ -5192,7 +5200,7 @@ Note that `C'` is a subtype of `T` if `C'` = `T`.
 [NOTE]
 .Implementation note
 ====
-Extractor retrieval for container element constraints is based on the runtime type of the elements marked with `@Valid`
+Extractor retrieval for cascaded validation is based on the runtime type of the elements marked with `@Valid`
 (this is to be consistent with the semantics of property paths for cascaded validation),
 hence it is not possible to perform the extractor resolution only once per usage of `@Valid` and cache the result.
 ====
@@ -5204,7 +5212,7 @@ When detecting a constraint given as a _declaration annotation_ and not as a _ty
 
 * [tck-testable]#If the constraint carries the `Unwrapping.Skip` payload, no value extractor is applied.#
 * [tck-testable]#If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one maximally-specific type-compliant value extractor, this extractor is applied;#
-[tck-testable]#type-compliant extractor or multiple maximally-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised.#
+[tck-testable]#if no type-compliant extractor or multiple maximally-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised.#
 * If the constraint carries neither the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
 ** [tck-testable]#If there is exactly one maximally-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied;#
 ** [tck-testable]#Otherwise, no value extractor is applied.#
@@ -5387,8 +5395,10 @@ The second example demonstrates object graph validation.
 public class Country {
     @NotNull
     private String name;
-    @Size(max=2) private String ISO2Code;
-    @Size(max=3) private String ISO3Code;
+    @Size(max=2)
+    private String ISO2Code;
+    @Size(max=3)
+    private String ISO3Code;
 
     public String getName() {
         return name;
@@ -5714,7 +5724,7 @@ As both [methodname]`title` and [methodname]`author.lastname` are checked as par
 [source, JAVA]
 ----
 book.setTitle( "Les fleurs du mal" );
-author.setCompany("Some random publisher with a very very very long name");
+author.setCompany( "Some random publisher with a very very very long name" );
 ----
 
 the validation routine will return the following failures:
@@ -5981,7 +5991,7 @@ The following code will return no [classname]`ConstraintViolation` objects becau
 
 [source, JAVA]
 ----
-validator.validateValue("city", "Paris").size() == 0
+validator.validateValue(Address.class, "city", "Paris").size() == 0
 ----
 
 [[validationapi-validatorapi-methodlevelvalidationmethods]]
@@ -6509,11 +6519,11 @@ The [methodname]`getLeafBean()` method returns the following object:
 * If a constructor return value constraint, the object the constructor has created.
 --
 
-[tck-testable]#The [methodname]`getExecutableParameters()` returns the parameters provided to the method or constructor invocation or `null` if not validating the method or constructor parameters.#
+[tck-testable]#The [methodname]`getExecutableParameters()` returns the parameters provided to the method or constructor invocation or `null` if not validating a method or constructor parameters.#
 
-[tck-testable]#The [methodname]`getExecutableReturnValue()` returns the return value of the method or constructor invocation or `null` if the method has no return value or if not validating the method or constructor return value.#
+[tck-testable]#The [methodname]`getExecutableReturnValue()` returns the return value of the method or constructor invocation or `null` if the method has no return value or if not validating a method or constructor return value.#
 
-[tck-testable]#The [methodname]`getInvalidValue()` method returns the value (field, property, method/constructor parameter, method/constructor return value or validated object) being passed to [methodname]`isValid()`.# [tck-testable]#For a cross-parameter constraint failure, an [code]`Object[]` representing the method/constructor invocation arguments is returned.#
+[tck-testable]#The [methodname]`getInvalidValue()` method returns the value (field, property, method/constructor parameter, method/constructor return value, container element or validated object) being passed to [methodname]`isValid()`.# [tck-testable]#For a cross-parameter constraint failure, an [code]`Object[]` representing the method/constructor invocation arguments is returned.#
 
 [tck-testable]#[methodname]`getConstraintDescriptor()` provides access to the failing constraint metadata# (see <<constraintmetadata-constraintdescriptor>>).
 
@@ -6859,7 +6869,7 @@ e.g. `<map value>` if the default value extractor for map values is applied
 * [tck-testable]#[methodname]`getIndex()` returns the index of the node if it is contained in an array or [classname]`List`. Returns `null` otherwise.#
 * [tck-testable]#[methodname]`getKey()` returns the key of the node if it is contained in a [classname]`Map`. Returns `null` otherwise.#
 * [tck-testable]#[methodname]`getKind()` returns the [classname]`ElementKind` corresponding to the actual node type. This can be used in conjunction with the method [methodname]`as()` to narrow the type and access node specific methods#
-* [tck-testable]#[methodname]`as(Class<? extends Node>)` returns the node instance narrowed to the type passed as a parameter or [classname]`ClassCastException` if the type and node don't match.#
+* [tck-testable]#[methodname]`as(Class<? extends Node>)` returns the node instance narrowed to the type passed as a parameter or throws a [classname]`ClassCastException` if the type and node don't match.#
 
 Nodes are of the following possible types:
 
@@ -7037,7 +7047,8 @@ public class Author {
 
     [...]
 
-    @OldAndNewPasswordsDifferent @NewPasswordsIdentical
+    @OldAndNewPasswordsDifferent
+    @NewPasswordsIdentical
     public void renewPassword(
             String oldPassword, String newPassword, String retypedNewPassword) {
         [...]
@@ -7464,7 +7475,7 @@ Then one [classname]`ConstraintViolation` object would be returned by [methodnam
 [source, JAVA]
 ----
 //assuming an english locale, the interpolated message is returned
-assert "may not be null".equals( constraintViolation.getMessage() );
+assert "must not be null".equals( constraintViolation.getMessage() );
 
 assert library == constraintViolation.getRootBean();
 assert Library.class == constraintViolation.getRootBeanClass();
@@ -7575,7 +7586,7 @@ Then one [classname]`ConstraintViolation` object would be returned by [methodnam
 [source, JAVA]
 ----
 //assuming an english locale, the interpolated message is returned
-assert "may not be null".equals( constraintViolation.getMessage() );
+assert "must not be null".equals( constraintViolation.getMessage() );
 
 assert null == constraintViolation.getRootBean();
 assert Library.class == constraintViolation.getRootBeanClass();
@@ -7683,7 +7694,7 @@ A message interpolator is responsible for transforming the so called message des
 
 ==== Default message interpolation
 
-[tck-testable]#Every conforming Bean Validation implementation includes a default message interpolator which has to comply with# the algorithm defined here to interpolate message descriptors. As precondition for message interpolation the following applies:
+[tck-testable]#Every conforming Bean Validation implementation includes a default message interpolator which has to comply with the algorithm defined here to interpolate message descriptors.# As precondition for message interpolation the following applies:
 
 * [tck-testable]#Each constraint defines a message descriptor via its [methodname]`message` property.#
 * [tck-testable]#Every constraint definition defines a default message descriptor for that constraint.#
@@ -7774,7 +7785,7 @@ The locale to be used for message interpolation is defined as following:
 * [tck-testable]#a bean mapped to the name `formatter` exposing the vararg method [methodname]`format(String format, Object\... args)`. This method must behave like [methodname]`java.util.Formatter.format(String format, Object\... args)`. The locale used for formatting is defined by <<validationapi-message-defaultmessageinterpolation-locale>>. The `formatter` bean allows to format property values, for example in the case of the validated value being 98.12345678, `${formatter.format('%1$.2f', validatedValue)}` would format it to 98.12 (two digits after the decimal point, where the use of '.' vs ',' would be locale specific).#
 
 
-[tck-testable]#If an exception occurs during message interpolation, e.g. due invalid expressions or references to an unknown property, the message expression stays unchanged.#
+[tck-testable]#If an exception occurs during message interpolation, e.g. due to invalid expressions or references to an unknown property, the message expression stays unchanged.#
 
 [[validationapi-message-customresolution]]
 
@@ -7923,6 +7934,7 @@ public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
     /**
      * enforces the locale passed to the interpolator
      */
+    @Override
     public String interpolate(String message,
                               Context context) {
         return defaultInterpolator.interpolate(message,
@@ -7931,6 +7943,7 @@ public class LocaleSpecificMessageInterpolator implements MessageInterpolator {
     }
 
     // no real use, implemented for completeness
+    @Override
     public String interpolate(String message,
                               Context context,
                               Locale locale) {
@@ -7967,12 +7980,14 @@ public class ContextualMessageInterpolator implements MessageInterpolator {
         this.delegate = delegate;
     }
 
+    @Override
     public String interpolate(String message, Context context) {
         Locale locale = Container.getManager().getUserLocale();
         return this.delegate.interpolate(
                         message, context, locale );
     }
 
+    @Override
     public String interpolate(String message, Context context, Locale locale) {
         return this.delegate.interpolate(message, context, locale);
     }
@@ -8018,7 +8033,7 @@ By throwing a [classname]`ConstraintViolationException` if either of the validat
 * only returns to the method caller if the method's postconditions are guaranteed.
 
 
-By default, integrators intercept and validate methods hosting either a constraint or being marked for cascaded validation ([classname]`@Valid`) whether it be on the method itself or on any of its parameters. [tck-testable]#The [classname]`Default` group is used for validation out of the box.#
+By default, integrators intercept and validate methods either hosting a constraint or being marked for cascaded validation ([classname]`@Valid`) whether it be on the method itself or on any of its parameters. [tck-testable]#The [classname]`Default` group is used for validation out of the box.#
 
 Integrators are encouraged to use Bean Validation's metadata API to find whether or not a method or a constructor should be intercepted. This guarantees that XML descriptors as well as future mapping strategies are taken into account. Note that the metadata API does not take into account the fact that a method or constructor validation has been enabled or disabled by the techniques described in <<integration-general-executable>>.
 
@@ -8230,7 +8245,7 @@ factory.close();
 
 ====
 
-The third example shows how to bootstrap Bean Validation in an environment not following the traditional Java classloader strategies (such as tools or alternative service containers like OSGi). They can provide some alternative provider resolution strategy to discover Bean Validation providers.
+The third example shows how to bootstrap Bean Validation in an environment not following the traditional Java class loader strategies (such as tools or alternative service containers like OSGi). They can provide some alternative provider resolution strategy to discover Bean Validation providers.
 
 .Customize the Bean Validation provider resolution mechanism
 ====
@@ -9349,7 +9364,7 @@ Here, [varname]`factory1` is set up using a custom message interpolator, while [
 [[validationapi-bootstrapping-validationprovider]]
 ==== ValidationProvider and ValidationProviderResolver
 
-[classname]`ValidationProvider` is the contract between the bootstrap process and a specific Bean Validation provider. [classname]`ValidationProviderResolver` implements the discovery mechanism for Bean Validation provider implementations. Any Bean Validation client can implement such a discovery mechanism but it is typically implemented by containers having specific classloader structures and restrictions.
+[classname]`ValidationProvider` is the contract between the bootstrap process and a specific Bean Validation provider. [classname]`ValidationProviderResolver` implements the discovery mechanism for Bean Validation provider implementations. Any Bean Validation client can implement such a discovery mechanism but it is typically implemented by containers having specific class loader structures and restrictions.
 
 [[validationapi-bootstrapping-validationprovider-resolver]]
 ===== ValidationProviderResolver
@@ -9393,7 +9408,7 @@ By default, providers are resolved using the Service Provider pattern described 
 
 Bean Validation provider jars may be installed or made available in the same ways as other service providers, e.g. as extensions or added to the application classpath according to the guidelines in the JAR file specification.
 
-The default [classname]`ValidationProviderResolver` implementation will locate all the Bean Validation providers by their provider configuration files visible in the classpath. The default [classname]`ValidationProviderResolver` implementation is recommended and custom [classname]`ValidationProviderResolver` implementations should be rarely used. A typical use of a custom resolution is resolving providers in a classloader constrained container like OSGi or in a tool environment (IDE).
+The default [classname]`ValidationProviderResolver` implementation will locate all the Bean Validation providers by their provider configuration files visible in the classpath. The default [classname]`ValidationProviderResolver` implementation is recommended and custom [classname]`ValidationProviderResolver` implementations should be rarely used. A typical use of a custom resolution is resolving providers in a class loader constrained container like OSGi or in a tool environment (IDE).
 
 The default [classname]`ValidationProviderResolver` can be accessed via [classname]`BootStrapState.getDefaultValidationProviderResolver()`. This method is typically used by the Bean Validation provider [classname]`Configuration` implementation.
 
@@ -9913,7 +9928,7 @@ The XML schema is described in <<xml-config-xsd>>.
 
 The Bean Validation bootstrap API can be used directly by any application or made available through a container or other framework. In all cases, the following rules apply:
 
-* [tck-not-testable]#[classname]`ValidatorFactory` is a thread-safe object that should be built once per deployment unit#
+* [tck-not-testable]#[classname]`ValidatorFactory` is a thread-safe object that should be built once per deployment unit.#
 * [classname]`ValidatorFactory` should be closed when it is no longer needed (e.g. when the unit is undeployed or the server stopped).
 * [tck-not-testable]#[classname]`Validator` is a thread-safe and lightweight object which can be cached by the [classname]`ValidatorFactory` instance.#
 
@@ -10132,7 +10147,7 @@ public enum Scope {
 
 [tck-testable]#[methodname]`hasConstraints()` returns `true` if the given element in the class hierarchy holds at least one constraint declaration.#
 
-[tck-testable]#If you need to query the metadata API in a more fine grained way for example by restricting the constraints to the one described on fields or on getters or by restricting to a given set of groups, you can use the [classname]`ConstraintFinder` fluent API by calling [methodname]`findConstraints()`.#
+[tck-testable]#If you need to query the metadata API in a more fine grained way for example by restricting the constraints to the ones described on fields or on getters or by restricting to a given set of groups, you can use the [classname]`ConstraintFinder` fluent API by calling [methodname]`findConstraints()`.#
 
 [tck-testable]#[classname]`unorderedAndMatchingGroups()` restricts the results to the [classname]``ConstraintDescriptor``s (see <<constraintmetadata-constraintdescriptor>>) matching the given groups. Order is not respected but group inheritance and inheritance via sequence (including the [classname]`Default` group overriding at the class level) are honored.#
 
@@ -10365,7 +10380,6 @@ public interface BeanDescriptor extends ElementDescriptor {
      * exists or the specified constructor neither has parameter or return value
      * constraints nor a parameter or return value marked for cascaded
      * validation.
-     * Constructor of super types are considered.
      *
      * @param parameterTypes the parameter types of the constructor
      * @return a constructor descriptor for the given constructor
@@ -10779,7 +10793,7 @@ public interface ParameterDescriptor extends ElementDescriptor, CascadableDescri
 [[constraintmetadata-crossparameterdescriptor]]
 === CrossParameterDescriptor
 
-The [classname]`CrossParameterDescriptor` interface describes a element containing all cross-parameter constraints of a method or constructor.
+The [classname]`CrossParameterDescriptor` interface describes an element containing all cross-parameter constraints of a method or constructor.
 
 This interface is returned by [methodname]`MethodDescriptor.getCrossParameterDescriptor()` and [methodname]`ConstructorDescriptor.getCrossParameterDescriptor()`.
 
@@ -12834,7 +12848,7 @@ Property-level annotations are described via the `getter` element. [tck-testable
 
 Constructor-level annotations are described via the `constructor` element.
 
-[tck-testable]#To identify a constructor to be configured, zero or more parameter elements are used, matching the number and types of parameters of the configured constructor. When configuring the default constructor, no parameter element is to be used. The parameter types are specified using their fully qualified name using the syntax described in the documentation of [methodname]`java.lang.Class.getName()`.#
+[tck-testable]#To identify a constructor to be configured, zero or more `parameter` elements are used, matching the number and types of parameters of the configured constructor. When configuring the default constructor, no `parameter` element is to be used. The parameter types are specified using their fully qualified name using the syntax described in the documentation of [methodname]`java.lang.Class.getName()`.#
 
 Let's look at some examples:
 
@@ -12864,7 +12878,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 
 [tck-testable]#The cross-parameter constraints applied on a constructor parameter list are specified by adding `constraint` elements to the `cross-parameter` element.#
 
-[tck-testable]#If `ignore-annotations` is declared on the parameter, cross-parameter element or return value level, Bean Validation must honor the explicit value for this element. Otherwise, if `ignore-annotations` is declared for the `constructor` element, Bean Validation must honor this value. Otherwise, the default value declared in the encapsulating `bean` element is considered.#
+[tck-testable]#If `ignore-annotations` is declared on the `parameter`, `cross-parameter` or `return-value` element, Bean Validation must honor the explicit value for this element. Otherwise, if `ignore-annotations` is declared for the `constructor` element, Bean Validation must honor this value. Otherwise, the default value declared in the encapsulating `bean` element is considered.#
 
 [tck-testable]#When `ignore-annotations` is true, Bean Validation annotations on the targeted constructor or parameter are ignored (including [classname]`@Valid` and [classname]`@ConvertGroup`).# When `ignore-annotations` is false:
 
@@ -12920,7 +12934,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 
 Method-level annotations are described via the `method` element.
 
-[tck-testable]#To identify a method to be configured, zero or more parameter elements are used, matching the number and types of parameters of the configured method. The parameter types are specified using their fully qualified name using the syntax described in the documentation of [methodname]`java.lang.Class.getName()`.#
+[tck-testable]#To identify a method to be configured, zero or more `parameter` elements are used, matching the number and types of parameters of the configured method. The parameter types are specified using their fully qualified name using the syntax described in the documentation of [methodname]`java.lang.Class.getName()`.#
 
 Let's look at some examples:
 
@@ -12955,7 +12969,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 
 [tck-testable]#The cross-parameter constraints applied on a method parameter list are specified by adding `constraint` elements to the `cross-parameter` element.#
 
-[tck-testable]#If `ignore-annotations` is declared on the parameter, cross-parameter element or return value level, Bean Validation must honor the explicit value for this element. Otherwise, if `ignore-annotations` is declared for the `method` element, Bean Validation must honor this value. Otherwise, the default value declared in the encapsulating `bean` element is considered.#
+[tck-testable]#If `ignore-annotations` is declared on the `parameter`, `cross-parameter` or `return-value` element, Bean Validation must honor the explicit value for this element. Otherwise, if `ignore-annotations` is declared for the `method` element, Bean Validation must honor this value. Otherwise, the default value declared in the encapsulating `bean` element is considered.#
 
 [tck-testable]#When `ignore-annotations` is true, Bean Validation annotations on the targeted method or parameter are ignored (including [classname]`@Valid` and [classname]`@ConvertGroup`).# When `ignore-annotations` is false:
 
@@ -13006,7 +13020,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 [[xml-mapping-constraintdeclarationinxml-containerelementconstraints]]
 ===== Container-element overriding
 
-[tck-testable]#For applying constraints to the elements of generic container types or marking the same for cascaded validation, the `container-element-type` element is used.#
+[tck-testable]#For applying constraints to the elements of generic container types or marking them for cascaded validation, the `container-element-type` element is used.#
 
 [tck-testable]#`container-element-type` can be used within the `field`, `getter`, `parameter` and `return-value` elements.#
 
@@ -13236,7 +13250,7 @@ Other custom elements of an annotation are represented by `element`. [tck-testab
 [[xml-mapping-constraintdeclarationinxml-groupconversions]]
 ===== Declaration of group conversions
 
-[tck-testable]#Group conversion rules are declared by specifying one or more `convert-group` elements within the `field`, `getter`, `parameter` and `return-value` elements.#
+[tck-testable]#Group conversion rules are declared by specifying one or more `convert-group` elements within the `field`, `getter`, `parameter`, `return-value` and `container-element-type` elements.#
 
 [tck-testable]#Source and target group of a conversion rule are given by specifying their fully-qualified names within the `from` and `to` attribute respectively. If the `default-package` element is configured for the mapping file, any unqualified class names will be resolved using the given default package.#
 
@@ -13302,7 +13316,7 @@ A constraint definition (i.e. the annotation representing a constraint), cannot 
 
 [tck-testable]#A constraint definition is represented by a `constraint-definition` element.# The `annotation` attribute represents the constraint annotation being altered. The `validated-by` elements represent the (ordered) list of [classname]`ConstraintValidator` implementations associated to the constraint.
 
-[tck-testable]#If `include-existing-validator` is set to false, [classname]`ConstraintValidator` defined on the constraint annotation are ignored.# [tck-testable]#If set to true, the list of [classname]``ConstraintValidator``s described in XML are concatenated to the list of [classname]`ConstraintValidator` described on the annotation to form a new array of [classname]`ConstraintValidator` evaluated.# [tck-testable]#Annotation based [classname]`ConstraintValidator` come before XML based [classname]``ConstraintValidator``s in the array.# [tck-testable]#The new list is returned by [methodname]`ConstraintDescriptor.getConstraintValidatorClasses()`.#
+[tck-testable]#If `include-existing-validator` is set to false, [classname]`ConstraintValidator` defined on the constraint annotation are ignored.# [tck-testable]#If set to true, the list of [classname]``ConstraintValidator``s described in XML are concatenated to the list of [classname]`ConstraintValidator` described on the annotation to form a new array of [classname]`ConstraintValidator` evaluated.# [tck-testable]#Annotation based [classname]``ConstraintValidator``s come before XML based [classname]``ConstraintValidator``s in the array.# [tck-testable]#The new list is returned by [methodname]`ConstraintDescriptor.getConstraintValidatorClasses()`.#
 
 .Overriding constraint definitions
 ====
@@ -14087,7 +14101,7 @@ Integration layers can read the list of validated executable types defined in th
 
 More formally, a given executable (constructor or method) is validated upon execution according to the following rules in decreasing order:
 
-* [tck-testable tcck-needs-update]#the executable is validated if it is annotated with [classname]`@ValidateOnExecution` and the [methodname]`type` attribute contains the executable type or `IMPLICIT`. If the [methodname]`type` attribute does neither contain the executable type nor `IMPLICIT`, the executable is not validated.#
+* [tck-testable tck-needs-update]#the executable is validated if it is annotated with [classname]`@ValidateOnExecution` and the [methodname]`type` attribute contains the executable type or `IMPLICIT`. If the [methodname]`type` attribute does neither contain the executable type nor `IMPLICIT`, the executable is not validated.#
 * [tck-testable]#otherwise the executable is validated if the type (class, interface) on which it is declared is annotated with [classname]`@ValidateOnExecution` and the [methodname]`type` attribute contains the executable type. If the `type` attribute contains `IMPLICIT`, then this rule is ignored and the behavior is equivalent to [classname]`@ValidateOnExecution` not being present. If the [methodname]`type` attribute does not contain the executable type, the executable is not validated.#
 * [tck-testable]#otherwise the executable is validated if the global executable validation setting contains the executable type. If the global setting does not contain the executable type, the executable is not validated.#
 * [tck-testable]#The rules above do not apply to methods overriding a superclass method or implementing an interface method. In this case, the method inherits the behavior of the method it overrides / implements. Out of the box, a conforming integration implementation raises a [classname]`ValidationException` if the overriding / implementing method hosts the [classname]`@ValidateOnExecution` annotation.#
@@ -14444,10 +14458,10 @@ Constraint:: A restriction on a bean instance, the value of a field or the value
 Constraint declaration:: Assignment of a constraint to a target (bean, field, property) for a specific class. Typically by declaring an annotation on the target but can also be done through a XML deployment descriptor.
 Validation routine:: Sequence of operations executed by the Bean Validation provider to validate a given object graph.
 Constraint definition:: Defines a type of constraint, its attributes and the actual constraint validation implementations. Done through annotations. The list of constraint validation implementations can be provided via XML.
-Group:: Constraints can belong to one or more group or context. Useful to apply a subset of the constraints for a given use case. By default, the `Default`  group is used.
+Group:: Constraints can belong to one or more group or context. Useful to apply a subset of the constraints for a given use case. By default, the `Default` group is used.
 Group Sequence:: Defines a group ordering in the validation process. If a given group in the sequence contains one or more failure, the following groups in the sequence must be ignored.
 Constraint validation:: Constraint logic algorithm used to determine whether a given value passes a constraint or not.
-Constraint validation implementation:: Class implementing the constraint logic and used to determine whether a given value pass a constraint or not.
+Constraint validation implementation:: Class implementing the constraint logic and used to determine whether a given value passes a constraint or not.
 Bean Validation provider:: Product implementing this specification.
 Message interpolator:: Algorithm used to build the end user message associated to a constraint failure. Typically useful for i18n.
 Constraint metadata API:: API exposing the constraints applied to a given bean type. Also considered one of the integration points with other JSR or frameworks.
