@@ -40,9 +40,7 @@ public class BeginsWithValidator implements ConstraintValidator<BeginsWith, Stri
 			return true;
 
 		return allowedPrefixes.stream()
-				.filter( s -> value.startsWith( s ) )
-				.findAny()
-				.isPresent();
+				.anyMatch( value::startsWith );
 	}
 }
 //end::include[]
