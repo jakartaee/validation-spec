@@ -386,7 +386,7 @@ include::{validation-api-source-dir}javax/validation/metadata/ReturnValueDescrip
 [[constraintmetadata-containerdescriptor]]
 === ContainerDescriptor and ContainerElementTypeDescriptor
 
-The `ContainerDescriptor` interface describes those elements that can host container element constraints (see <<constraintdeclarationvalidationprocess-containerelementconstraints>>).
+The `ContainerDescriptor` interface describes those elements that can be of a container type, e.g. `List` or `Map`, and as such may host container element constraints (see <<constraintdeclarationvalidationprocess-containerelementconstraints>>) or have container element types that are marked with `@Valid`.
 
 `ContainerDescriptor` is extended by `PropertyDescriptor`, `ParameterDescriptor`, `ReturnValueDescriptor` and `ContainerElementTypeDescriptor`.
 
@@ -395,12 +395,13 @@ The `ContainerDescriptor` interface describes those elements that can host conta
 include::{validation-api-source-dir}javax/validation/metadata/ContainerDescriptor.java[lines=7..8;11..-1]
 ----
 
-[tck-testable]#`getContainerElementTypes()` returns a list of descriptors representing all the type arguments of the container type,
-in the order of their declaration.#
+[tck-testable]#If a given element is of a container type, `getConstrainedContainerElementTypes()` returns a set with descriptors representing those container element types that either host at least one constraint or are marked with `@Valid`.#
+[tck-testable]#The returned set will be empty if the given element is not of a container type or is of a container type but has no element types that are constrained or marked with `@Valid`.#
+In the context of properties and method return values, container element types of super-types are considered.
 
-[tck-testable]#The `ContainerElementTypeDescriptor` interface describes the potential container element constraints applied to one type argument of a container type.#
+[tck-testable]#The `ContainerElementTypeDescriptor` interface describes the potential container element constraints applied to one element type of a container.#
 
-This interface is returned by `ContainerDescriptor.getContainerElementTypes()`.
+This interface is returned by `ContainerDescriptor.getConstrainedContainerElementTypes()`.
 
 [source, JAVA, indent=0]
 ----
@@ -408,6 +409,146 @@ include::{validation-api-source-dir}javax/validation/metadata/ContainerElementTy
 ----
 
 [tck-testable]#`getTypeArgumentIndex()` returns the index of the type argument corresponding to this descriptor instance.#
+[tck-testable]#`getContainerClass()` returns the type of the container declaring the container element type represented by this descriptor instance.#
+
+As an example, consider the following type hierarchy:
+
+.Type hierarchy with container element constraints
+====
+[source, JAVA]
+----
+public interface LegalEntity {
+
+    Iterable<@NotNull String> getRoles();
+}
+
+public interface Person extends LegalEntity {
+
+    @Override
+    Set<@NotEmpty String> getRoles();
+
+    Map<@NotNull String, @Valid Account> getAccounts();
+}
+
+public interface Employee extends Person {
+
+    @Override
+    Set<@NotBlank String> getRoles();
+
+    Map<String, List<@NotNull @Valid Address>> getAddresses();
+}
+
+public abstract class Roles implements Set<String> {
+    [...]
+}
+
+public class EmployeeImpl implements Employee {
+
+    @Override
+    public Roles getRoles() {
+        [...]
+    }
+
+    public Map<String, List<@ValidAddress Address>> getAddresses() {
+        [...]
+    }
+
+    [...]
+}
+----
+====
+
+Then the assertions in the following example are true:
+
+.Retrieving metadata on container element constraints
+====
+[source, JAVA]
+----
+Validator validator = ...;
+
+BeanDescriptor employeeImplDescriptor = validator.getConstraintsForClass( Employee.class );
+
+// container element constraints for property "roles"
+PropertyDescriptor rolesDescriptor = employeeImplDescriptor.getConstraintsForProperty( "roles" );
+assert rolesDescriptor != null;
+
+Set<ContainerElementTypeDescriptor> constrainedContainerElementTypes = rolesDescriptor.getConstrainedContainerElementTypes();
+// the container element types of Set and Iterable; Roles does not declare any container element types itself
+assert constrainedContainerElementTypes.size() == 2;
+
+Iterator<ContainerElementTypeDescriptor> it = constrainedContainerElementTypes.iterator();
+
+// assuming that the descriptor for Set is returned first
+ContainerElementTypeDescriptor containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Set.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == String.class;
+// @NotEmpty and @NotBlank
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 2;
+
+// assuming that the descriptor for Iterable is returned next
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Iterable.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == String.class;
+// @NotNull
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 1;
+
+// container element constraints for property "accounts"
+PropertyDescriptor accountsDescriptor = employeeImplDescriptor.getConstraintsForProperty( "accounts" );
+constrainedContainerElementTypes = accountsDescriptor.getConstrainedContainerElementTypes();
+// the map key type and the map value type
+assert constrainedContainerElementTypes.size() == 2;
+
+it = constrainedContainerElementTypes.iterator();
+
+// assuming that the descriptor for the map key is returned first
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == String.class;
+// @NotNull
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 1;
+assert containerElementTypeDescriptor.isCascaded() == false;
+
+// assuming that the descriptor for the map value is returned next
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 1;
+assert containerElementTypeDescriptor.getElementClass() == Account.class;
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 0;
+assert containerElementTypeDescriptor.isCascaded() == true;
+
+// container element constraints for property "addresses"
+PropertyDescriptor addressesDescriptor = employeeImplDescriptor.getConstraintsForProperty( "addresses" );
+constrainedContainerElementTypes = accountsDescriptor.getConstrainedContainerElementTypes();
+// the map value type
+assert constrainedContainerElementTypes.size() == 1;
+
+it = constrainedContainerElementTypes.iterator();
+
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 1;
+assert containerElementTypeDescriptor.getElementClass() == List.class;
+// No constraints nor @Valid on List itself
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 0;
+assert containerElementTypeDescriptor.isCascaded() == false;
+
+// container element type of the nested List container
+constrainedContainerElementTypes = containerElementTypeDescriptor.getConstrainedContainerElementTypes();
+assert constrainedContainerElementTypes.size() == 1;
+it = constrainedContainerElementTypes.iterator();
+
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == List.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == Address.class;
+// @NotNull and @ValidAddress
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 2;
+assert containerElementTypeDescriptor.isCascaded() == true;
+----
+====
 
 [[constraintmetadata-constraintdescriptor]]
 === ConstraintDescriptor
