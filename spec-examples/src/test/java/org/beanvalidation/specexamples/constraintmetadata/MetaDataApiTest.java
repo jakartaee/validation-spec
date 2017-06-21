@@ -6,11 +6,14 @@
  */
 package org.beanvalidation.specexamples.constraintmetadata;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
@@ -90,44 +93,6 @@ public class MetaDataApiTest {
 		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "author" );
 		assert propertyDescriptor.getConstraintDescriptors().size() == 1;
 		assert propertyDescriptor.isCascaded();
-
-		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "title" );
-
-		// no container element types
-		assert propertyDescriptor.getContainerElementTypes().isEmpty();
-
-		propertyDescriptor = bookDescriptor.getConstraintsForProperty( "keywordsPerChapter" );
-
-		// 2 container element types: one for the map key and one for the map value
-		assert propertyDescriptor.getContainerElementTypes().size() == 2;
-
-		// @Valid on the map key
-		ContainerElementTypeDescriptor mapKeyElementDescriptor =
-				propertyDescriptor.getContainerElementTypes().get( 0 );
-		assert mapKeyElementDescriptor.isCascaded() == true;
-
-		// @Size on the map value
-		ContainerElementTypeDescriptor mapValueElementDescriptor =
-				propertyDescriptor.getContainerElementTypes().get( 1 );
-		Set<ConstraintDescriptor<?>> mapKeyConstraints =
-				mapValueElementDescriptor.getConstraintDescriptors();
-		assert mapKeyConstraints.size() == 1;
-		assert mapKeyConstraints.iterator().next().getAnnotation().annotationType() == Size.class;
-
-		// 1 container element type for the nested list
-		assert mapValueElementDescriptor.getContainerElementTypes().size() == 1;
-
-		// @NotBlank on the nested list elements
-		ContainerElementTypeDescriptor listElementDescriptor =
-				mapValueElementDescriptor.getContainerElementTypes().get( 0 );
-		Set<ConstraintDescriptor<?>> listElementConstraints =
-				listElementDescriptor.getConstraintDescriptors();
-		assert listElementConstraints.size() == 1;
-		assert listElementConstraints.iterator().next().getAnnotation().annotationType() ==
-				NotBlank.class;
-
-		// no further nested container element constraints
-		assert listElementDescriptor.getContainerElementTypes().isEmpty();
 
 		//getTitle() and addChapter()
 		assert bookDescriptor.getConstrainedMethods( MethodType.GETTER, MethodType.NON_GETTER ).size() ==
@@ -218,6 +183,95 @@ public class MetaDataApiTest {
 		ConstraintDescriptor<?> crossParameterConstraint =
 				crossParameterDescriptor.getConstraintDescriptors().iterator().next();
 		assert crossParameterConstraint.getAnnotation().annotationType() == ValidInterval.class;
+
+		// no constrained container element types for title
+		assert bookDescriptor.getConstraintsForProperty( "title" )
+				.getConstrainedContainerElementTypes().size() == 0;
+
+		BeanDescriptor employeeImplDescriptor = validator.getConstraintsForClass( Employee.class );
+
+		// container element constraints for property "roles"
+		PropertyDescriptor rolesDescriptor = employeeImplDescriptor.getConstraintsForProperty( "roles" );
+		assert rolesDescriptor != null;
+
+		Set<ContainerElementTypeDescriptor> constrainedContainerElementTypes = rolesDescriptor
+				.getConstrainedContainerElementTypes();
+		// the container element types of Set and Iterable; Roles does not declare any container element types itself
+		assert constrainedContainerElementTypes.size() == 2;
+
+		Iterator<ContainerElementTypeDescriptor> it = constrainedContainerElementTypes.iterator();
+
+		// assuming that the descriptor for Set is returned first
+		ContainerElementTypeDescriptor containerElementTypeDescriptor = it.next();
+		assert containerElementTypeDescriptor.getContainerClass() == Set.class;
+		assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+		assert containerElementTypeDescriptor.getElementClass() == String.class;
+		// @NotEmpty and @NotBlank
+		assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 2;
+
+		// assuming that the descriptor for Iterable is returned next
+		containerElementTypeDescriptor = it.next();
+		assert containerElementTypeDescriptor.getContainerClass() == Iterable.class;
+		assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+		assert containerElementTypeDescriptor.getElementClass() == String.class;
+		// @NotNull
+		assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 1;
+
+		// container element constraints for property "accounts"
+		PropertyDescriptor accountsDescriptor = employeeImplDescriptor
+				.getConstraintsForProperty( "accounts" );
+		constrainedContainerElementTypes = accountsDescriptor.getConstrainedContainerElementTypes();
+		// the map key type and the map value type
+		assert constrainedContainerElementTypes.size() == 2;
+
+		it = constrainedContainerElementTypes.iterator();
+
+		// assuming that the descriptor for the map key is returned first
+		containerElementTypeDescriptor = it.next();
+		assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+		assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+		assert containerElementTypeDescriptor.getElementClass() == String.class;
+		// @NotNull
+		assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 1;
+		assert containerElementTypeDescriptor.isCascaded() == false;
+
+		// assuming that the descriptor for the map value is returned next
+		containerElementTypeDescriptor = it.next();
+		assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+		assert containerElementTypeDescriptor.getTypeArgumentIndex() == 1;
+		assert containerElementTypeDescriptor.getElementClass() == Account.class;
+		assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 0;
+		assert containerElementTypeDescriptor.isCascaded() == true;
+
+		// container element constraints for property "addresses"
+		PropertyDescriptor addressesDescriptor = employeeImplDescriptor
+				.getConstraintsForProperty( "addresses" );
+		constrainedContainerElementTypes = addressesDescriptor.getConstrainedContainerElementTypes();
+		// the map value type
+		assert constrainedContainerElementTypes.size() == 1;
+
+		it = constrainedContainerElementTypes.iterator();
+
+		containerElementTypeDescriptor = it.next();
+		assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+		assert containerElementTypeDescriptor.getTypeArgumentIndex() == 1;
+		assert containerElementTypeDescriptor.getElementClass() == List.class;
+		// No constraints nor @Valid on List itself
+		assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 0;
+		assert containerElementTypeDescriptor.isCascaded() == false;
+
+		// container element type of the nested List container
+		constrainedContainerElementTypes = containerElementTypeDescriptor.getConstrainedContainerElementTypes();
+		assert constrainedContainerElementTypes.size() == 1;
+		it = constrainedContainerElementTypes.iterator();
+
+		containerElementTypeDescriptor = it.next();
+		assert containerElementTypeDescriptor.getContainerClass() == List.class;
+		assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+		assert containerElementTypeDescriptor.getElementClass() == Address.class;
+		// @NotNull and @ValidAddress
+		assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 2;
+		assert containerElementTypeDescriptor.isCascaded() == true;
 		//end::include[]
 	}
 }

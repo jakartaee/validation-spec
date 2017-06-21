@@ -6,6 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintmetadata;
 
+import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
 //tag::include[]

@@ -15,6 +15,7 @@ import static java.lang.annotation.ElementType.TYPE_USE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -22,21 +23,18 @@ import javax.validation.Constraint;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 import javax.validation.Payload;
-import javax.validation.ReportAsSingleViolation;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+
+import org.beanvalidation.specexamples.constraintmetadata.ValidAddress.List;
 
 //tag::include[]
 @Documented
-@NotNull
-@Size(min = 1)
-@ReportAsSingleViolation
-@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
+@Constraint(validatedBy = ValidAddress.Validator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface NotEmpty {
+@Repeatable( List.class )
+public @interface ValidAddress {
 
-	String message() default "{com.acme.constraint.NotEmpty.message}";
+	String message() default "{com.acme.constraint.ValidAddress.message}";
 
 	Class<?>[] groups() default {};
 
@@ -47,14 +45,17 @@ public @interface NotEmpty {
 	@Documented
 	@interface List {
 
-		NotEmpty[] value();
+		ValidAddress[] value();
 	}
 
-	class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
+	class Validator implements ConstraintValidator<ValidAddress, Address> {
 
 		@Override
-		public boolean isValid(String value, ConstraintValidatorContext context) {
-			return true;
+		public boolean isValid(Address value, ConstraintValidatorContext context) {
+			// [...]
+			//end::include[]
+			return false;
+			//tag::include[]
 		}
 	}
 }

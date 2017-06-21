@@ -8,13 +8,12 @@ package org.beanvalidation.specexamples.constraintmetadata;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
-import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static javax.validation.constraintvalidation.ValidationTarget.PARAMETERS;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -24,11 +23,13 @@ import javax.validation.ConstraintValidatorContext;
 import javax.validation.Payload;
 import javax.validation.constraintvalidation.SupportedValidationTarget;
 
+import org.beanvalidation.specexamples.constraintmetadata.ValidInterval.List;
 //tag::include[]
 @Documented
 @Constraint(validatedBy = ValidInterval.Validator.class)
 @Target({ METHOD, ANNOTATION_TYPE, CONSTRUCTOR })
 @Retention(RUNTIME)
+@Repeatable( List.class )
 public @interface ValidInterval {
 
 	String message() default "{com.acme.constraint.ValidInterval.message}";
@@ -41,7 +42,7 @@ public @interface ValidInterval {
 
 	int endParameter();
 
-	@Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER })
+	@Target({ METHOD, ANNOTATION_TYPE, CONSTRUCTOR })
 	@Retention(RUNTIME)
 	@Documented
 	@interface List {
