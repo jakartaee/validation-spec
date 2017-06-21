@@ -498,7 +498,10 @@ public interface Payload {
 }
 ----
 
-Payloads are typically used by validation clients to associate some metadata information with a given constraint declaration. Payloads are typically non-portable. Describing payloads as interface extensions as opposed to a string-based approach allows an easier and more type-safe approach.
+Payloads are typically used by validation clients to associate some metadata information with a given constraint declaration.
+Describing payloads as interface extensions as opposed to a string-based approach allows an easier and more type-safe approach.
+Payloads are typically non-portable.
+An exception are the `Unwrapping.Skip` and `Unwrapping.Unwrap` payload types which are defined by this specification (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>).
 
 One use case for payload shown in <<example-payload>> is to associate a severity to a constraint. This severity can be exploited by a presentation framework to adjust how a constraint failure is displayed.
 
@@ -1428,7 +1431,7 @@ public class SizeValidatorForCollection implements ConstraintValidator<Size, Col
     [...]
 }
 
-//Collection uses generics and unbounded windcard type
+//Collection uses generics and unbounded wildcard type
 public class SizeValidatorForCollection implements ConstraintValidator<Size, Collection<?>> {
     [...]
 }
@@ -2539,9 +2542,7 @@ public class BeginsWithValidator implements ConstraintValidator<BeginsWith, Stri
             return true;
 
         return allowedPrefixes.stream()
-                .filter( s -> value.startsWith( s ) )
-                .findAny()
-                .isPresent();
+                .anyMatch( value::startsWith );
     }
 }
 ----
@@ -2940,7 +2941,7 @@ public @interface ExtractedValue {
 [tck-testable]#The `@ExtractedValue` annotation must be specified exactly once for a value extractor type.#
 
 [tck-testable]#For generic container types (e.g. `java.util.List`), `@ExtractedValue` is to be specified on a type argument of the container type as used in the extractor definition.#
-[tck-not-testable]#Only wildcard type arguments are supported as target for `@ExtractedValue` in this case.#
+[tck-not-testable]#Only unbounded wildcard type arguments are supported as target for `@ExtractedValue` in this case.#
 
 [NOTE]
 ====
@@ -3225,6 +3226,10 @@ but not both (in order to prevent the container elements from being validated tw
 
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
 
+[tck-not-testable]#It is not supported to put `@Valid` to the type parameters of generic types or methods.#
+[tck-not-testable]#It is also not supported to put `@Valid` to type arguments within the `extends` or `implements` clauses of type definitions.#
+A future revision of this specification might define support for such usages of `@Valid`.
+
 [[constraintdeclarationvalidationprocess-requirements-graphvalidation-examples]]
 ===== Examples
 
@@ -3323,6 +3328,9 @@ Constraint declarations are placed on classes or interfaces primarily through an
 [tck-testable]#When a constraint is defined on a class, the class instance being validated is passed to the [classname]`ConstraintValidator`. When a constraint is defined on a field, the value of the field is passed to the [classname]`ConstraintValidator`. When a constraint is defined on a getter, the result of the getter invocation is passed to the [classname]`ConstraintValidator`.#
 
 <<constraintdeclarationvalidationprocess-methodlevelconstraints>> discusses in detail constraints on methods and constructors.
+
+Constraints can also be applied to the elements of container types, e.g. to the elements of a `List`-typed property or to the value wrapped by an `Optional` object returned by a method.
+Container element constraints are discussed in <<constraintdeclarationvalidationprocess-containerelementconstraints>>.
 
 [[constraintdeclarationvalidationprocess-inheritance]]
 
@@ -3978,7 +3986,7 @@ public List<@NotBlank String> getMatchingRecords(List<@NotNull @Size(max=20) Str
 ----
 ====
 
-[tck-testable]#When a field, property, executable parameter or method return value which is of a container type gets validated, then all values contained in the container will be validated provided that their container element is constrained.#
+[tck-testable]#When a field, property, executable parameter or method return value which is of a container type gets validated, then all values contained in the container will be validated provided that their container element type is constrained.#
 [tck-testable]#Any container element constraints of that element will be validated alongside any other constraints hosted by that element.#
 [tck-testable]#For container element constraints, the same rules for validation groups and group sequences apply as for any other constraint on the same element.#
 
@@ -4005,15 +4013,29 @@ In the example above,
 * for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
 * the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
 
-[tck-not-testable]#Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported#:
+[tck-not-testable]#It is not supported to declare container element constraints on the type parameters of generic types or methods.#
+[tck-not-testable]#It is also not supported to declare container element constraints on type arguments within the `extends` or `implements` clauses of type definitions.#
+I.e. the following usages are unsupported:
 
-.Unsupported usage of a container element constraint on a wildcard type argument
+.Unsupported usage of container element constraints on generic types and methods
 ====
 [source, JAVA]
 ----
-private List<@NotEmpty ?> list;
+public class NonNullList<@NotNull T> {
+    [...]
+}
+
+public class ContainerFactory {
+    <@NotNull T> Container<T> instantiateContainer(Class<T> clazz) { [...] }
+}
+
+public class NonNullSet<T> extends Set<@NotNull T> {
+    [...]
+}
 ----
 ====
+
+A future revision of this specification might define support for such usages of container element constraints.
 
 [[constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping]]
 ==== Implicit unwrapping of containers
@@ -6536,6 +6558,8 @@ The [methodname]`getLeafBean()` method returns the following object:
 
 [source, JAVA]
 ----
+import javax.validation.valueextraction.ValueExtractor;
+
 /**
  * Represents the navigation path from an object to another
  * in an object graph.
@@ -6582,6 +6606,12 @@ public interface Path extends Iterable<Path.Node> {
          *     cross-parameter.</li>
          *     <li>The literal {@code <return value>} for a method or constructor return
          *     value.</li>
+         *     <li>The node name as defined by the {@link ValueExtractor} for a container
+         *     element; specifically, the literal {@code <list element>} for elements
+         *     stored in a list, the literal {@code <iterable element>} for elements
+         *     stored in an {@code Iterable}, the literal {@code <map key>} for the keys
+         *     stored in a {@code Map} and the literal {@code <map value>} for the values
+         *     stored in a {@code Map}.
          * </ul>
          *
          * @return name of the element which the node represents
@@ -6589,20 +6619,21 @@ public interface Path extends Iterable<Path.Node> {
         String getName();
 
         /**
-         * @return {@code true} if the node represents an object contained in an
-         *         {@code Iterable} or in a {@code Map}, {@code false} otherwise
+         * @return  @return {@code true} if the node represents an object contained in
+         * a multi-valued container such as {@code Iterable} or {@code Map} or an array,
+         * {@code false} otherwise
          */
         boolean isInIterable();
 
         /**
-         * @return the index the node is placed in if contained in an array or
-         *         {@code List}; {@code null} otherwise
+         * @return the index the node is placed in if contained in an array, a {@code List}
+         *         or any other container supporting indexed access, {@code null} otherwise
          */
         Integer getIndex();
 
         /**
-         * @return the key the node is placed in if contained in a {@code Map},
-         *         {@code null} otherwise
+         * @return the key the node is placed in if contained in a {@code Map} or any
+         *         other container supporting keyed access, {@code null} otherwise
          */
         Object getKey();
 
@@ -6862,12 +6893,12 @@ public enum ElementKind {
 ** The parameter named as defined by the [classname]`ParameterNameProvider` (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>) for a method or constructor parameter.
 ** The literal `<cross-parameter>` for a method or constructor cross-parameter.
 ** The literal `<return value>` for a method or constructor return value.
-** The name set by the applied value extractor for a container element constraint,
-e.g. `<map value>` if the default value extractor for map values is applied
+** The name set by the applied value extractor for a container element constraint;
+specifically, when applying the default value extractor for iterable elements, list elements, map keys or map values, the literal `<iterable element>`, `<list element>`, `<map key>` or `<map value>`, respectively.
 
-* [tck-testable]#[methodname]`isInIterable()` returns `true` if the node represents an object contained in an array, [classname]`Iterable` or in a [classname]`Map`, `false` otherwise.#
-* [tck-testable]#[methodname]`getIndex()` returns the index of the node if it is contained in an array or [classname]`List`. Returns `null` otherwise.#
-* [tck-testable]#[methodname]`getKey()` returns the key of the node if it is contained in a [classname]`Map`. Returns `null` otherwise.#
+* [tck-testable]#[methodname]`isInIterable()` returns `true` if the node represents an object contained in an array or in a multi-valued container such as [classname]`Iterable` or [classname]`Map`, `false` otherwise.#
+* [tck-testable]#[methodname]`getIndex()` returns the index of the node if it is contained in an array, [classname]`List` or any other container supporting indexed access. Returns `null` otherwise.#
+* [tck-testable]#[methodname]`getKey()` returns the key of the node if it is contained in a [classname]`Map` or any other container supporting keyed access. Returns `null` otherwise.#
 * [tck-testable]#[methodname]`getKind()` returns the [classname]`ElementKind` corresponding to the actual node type. This can be used in conjunction with the method [methodname]`as()` to narrow the type and access node specific methods#
 * [tck-testable]#[methodname]`as(Class<? extends Node>)` returns the node instance narrowed to the type passed as a parameter or throws a [classname]`ClassCastException` if the type and node don't match.#
 
@@ -7016,6 +7047,7 @@ If additional path nodes are added in a constraint validator implementation usin
 [NOTE]
 ====
 A given [classname]`Node` object derives its `inIterable`, `key` and `index` properties from the previous association, method parameter or return value traversed.
+The same applies to `typeArgumentIndex` and `containerClass` if the given node type defines these properties.
 ====
 
 [NOTE]
@@ -10140,7 +10172,8 @@ public enum Scope {
 * the object type when invoked on [classname]`BeanDescriptor`,
 * the type of a property or parameter when invoked on [classname]`PropertyDescriptor` or [classname]`ParameterDescriptor` respectively,
 * `Object[].class` when invoked on [classname]`CrossParameterDescriptor`,
-* the return type when invoked on [classname]`ConstructorDescriptor`, [classname]`MethodDescriptor` or [classname]`ReturnValueDescriptor`.
+* the return type when invoked on [classname]`ConstructorDescriptor`, [classname]`MethodDescriptor` or [classname]`ReturnValueDescriptor`,
+* the container element type when invoked on `ContainerElementTypeDescriptor` (e.g. when invoked on a descriptor representing the container element type of `List<String>`, `String.class` will be returned).
 --
 
 [tck-testable]#[classname]`getConstraintDescriptors()` returns all the [classname]``ConstraintDescriptor``s (see <<constraintmetadata-constraintdescriptor>>) hosted on the given element in the class hierarchy, each [classname]`ConstraintDescriptor` describing one of the constraints declared on the given element.#
@@ -10843,7 +10876,7 @@ public interface ReturnValueDescriptor extends ElementDescriptor, CascadableDesc
 [[constraintmetadata-containerdescriptor]]
 === ContainerDescriptor and ContainerElementTypeDescriptor
 
-The `ContainerDescriptor` interface describes those elements that can host container element constraints (see <<constraintdeclarationvalidationprocess-containerelementconstraints>>).
+The `ContainerDescriptor` interface describes those elements that can be of a container type, e.g. `List` or `Map`, and as such may host container element constraints (see <<constraintdeclarationvalidationprocess-containerelementconstraints>>) or have container element types that are marked with `@Valid`.
 
 `ContainerDescriptor` is extended by `PropertyDescriptor`, `ParameterDescriptor`, `ReturnValueDescriptor` and `ContainerElementTypeDescriptor`.
 
@@ -10872,12 +10905,13 @@ public interface ContainerDescriptor {
 }
 ----
 
-[tck-testable]#`getContainerElementTypes()` returns a list of descriptors representing all the type arguments of the container type,
-in the order of their declaration.#
+[tck-testable]#If a given element is of a container type, `getConstrainedContainerElementTypes()` returns a set with descriptors representing those container element types that either host at least one constraint or are marked with `@Valid`.#
+[tck-testable]#The returned set will be empty if the given element is not of a container type or is of a container type but has no element types that are constrained or marked with `@Valid`.#
+In the context of properties and method return values, container element types of super-types are considered.
 
-[tck-testable]#The `ContainerElementTypeDescriptor` interface describes the potential container element constraints applied to one type argument of a container type.#
+[tck-testable]#The `ContainerElementTypeDescriptor` interface describes the potential container element constraints applied to one element type of a container.#
 
-This interface is returned by `ContainerDescriptor.getContainerElementTypes()`.
+This interface is returned by `ContainerDescriptor.getConstrainedContainerElementTypes()`.
 
 [source, JAVA, indent=0]
 ----
@@ -10899,6 +10933,146 @@ public interface ContainerElementTypeDescriptor extends ElementDescriptor, Casca
 ----
 
 [tck-testable]#`getTypeArgumentIndex()` returns the index of the type argument corresponding to this descriptor instance.#
+[tck-testable]#`getContainerClass()` returns the type of the container declaring the container element type represented by this descriptor instance.#
+
+As an example, consider the following type hierarchy:
+
+.Type hierarchy with container element constraints
+====
+[source, JAVA]
+----
+public interface LegalEntity {
+
+    Iterable<@NotNull String> getRoles();
+}
+
+public interface Person extends LegalEntity {
+
+    @Override
+    Set<@NotEmpty String> getRoles();
+
+    Map<@NotNull String, @Valid Account> getAccounts();
+}
+
+public interface Employee extends Person {
+
+    @Override
+    Set<@NotBlank String> getRoles();
+
+    Map<String, List<@NotNull @Valid Address>> getAddresses();
+}
+
+public abstract class Roles implements Set<String> {
+    [...]
+}
+
+public class EmployeeImpl implements Employee {
+
+    @Override
+    public Roles getRoles() {
+        [...]
+    }
+
+    public Map<String, List<@ValidAddress Address>> getAddresses() {
+        [...]
+    }
+
+    [...]
+}
+----
+====
+
+Then the assertions in the following example are true:
+
+.Retrieving metadata on container element constraints
+====
+[source, JAVA]
+----
+Validator validator = ...;
+
+BeanDescriptor employeeImplDescriptor = validator.getConstraintsForClass( Employee.class );
+
+// container element constraints for property "roles"
+PropertyDescriptor rolesDescriptor = employeeImplDescriptor.getConstraintsForProperty( "roles" );
+assert rolesDescriptor != null;
+
+Set<ContainerElementTypeDescriptor> constrainedContainerElementTypes = rolesDescriptor.getConstrainedContainerElementTypes();
+// the container element types of Set and Iterable; Roles does not declare any container element types itself
+assert constrainedContainerElementTypes.size() == 2;
+
+Iterator<ContainerElementTypeDescriptor> it = constrainedContainerElementTypes.iterator();
+
+// assuming that the descriptor for Set is returned first
+ContainerElementTypeDescriptor containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Set.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == String.class;
+// @NotEmpty and @NotBlank
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 2;
+
+// assuming that the descriptor for Iterable is returned next
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Iterable.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == String.class;
+// @NotNull
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 1;
+
+// container element constraints for property "accounts"
+PropertyDescriptor accountsDescriptor = employeeImplDescriptor.getConstraintsForProperty( "accounts" );
+constrainedContainerElementTypes = accountsDescriptor.getConstrainedContainerElementTypes();
+// the map key type and the map value type
+assert constrainedContainerElementTypes.size() == 2;
+
+it = constrainedContainerElementTypes.iterator();
+
+// assuming that the descriptor for the map key is returned first
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == String.class;
+// @NotNull
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 1;
+assert containerElementTypeDescriptor.isCascaded() == false;
+
+// assuming that the descriptor for the map value is returned next
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 1;
+assert containerElementTypeDescriptor.getElementClass() == Account.class;
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 0;
+assert containerElementTypeDescriptor.isCascaded() == true;
+
+// container element constraints for property "addresses"
+PropertyDescriptor addressesDescriptor = employeeImplDescriptor.getConstraintsForProperty( "addresses" );
+constrainedContainerElementTypes = accountsDescriptor.getConstrainedContainerElementTypes();
+// the map value type
+assert constrainedContainerElementTypes.size() == 1;
+
+it = constrainedContainerElementTypes.iterator();
+
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == Map.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 1;
+assert containerElementTypeDescriptor.getElementClass() == List.class;
+// No constraints nor @Valid on List itself
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 0;
+assert containerElementTypeDescriptor.isCascaded() == false;
+
+// container element type of the nested List container
+constrainedContainerElementTypes = containerElementTypeDescriptor.getConstrainedContainerElementTypes();
+assert constrainedContainerElementTypes.size() == 1;
+it = constrainedContainerElementTypes.iterator();
+
+containerElementTypeDescriptor = it.next();
+assert containerElementTypeDescriptor.getContainerClass() == List.class;
+assert containerElementTypeDescriptor.getTypeArgumentIndex() == 0;
+assert containerElementTypeDescriptor.getElementClass() == Address.class;
+// @NotNull and @ValidAddress
+assert containerElementTypeDescriptor.getConstraintDescriptors().size() == 2;
+assert containerElementTypeDescriptor.isCascaded() == true;
+----
+====
 
 [[constraintmetadata-constraintdescriptor]]
 === ConstraintDescriptor
@@ -13026,7 +13200,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 
 [tck-testable]#The `type-argument-index` is used to specify the index of the configured type argument.#
 [tck-testable]#The `type-argument-index` can be omitted, if the container element type has exactly one type argument.#
-[tck-testable]#The `ignore-annotations` settings effectively applying for the encapsulating element (`field`, `getter` etc.) are applied for `container-element-type`, too.#
+[tck-testable]#The `ignore-annotations` settings effectively applying to the encapsulating element (`field`, `getter` etc.) are applied to `container-element-type`, too.#
 [tck-testable]#The `container-element-type` element can be nested for configuring nested generic containers such as `List<List<String>>`.#
 
 [tck-testable]#Constraints are applied by adding `constraint` elements to `container-element-type`.#
@@ -13840,7 +14014,7 @@ Illegal arguments passed to the Bean Validation APIs generally lead to an [class
 
 Each of these error cases lead to a [classname]`ValidationException` or a subclass of [classname]`ValidationException` (see following subsections).
 
-[tck-testable]#Every (runtime) exception raised either at initialization time or execution time by any of the extension interfaces ([classname]`ConstraintValidator`, [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`TraversableResolver`, [classname]`ValidationProviderResolver`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`) is wrapped in a [classname]`ValidationException`.#
+[tck-testable]#Every (runtime) exception raised either at initialization time or execution time by any of the extension interfaces ([classname]`ConstraintValidator`, [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`TraversableResolver`, [classname]`ValidationProviderResolver`, [classname]`ParameterNameProvider`, [classname]`ClockProvider`, `ValueExtractor`) is wrapped in a [classname]`ValidationException`.#
 
 If a constraint definition or constraint declaration is invalid for a given class, the metadata API should raise the according exception.
 
