@@ -125,6 +125,10 @@ but not both (in order to prevent the container elements from being validated tw
 
 [tck-testable]#The [classname]`@Valid` annotation is applied recursively.# A conforming implementation avoids infinite loops according to the rules described in <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>.
 
+[tck-not-testable]#It is not supported to put `@Valid` to the type parameters of generic types or methods.#
++[tck-not-testable]#It is also not supported to put `@Valid` to type arguments within the `extends` or `implements` clauses of type definitions.#
+A future revision of this specification might define support for such usages of `@Valid`.
+
 [[constraintdeclarationvalidationprocess-requirements-graphvalidation-examples]]
 ===== Examples
 
@@ -841,15 +845,29 @@ In the example above,
 * for each extracted list of addresses, the `@NotEmpty` constraint will be validated and the extractor for `List` elements will be invoked, providing the `Address` objects from each list in the map
 * the `@ValidAddress` constraint will be applied to all elements of all lists stored in the map
 
-[tck-not-testable]#Container element constraints are not supported on wildcard type arguments (with or without bounds), i.e. the following usage is unsupported#:
+[tck-not-testable]#It is not supported to declare container element constraints on the type parameters of generic types or methods.#
+[tck-not-testable]#It is also not supported to declare container element constraints on type arguments within the `extends` or `implements` clauses of type definitions.#
+I.e. the following usages are unsupported:
 
-.Unsupported usage of a container element constraint on a wildcard type argument
+.Unsupported usage of container element constraints on generic types and methods
 ====
 [source, JAVA]
 ----
-private List<@NotEmpty ?> list;
+public class NonNullList<@NotNull T> {
+    [...]
+}
+
+public class ContainerFactory {
+    <@NotNull T> Container<T> instantiateContainer(Class<T> clazz) { [...] }
+}
+
+public class NonNullSet<T> extends Set<@NotNull T> {
+    [...]
+}
 ----
 ====
+
+A future revision of this specification might define support for such usages of container element constraints.
 
 [[constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping]]
 ==== Implicit unwrapping of containers
