@@ -17,7 +17,8 @@ The main Bean Validation API is the [classname]`javax.validation.Validator` inte
 
 A [classname]`Validator` instance is able to validate instances of beans and their associated objects if any. It is recommended to leave the caching of [classname]`Validator` instances to the [classname]`ValidatorFactory`. [tck-not-testable]#[classname]`Validator` implementations must be thread-safe.#
 
-.Validator interface
+[role="api"]
+.`Validator` interface
 ====
 
 [source, JAVA, indent=0]
@@ -159,7 +160,8 @@ validator.validateValue(Address.class, "city", "Paris").size() == 0
 
 The methods for the validation of parameters and return values of methods and constructors can be found on the interface [classname]`javax.validation.executable.ExecutableValidator`.
 
-.ExecutableValidator interface
+[role="api"]
+.`ExecutableValidator` interface
 ====
 
 [source, JAVA, indent=0]
@@ -432,10 +434,14 @@ If the group definition is invalid, a [classname]`GroupDefinitionException` is r
 
 [classname]`ConstraintViolation` is the class describing a single constraint failure. A set of [classname]`ConstraintViolation` is returned for an object validation.
 
+[role="api"]
+.`ConstraintViolation` interface
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/ConstraintViolation.java[lines=11..-1]
 ----
+====
 
 [tck-testable]#The [methodname]`getMessage()` method returns the interpolated (localized) message for the failing constraint# (see <<validationapi-message>> for more information on message interpolator). This can be used by clients to expose user friendly messages.
 
@@ -469,7 +475,8 @@ The [methodname]`getLeafBean()` method returns the following object:
 
 [methodname]`unwrap()` is provided as a way to access objects of a given type specific to a Bean Validation provider typically as a complement to the [classname]`ConstraintViolation` contract. Using this method makes your code non portable.
 
-.Path, Node and ElementKind interfaces
+[role="api"]
+.`Path` and `Node` interfaces and `ElementKind` enum
 ====
 
 [source, JAVA]
@@ -1339,10 +1346,14 @@ The locale to be used for message interpolation is defined as following:
 
 A custom message interpolator may be provided (e.g., to interpolate contextual data, or to adjust the default [classname]`Locale` used). A message interpolator implements the [classname]`MessageInterpolator` interface.
 
+[role="api"]
+.`MessageInterpolator` interface
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/MessageInterpolator.java[lines=12..-1]
 ----
+====
 
 [tck-testable]#[parameter]`messageTemplate` is the value of the `message` attribute of the constraint declaration or provided to the [classname]`ConstraintValidatorContext` methods.#
 
@@ -1828,7 +1839,8 @@ We will now explore the various interfaces, their constraints and usage. We will
 
 [tck-not-testable]#[classname]`ValidatorFactory` implementations must be thread-safe.# [classname]`ValidatorFactory` implementations can cache [classname]`Validator` instances if needed.
 
-.ValidatorFactory interface
+[role="api"]
+.`ValidatorFactory` interface
 ====
 
 [source, JAVA]
@@ -1868,7 +1880,8 @@ acmeFactory.setSpecificConfiguration( [...] );
 
 [classname]`ValidatorContext` returned by [methodname]`usingContext()` can be used to customize the state in which the [classname]`Validator` must be initialized. This is used to customize the [classname]`MessageInterpolator`, the [classname]`TraversableResolver`, the [classname]`ParameterNameProvider`, the  [classname]`ClockProvider` or the [classname]`ConstraintValidatorFactory`.
 
-.ValidatorContext interface
+[role="api"]
+.`ValidatorContext` interface
 ====
 
 [source, JAVA]
@@ -1939,7 +1952,8 @@ detected through the service loader or given in the XML configuration.#
 
 Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the initialized [classname]`ValidatorFactory` instance. [tck-testable]#It is legal to invoke [methodname]`buildValidatorFactory()` several times, e.g. in order to retrieve several [classname]`ValidatorFactory` instances with a slightly different configuration (see <<using-configuration-several-times>>).#
 
-.Configuration and BootstrapConfiguration interfaces
+[role="api"]
+.`Configuration` and `BootstrapConfiguration` interfaces
 ====
 
 [source, JAVA]
@@ -1992,7 +2006,8 @@ A typical implementation of [classname]`Configuration` also implements [classnam
 
 [tck-not-testable]#Streams represented in the XML configuration and opened by the [classname]`Configuration` implementation must be closed by the [classname]`Configuration` implementation after the [classname]`ValidatorFactory` creation (or if an exception occurs).# Streams provided programmatically are the responsibility of the application.
 
-.ConfigurationState interface
+[role="api"]
+.`ConfigurationState` interface
 ====
 
 [source, JAVA]
@@ -2076,7 +2091,8 @@ Here, [varname]`factory1` is set up using a custom message interpolator, while [
 
 [tck-testable]#[classname]`ValidationProviderResolver` returns the list of Bean Validation providers available at runtime and more specifically a [classname]`ValidationProvider` instance for each provider available in the context.# This service can be customized by implementing [classname]`ValidationProviderResolver`. [tck-not-testable]#Implementations must be thread-safe.#
 
-.ValidationProviderResolver
+[role="api"]
+.`ValidationProviderResolver` interface
 ====
 
 [source, JAVA, indent=0]
@@ -2103,8 +2119,8 @@ The default [classname]`ValidationProviderResolver` can be accessed via [classna
 * Provide a provider specific [classname]`Configuration` implementation. This [classname]`Configuration` will specifically build [classname]`ValidatorFactory` instances of the provider it comes from.
 * Build a [classname]`ValidatorFactory` object from the configuration provided by [classname]`ConfigurationState`.
 
-
-.ValidationProvider
+[role="api"]
+.`ValidationProvider` interface
 ====
 
 [source, JAVA, indent=0]
@@ -2114,7 +2130,8 @@ include::{validation-api-source-dir}javax/validation/spi/ValidationProvider.java
 
 ====
 
-.BootstrapState interface
+[role="api"]
+.`BootstrapState` interface
 ====
 
 [source, JAVA, indent=0]
@@ -2337,7 +2354,8 @@ public class Validation {
 
 [tck-testable]#The second entry point lets the client provide a custom [classname]`ValidationProviderResolver` instance. This instance is passed to [classname]`GenericBootstrap`. [classname]`GenericBootstrap` builds a generic [classname]`Configuration` using the first [classname]`ValidationProvider` returned by [classname]`ValidationProviderResolution` and calling [code]`ValidationProvider.createGenericConfiguration(BootstrapState state)`.# [classname]`BootstrapState` holds the [classname]`ValidationProviderResolution` instance passed to [classname]`GenericBootstrap` and will be used by the [classname]`Configuration` instance when resolving the provider to use. Note that [code]`ValidationProvider.createGenericConfiguration` returns a [classname]`Configuration` object not bound to any particular provider.
 
-.GenericBootstrap interface
+[role="api"]
+.`GenericBootstrap` interface
 ====
 
 [source, JAVA]
@@ -2351,7 +2369,8 @@ include::{validation-api-source-dir}javax/validation/bootstrap/GenericBootstrap.
 
 A [classname]`ProviderSpecificBootstrap` object can optionally receive a [classname]`ValidationProviderResolver` instance.
 
-.ProviderSpecificBootstrap interface
+[role="api"]
+.`ProviderSpecificBootstrap` interface
 ====
 
 [source, JAVA, indent=0]

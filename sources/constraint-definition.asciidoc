@@ -17,10 +17,14 @@ Unless stated otherwise the default package name for the Bean Validation APIs is
 
 A constraint on a JavaBean is expressed through one or more annotations. [tck-not-testable]#An annotation is considered a constraint definition if its retention policy contains `RUNTIME` and if the annotation itself is annotated with `javax.validation.Constraint`# .
 
+[role="api"]
+.`@Constraint` annotation
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/Constraint.java[lines=19..-1]
 ----
+====
 
 A constraint is said to be generic if it has at least one constraint validator targeting the element annotated i.e. targeting the (returned) element annotated by the constraint (a bean, a field, a getter, a method/constructor return value or a method/constructor parameter). A constraint is said to be cross-parameter if it has one constraint validator targeting the array of parameters of a method or constructor (to validate the consistency of several method/constructor parameters). A Bean Validation constraint is most of the time either a generic constraint or a cross-parameter constraint. In rare situations, a constraint can be both.
 
@@ -116,10 +120,14 @@ Class<? extends Payload>[] payload() default {};
 
 [tck-testable]#Each attachable payload extends [classname]`Payload`.#
 
+[role="api"]
+.`Payload` interface
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/Payload.java[lines=9..-1]
 ----
+====
 
 Payloads are typically used by validation clients to associate some metadata information with a given constraint declaration.
 Describing payloads as interface extensions as opposed to a string-based approach allows an easier and more type-safe approach.
@@ -165,6 +173,7 @@ The `payload` information can be retrieved from error reports via the [classname
 
 [tck-testable]#The type of the `validationAppliesTo` parameter is [classname]`ConstraintTarget`. The default value must be [classname]`ConstraintTarget.IMPLICIT`.#
 
+[role="api"]
 .validationAppliesTo and ConstraintTarget
 ====
 
@@ -383,10 +392,14 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 
 The definition of [classname]`@ReportAsSingleViolation` is as follows.
 
+[role="api"]
+.`@ReportAsSingleViolation` annotation
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/ReportAsSingleViolation.java[lines=16..-1]
 ----
+====
 
 [tck-testable]#More specifically, if a composed constraint is marked as [classname]`@ReportAsSingleViolation`, the evaluation of the composing constraints stops at the first failing constraint and the error report corresponding to the composed constraint is generated and returned.#
 
@@ -478,10 +491,14 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdef
 
 [classname]`@OverridesAttribute` definition is as follows:
 
+[role="api"]
+.`@OverridesAttribute` annotation
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/OverridesAttribute.java[lines=20..-1]
 ----
+====
 
 The following elements uniquely identify an overridden constraint attribute:
 
@@ -511,10 +528,14 @@ Constraint designers are encouraged to make use of composition (recursively or n
 
 [tck-testable]#A constraint validation implementation performs the validation of a given constraint annotation for a given type.# [tck-testable]#The implementation classes are specified by the `validatedBy` element of the [classname]`@Constraint` annotation that decorates the constraint definition.# [tck-not-testable]#The constraint validation implementation implements the [classname]`ConstraintValidator` interface.#
 
+[role="api"]
+.`ConstraintValidator` interface
+====
 [source, JAVA, indent=0]
 ----
 include::{validation-api-source-dir}javax/validation/ConstraintValidator.java[lines=12..-1]
 ----
+====
 
 [tck-not-testable]
 --
@@ -531,7 +552,8 @@ This restriction is not a theoretical limitation and a future version of the spe
 
 [tck-testable]#By default, a [classname]`ConstraintValidator` targets the (returned) element annotated by the constraint. You can make a [classname]`ConstraintValidator` target the array of parameters of a method or constructor (aka cross-parameter) by annotating the validator implementation with [classname]`@SupportedValidationTarget`.#
 
-.@SupportedValidationTarget annotation and ValidationTarget enum
+[role="api"]
+.`@SupportedValidationTarget` annotation and `ValidationTarget` enum
 ====
 
 [source, JAVA, indent=0]
@@ -662,10 +684,14 @@ While not mandatory, it is considered a good practice to split the core constrai
 
 The [classname]`ConstraintValidatorContext` object passed to the [methodname]`isValid()` method carries information and operations available in the context the constraint is validated to.
 
+[role="api"]
+.`ConstraintValidatorContext` interface
+====
 [source, JAVA]
 ----
 include::{validation-api-source-dir}javax/validation/ConstraintValidatorContext.java[lines=11..-1]
 ----
+====
 
 The [classname]`ConstraintValidatorContext` interface provides access to contextual information useful for the validation of specific constraints (e.g. `getClockProvider()`, see <<constraintsdefinitionimplementation-validationimplementation-temporalvalidators>> ).
 
@@ -784,10 +810,14 @@ context.buildConstraintViolationWithTemplate(
 
 [tck-testable]#Constraint validators for temporal constraints (either the built-in constraints `@Past`, `@PastOrPresent`, `@Future` and `@FutureOrPresent` or custom temporal constraints) can obtain the current instant from the `ClockProvider` object exposed by `ConstraintValidatorContext#getClockProvider()`.#
 
+[role="api"]
+.`ClockProvider` interface
+====
 [source, JAVA]
 ----
 include::{validation-api-source-dir}javax/validation/ClockProvider.java[lines=11..-1]
 ----
+====
 
 [tck-testable]#The `getClock()` method returns a `java.time.Clock` object which represents the current instant, date and time using a time zone.
 A conforming Bean Validation implementation provides a default clock provider which returns a clock representing the current system time and default time zone.#
@@ -891,7 +921,8 @@ The lifecycle of [classname]`ConstraintValidator` instances is fully dependent o
 [classname]`ConstraintValidator` instances created by the [classname]`ValidatorFactory` -level [classname]`ConstraintValidatorFactory` can be released when the [classname]`ValidatorFactory` is being closed.
 ====
 
-.ConstraintValidatorFactory interface
+[role="api"]
+.`ConstraintValidatorFactory` interface
 ====
 
 [source, JAVA, indent=0]
