@@ -883,7 +883,7 @@ A future revision of this specification might define support for such usages of 
 ==== Implicit unwrapping of containers
 
 Besides specifying container element constraints on type arguments, it is also possible to declare container element constraints on non-generic container types.
-This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its elements.
+This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its element(s).
 Examples for types being subject to implicit unwrapping are `java.util.OptionalInt`, `OptionalLong` and `OptionalDouble` as well as JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
 
 .Implicit unwrapping of container elements
@@ -893,15 +893,17 @@ Examples for types being subject to implicit unwrapping are `java.util.OptionalI
 @Min(1)
 private OptionalInt optionalNumber;
 
-@Size(max=10)
-private StringProperty name;
+@Negative
+private LongProperty negativeLong;
 
 @Positive
 private IntegerProperty positiveInt;
+
+private final ListProperty<@NotBlank StringProperty> notBlankStrings;
 ----
 ====
 
-Here the `@Min`, `@Size` and `@Positive` constraints don't apply to the annotated `OptionalInt`, `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
+Here the `@Min`, `@Negative`, `@Positive` and `@NotBlank` constraints don't apply to the annotated `OptionalInt`, `LongProperty`, `IntegerProperty` and `StringProperty` objects themselves, but rather to the wrapped numeric and string values, respectively.
 
 For this to work, an unambiguously resolvable value extractor (see <<constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-implicitunwrapping>>) must be defined which carries the `@UnwrapByDefault` annotation (see <<valueextractordefinition-unwrapbydefault>>).
 
