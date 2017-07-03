@@ -3744,7 +3744,7 @@ package javax.validation.groups;
  * @author Emmanuel Bernard
  * @since 1.1
  */
-@Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE })
+@Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
 @Repeatable(List.class)
 @Documented
@@ -3758,7 +3758,7 @@ public @interface ConvertGroup {
      * Defines several {@link ConvertGroup} annotations
      * on the same element.
      */
-    @Target({ TYPE, METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE })
+    @Target({ METHOD, FIELD, CONSTRUCTOR, PARAMETER, TYPE_USE })
     @Retention(RUNTIME)
     @Documented
     public @interface List {
@@ -4098,7 +4098,7 @@ A future revision of this specification might define support for such usages of 
 ==== Implicit unwrapping of containers
 
 Besides specifying container element constraints on type arguments, it is also possible to declare container element constraints on non-generic container types.
-This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its elements.
+This is done by means of _implicit unwrapping_, i.e. a constraint doesn't apply to the annotated container itself but to its element(s).
 Examples for types being subject to implicit unwrapping are `java.util.OptionalInt`, `OptionalLong` and `OptionalDouble` as well as JavaFX's non-generic property types such as `StringProperty` or `IntegerProperty`:
 
 .Implicit unwrapping of container elements
@@ -4108,17 +4108,19 @@ Examples for types being subject to implicit unwrapping are `java.util.OptionalI
 @Min(1)
 private OptionalInt optionalNumber;
 
-@Size(max=10)
-private StringProperty name;
+@Negative
+private LongProperty negativeLong;
 
 @Positive
 private IntegerProperty positiveInt;
+
+private final ListProperty<@NotBlank StringProperty> notBlankStrings;
 ----
 ====
 
-Here the `@Min`, `@Size` and `@Positive` constraints don't apply to the annotated `OptionalInt`, `StringProperty` and `IntegerProperty` themselves, but rather to the wrapped string and integer values, respectively.
+Here the `@Min`, `@Negative`, `@Positive` and `@NotBlank` constraints don't apply to the annotated `OptionalInt`, `LongProperty`, `IntegerProperty` and `StringProperty` objects themselves, but rather to the wrapped numeric and string values, respectively.
 
-For this to work, an unambiguously resolvable value extractor must be defined which carries the `@UnwrapByDefault` annotation (see <<valueextractordefinition-unwrapbydefault>>).
+For this to work, an unambiguously resolvable value extractor (see <<constraintdeclarationvalidationprocess-validationroutine-valueextractorresolution-implicitunwrapping>>) must be defined which carries the `@UnwrapByDefault` annotation (see <<valueextractordefinition-unwrapbydefault>>).
 
 If needed, the target (container or container element) of a constraint declared on a container can be explicitly specified via the `Unwrap` and `Skip` payload definitions:
 
@@ -5301,7 +5303,7 @@ When detecting a constraint given as a _declaration annotation_ and not as a _ty
 * [tck-testable]#If the constraint carries the `Unwrapping.Unwrap` payload and there is exactly one maximally-specific type-compliant value extractor, this extractor is applied;#
 [tck-testable]#if no type-compliant extractor or multiple maximally-specific type-compliant extractors exist, a `ConstraintDeclarationException` is raised.#
 * If the constraint carries neither the `Unwrapping.Unwrap` nor the `Unwrapping.Skip` payload:
-** [tck-testable]#If there is exactly one maximally-specific type-compliant value extractor marked with `@UnwrapByDefault`, this extractor is applied;#
+** [tck-testable]#If there is exactly one maximally-specific type-compliant value extractor and this extractor is marked with `@UnwrapByDefault`, this extractor is applied;#
 ** [tck-testable]#Otherwise, no value extractor is applied.#
 
 [[constraintdeclarationvalidationprocess-validationroutine-algorithm-examples]]
@@ -6617,6 +6619,7 @@ The [methodname]`getLeafBean()` method returns the following object:
 [tck-testable]#The [methodname]`getExecutableReturnValue()` returns the return value of the method or constructor invocation or `null` if the method has no return value or if not validating a method or constructor return value.#
 
 [tck-testable]#The [methodname]`getInvalidValue()` method returns the value (field, property, method/constructor parameter, method/constructor return value, container element or validated object) being passed to [methodname]`isValid()`.# [tck-testable]#For a cross-parameter constraint failure, an [code]`Object[]` representing the method/constructor invocation arguments is returned.#
+[tck-testable]#In case of a constraint given on a container is subject to implicit application to the container element(s) (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>), `getInvalidValue()` returns the invalid container element value.#
 
 [tck-testable]#[methodname]`getConstraintDescriptor()` provides access to the failing constraint metadata# (see <<constraintmetadata-constraintdescriptor>>).
 
@@ -7094,10 +7097,12 @@ case PROPERTY:
 --
 * For a container element constraint:
 
-** a [classname]`ContainerElementNode` object is added to [classname]`Path` whose `name` is the node name produced by the corresponding value extractor (see <<valueextractordefinition>>).
+** if the corresponding value extractor (see <<valueextractordefinition>>) has specified a node name when calling one of the receiver methods, a [classname]`ContainerElementNode` object with that name is added to the `Path`.
 The [classname]`ElementKind` of the node is [varname]`ElementKind.CONTAINER_ELEMENT`.
 `getContainerClass()` returns the declared type of the container hosting the constraint.
 `getTypeArgumentIndex()` returns the index of the type argument hosting the constraint.
+If the constraint is given on a container and is subject to implicit application to the container's element(s) (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>) and the applied value extractor is not tied to a type parameter, `getTypeArgumentIndex()` returns null.
+** if the corresponding value extractor has passed no node name to the called receiver method, no node is appended.
 ** the property path is considered complete
 --
 
@@ -12587,10 +12592,9 @@ package javax.validation.constraints;
 /**
  * The annotated element must be an instant, date or time in the past.
  * <p>
- * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link javax.validation.Validator}
- * or {@link javax.validation.ValidatorFactory}.
- * The default {@code clockProvider} defines the current time according to the virtual machine,
- * applying the current default time zone if needed.
+ * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link Validator} or
+ * {@link ValidatorFactory}. The default {@code clockProvider} defines the current time
+ * according to the virtual machine, applying the current default time zone if needed.
  * <p>
  * Supported types are:
  * <ul>
@@ -12660,12 +12664,13 @@ package javax.validation.constraints;
 /**
  * The annotated element must be an instant, date or time in the past or in the present.
  * <p>
- * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link javax.validation.Validator}
- * or {@link javax.validation.ValidatorFactory}.
- * The default {@code clockProvider} defines the current time according to the virtual machine,
- * applying the current default time zone if needed.
- * <p>The notion of present is defined relatively to the type on which the constraint is used.
- * For instance, if the constraint is on a {@link Year}, present would mean the whole current year.
+ * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link Validator} or
+ * {@link ValidatorFactory}. The default {@code clockProvider} defines the current time
+ * according to the virtual machine, applying the current default time zone if needed.
+ * <p>
+ * The notion of present is defined relatively to the type on which the constraint is
+ * used. For instance, if the constraint is on a {@link Year}, present would mean the whole
+ * current year.
  * <p>
  * Supported types are:
  * <ul>
@@ -12736,10 +12741,9 @@ package javax.validation.constraints;
 /**
  * The annotated element must be an instant, date or time in the future.
  * <p>
- * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link javax.validation.Validator}
- * or {@link javax.validation.ValidatorFactory}.
- * The default {@code clockProvider} defines the current time according to the virtual machine,
- * applying the current default time zone if needed.
+ * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link Validator} or
+ * {@link ValidatorFactory}. The default {@code clockProvider} defines the current time
+ * according to the virtual machine, applying the current default time zone if needed.
  * <p>
  * Supported types are:
  * <ul>
@@ -12809,12 +12813,13 @@ package javax.validation.constraints;
 /**
  * The annotated element must be an instant, date or time in the present or in the future.
  * <p>
- * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link javax.validation.Validator}
- * or {@link javax.validation.ValidatorFactory}.
- * The default {@code clockProvider} defines the current time according to the virtual machine,
- * applying the current default time zone if needed.
- * <p>The notion of present here is defined relatively to the type on which the constraint is used.
- * For instance, if the constraint is on a {@link Year}, present would mean the whole current year.
+ * <i>Now</i> is defined by the {@link ClockProvider} attached to the {@link Validator} or
+ * {@link ValidatorFactory}. The default {@code clockProvider} defines the current time
+ * according to the virtual machine, applying the current default time zone if needed.
+ * <p>
+ * The notion of present here is defined relatively to the type on which the constraint is
+ * used. For instance, if the constraint is on a {@link Year}, present would mean the whole
+ * current year.
  * <p>
  * Supported types are:
  * <ul>
@@ -15151,12 +15156,8 @@ A mandatory module name - which may be `java.validation` or another one - will b
 
 [[changelog]]
 
-
 [appendix]
 == Changelog
-
-.Changelog
-====
 
 [source]
 ....
@@ -15774,5 +15775,3 @@ A mandatory module name - which may be `java.validation` or another one - will b
     * [BVAL-8] - StandardConstraint description (2.5)
     * [BVAL-23] - Make Validator<T> thread-safe
 ....
-
-====
