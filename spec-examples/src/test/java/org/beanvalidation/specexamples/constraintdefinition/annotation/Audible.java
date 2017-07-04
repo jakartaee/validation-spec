@@ -23,7 +23,8 @@ import javax.validation.Payload;
 
 //tag::include[]
 /**
- * A frequency in Hz as audible to human ear. Adjustable to the age of the person. Accept Numbers.
+ * A frequency in Hz as audible to human ear. Adjustable to the age of the person. Accepts
+ * Numbers.
  */
 @Documented
 @Constraint(validatedBy = AudibleValidator.class)
