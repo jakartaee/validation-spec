@@ -15,14 +15,16 @@ import javax.validation.constraintvalidation.ValidationTarget;
 
 //tag::include[]
 /**
- * Check that two date parameters of a method are in the expected order. Expects the 2nd and 3rd parameter of the
- * validated method to be of type java.util.Date.
+ * Check that two date parameters of a method are in the expected order. Expects the 2nd and
+ * 3rd parameter of the validated method to be of type java.util.Date.
  */
 @SupportedValidationTarget(ValidationTarget.PARAMETERS)
-public class DateParametersConsistentValidator implements ConstraintValidator<DateParametersConsistent, Object[]> {
+public class DateParametersConsistentValidator implements
+		ConstraintValidator<DateParametersConsistent, Object[]> {
 
 	/**
-	 * Validate a specified value. returns false if the specified value does not conform to the definition
+	 * Validate a specified value. returns false if the specified value does not conform to
+	 * the definition
 	 */
 	@Override
 	public boolean isValid(Object[] value, ConstraintValidatorContext context) {

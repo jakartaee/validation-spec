@@ -8,5 +8,6 @@ package org.beanvalidation.specexamples.constraintdefinition.annotation;
 
 import javax.validation.ConstraintValidator;
 
-abstract class DateParametersConsistentValidator implements ConstraintValidator<DateParametersConsistent, String> {
+abstract class DateParametersConsistentValidator implements
+		ConstraintValidator<DateParametersConsistent, String> {
 }

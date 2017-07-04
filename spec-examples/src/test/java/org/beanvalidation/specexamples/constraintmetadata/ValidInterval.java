@@ -64,7 +64,8 @@ public @interface ValidInterval {
 
 		@Override
 		public boolean isValid(Object[] value, ConstraintValidatorContext context) {
-			return Integer.parseInt( String.valueOf( value[start] ) ) < Integer.parseInt( String.valueOf( value[end] ) );
+			return Integer.parseInt( String.valueOf( value[start] ) ) <
+					Integer.parseInt( String.valueOf( value[end] ) );
 		}
 	}
 }
