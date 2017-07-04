@@ -13,7 +13,7 @@ public class Author {
 
 	private String firstName;
 
-	@NotEmpty(message = "lastname must not be null")
+	@NonEmpty(message = "lastname must not be null")
 	private String lastName;
 
 	@Size(max = 30)

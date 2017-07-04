@@ -2239,11 +2239,11 @@ public class Address {
 
 During the validation routine execution on an [classname]`Address` object, constraints on [methodname]`addressLine1`, [methodname]`addressLine2`, [methodname]`zipCode`, [classname]`getCity` and [methodname]`country` are processed as well as the validation of the [classname]`Country` object itself, more specifically [methodname]`country.name` is checked for [classname]`@NotNull`, [methodname]`ISO2Code` and [methodname]`ISO3Code` are checked for [classname]`@Size`.
 
-Assuming that [classname]`@NotEmpty` is defined as such
+Assuming that [classname]`@NonEmpty` is defined as such:
 
 [source, JAVA, indent=0]
 ----
-include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdeclarationvalidation/resolution/NotEmpty.java[tags=include]
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdeclarationvalidation/resolution/NonEmpty.java[tags=include]
 ----
 
 The third example demonstrates superclass, inheritance and composite constraints.
@@ -2254,12 +2254,12 @@ The third example demonstrates superclass, inheritance and composite constraints
 [source, JAVA]
 ----
 public interface Person {
-    @NotEmpty
+    @NonEmpty
     String getFirstName();
 
     String getMiddleName();
 
-    @NotEmpty
+    @NonEmpty
     String getLastName();
 }
 
@@ -2333,16 +2333,16 @@ public class CommonGuest extends customer {}
 
 When validating a [classname]`PreferredGuest` the following constraints are processed:
 
-* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`firstName`
-* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`lastName`
+* [classname]`@NonEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`firstName`
+* [classname]`@NonEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`lastName`
 * [classname]`@NotNull` on [methodname]`customerId`, [classname]`@Password` on [methodname]`password`
 * [classname]`@CreditCard` on [methodname]`guestCreditCardNumber`
 
 
 When validating [classname]`CommonGuest`, the following constraints are processed:
 
-* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`firstName`
-* [classname]`@NotEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`lastName`
+* [classname]`@NonEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`firstName`
+* [classname]`@NonEmpty`, [classname]`@NotNull` and [classname]`@Size(min=1)` on [methodname]`lastName`
 * [classname]`@NotNull` on [methodname]`customerId`, [classname]`@Password` on [methodname]`password`
 
 The fourth example demonstrates the influence of group sequence.
@@ -2356,7 +2356,7 @@ The fourth example demonstrates the influence of group sequence.
 public interface Complete {}
 
 public class Book {
-    @NotEmpty(groups=First.class)
+    @NonEmpty(groups=First.class)
     private String title;
 
     @Size(max=30, groups=Second.class)
@@ -2392,10 +2392,10 @@ public class Book {
 }
 
 public class Author {
-    @NotEmpty(groups=Last.class)
+    @NonEmpty(groups=Last.class)
     private String firstName;
 
-    @NotEmpty(groups=First.class)
+    @NonEmpty(groups=First.class)
     private String lastName;
 
     @Size(max=30, groups=Last.class)
@@ -2442,7 +2442,7 @@ book.setAuthor( author );
 
 the validation routine will return the following failure:
 
-* [classname]`@NotNull` failure (from [classname]`@NotEmpty`) on the `title` field
+* [classname]`@NotNull` failure (from [classname]`@NonEmpty`) on the `title` field
 
 
 As both [methodname]`title` and [methodname]`author.lastname` are checked as part of the `First` group. If the instance is updated:
@@ -2455,7 +2455,7 @@ author.setCompany( "Some random publisher with a very very very long name" );
 
 the validation routine will return the following failures:
 
-* [methodname]`author.firstName` fails to pass the [classname]`@Size(min=1)` (from [classname]`@NotEmpty`) constraint
+* [methodname]`author.firstName` fails to pass the [classname]`@Size(min=1)` (from [classname]`@NonEmpty`) constraint
 * [methodname]`author.company` fails to pass the [classname]`@Size` constraint
 
 

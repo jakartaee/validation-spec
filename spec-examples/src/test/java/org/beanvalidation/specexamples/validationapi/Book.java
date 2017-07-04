@@ -13,7 +13,7 @@ import javax.validation.groups.Default;
 //tag::include[]
 public class Book {
 
-	@NotEmpty(groups = { FirstLevelCheck.class, Default.class })
+	@NonEmpty(groups = { FirstLevelCheck.class, Default.class })
 	private String title;
 
 	@Valid

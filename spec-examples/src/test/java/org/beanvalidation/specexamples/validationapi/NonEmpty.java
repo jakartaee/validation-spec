@@ -31,12 +31,12 @@ import javax.validation.constraints.Size;
 @NotNull
 @Size(min = 1)
 @ReportAsSingleViolation
-@Constraint(validatedBy = NotEmpty.NotEmptyValidator.class)
+@Constraint(validatedBy = NonEmpty.NonEmptyValidator.class)
 @Target({ METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER, TYPE_USE })
 @Retention(RUNTIME)
-public @interface NotEmpty {
+public @interface NonEmpty {
 
-	String message() default "{com.acme.constraint.NotEmpty.message}";
+	String message() default "{com.acme.constraint.NonEmpty.message}";
 
 	Class<?>[] groups() default {};
 
@@ -47,10 +47,10 @@ public @interface NotEmpty {
 	@Documented
 	@interface List {
 
-		NotEmpty[] value();
+		NonEmpty[] value();
 	}
 
-	class NotEmptyValidator implements ConstraintValidator<NotEmpty, String> {
+	class NonEmptyValidator implements ConstraintValidator<NonEmpty, String> {
 
 		@Override
 		public boolean isValid(String value, ConstraintValidatorContext context) {

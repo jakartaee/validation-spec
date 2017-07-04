@@ -342,56 +342,56 @@ public interface Minimal {}
 
 public class Address {
 
-    @NotEmpty(groups = Minimal.class)
+    @NonEmpty(groups = Minimal.class)
     @Size(max=50)
     private String street1;
 
-    @NotEmpty
+    @NonEmpty
     private String city;
 
-    @NotEmpty(groups = {Minimal.class, Default.class})
+    @NonEmpty(groups = {Minimal.class, Default.class})
     private String zipCode;
 
     [...]
 }
 ----
 
-In the previous example, [classname]`@NotEmpty` (and its composing constraints) on [methodname]`street1` applies to the group [classname]`Minimal`, [classname]`@Size` on [methodname]`street1` applies to the group `Default` and [classname]`@NotEmpty`(and its composing constraints) on [methodname]`zipCode` applies to the groups `Default` and `Minimal`.
+In the previous example, [classname]`@NonEmpty` (and its composing constraints, assuming the definition given in chapter <<constraintdeclarationvalidationprocess>>) on [methodname]`street1` applies to the group [classname]`Minimal`, [classname]`@Size` on [methodname]`street1` applies to the group `Default` and [classname]`@NonEmpty`(and its composing constraints) on [methodname]`zipCode` applies to the groups `Default` and `Minimal`.
 
 [source, JAVA]
 ----
 validator.validate(address);
 ----
 
-validates the group [classname]`Default` (implicitly) and applies [classname]`@Size` on [methodname]`street1`, [classname]`@NotEmpty` (and its composing constraints) on [methodname]`city`, [classname]`@NotEmpty` (and its composing constraints) on [methodname]`zipCode`. Particularly, [classname]`@NotEmpty` (and its composing constraints) on [methodname]`street1` are not applied.
+validates the group [classname]`Default` (implicitly) and applies [classname]`@Size` on [methodname]`street1`, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`city`, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`zipCode`. Particularly, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`street1` are not applied.
 
 [source, JAVA]
 ----
 validator.validate(address, Minimal.class);
 ----
 
-applies [classname]`@NotEmpty` (and its composing constraints) on [methodname]`street1` and [classname]`@NotEmpty` (and its composing constraints) on [methodname]`zipCode` because they belong to the [classname]`Minimal` group.
+applies [classname]`@NonEmpty` (and its composing constraints) on [methodname]`street1` and [classname]`@NonEmpty` (and its composing constraints) on [methodname]`zipCode` because they belong to the [classname]`Minimal` group.
 
 [source, JAVA]
 ----
 validator.validate(address, Minimal.class, Default.class);
 ----
 
-validates both [classname]`Default` and [classname]`Minimal` groups. The routine applies [classname]`@NotEmpty` (and its composing constraints) and [classname]`@Size` on [methodname]`street1`, [classname]`@NotEmpty` (and its composing constraints) on [methodname]`city`, [classname]`@NotEmpty` (and its composing constraints) on [methodname]`zipCode`. Note that if [methodname]`zipCode` is empty, only one [classname]`ConstraintViolation` object will represent the failure and the not empty validation will only be executed once.
+validates both [classname]`Default` and [classname]`Minimal` groups. The routine applies [classname]`@NonEmpty` (and its composing constraints) and [classname]`@Size` on [methodname]`street1`, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`city`, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`zipCode`. Note that if [methodname]`zipCode` is empty, only one [classname]`ConstraintViolation` object will represent the failure and the not empty validation will only be executed once.
 
 Let's look at a more complex example involving group sequence.
 
 [source, JAVA]
 ----
 public class Address {
-    @NotEmpty(groups = Minimal.class)
+    @NonEmpty(groups = Minimal.class)
     @Size(max=50, groups=FirstStep.class)
     private String street1;
 
-    @NotEmpty(groups=SecondStep.class)
+    @NonEmpty(groups=SecondStep.class)
     private String city;
 
-    @NotEmpty(groups = {Minimal.class, SecondStep.class})
+    @NonEmpty(groups = {Minimal.class, SecondStep.class})
     private String zipCode;
 
     [...]
@@ -412,7 +412,7 @@ When running:
 validator.validate(address, Minimal.class, Total.class);
 ----
 
-the validation process will process [classname]`@NotEmpty` (and its composing constraints) and [classname]`@Size` from [methodname]`street1` and [classname]`@NotEmpty` (and its composing constraints) from [methodname]`zipCode`. If [classname]`@Size` from [methodname]`street1` does not generate a failure, then [classname]`@NotEmpty` (and its composing constraints) from [methodname]`city` will be processed as part of [classname]`SecondStep`. Note that [classname]`@NotEmpty` (and its composing constraints) from [methodname]`zipCode` are not reprocessed as they have already been processed before.
+the validation process will process [classname]`@NonEmpty` (and its composing constraints) and [classname]`@Size` from [methodname]`street1` and [classname]`@NonEmpty` (and its composing constraints) from [methodname]`zipCode`. If [classname]`@Size` from [methodname]`street1` does not generate a failure, then [classname]`@NonEmpty` (and its composing constraints) from [methodname]`city` will be processed as part of [classname]`SecondStep`. Note that [classname]`@NonEmpty` (and its composing constraints) from [methodname]`zipCode` are not reprocessed as they have already been processed before.
 
 When running:
 
@@ -421,7 +421,7 @@ When running:
 validator.validate(address, Total.class, SecondStep.class);
 ----
 
-[classname]`@NotEmpty` (and its composing constraints) from [methodname]`city` and [classname]`@NotEmpty` (and its composing constraints) from [methodname]`zipCode` will be processed even if [classname]`@Size` from [methodname]`street1` fails: while `SecondStep` is in the `Total` group sequence and hence should not be triggered if `FirstStep` has a failure, it also has been requested outside the sequence (in this case explicitly).
+[classname]`@NonEmpty` (and its composing constraints) from [methodname]`city` and [classname]`@NonEmpty` (and its composing constraints) from [methodname]`zipCode` will be processed even if [classname]`@Size` from [methodname]`street1` fails: while `SecondStep` is in the `Total` group sequence and hence should not be triggered if `FirstStep` has a failure, it also has been requested outside the sequence (in this case explicitly).
 
 [NOTE]
 ====
@@ -682,7 +682,7 @@ Let there be the following object definitions:
 public class Author {
     private String firstName;
 
-    @NotEmpty(message="lastname must not be null")
+    @NonEmpty(message="lastname must not be null")
     private String lastName;
 
     @Size(max=30)
@@ -700,7 +700,7 @@ public class Author {
 
 @AvailableInStore(groups={Availability.class})
 public class Book {
-    @NotEmpty(groups={FirstLevelCheck.class, Default.class})
+    @NonEmpty(groups={FirstLevelCheck.class, Default.class})
     private String title;
 
     @Valid
@@ -776,7 +776,7 @@ Assuming a [classname]`Book` instance gets validated, the property paths to the 
 |[classname]`@AvailableInStore`  on [classname]`Book`|
 BeanNode(name=null, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.BEAN)
 
-|[classname]`@NotEmpty`  on [classname]`Book.title`|
+|[classname]`@NonEmpty`  on [classname]`Book.title`|
 PropertyNode(name=title, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
 |[classname]`@NotNull`  on [classname]`Book.authors`|
@@ -787,7 +787,7 @@ PropertyNode(name=authors, inIterable=false, index=null, key=null, containerClas
 
 BeanNode(name=null, inIterable=true, index=3, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.BEAN)
 
-|[classname]`@NotEmpty`  on the fourth author, [classname]`Author.lastname`|
+|[classname]`@NonEmpty`  on the fourth author, [classname]`Author.lastname`|
 PropertyNode(name=authors, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
 PropertyNode(name=lastName, inIterable=true, index=3, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
@@ -824,7 +824,7 @@ PropertyNode(name=categories, inIterable=false, index=null, key=null, containerC
 
 PropertyNode(name=name, inIterable=true, index=1, key=null, containerClass=List.class, typeArgumentIndex=0, kind=ElementKind.PROPERTY)
 
-|`@NotEmpty` on the last name of the third author of chapter 4, `Author.lastname`|
+|`@NonEmpty` on the last name of the third author of chapter 4, `Author.lastname`|
 PropertyNode(name=authorsByChapter, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
 
 ContainerElementNode(name=<map value>, inIterable=true, index=null, key=4, containerClass=Map.class, typeArgumentIndex=1, kind=ElementKind.CONTAINER_ELEMENT)
@@ -847,14 +847,14 @@ ParameterNode(name=location, inIterable=false, index=null, key=null, kind=Elemen
               method|MethodNode(name=addBook, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[Book.class])
 
 ParameterNode(name=book, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
-|[classname]`@NotEmpty`  on
+|[classname]`@NonEmpty`  on
               [classname]`Book.title`  during validation of
               [methodname]`addBook()`|MethodNode(name=addBook, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[Book.class])
 
 ParameterNode(name=book, inIterable=false, index=null, key=null, kind=ElementKind.PARAMETER, parameterIndex=0)
 
 PropertyNode(name=title, inIterable=false, index=null, key=null, containerClass=null, typeArgumentIndex=null, kind=ElementKind.PROPERTY)
-|[classname]`@NotEmpty`  on fourth book,
+|[classname]`@NonEmpty`  on fourth book,
               [classname]`Book.title`  during validation of
               [methodname]`addAllBooks()`|MethodNode(name=addAllBooks, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[List.class])
 
@@ -865,7 +865,7 @@ PropertyNode(name=title, inIterable=true, index=3, key=null, containerClass=List
               the [methodname]`getLocation()`  method|MethodNode(name=getLocation, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[])
 
 ReturnValueNode(name=<return value>, inIterable=false, index=null, key=null, kind=ElementKind.RETURN_VALUE)
-|[classname]`@NotEmpty`  on most popular book of
+|[classname]`@NonEmpty`  on most popular book of
               author "John Doe", [classname]`Book.title`  during
               validation of
               [methodname]`getMostPopularBookPerAuthor()`|MethodNode(name=getMostPopularBookPerAuthor, inIterable=false, index=null, key=null, kind=ElementKind.METHOD, parameterTypes=[])
@@ -903,13 +903,13 @@ If a user wishes to send [classname]`ConstraintViolation` remotely, it should ma
 [[validationapi-constraintviolation-examples]]
 ==== Examples
 
-These examples assume the following definition of [classname]`@NotEmpty`.
+These examples assume the following definition of [classname]`@NonEmpty`.
 
 [source, JAVA, indent=0]
 ----
 package com.acme.constraint;
 
-include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/NotEmpty.java[tags=include]
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/NonEmpty.java[tags=include]
 ----
 
 and the following class definitions
@@ -929,7 +929,7 @@ book.setAuthor(author);
 Set<ConstraintViolation> constraintViolations = validator.validate(book);
 ----
 
-[classname]`ConstraintViolations` is a set of size 2. One of the entries represents the failure of `@NotEmpty` (or more precisely [classname]`@Size(min=1)` a composing constraint of [classname]`@NotEmpty`) on the `title` property.
+[classname]`ConstraintViolations` is a set of size 2. One of the entries represents the failure of `@NonEmpty` (or more precisely [classname]`@Size(min=1)` a composing constraint of [classname]`@NonEmpty`) on the `title` property.
 
 The [classname]`ConstraintViolation` object for this failure passes the following assertions:
 
@@ -957,7 +957,7 @@ assert false == nodeIter.hasNext();
 
 ====
 
-The second failure, `@NotEmpty` (or more precisely [classname]`@NotNull` a composing constraint of [classname]`@NotEmpty`) on the author's [methodname]`lastname`, will produce the [classname]`ConstraintViolation` object satisfying the following assertions:
+The second failure, `@NonEmpty` (or more precisely [classname]`@NotNull` a composing constraint of [classname]`@NonEmpty`) on the author's [methodname]`lastname`, will produce the [classname]`ConstraintViolation` object satisfying the following assertions:
 
 [source, JAVA]
 ----
