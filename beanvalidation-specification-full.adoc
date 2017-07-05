@@ -374,16 +374,15 @@ A constraint on a JavaBean is expressed through one or more annotations. [tck-no
 public @interface Constraint {
 
     /**
-     * {@link ConstraintValidator} classes must reference distinct target types
-     * for a given {@link ValidationTarget}
-     * If two {@code ConstraintValidator}s refer to the same type,
-     * an exception will occur.
+     * {@link ConstraintValidator} classes implementing the constraint. The given classes
+     * must reference distinct target types for a given {@link ValidationTarget}. If two
+     * {@code ConstraintValidator}s refer to the same type, an exception will occur.
      * <p>
      * At most one {@code ConstraintValidator} targeting the array of parameters of
      * methods or constructors (aka cross-parameter) is accepted. If two or more
      * are present, an exception will occur.
      *
-     * @return array of (@code ConstraintValidator} classes implementing the constraint
+     * @return array of {@code ConstraintValidator} classes implementing the constraint
      */
     Class<? extends ConstraintValidator<?, ?>>[] validatedBy();
 }
@@ -496,7 +495,8 @@ Class<? extends Payload>[] payload() default {};
  * Payloads are typically used to carry on metadata information
  * consumed by a validation client.
  * </p>
- * Use of payloads is not considered portable.
+ * With the exception of the {@link Unwrapping} payload types, the use of payloads is not
+ * considered portable.
  *
  * @author Emmanuel Bernard
  * @author Gerhard Petracek
@@ -696,8 +696,8 @@ public @interface DateParametersConsistent {
 package com.acme.constraint;
 
 /**
- * EL expression to be validated. This constraint accepts any type and can validate both the annotated type or apply
- * restrictions across parameters.
+ * EL expression to be validated. This constraint accepts any type and can validate both the
+ * annotated type or apply restrictions across parameters.
  */
 @Documented
 @Constraint(validatedBy = ELAssertValidator.class)
@@ -2820,7 +2820,7 @@ public interface ConstraintValidatorFactory {
 [[valueextractordefinition]]
 == Value extractor definition
 
-Validation of container element constraints as well as cascaded validation of generic container types requires access to the values stored in the container.
+Validation of container element constraints (see <<constraintdeclarationvalidationprocess-containerelementconstraints>>) as well as cascaded validation of generic container types (see <<constraintdeclarationvalidationprocess-requirements-graphvalidation>>) requires access to the value(s) stored in the container.
 The retrieval of values stored in a container is handled via implementations of the `ValueExtractor` interface:
 
 [role="api"]
@@ -2836,7 +2836,7 @@ package javax.validation.valueextraction;
  * A value extractor for a generic type such as {@link Optional}, {@link List} or {@link Map}
  * is tied to one specific type parameter of {@code T}. The {@link ExtractedValue} annotation
  * is used to mark that type parameter. A value extractor for a non-generic type such as
- * {@link OptionalInt} needs to declare the type of the wrapped element using
+ * {@link OptionalInt} needs to declare the type of the wrapped element(s) using
  * {@link ExtractedValue#type()}.
  * <p>
  * The extracted values are passed to the corresponding method of the {@link ValueReceiver}.
@@ -2862,6 +2862,7 @@ package javax.validation.valueextraction;
  * @author Guillaume Smet
  * @see ExtractedValue
  * @see UnwrapByDefault
+ * @since 2.0
  */
 public interface ValueExtractor<T> {
 
@@ -2879,6 +2880,8 @@ public interface ValueExtractor<T> {
      * <p>
      * The value has to be passed to the method corresponding best to the type of the
      * original value.
+     *
+     * @since 2.0
      */
     interface ValueReceiver {
 
@@ -2886,7 +2889,8 @@ public interface ValueExtractor<T> {
          * Receives the value extracted from an object.
          *
          * @param nodeName the name of the node representing the container element. If not
-         * {@code null}, a node with that name will be added to the {@link Path}
+         * {@code null}, the name will be used when adding a container element node to the
+         * {@link Path}
          * @param object the value to validate
          */
         void value(String nodeName, Object object);
@@ -2896,7 +2900,8 @@ public interface ValueExtractor<T> {
          * a {@link Iterable}, {@link Set} or a {@link Map}).
          *
          * @param nodeName the name of the node representing the container element. If not
-         * {@code null}, a node with that name will be added to the {@link Path}
+         * {@code null}, the name will be used when adding a container element node to the
+         * {@link Path}
          * @param object the value to validate
          */
         void iterableValue(String nodeName, Object object);
@@ -2905,7 +2910,8 @@ public interface ValueExtractor<T> {
          * Receives the value extracted from an indexed object (e.g. a {@link List}).
          *
          * @param nodeName the name of the node representing the container element. If not
-         * {@code null}, a node with that  name will be added to the {@link Path}
+         * {@code null}, the name will be used when adding a container element node to the
+         * {@link Path}
          * @param i the index of the value in the original object
          * @param object the value to validate
          */
@@ -2915,7 +2921,8 @@ public interface ValueExtractor<T> {
          * Receives the value extracted from a keyed object (e.g. a {@link Map}).
          *
          * @param nodeName the name of the node representing the container element. If not
-         * {@code null}, a node with that name will be added to the {@link Path}
+         * {@code null}, the name will be used when adding a container element node to the
+         * {@link Path}
          * @param key the key of the value in the original object
          * @param object the value to validate
          */
@@ -2935,11 +2942,10 @@ When calling
 * [tck-testable]#`indexedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given index, i.e. `Node#getIndex()` returns the given index value#;
 * [tck-testable]#`keyedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given key, i.e. `Node#getKey()` returns the given key value#.
 
-[tck-testable]#When passing a non-null node name to any of the receiver methods and when the extractor is called in the course of container element validation (not during cascaded validation),
-a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.#
+[tck-testable]#When passing a non-null node name to any of the receiver methods, this node name will be used when adding a node of kind `CONTAINER_ELEMENT` to the property path (see <<validationapi-constraintviolation>> for the property path construction rules).#
 [tck-testable]#If null is passed as node name, no node will be appended to the property path.
 The resulting property path will then be the same as if the constraint had been given on the container instead of a container element.
-That is desirable for pure wrapper types such as `Optional`, `OptionalInt` etc.#
+That is desirable for single-element wrapper types such as `Optional`, `OptionalInt` etc.#
 
 [tck-testable]#If an exception occurs during invocation of the `extractValues()` method, this exception is wrapped into a `ValidationException` by the Bean Validation engine.#
 
@@ -2947,10 +2953,15 @@ The container value passed to a value extractor is retrieved from the element th
 
 [source,java]
 ----
-private Map<String, @Valid @RetailOrder Order> ordersByName;
+public class Orders {
 
-public Map<@NotNull String, Order> getOrdersByName() {
-    return ordersByName;
+    private Map<String, @Valid @RetailOrder Order> ordersByName;
+
+    public Map<@NotNull String, Order> getOrdersByName() {
+        return ordersByName;
+    }
+
+    [...]
 }
 ----
 
@@ -2980,6 +2991,7 @@ package javax.validation.valueextraction;
  * @author Guillaume Smet
  *
  * @see ValueExtractor
+ * @since 2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE_USE)
@@ -2987,21 +2999,19 @@ package javax.validation.valueextraction;
 public @interface ExtractedValue {
 
     /**
-     * Returns the type of the value extracted by the {@link ValueExtractor}. If not set,
-     * returns {@code void.class}, meaning the type will be automatically inferred from the
-     * type argument of the parameterized type.
+     * The type of the value extracted by the {@link ValueExtractor}. If not set, the type
+     * will be automatically inferred from the type argument of the parameterized type.
      * <p>
      * Used to define value extractors for non-generic wrapper types e.g.
      * {@link OptionalInt}.
      * <p>
      * May not be used when {@code ExtractedValue} is defined on the type parameter of
-     * a generic wrapper type. A {@code ValueExtractorDefinitionException} will be thrown in
-     * this case.
+     * a generic container type. A {@code ValueExtractorDefinitionException} will be thrown
+     * in this case.
      *
      * @return the type of the value extracted by the value extractor
      */
     Class<?> type() default void.class;
-
 }
 ----
 ====
@@ -3070,8 +3080,8 @@ Compatible implementations provide value extractors for the following types out 
 * [tck-testable]#`java.util.Map`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name#
-* [tck-testable]#`java.util.Optional`; `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name#
-* [tck-testable]#`java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; the extracted value types must be `java.lang.Integer`, `java.lang.Long` and `java.lang.Double`, respectively. `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name. The extractors must be marked with `@UnwrapByDefault`.#
+* [tck-testable]#`java.util.Optional`; `value()` must be invoked, passing `null` as node name and passing the contained object as value or `null` if none is present#
+* [tck-testable]#`java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; the extracted value types must be `java.lang.Integer`, `java.lang.Long` and `java.lang.Double`, respectively. `value()` must be invoked, passing `null` as node name and passing the contained number as value or `null` if none is present. The extractors must be marked with `@UnwrapByDefault`.#
 
 In environments where http://docs.oracle.com/javase/8/javafx/get-started-tutorial/jfx-overview.htm#JFXST784[JavaFX] is present, compatible implementations additionally provide extractors for the following types out of the box:
 
@@ -3141,6 +3151,8 @@ This extractor passes the `int` value wrapped by the given `OptionalInt` to the 
 `null` is passed as a node name, causing no node to be appended to the resulting property path.
 As the extractor is marked with `@UnwrapByDefault`,
 any constraint declared on an element of type `OptionalInt` will implicitly be applied to the wrapped `int` value instead of the `OptionalInt` itself.
+As `OptionalInt` is a non-generic type (i.e. it has no type parameters), `@ExtractedValue` is given on the container type as used within the value extractor definition,
+specifying the type of the wrapped element via `type()`.
 
 [tck-testable]#The following extractor definition is illegal as it specifies `@ExtractedValue` more than once:#
 
@@ -3282,7 +3294,7 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
-[tck-testable]#As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) of such container,
+[tck-testable]#As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) when using such container (e.g. `MultiMap<String, @Valid Address> addressesByType`),
 provided a value extractor implementation (see <<valueextractordefinition>>) for that container type and the targeted type argument is present.#
 There are built-in value extractors for the generic collection types listed above.
 In addition, there is a built-in extractor for the key objects of maps.
@@ -6653,7 +6665,7 @@ The [methodname]`getLeafBean()` method returns the following object:
 [tck-testable]#The [methodname]`getExecutableReturnValue()` returns the return value of the method or constructor invocation or `null` if the method has no return value or if not validating a method or constructor return value.#
 
 [tck-testable]#The [methodname]`getInvalidValue()` method returns the value (field, property, method/constructor parameter, method/constructor return value, container element or validated object) being passed to [methodname]`isValid()`.# [tck-testable]#For a cross-parameter constraint failure, an [code]`Object[]` representing the method/constructor invocation arguments is returned.#
-[tck-testable]#In case of a constraint given on a container is subject to implicit application to the container element(s) (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>), `getInvalidValue()` returns the invalid container element value.#
+[tck-testable]#In case a constraint given on a container is subject to implicit application to the container element(s) (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>), `getInvalidValue()` returns the invalid container element value.#
 
 [tck-testable]#[methodname]`getConstraintDescriptor()` provides access to the failing constraint metadata# (see <<constraintmetadata-constraintdescriptor>>).
 
@@ -7035,8 +7047,8 @@ It is possible to narrow a node instance to its precise type and extract node sp
 [tck-testable]
 --
 `BeanNode`, `PropertyNode` and `ContainerElementNode` host `getContainerClass()` and `getTypeArgumentIndex()`.
-If the node represents an element that is contained in a generic container such as `Optional`, `List` or `Map`,
-the former returns the declared type of the container and the latter returns the index of the affected type argument.
+If the node represents an element that is contained in a container such as `Optional`, `List` or `Map`,
+the former returns the declared type of the container and, if the container is of a generic type, the latter returns the index of the affected type argument.
 --
 
 .Narrow a node to its specific type
@@ -7092,7 +7104,7 @@ case PROPERTY:
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`)#
 ** [tck-testable]#if the traversed object is of a container type (e.g. a `List` or `Map`), the following `Node` object added returns the declared type of the traversed container via `getContainerClass()` and the index of the affected type argument via `getTypeArgumentIndex()`#
 * When a nested container is traversed (e.g. when traversing into the elements of the lists in `Map<String, List<@Valid Address>>`):
-** [tck-testable]#a `ContainerElementNode` object whose `name` equals the name produced by the value extractor of the outer container is added to `Path`. The `ElementKind` of the node is `ElementKind.CONTAINER_ELEMENT`#
+** [tck-testable]#if the value extractor of the outer container has provided a non-null node name, a `ContainerElementNode` object whose `name` equals that name is added to `Path`. The `ElementKind` of the node is `ElementKind.CONTAINER_ELEMENT`#
 ** [tck-testable]#if the container is a `List`, the following `Node` object added contains the index value in `getIndex()`#
 ** [tck-testable]#if the container is a `Map`, the following `Node` object added (representing a given map entry) contains the key value in `getKey()`#
 ** [tck-testable]#for all `Iterable` or `Map`, the following `Node` object added is marked as `inIterable` (`isInIterable()`)#
@@ -8747,7 +8759,7 @@ public interface ValidatorContext {
      * @param extractor value extractor implementation
      * @return self following the chaining method pattern
      * @throws ValueExtractorDeclarationException If more than one extractor for
-     *         the same type and type use is added
+     *         the same type and type parameter is added
      * @since 2.0
      */
     ValidatorContext addValueExtractor(ValueExtractor<?> extractor);
@@ -13623,7 +13635,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 [tck-testable]#`container-element-type` can be used within the `field`, `getter`, `parameter` and `return-value` elements.#
 
 [tck-testable]#The `type-argument-index` is used to specify the index of the configured type argument.#
-[tck-testable]#The `type-argument-index` can be omitted, if the container element type has exactly one type argument.#
+[tck-testable]#The `type-argument-index` can be omitted, if the container type has exactly one type argument.#
 [tck-testable]#The `ignore-annotations` settings effectively applying to the encapsulating element (`field`, `getter` etc.) are applied to `container-element-type`, too.#
 [tck-testable]#The `container-element-type` element can be nested for configuring nested generic containers such as `List<List<String>>`.#
 
@@ -13631,7 +13643,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 [tck-testable]#Whether or not to perform cascaded validation is controlled using the `valid` element.#
 [tck-testable]#Group conversion rules for cascaded validation are specified using the `convert-group` element.#
 
-If an invalid container type element configuration is detected, a `ValidationException` is raised.
+If an invalid container element type configuration is detected, a `ValidationException` is raised.
 This includes the following configuration errors:
 
 * [tck-testable]#The type of the surrounding element (field, getter etc.) has no type arguments.#
@@ -14577,41 +14589,7 @@ Reasons for raising this exception include:
 * The extracted type is not marked with `@ExtractedValue`
 * The `@ExtractedValue` annotation is given more than once for one value extractor type
 
-[role="api"]
-.`ValueExtractorDefinitionException` exception
-====
-[source,java]
-----
-package javax.validation.valueextraction;
-
-/**
- * Raised if a {@link ValueExtractor} definition is illegal, e.g. because it doesn't declare
- * its extracted value using {@link ExtractedValue}.
- *
- * @author Gunnar Morling
- *
- * @since 2.0
- */
-public class ValueExtractorDefinitionException extends ValidationException {
-
-    public ValueExtractorDefinitionException() {
-        super();
-    }
-
-    public ValueExtractorDefinitionException(String message) {
-        super( message );
-    }
-
-    public ValueExtractorDefinitionException(Throwable cause) {
-        super( cause );
-    }
-
-    public ValueExtractorDefinitionException(String message, Throwable cause) {
-        super( message, cause );
-    }
-}
-----
-====
+`ValueExtractorDefinitionException` is a subclass of `ValidationException`.
 
 [[exception-valueextractordeclaration]]
 === Value extractor declaration: [classname]`ValueExtractorDeclarationException`
@@ -14619,42 +14597,7 @@ public class ValueExtractorDefinitionException extends ValidationException {
 [tck-testable]#When detecting an illegal configuration of value extractors, a `ValueExtractorDeclarationException` will be raised.#
 One example is the configuration of multiple extractors for the same container element type in `META-INF/validation.xml`.
 
-[role="api"]
-.`ValueExtractorDeclarationException` exception
-====
-[source,java]
-----
-package javax.validation.valueextraction;
-
-/**
- * Raised if the configuration of {@link ValueExtractor} is illegal, e.g. because multiple
- * extractors for the same type and type use have been configured in
- * {@code META-INF/validation.xml}.
- *
- * @author Gunnar Morling
- *
- * @since 2.0
- */
-public class ValueExtractorDeclarationException extends ValidationException {
-
-    public ValueExtractorDeclarationException() {
-        super();
-    }
-
-    public ValueExtractorDeclarationException(String message) {
-        super( message );
-    }
-
-    public ValueExtractorDeclarationException(Throwable cause) {
-        super( cause );
-    }
-
-    public ValueExtractorDeclarationException(String message, Throwable cause) {
-        super( message, cause );
-    }
-}
-----
-====
+`ValueExtractorDeclarationException` is a subclass of `ValidationException`.
 
 [[exception-noprovider]]
 === No Bean Validation Provider detected: `NoProviderFoundException`
