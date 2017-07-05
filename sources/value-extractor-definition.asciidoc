@@ -6,7 +6,7 @@
 [[valueextractordefinition]]
 == Value extractor definition
 
-Validation of container element constraints as well as cascaded validation of generic container types requires access to the values stored in the container.
+Validation of container element constraints (see <<constraintdeclarationvalidationprocess-containerelementconstraints>>) as well as cascaded validation of generic container types (see <<constraintdeclarationvalidationprocess-requirements-graphvalidation>>) requires access to the value(s) stored in the container.
 The retrieval of values stored in a container is handled via implementations of the `ValueExtractor` interface:
 
 [role="api"]
@@ -28,11 +28,10 @@ When calling
 * [tck-testable]#`indexedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given index, i.e. `Node#getIndex()` returns the given index value#;
 * [tck-testable]#`keyedValue()`, the given value will be passed to the validation engine and the corresponding property path node will be marked as iterable and it will have set the given key, i.e. `Node#getKey()` returns the given key value#.
 
-[tck-testable]#When passing a non-null node name to any of the receiver methods and when the extractor is called in the course of container element validation (not during cascaded validation),
-a node of kind `CONTAINER_ELEMENT` will be appended to the property path, with `Node#getName()` returning the specified name.#
+[tck-testable]#When passing a non-null node name to any of the receiver methods, this node name will be used when adding a node of kind `CONTAINER_ELEMENT` to the property path (see <<validationapi-constraintviolation>> for the property path construction rules).#
 [tck-testable]#If null is passed as node name, no node will be appended to the property path.
 The resulting property path will then be the same as if the constraint had been given on the container instead of a container element.
-That is desirable for pure wrapper types such as `Optional`, `OptionalInt` etc.#
+That is desirable for single-element wrapper types such as `Optional`, `OptionalInt` etc.#
 
 [tck-testable]#If an exception occurs during invocation of the `extractValues()` method, this exception is wrapped into a `ValidationException` by the Bean Validation engine.#
 
@@ -40,10 +39,15 @@ The container value passed to a value extractor is retrieved from the element th
 
 [source,java]
 ----
-private Map<String, @Valid @RetailOrder Order> ordersByName;
+public class Orders {
 
-public Map<@NotNull String, Order> getOrdersByName() {
-    return ordersByName;
+    private Map<String, @Valid @RetailOrder Order> ordersByName;
+
+    public Map<@NotNull String, Order> getOrdersByName() {
+        return ordersByName;
+    }
+
+    [...]
 }
 ----
 
@@ -106,8 +110,8 @@ Compatible implementations provide value extractors for the following types out 
 * [tck-testable]#`java.util.Map`; both map keys and map values are to be supported;
 `keyedValue()` must be invoked by the map key extractor for each contained key, passing the string literal `<map key>` as node name;
 `keyedValue()` must be invoked by the map value extractor for each contained value, passing the string literal `<map value>` as node name#
-* [tck-testable]#`java.util.Optional`; `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name#
-* [tck-testable]#`java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; the extracted value types must be `java.lang.Integer`, `java.lang.Long` and `java.lang.Double`, respectively. `value()` must be invoked (passing the contained value or `null` if none is present), passing `null` as node name. The extractors must be marked with `@UnwrapByDefault`.#
+* [tck-testable]#`java.util.Optional`; `value()` must be invoked, passing `null` as node name and passing the contained object as value or `null` if none is present#
+* [tck-testable]#`java.util.OptionalInt`, `java.util.OptionalLong` and `java.util.OptionalDouble`; the extracted value types must be `java.lang.Integer`, `java.lang.Long` and `java.lang.Double`, respectively. `value()` must be invoked, passing `null` as node name and passing the contained number as value or `null` if none is present. The extractors must be marked with `@UnwrapByDefault`.#
 
 In environments where http://docs.oracle.com/javase/8/javafx/get-started-tutorial/jfx-overview.htm#JFXST784[JavaFX] is present, compatible implementations additionally provide extractors for the following types out of the box:
 
@@ -177,6 +181,8 @@ This extractor passes the `int` value wrapped by the given `OptionalInt` to the 
 `null` is passed as a node name, causing no node to be appended to the resulting property path.
 As the extractor is marked with `@UnwrapByDefault`,
 any constraint declared on an element of type `OptionalInt` will implicitly be applied to the wrapped `int` value instead of the `OptionalInt` itself.
+As `OptionalInt` is a non-generic type (i.e. it has no type parameters), `@ExtractedValue` is given on the container type as used within the value extractor definition,
+specifying the type of the wrapped element via `type()`.
 
 [tck-testable]#The following extractor definition is illegal as it specifies `@ExtractedValue` more than once:#
 

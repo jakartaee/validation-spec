@@ -25,8 +25,8 @@ import javax.validation.Payload;
 
 //tag::include[]
 /**
- * EL expression to be validated. This constraint accepts any type and can validate both the annotated type or apply
- * restrictions across parameters.
+ * EL expression to be validated. This constraint accepts any type and can validate both the
+ * annotated type or apply restrictions across parameters.
  */
 @Documented
 @Constraint(validatedBy = ELAssertValidator.class)

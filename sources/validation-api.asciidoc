@@ -468,7 +468,7 @@ The [methodname]`getLeafBean()` method returns the following object:
 [tck-testable]#The [methodname]`getExecutableReturnValue()` returns the return value of the method or constructor invocation or `null` if the method has no return value or if not validating a method or constructor return value.#
 
 [tck-testable]#The [methodname]`getInvalidValue()` method returns the value (field, property, method/constructor parameter, method/constructor return value, container element or validated object) being passed to [methodname]`isValid()`.# [tck-testable]#For a cross-parameter constraint failure, an [code]`Object[]` representing the method/constructor invocation arguments is returned.#
-[tck-testable]#In case of a constraint given on a container is subject to implicit application to the container element(s) (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>), `getInvalidValue()` returns the invalid container element value.#
+[tck-testable]#In case a constraint given on a container is subject to implicit application to the container element(s) (see <<constraintdeclarationvalidationprocess-containerelementconstraints-implicitunwrapping>>), `getInvalidValue()` returns the invalid container element value.#
 
 [tck-testable]#[methodname]`getConstraintDescriptor()` provides access to the failing constraint metadata# (see <<constraintmetadata-constraintdescriptor>>).
 
@@ -529,8 +529,8 @@ It is possible to narrow a node instance to its precise type and extract node sp
 [tck-testable]
 --
 `BeanNode`, `PropertyNode` and `ContainerElementNode` host `getContainerClass()` and `getTypeArgumentIndex()`.
-If the node represents an element that is contained in a generic container such as `Optional`, `List` or `Map`,
-the former returns the declared type of the container and the latter returns the index of the affected type argument.
+If the node represents an element that is contained in a container such as `Optional`, `List` or `Map`,
+the former returns the declared type of the container and, if the container is of a generic type, the latter returns the index of the affected type argument.
 --
 
 .Narrow a node to its specific type
@@ -586,7 +586,7 @@ case PROPERTY:
 ** [tck-testable]#for all [classname]`Iterable` or [classname]`Map`, the following [classname]`Node` object added is marked as `inIterable` ([methodname]`isInIterable()`)#
 ** [tck-testable]#if the traversed object is of a container type (e.g. a `List` or `Map`), the following `Node` object added returns the declared type of the traversed container via `getContainerClass()` and the index of the affected type argument via `getTypeArgumentIndex()`#
 * When a nested container is traversed (e.g. when traversing into the elements of the lists in `Map<String, List<@Valid Address>>`):
-** [tck-testable]#a `ContainerElementNode` object whose `name` equals the name produced by the value extractor of the outer container is added to `Path`. The `ElementKind` of the node is `ElementKind.CONTAINER_ELEMENT`#
+** [tck-testable]#if the value extractor of the outer container has provided a non-null node name, a `ContainerElementNode` object whose `name` equals that name is added to `Path`. The `ElementKind` of the node is `ElementKind.CONTAINER_ELEMENT`#
 ** [tck-testable]#if the container is a `List`, the following `Node` object added contains the index value in `getIndex()`#
 ** [tck-testable]#if the container is a `Map`, the following `Node` object added (representing a given map entry) contains the key value in `getKey()`#
 ** [tck-testable]#for all `Iterable` or `Map`, the following `Node` object added is marked as `inIterable` (`isInIterable()`)#
