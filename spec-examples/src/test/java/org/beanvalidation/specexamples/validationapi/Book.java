@@ -6,8 +6,11 @@
  */
 package org.beanvalidation.specexamples.validationapi;
 
+import java.util.List;
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 import javax.validation.groups.Default;
 
 //tag::include[]
@@ -19,6 +22,8 @@ public class Book {
 	@Valid
 	@NotNull
 	private Author author;
+
+	private List<@Size(min=3, max=30) String> tags;
 
 	public String getTitle() {
 		return title;
@@ -34,6 +39,14 @@ public class Book {
 
 	public void setAuthor(Author author) {
 		this.author = author;
+	}
+
+	public List<String> getTags() {
+		return tags;
+	}
+
+	public void setTags(List<String> tags) {
+		this.tags = tags;
 	}
 }
 // end::include[]
