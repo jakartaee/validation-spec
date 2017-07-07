@@ -456,10 +456,10 @@ include::{validation-api-source-dir}javax/validation/ConstraintViolation.java[li
 The [methodname]`getLeafBean()` method returns the following object:
 
 * If a bean constraint, the bean instance the constraint is applied on.
-* If a property constraint, the bean instance hosting the property the constraint is applied on.
+* If a property constraint or a <<constraintdeclarationvalidationprocess-containerelementconstraints,container element constraint>> hosted on a property, the bean instance hosting the property the constraint is applied on.
 * If a property constraint, `null` when the [classname]`ConstraintViolation` is returned after calling [methodname]`Validator.validateValue()`.
-* If a method parameter, cross-parameter or return value constraint, the object the method is executed on.
-* If a constructor parameter or cross-parameter constraint, `null`.
+* If a method parameter, cross-parameter or return value constraint or a container element constraint hosted on a method parameter or return value, the object the method is executed on.
+* If a constructor parameter or cross-parameter constraint or a container element constraint hosted on a constructor parameter, `null`.
 * If a constructor return value constraint, the object the constructor has created.
 --
 
@@ -903,7 +903,7 @@ If a user wishes to send [classname]`ConstraintViolation` remotely, it should ma
 [[validationapi-constraintviolation-examples]]
 ==== Examples
 
-These examples assume the following definition of [classname]`@NonEmpty`.
+These examples assume the following definition of [classname]`@NonEmpty`:
 
 [source, JAVA, indent=0]
 ----
@@ -912,75 +912,62 @@ package com.acme.constraint;
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/NonEmpty.java[tags=include]
 ----
 
-and the following class definitions
+And the following class definitions:
 
 [source, JAVA, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/Author.java[tags=include]
-
-include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/Book.java[tags=include]
-
-Author author = new Author();
-author.setCompany("ACME");
-Book book = new Book();
-book.setTitle("");
-book.setAuthor(author);
-
-Set<ConstraintViolation> constraintViolations = validator.validate(book);
 ----
 
-[classname]`ConstraintViolations` is a set of size 2. One of the entries represents the failure of `@NonEmpty` (or more precisely [classname]`@Size(min=1)` a composing constraint of [classname]`@NonEmpty`) on the `title` property.
+[source, JAVA, indent=0]
+----
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/Book.java[tags=include]
+----
+
+When executing the following validation:
+
+[source, JAVA, indent=0]
+----
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=invocation]
+----
+
+Then `constraintViolations` is a set of size 3. One of the entries represents the failure of `@NonEmpty` (or more precisely [classname]`@Size(min=1)` a composing constraint of [classname]`@NonEmpty`) on the `title` property.
 
 The [classname]`ConstraintViolation` object for this failure passes the following assertions:
 
-.Test assertions on ContraintViolation
+.Test assertions on `ContraintViolation` for `title`
 ====
 
-[source, JAVA]
+[source, JAVA, indent=0]
 ----
-//assuming an english locale, the interpolated message is returned
-assert "may not be null or empty".equals( constraintViolation.getMessage() );
-assert book == constraintViolation.getRootBean();
-assert book == constraintViolation.getLeafBean();
-
-//the offending value
-assert book.getTitle().equals( constraintViolation.getInvalidValue() );
-
-//the offending property
-Iterator<Node> nodeIter = constraintViolation.getPropertyPath().iterator();
-Node node = nodeIter.next();
-assert "title".equals( node.getName() );
-assert ElementKind.PROPERTY.equals( node.getKind() );
-
-assert false == nodeIter.hasNext();
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=title]
 ----
 
 ====
 
 The second failure, `@NonEmpty` (or more precisely [classname]`@NotNull` a composing constraint of [classname]`@NonEmpty`) on the author's [methodname]`lastname`, will produce the [classname]`ConstraintViolation` object satisfying the following assertions:
 
-[source, JAVA]
+.Test assertions on `ContraintViolation` for `lastName`
+====
+
+[source, JAVA, indent=0]
 ----
-assert "lastname must not be null".equals( constraintViolation.getMessage() );
-assert book == constraintViolation.getRootBean();
-assert author == constraintViolation.getLeafBean();
-
-//the offending value
-assert book.getAuthor().getLastName() == constraintViolation.getInvalidValue();
-
-//the offending property
-Iterator<Node> nodeIter = constraintViolation.getPropertyPath().iterator();
-
-Node node = nodeIter.next();
-assert "author".equals( node.getName() );
-assert ElementKind.PROPERTY.equals( node.getKind() );
-
-node = nodeIter.next();
-assert "lastName".equals( node.getName() );
-assert ElementKind.PROPERTY.equals( node.getKind() );
-
-assert false == nodeIter.hasNext();
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=lastName]
 ----
+
+====
+
+The third failure, `@Size` on one of the book's `tags`, will produce a `ConstraintViolation` object satisfying the following assertions:
+
+.Test assertions on `ContraintViolation` for `tags`
+====
+
+[source, JAVA, indent=0]
+----
+include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=tags]
+----
+
+====
 
 [[validationapi-constraintviolation-examplesexecutables]]
 ==== Examples for method and constructor constraint violations
