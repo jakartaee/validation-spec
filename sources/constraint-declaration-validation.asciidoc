@@ -924,7 +924,7 @@ include::{validation-api-source-dir}javax/validation/valueextraction/Unwrapping.
 --
 This is useful for applying a constraint given on a non-generic container to
 
-* the container element if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
+* the container element(s) if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
 * the container itself in case there is a value extractor marked with `@UnwrapByDefault` (by using `Skip`)
 --
 
@@ -1957,7 +1957,7 @@ Note that `C'` is a subtype of `T` if `C'` = `T`.
 [NOTE]
 .Implementation note
 ====
-Extractor retrieval for cascaded validation is based on the runtime type of the elements marked with `@Valid`
+Extractor retrieval for cascaded validation is based on the runtime type of the container hosting `@Valid`
 (this is to be consistent with the semantics of property paths for cascaded validation),
 hence it is not possible to perform the extractor resolution only once per usage of `@Valid` and cache the result.
 ====
@@ -2067,7 +2067,7 @@ The following value extractor resolutions occur:
 |`Iterable<@Valid Address> addresses = new ArrayList<>()`|`ListValueExtractor` (the runtime type `ArrayList` is used for resolving value extractors for cascaded validation)
 |`Map<@Email String, String> emails`|`MapKeyExtractor`; equally specific as `MapValueExtractor`, but the latter isn't container-element-compliant
 |`ConfusingMap<@Email String, String> map`|`MapValueExtractor`; the constrained type argument maps to the type parameter `V` of `Map`
-|`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed
+|`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed; `String` will be used for validator resolution as that's the type captured for the type parameter handled by the applied value extractor
 |`@Min(1) OptionalInt`|`OptionalIntValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed; `Integer` as given via `@ExtractedValue#type()` will be used for validator resolution
 |`Optional<@Email String> getEmail() {...}`|`ConstraintDeclarationException`; no compliant extractor exists
 |`Table<@Min(1) String, String, String> table`|`ConstraintDeclarationException`; `TableValueExtractor` is type-compliant but not container-element-compliant
