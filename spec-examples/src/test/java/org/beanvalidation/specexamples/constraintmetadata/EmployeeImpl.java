@@ -9,9 +9,6 @@ package org.beanvalidation.specexamples.constraintmetadata;
 import java.util.List;
 import java.util.Map;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-
 //tag::include[]
 public class EmployeeImpl implements Employee {
 
@@ -32,7 +29,7 @@ public class EmployeeImpl implements Employee {
 	}
 
 	@Override
-	public Map<@NotNull String, @Valid Account> getAccounts() {
+	public Map<String, Account> getAccounts() {
 		// [...]
 		//end::include[]
 		return null;
