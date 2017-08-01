@@ -174,6 +174,7 @@ fine-grained control over the current time and time zone used for validation (se
 * All built-in constraints are marked as repeatable now
 * Parameter names are retrieved using reflection (see <<constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters>>)
 * `ConstraintValidator#initialize()` is a default method (see <<constraintsdefinitionimplementation-validationimplementation>>)
+* The namespace for Bean Validation XML descriptors has been changed to `http://xmlns.jcp.org/xml/ns/validation/configuration` for `META-INF/validation.xml` and `http://xmlns.jcp.org/xml/ns/validation/mapping` for constraint mapping files (see <<validationapi-bootstrapping-xmlconfiguration>>)
 
 [[whatsnew-11]]
 === What's new in 1.1
@@ -1811,9 +1812,9 @@ public interface ConstraintValidatorContext {
 
         /**
          * Represents refinement choices for a node which is
-         * in an {@code Iterator} or {@code Map}.
+         * in an iterable, e.g. array, {@code Iterable} or {@code Map}.
          * <p>
-         * If the iterator is an indexed collection or a map,
+         * If the iterable is an indexed collection or a map,
          * the index or the key should be set.
          * <p>
          * The node is a leaf node (i.e. no subnode can be added).
@@ -2028,9 +2029,9 @@ public interface ConstraintValidatorContext {
 
         /**
          * Represents refinement choices for a node which is
-         * in an {@code Iterator} or {@code Map}.
+         * in an iterable, e.g. array, {@code Iterable} or {@code Map}.
          * <p>
-         * If the iterator is an indexed collection or a map,
+         * If the iterable is an indexed collection or a map,
          * the index or the key should be set.
          * <p>
          * The node is not necessarily a leaf node (i.e. subnodes can
@@ -2097,7 +2098,6 @@ public interface ConstraintValidatorContext {
             /**
              * Adds a container element node to the path the {@link ConstraintViolation}
              * will be associated to.
-             * Note that container element nodes are always leaf nodes.
              *
              * @param name the node name
              * @param containerType the type of the container
@@ -2252,10 +2252,9 @@ public interface ConstraintValidatorContext {
         }
 
         /**
-         * Represents refinement choices for a container element node which is
-         * in an {@code Iterator} or {@code Map}.
+         * Represents refinement choices for a container element node.
          * <p>
-         * If the iterator is an indexed collection or a map,
+         * If the container is an indexed collection or a map,
          * the index or the key should be set.
          * <p>
          * The node is not necessarily a leaf node (i.e. subnodes can
@@ -3067,8 +3066,8 @@ public class OptionalValueExtractor implements ValueExtractor<Optional<@Extracte
 
 This extractor passes the element wrapped by the given `Optional` to the receiver object, if present.
 `null` is passed as a node name, causing no node to be appended to the resulting property path.
-I.e. when the `@Size` constraint in `private Optional<@Size(min=1) String name;` is violated,
-the resulting property path will be the same as if a constraint hosted on the `name` field itself was violated.
+I.e. when the `@Size` constraint in `Optional<@Size(min=1) String getName() { ... }` is violated,
+the resulting property path will be the same as if a constraint hosted on the `getName` getter itself was violated.
 
 A value extractor for `java.util.OptionalInt`:
 
@@ -4146,7 +4145,7 @@ public interface Unwrapping {
 --
 This is useful for applying a constraint given on a non-generic container to
 
-* the container element if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
+* the container element(s) if there is no value extractor marked with `@UnwrapByDefault` (by using `Unwrap`)
 * the container itself in case there is a value extractor marked with `@UnwrapByDefault` (by using `Skip`)
 --
 
@@ -5268,7 +5267,7 @@ Note that `C'` is a subtype of `T` if `C'` = `T`.
 [NOTE]
 .Implementation note
 ====
-Extractor retrieval for cascaded validation is based on the runtime type of the elements marked with `@Valid`
+Extractor retrieval for cascaded validation is based on the runtime type of the container hosting `@Valid`
 (this is to be consistent with the semantics of property paths for cascaded validation),
 hence it is not possible to perform the extractor resolution only once per usage of `@Valid` and cache the result.
 ====
@@ -5378,7 +5377,7 @@ The following value extractor resolutions occur:
 |`Iterable<@Valid Address> addresses = new ArrayList<>()`|`ListValueExtractor` (the runtime type `ArrayList` is used for resolving value extractors for cascaded validation)
 |`Map<@Email String, String> emails`|`MapKeyExtractor`; equally specific as `MapValueExtractor`, but the latter isn't container-element-compliant
 |`ConfusingMap<@Email String, String> map`|`MapValueExtractor`; the constrained type argument maps to the type parameter `V` of `Map`
-|`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed
+|`@Email StringProperty`|`PropertyValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed; `String` will be used for validator resolution as that's the type captured for the type parameter handled by the applied value extractor
 |`@Min(1) OptionalInt`|`OptionalIntValueExtractor`; the extractor is marked with `@UnwrapByDefault`, i.e. implicit unwrapping is performed; `Integer` as given via `@ExtractedValue#type()` will be used for validator resolution
 |`Optional<@Email String> getEmail() {...}`|`ConstraintDeclarationException`; no compliant extractor exists
 |`Table<@Min(1) String, String, String> table`|`ConstraintDeclarationException`; `TableValueExtractor` is type-compliant but not container-element-compliant
@@ -6739,7 +6738,7 @@ public interface Path extends Iterable<Path.Node> {
          *
          * @return this node narrowed down to the given type.
          *
-         * @throws ClassCastException If this node is not assignable to the type {@code T}
+         * @throws ClassCastException if this node is not assignable to the type {@code T}
          * @since 1.1
          */
         <T extends Node> T as(Class<T> nodeType);
@@ -8757,7 +8756,7 @@ public interface ValidatorContext {
      *
      * @param extractor value extractor implementation
      * @return self following the chaining method pattern
-     * @throws ValueExtractorDeclarationException If more than one extractor for
+     * @throws ValueExtractorDeclarationException if more than one extractor for
      *         the same type and type parameter is added
      * @since 2.0
      */
@@ -8969,8 +8968,8 @@ public interface Configuration<T extends Configuration<T>> {
      *
      * @param extractor value extractor implementation
      * @return {@code this} following the chaining method pattern.
-     * @throws ValueExtractorDeclarationException If more than one extractor for
-     *         the same type and type use is added
+     * @throws ValueExtractorDeclarationException if more than one extractor for
+     *         the same type and type parameter is added
      * @since 2.0
      */
     T addValueExtractor(ValueExtractor<?> extractor);
@@ -11144,7 +11143,7 @@ package javax.validation.metadata;
 public interface ContainerElementTypeDescriptor extends ElementDescriptor, CascadableDescriptor, ContainerDescriptor {
 
     /**
-     * Returns the index of the type argument corresponding to this container element type
+     * Returns the index of the type argument corresponding to this container element type.
      * @return the index of the type argument corresponding to this container element type
      */
     Integer getTypeArgumentIndex();
@@ -11575,7 +11574,7 @@ public class EmployeeImpl implements Employee {
     }
 
     @Override
-    public Map<@NotNull String, @Valid Account> getAccounts() {
+    public Map<String, Account> getAccounts() {
         // [...]
     }
 }
@@ -13629,7 +13628,7 @@ You must declare all parameters even if they are not reconfigured to ensure the 
 [[xml-mapping-constraintdeclarationinxml-containerelementconstraints]]
 ===== Container-element overriding
 
-[tck-testable]#To apply constraints to the elements of generic container types or marking them for cascaded validation, the `container-element-type` element is used.#
+[tck-testable]#To apply constraints to the elements of generic container types or to mark them for cascaded validation, the `container-element-type` element is used.#
 
 [tck-testable]#`container-element-type` can be used within the `field`, `getter`, `parameter` and `return-value` elements.#
 
@@ -14124,12 +14123,12 @@ From Bean Validation revision 1.1 onwards, mapping authors must specify the used
                         name="convert-group"
                         minOccurs="0"
                         maxOccurs="unbounded"/>
-            <xs:element type="map:constraintType"
-                        name="constraint"
-                        maxOccurs="unbounded"
-                        minOccurs="0"/>
             <xs:element type="map:containerElementTypeType"
                         name="container-element-type"
+                        maxOccurs="unbounded"
+                        minOccurs="0"/>
+            <xs:element type="map:constraintType"
+                        name="constraint"
                         maxOccurs="unbounded"
                         minOccurs="0"/>
         </xs:sequence>
@@ -15194,6 +15193,18 @@ A mandatory module name - which may be `java.validation` or another one - will b
 
 [source]
 ....
+2.0.0.CR3 (Final Approval Ballot, 2017-07-11)
+---------------------------------------------
+
+** Improvement
+    * [BVAL-693] - Make order of <constraint> and <container-element-type> consistent in XSD
+    * [BVAL-692] - Misc. findings after review
+    * [BVAL-690] - Clarify getLeafBean() for container element constraints
+    * [BVAL-464] - Create CONTRIBUTING.md page
+
+** Task
+    * [BVAL-687] - Update license information for submission to Final Approval Ballot
+
 2.0.0.CR2 (2017-07-05)
 ----------------------
 
