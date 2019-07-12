@@ -7,9 +7,9 @@
 
 == Constraint declaration and validation process
 
-The Bean Validation specification defines a framework for declaring constraints on JavaBean classes, fields and properties. Constraints are declared on types and evaluated against instances or graphs of instances.
+The {spec-name-bv} specification defines a framework for declaring constraints on JavaBean classes, fields and properties. Constraints are declared on types and evaluated against instances or graphs of instances.
 
-Bean Validation also offers a way to declare constructor and method constraints where parameters and return values are the constrained elements. We will discuss method constraints declaration in detail in <<constraintdeclarationvalidationprocess-methodlevelconstraints>>.
+{spec-name-bv} also offers a way to declare constructor and method constraints where parameters and return values are the constrained elements. We will discuss method constraints declaration in detail in <<constraintdeclarationvalidationprocess-methodlevelconstraints>>.
 
 Furthermore, constraints can be applied to the elements of generic container types such as `Map`, `List` or `Optional` or of non-generic container types such as `OptionalInt`.
 Container element constraints are discussed in detail in <<constraintdeclarationvalidationprocess-containerelementconstraints>>.
@@ -18,7 +18,7 @@ Container element constraints are discussed in detail in <<constraintdeclaration
 
 === Requirements on classes to be validated
 
-Objects hosting constraints and expecting to be validated by Bean Validation providers must fulfill the following requirements:
+Objects hosting constraints and expecting to be validated by {spec-name-bv} providers must fulfill the following requirements:
 
 * [tck-testable]#Properties to be validated must follow the method signature conventions for JavaBeans read properties, as defined by the link:$$http://download.oracle.com/otndocs/jcp/7224-javabeans-1.01-fr-spec-oth-JSpec/$$[JavaBeans specification]. These properties are commonly referred as getters.#
 * [tck-not-testable]#Static fields and static methods are excluded from validation.#
@@ -69,16 +69,16 @@ provided that:
 [tck-testable]#Constraint declarations can be applied on both fields and properties for the same object type.# [tck-testable]#The same constraint should however not be duplicated between a field and its associated property (the constraint validation would be applied twice).# It is recommended for objects holding constraint declarations to adhere to a single state access strategy (either annotated fields or properties).
 
 [NOTE]
-.{spec-name-persistence} and Bean Validation
+.{spec-name-persistence} and {spec-name-bv}
 ====
-For maximum portability, persistent properties hosting Bean Validation constraints should use the same access strategy used in {spec-name-persistence}. In other words, place your Bean Validation constraint annotations on the same element (field or getter) as your {spec-name-persistence} annotations.
+For maximum portability, persistent properties hosting {spec-name-bv} constraints should use the same access strategy used in {spec-name-persistence}. In other words, place your {spec-name-bv} constraint annotations on the same element (field or getter) as your {spec-name-persistence} annotations.
 ====
 
 [tck-testable]#When a field is annotated with a constraint declaration, field access strategy is used to access the state validated by such constraint.#
 
 [tck-testable]#When a property is annotated with a constraint declaration, property access strategy is used to access the state validated by such constraint.#
 
-When using field access strategy, the Bean Validation provider accesses the instance variable directly. When using the property access strategy, the Bean Validation provider accesses the state via the property accessor method. It is required that the class follows the method signature conventions for JavaBeans read properties (as defined by the JavaBeans [classname]`Introspector` class) for constrained properties when constrained properties are used. In this case, for every constraint property of type [classname]`T`, there is a getter method named [methodname]`get<Property-name>`. The method must have no parameters. For [code]`boolean` properties, [methodname]`is<Property-name>` is an alternative name for the getter method. Specifically, if [methodname]`getX` is the name of the getter method, where [classname]`X` is a string, the name of the persistent property is defined by the result of [code]`java.beans.Introspector.decapitalize(X)`.
+When using field access strategy, the {spec-name-bv} provider accesses the instance variable directly. When using the property access strategy, the {spec-name-bv} provider accesses the state via the property accessor method. It is required that the class follows the method signature conventions for JavaBeans read properties (as defined by the JavaBeans [classname]`Introspector` class) for constrained properties when constrained properties are used. In this case, for every constraint property of type [classname]`T`, there is a getter method named [methodname]`get<Property-name>`. The method must have no parameters. For [code]`boolean` properties, [methodname]`is<Property-name>` is an alternative name for the getter method. Specifically, if [methodname]`getX` is the name of the getter method, where [classname]`X` is a string, the name of the persistent property is defined by the result of [code]`java.beans.Introspector.decapitalize(X)`.
 
 [tck-testable]#The fields or methods visibility are not constrained.#
 
@@ -112,7 +112,7 @@ Collection-valued, array-valued and generally [classname]`Iterable` fields and p
 
 [tck-testable]#Like regular references, its type is determined at runtime and the constraint definitions for this particular type are used.#
 
-[tck-testable]#As of Bean Validation 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) when using such container (e.g. `MultiMap<String, @Valid Address> addressesByType`),
+[tck-testable]#As of {spec-name-bv} 2.0, `@Valid` can be applied to the elements of any generic container by putting it to the type argument(s) when using such container (e.g. `MultiMap<String, @Valid Address> addressesByType`),
 provided a value extractor implementation (see <<valueextractordefinition>>) for that container type and the targeted type argument is present.#
 There are built-in value extractors for the generic collection types listed above.
 In addition, there is a built-in extractor for the key objects of maps.
@@ -138,7 +138,7 @@ A future revision of this specification might define support for such usages of 
 ----
 public class User {
 
-    // preferred style as of Bean Validation 2.0
+    // preferred style as of Jakarta Bean Validation 2.0
     private List<@Valid PhoneNumber> phoneNumbers;
 
     // traditional style; continues to be supported
@@ -159,7 +159,7 @@ public class User {
 ----
 public class User {
 
-    // preferred style as of Bean Validation 2.0
+    // preferred style as of Jakarta Bean Validation 2.0
     private Map<AddressType, @Valid Address> addressesByType;
 
     // traditional style; continues to be supported
@@ -235,7 +235,7 @@ Container element constraints are discussed in <<constraintdeclarationvalidation
 
 === Inheritance (interface and superclass)
 
-[tck-testable]#A constraint declaration can be placed on an interface.# [tck-testable]#For a given class, constraint declarations held on superclasses as well as interfaces are evaluated by the Bean Validation provider.# Rules are formally described in <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>.
+[tck-testable]#A constraint declaration can be placed on an interface.# [tck-testable]#For a given class, constraint declarations held on superclasses as well as interfaces are evaluated by the {spec-name-bv} provider.# Rules are formally described in <<constraintdeclarationvalidationprocess-groupsequence-formaldefinition>>.
 
 [tck-testable]#The effect of constraint declarations is cumulative. Constraints declared on a superclass getter will be validated along with any constraints defined on an overridden version of the getter according to the Java Language Specification visibility rules.#
 
@@ -308,7 +308,7 @@ include::{validation-api-source-dir}javax/validation/groups/Default.java[lines=7
 [[constraintdeclarationvalidationprocess-groupsequence-groupinheritance]]
 ==== Group inheritance
 
-In some situations, a group is a superset of one or more groups. This can be described by Bean Validation. [tck-testable]#A group may inherit one or more groups by using interface inheritance.#
+In some situations, a group is a superset of one or more groups. This can be described by {spec-name-bv}. [tck-testable]#A group may inherit one or more groups by using interface inheritance.#
 
 .Groups can inherit other groups
 ====
@@ -579,7 +579,7 @@ The group referred to in [methodname]`@ConvertGroup.to` will be expanded before 
 
 [NOTE]
 ====
-Like most Bean Validation error cases, an illegal set of rules can be discovered statically (at compile time). For example, an annotation processor could detect such errors.
+Like most {spec-name-bv} error cases, an illegal set of rules can be discovered statically (at compile time). For example, an annotation processor could detect such errors.
 ====
 
 [NOTE]
@@ -966,7 +966,7 @@ List<String> emails;
 In the following, the term "method constraint" refers to constraints declared on methods as well as constructors.
 ====
 
-Method constraints are declared by adding constraint annotations directly to methods or constructors and/or their parameters. In the former case, all the parameters of an executable (cross-parameter constraint) or the return value is constrained, in the latter individual parameters are constrained. As with bean constraints, this can be done using either actual Java annotations or using an XML constraint mapping file (see <<xml-mapping-constraintdeclarationinxml-methodleveloverriding>>). Bean Validation providers are free to provide additional means of defining method constraints such as an API-based approach.
+Method constraints are declared by adding constraint annotations directly to methods or constructors and/or their parameters. In the former case, all the parameters of an executable (cross-parameter constraint) or the return value is constrained, in the latter individual parameters are constrained. As with bean constraints, this can be done using either actual Java annotations or using an XML constraint mapping file (see <<xml-mapping-constraintdeclarationinxml-methodleveloverriding>>). {spec-name-bv} providers are free to provide additional means of defining method constraints such as an API-based approach.
 
 Getters are not considered constrained methods by default (see <<integration-general-executable>>).
 
@@ -1059,7 +1059,7 @@ Some constraints can target an executable's return value as well as its array of
 [[constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-namingparameters]]
 ===== Naming parameters
 
-In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). Bean Validation defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
+In case the validation of a parameter constraint fails, the concerned parameter needs to be identified in the resulting [classname]`ConstraintViolation` (see section <<validationapi-constraintviolation>>). {spec-name-bv} defines the [classname]`javax.validation.ParameterNameProvider` API to which the retrieval of parameter names is delegated:
 
 [role="api"]
 .`ParameterNameProvider` interface
@@ -1072,7 +1072,7 @@ include::{validation-api-source-dir}javax/validation/ParameterNameProvider.java[
 
 [tck-testable]
 --
-A conforming Bean Validation implementation provides a default [classname]`ParameterNameProvider` implementation which returns parameter names as stored in the class file containing the validated executable, if present. A conforming implementation must either use the Java reflection API or ensure behavioral compatibility to using the reflection API in the following way:
+A conforming {spec-name-bv} implementation provides a default [classname]`ParameterNameProvider` implementation which returns parameter names as stored in the class file containing the validated executable, if present. A conforming implementation must either use the Java reflection API or ensure behavioral compatibility to using the reflection API in the following way:
 
  * Obtain the method's or constructor's parameters via [methodname]`java.lang.reflect.Executable.getParameters()`
  * Obtain each parameter's name via [methodname]`java.lang.reflect.Parameter.getName()`
@@ -1080,9 +1080,9 @@ A conforming Bean Validation implementation provides a default [classname]`Param
 
 Depending on whether the class file of the validated executable contains parameter name information or not, the actual parameter names as provided in the executable's definition will be returned or synthetic names in the form arg``PARAMETER_INDEX``, where `PARAMETER_INDEX` starts at 0 for the first parameter, e.g. [varname]`arg0`, [varname]`arg1` etc.
 
-Bean Validation providers and integrators are free to provide additional implementations (e.g. based on annotations specifying parameter names, debug symbols etc.). If a user wishes to use another parameter name provider than the default implementation, they may specify the provider to use with help of the bootstrap API (see <<validationapi-bootstrapping>>) or the XML configuration (see <<validationapi-bootstrapping-xmlconfiguration>>).
+{spec-name-bv} providers and integrators are free to provide additional implementations (e.g. based on annotations specifying parameter names, debug symbols etc.). If a user wishes to use another parameter name provider than the default implementation, they may specify the provider to use with help of the bootstrap API (see <<validationapi-bootstrapping>>) or the XML configuration (see <<validationapi-bootstrapping-xmlconfiguration>>).
 
-[tck-testable]#If an exception occurs during invocation of the [methodname]`getParameterNames()` methods, this exception is wrapped into a [classname]`ValidationException` by the Bean Validation engine.#
+[tck-testable]#If an exception occurs during invocation of the [methodname]`getParameterNames()` methods, this exception is wrapped into a [classname]`ValidationException` by the {spec-name-bv} engine.#
 
 [[constraintdeclarationvalidationprocess-methodlevelconstraints-returnvalueconstraints]]
 ==== Declaring return value constraints
@@ -1136,11 +1136,11 @@ Like parameter constraints, these return value constraints are not per-se valida
 [[constraintdeclarationvalidationprocess-methodlevelconstraints-cascadedvalidation]]
 ==== Marking parameters and return values for cascaded validation
 
-[tck-testable]#The [classname]`@Valid` annotation is used to declare that a cascaded validation of the given method/constructor parameters or return values is performed by the Bean Validation provider. When marked, the parameter or return value is considered a bean object to validate.# The same rules as for standard object graph validation (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) apply, in particular
+[tck-testable]#The [classname]`@Valid` annotation is used to declare that a cascaded validation of the given method/constructor parameters or return values is performed by the {spec-name-bv} provider. When marked, the parameter or return value is considered a bean object to validate.# The same rules as for standard object graph validation (see <<constraintdeclarationvalidationprocess-validationroutine-graphvalidation>>) apply, in particular
 
 * [tck-testable]#null arguments and null return values are ignored#
 * [tck-testable]#The validation is recursive; that is, if validated parameter or return value objects have references marked with [classname]`@Valid` themselves, these references will also be validated#
-* [tck-not-testable]#Bean Validation providers must guarantee the prevention of infinite loops during cascaded validation#
+* [tck-not-testable]#{spec-name-bv} providers must guarantee the prevention of infinite loops during cascaded validation#
 
 
 .Marking parameters and return values for cascaded validation
@@ -1200,7 +1200,7 @@ Therefore the following rules with respect to the definition of method level con
 * [tck-testable]#One must not mark a method return value for cascaded validation more than once in a line of a class hierarchy. In other words, overriding methods on sub types (be it sub classes/interfaces or interface implementations) cannot mark the return value for cascaded validation if the return value has already been marked on the overridden method of the super type or interface.#
 
 
-[tck-testable]#Out of the box, a conforming Bean Validation provider must throw a [classname]`ConstraintDeclarationException` when discovering that any of these rules are violated.# In addition providers may implement alternative, potentially more liberal, approaches for handling constrained methods in inheritance hierarchies. Possible means for activating such alternative behavior include provider-specific configuration properties or annotations. Note that client code relying on such alternative behavior is not portable between Bean Validation providers.
+[tck-testable]#Out of the box, a conforming {spec-name-bv} provider must throw a [classname]`ConstraintDeclarationException` when discovering that any of these rules are violated.# In addition providers may implement alternative, potentially more liberal, approaches for handling constrained methods in inheritance hierarchies. Possible means for activating such alternative behavior include provider-specific configuration properties or annotations. Note that client code relying on such alternative behavior is not portable between {spec-name-bv} providers.
 
 [tck-testable]#The above rules do not apply when validating constructor constraints as constructors do not override one another. Parameter and return value constraints can be applied to any constructor in the type hierarchy, but only the constraints defined directly on the validated constructor are evaluated.#
 
@@ -1354,18 +1354,18 @@ The object validation routine is described as such. For each constraint declarat
 * determine for the constraint declaration, the appropriate [classname]`ConstraintValidator` to use (see <<constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution>>).
 * execute the [methodname]`isValid` operation (from the constraint validation implementation) on the appropriate data (see <<constraintsdefinitionimplementation-validationimplementation>>)
 * if [methodname]`isValid()` returns `true`, continue to the next constraint,
-* if [methodname]`isValid()` returns `false`, the Bean Validation provider populates [classname]`ConstraintViolation` object(s) according to the rules defined in <<constraintsdefinitionimplementation-validationimplementation>> and appends these objects to the list of constraint violations.
+* if [methodname]`isValid()` returns `false`, the {spec-name-bv} provider populates [classname]`ConstraintViolation` object(s) according to the rules defined in <<constraintsdefinitionimplementation-validationimplementation>> and appends these objects to the list of constraint violations.
 --
 
 [[constraintdeclarationvalidationprocess-validationroutine-graphvalidation]]
 
 ==== Object graph validation
 
-[tck-testable]#The [classname]`@Valid` annotation on a given association (i.e. object reference or collection, array, [classname]`Iterable` of objects), dictates the Bean Validation implementation to apply recursively the Bean Validation routine on (each of) the associated object(s).# [tck-testable]#This mechanism is recursive: an associated object can itself contain cascaded references.#
+[tck-testable]#The [classname]`@Valid` annotation on a given association (i.e. object reference or collection, array, [classname]`Iterable` of objects), dictates the {spec-name-bv} implementation to apply recursively the {spec-name-bv} routine on (each of) the associated object(s).# [tck-testable]#This mechanism is recursive: an associated object can itself contain cascaded references.#
 
 [tck-testable]#Null references are ignored.#
 
-[tck-testable]#To prevent infinite loops, the Bean Validation implementation must ignore the cascading operation if the associated object instance has already been validated in the current navigation path (starting from the root object).# See <<example-oglimit>> for an example. A navigation path is defined as a set of [classname]`@Valid` associations starting from the root object instance and reaching the associated instance. A given navigation path cannot contain the same instance multiple times (the complete validated object graph can though). See <<example-oglimit>> for an example.
+[tck-testable]#To prevent infinite loops, the {spec-name-bv} implementation must ignore the cascading operation if the associated object instance has already been validated in the current navigation path (starting from the root object).# See <<example-oglimit>> for an example. A navigation path is defined as a set of [classname]`@Valid` associations starting from the root object instance and reaching the associated instance. A given navigation path cannot contain the same instance multiple times (the complete validated object graph can though). See <<example-oglimit>> for an example.
 
 [NOTE]
 ====
@@ -1538,7 +1538,7 @@ The object validation routine is as defined in described in <<constraintdeclarat
 
 In some cases, the state of some properties should not be accessed. For example, if a property loaded by a {spec-name-persistence} provider is a lazy property or a lazy association, accessing its state would trigger a load from the database. An undesired behavior.
 
-Bean Validation offers a way to control which property can and cannot be accessed via the [classname]`TraversableResolver.isReachable`() contract.
+{spec-name-bv} offers a way to control which property can and cannot be accessed via the [classname]`TraversableResolver.isReachable`() contract.
 
 Likewise, it is sometimes undesirable to cascade validation despite the use of [classname]`@Valid`. {spec-name-persistence} 2 for example does not cascade to associated entities during flush. You can control this behavior by implementing [methodname]`TraversableResolver.isCascadable()`.
 
@@ -1570,7 +1570,7 @@ include::{validation-api-source-dir}javax/validation/TraversableResolver.java[li
 
 [tck-testable]#`elementType` is the [classname]`java.lang.annotation.ElementType` the annotation is placed on. It can be either `FIELD` or `METHOD`. Any other value is not expected.#
 
-[tck-testable]#The Bean Validation provider must not access the state of a property, nor validate its constraints if the property is not traversable. A property is traversable if [classname]`TraversableResolver` returns `true` for this property.#
+[tck-testable]#The {spec-name-bv} provider must not access the state of a property, nor validate its constraints if the property is not traversable. A property is traversable if [classname]`TraversableResolver` returns `true` for this property.#
 
 [tck-testable]#If an exception occurs when the [classname]`TraversableResolver` is called, the exception is wrapped into a [classname]`ValidationException`.#
 
@@ -1585,7 +1585,7 @@ The following elements are not passed through the traversable resolver filter:
 
 [tck-testable]#But the properties of these elements (if validated) are. In this case the complete path is provided via `pathToTraversableObject`.#
 
-The traversable resolver used by default by a Bean Validation provider behaves as followed:
+The traversable resolver used by default by a {spec-name-bv} provider behaves as followed:
 
 * [tck-not-testable]#if {spec-name-persistence} is available in the runtime environment, a property is considered reachable if {spec-name-persistence} considers the property as loaded.# A typical implementation will use [code]`Persistence.getPersistenceUtil().isLoaded(Object, String)` to implement such contract.
 * [tck-not-testable]#if {spec-name-persistence} is not available in the runtime environment, all properties are considered reachable.#
@@ -1731,7 +1731,7 @@ public class Address {
 
 ====
 
-When the Bean Validation provider is about to check constraints of `ISO3Code`, it calls the [classname]`TraversableResolver.isReachable()` method to ensure that the `ISO3Code` property is reachable with the following parameter values:
+When the {spec-name-bv} provider is about to check constraints of `ISO3Code`, it calls the [classname]`TraversableResolver.isReachable()` method to ensure that the `ISO3Code` property is reachable with the following parameter values:
 
 * `traversableObject`: country. The instance returned by [code]`address.getCountry()`.
 * `traversableProperty`: a [classname]`PropertyNode` whose name is "ISO3Code". Represents the property of `traversableObject` being verified.
@@ -1740,7 +1740,7 @@ When the Bean Validation provider is about to check constraints of `ISO3Code`, i
 * `elementType`: [classname]`ElementType.FIELD`. The ISO3Code property is annotated on its field.
 
 
-When the Bean Validation provider is about to cascade validation on `country` ([classname]`Address` object), it calls the [classname]`TraversableResolver.isReachable()` method to ensure that the `country` property is reachable and if this method returns `true`, it calls [classname]`TraversableResolver.isCascadable()` with the following parameter values:
+When the {spec-name-bv} provider is about to cascade validation on `country` ([classname]`Address` object), it calls the [classname]`TraversableResolver.isReachable()` method to ensure that the `country` property is reachable and if this method returns `true`, it calls [classname]`TraversableResolver.isCascadable()` with the following parameter values:
 
 * `traversableObject`: address. The address instance.
 * `traversableProperty`: a [classname]`PropertyNode` whose name is "country". Represents the property of `traversableObject` being verified.
@@ -1749,7 +1749,7 @@ When the Bean Validation provider is about to cascade validation on `country` ([
 * `elementType`: [classname]`ElementType.FIELD`. The country property is annotated on its field.
 
 
-The following example shows invocations of the [classname]`TraversableResolver` as to be performed by the Bean Validation provider during method validation. The example is based on the object graph defined in <<example-ognav-definitions>> and the [classname]`AddressService` class shown in <<example-ognav-definitions-methodvalidation>>. It assumes that a call of [methodname]`persistAddress()` is subject to method parameter validation.
+The following example shows invocations of the [classname]`TraversableResolver` as to be performed by the {spec-name-bv} provider during method validation. The example is based on the object graph defined in <<example-ognav-definitions>> and the [classname]`AddressService` class shown in <<example-ognav-definitions-methodvalidation>>. It assumes that a call of [methodname]`persistAddress()` is subject to method parameter validation.
 
 [[example-ognav-definitions-methodvalidation]]
 
@@ -1767,9 +1767,9 @@ public class AddressService {
 
 ====
 
-When the Bean Validation provider is about to validate the [classname]`@NotNull` constraint on the [varname]`address` parameter, no call to [methodname]`isReachable()` is expected, since parameters are assumed to always be reachable. Similarly, no call to [methodname]`isCascadable()` is expected when performing cascaded validation of the [varname]`address` parameter, since parameters are assumed to always be cascadable.
+When the {spec-name-bv} provider is about to validate the [classname]`@NotNull` constraint on the [varname]`address` parameter, no call to [methodname]`isReachable()` is expected, since parameters are assumed to always be reachable. Similarly, no call to [methodname]`isCascadable()` is expected when performing cascaded validation of the [varname]`address` parameter, since parameters are assumed to always be cascadable.
 
-When the Bean Validation provider is about to validate constraints on the field [varname]`addressline1` of the passed [classname]`Address` object, it calls the [methodname]`isReachable()` method to ensure that the property is reachable with the following parameter values:
+When the {spec-name-bv} provider is about to validate constraints on the field [varname]`addressline1` of the passed [classname]`Address` object, it calls the [methodname]`isReachable()` method to ensure that the property is reachable with the following parameter values:
 
 * `traversableObject`: address. The instance passed to [methodname]`persistAddress()`.
 * `traversableProperty`: a [classname]`PropertyNode` whose name is "addressline1". Represents the property of `traversableObject` being verified.
@@ -1778,7 +1778,7 @@ When the Bean Validation provider is about to validate constraints on the field 
 * `elementType`: [classname]`ElementType.FIELD`. The [varname]`addressline1` property is annotated on its field.
 
 
-When the Bean Validation provider is about to perform a cascaded validation of the [varname]`country` property of the passed [classname]`Address` object, it calls the [methodname]`isReachable()` method to ensure that the property is reachable. If this method returns `true`, it calls [classname]`TraversableResolver.isCascadable()` with the following parameter values:
+When the {spec-name-bv} provider is about to perform a cascaded validation of the [varname]`country` property of the passed [classname]`Address` object, it calls the [methodname]`isReachable()` method to ensure that the property is reachable. If this method returns `true`, it calls [classname]`TraversableResolver.isCascadable()` with the following parameter values:
 
 * `traversableObject`: address. The instance passed to [methodname]`persistAddress()`.
 * `traversableProperty`: a [classname]`PropertyNode` whose name is "country". Represents the property of `traversableObject` being verified.
@@ -1822,7 +1822,7 @@ When validating a generic constraint [classname]`A` placed on a target declaring
 
 [NOTE]
 ====
-While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or an annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages Bean Validation providers to provide such a tool to their users.
+While the Java compiler itself cannot determine if a constraint declaration will lead to a [classname]`UnexpectedTypeException`, rules can be statically checked. A tool such as an IDE or an annotation processor can apply these rules and prevent compilation in case of ambiguity. The specification encourages {spec-name-bv} providers to provide such a tool to their users.
 ====
 
 Let's see a couple of declarations and their respective [classname]`ConstraintValidator` resolution. Assuming the definitions shown in <<example-constraintvalidator-resolution>>:

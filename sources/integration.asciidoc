@@ -7,13 +7,13 @@
 
 == Integration
 
-In this chapter, integration points between Bean Validation and other technologies are discussed. We first address the integration in generic terms applying to all integrations and we then detail how integration with various {spec-name-eeplatform} specifications is handled more specifically.
+In this chapter, integration points between {spec-name-bv} and other technologies are discussed. We first address the integration in generic terms applying to all integrations and we then detail how integration with various {spec-name-eeplatform} specifications is handled more specifically.
 
 [[integration-general]]
 
 === General requirements
 
-This section covers general requirements that should be followed by any container and interception technology integrating Bean Validation.
+This section covers general requirements that should be followed by any container and interception technology integrating {spec-name-bv}.
 
 [[integration-general-objectslifecycle]]
 ==== Objects lifecycle
@@ -22,10 +22,10 @@ Generally speaking, containers and frameworks controlling the lifecycle of objec
 
 * [tck-testable]#build and bootstrap the [classname]`ValidatorFactory` instance for an application.#
 * [tck-testable]#provide access to the [classname]`ValidatorFactory` instance as well as [classname]`Validator` instances in their default configuration using the paradigm of the container: for example, such instances would be injectable in other objects via a dependency injection framework.#
-* [tck-testable]#configure [classname]`ValidatorFactory` with a custom [classname]`ConstraintValidatorFactory` instance that returns managed [classname]`ConstraintValidator` instances, unless a custom [classname]`ConstraintValidatorFactory` is requested by the user. The scope of [classname]`ConstraintValidator` instances is still fully controlled by the Bean Validation provider as described in <<constraintsdefinitionimplementation-constraintfactory>>, but as managed beans they can receive expected services like injection of other objects.#
+* [tck-testable]#configure [classname]`ValidatorFactory` with a custom [classname]`ConstraintValidatorFactory` instance that returns managed [classname]`ConstraintValidator` instances, unless a custom [classname]`ConstraintValidatorFactory` is requested by the user. The scope of [classname]`ConstraintValidator` instances is still fully controlled by the {spec-name-bv} provider as described in <<constraintsdefinitionimplementation-constraintfactory>>, but as managed beans they can receive expected services like injection of other objects.#
 * [tck-testable]#configure [classname]`ValidatorFactory` with managed instances of [classname]`ConstraintValidatorFactory`, [classname]`MessageInterpolator`, [classname]`ParameterNameProvider`, [classname]`ClockProvider` and [classname]`TraversableResolver`, if such instances are defined in the XML deployment descriptor. Services provided by the container (like dependency injection) should thus be available to these instances.#
 * [tck-not-testable]#invoke [methodname]`ValidatorFactory.close()` when the [classname]`ValidatorFactory` instance is no longer needed.#
-* [tck-not-testable]#dispose of managed instances provided to the Bean Validation bootstrap process after [methodname]`ValidatorFactory.close()` has been invoked.#
+* [tck-not-testable]#dispose of managed instances provided to the {spec-name-bv} bootstrap process after [methodname]`ValidatorFactory.close()` has been invoked.#
 
 
 [IMPORTANT]
@@ -37,13 +37,13 @@ In this context, a default [classname]`ValidatorFactory` is a factory configured
 
 ==== Method and constructor validation
 
-This section expresses the behavior that integration with interception frameworks should follow. Any deviation should be considered with care as it will surprise Bean Validation users.
+This section expresses the behavior that integration with interception frameworks should follow. Any deviation should be considered with care as it will surprise {spec-name-bv} users.
 
 [tck-testable]#Method interception frameworks (such as AOP or interceptor frameworks) enable interception of constrained methods following the steps defined in <<validationapi-triggeringmethodvalidation>>.# [tck-testable]#Method validation execution is implicit for any method or constructor annotated with constraints.#
 
 [tck-testable]#By default, method validation is applied to all constrained methods or constructors provided the integration technology can intercept the call. By default, getters (as defined in <<constraintdeclarationvalidationprocess-requirements>>) are not considered constrained methods.# [tck-not-testable]#Static methods are ignored by validation. Putting constraints on a static method is not portable.#
 
-Bean Validation - via the interception technology - offers a way to customize whether or not a constructor, method or getter is validated when executed. This is achieved:
+{spec-name-bv} - via the interception technology - offers a way to customize whether or not a constructor, method or getter is validated when executed. This is achieved:
 
 * via the [classname]`@ValidateOnExecution` annotation on the executable (see <<example-validateonexecution>>)
 * via the [classname]`@ValidateOnExecution` annotation on the type declaring the executable
@@ -133,7 +133,7 @@ include::{validation-api-source-dir}javax/validation/executable/ExecutableType.j
 
 [NOTE]
 ====
-The proper selection of the validated executables is the responsibility of the integration between the interception technology and Bean Validation. Bean Validation engines ignore the XML configuration around executable validation and [classname]`@ValidateOnExecution` when validating executables and when providing metadata.
+The proper selection of the validated executables is the responsibility of the integration between the interception technology and {spec-name-bv}. {spec-name-bv} engines ignore the XML configuration around executable validation and [classname]`@ValidateOnExecution` when validating executables and when providing metadata.
 ====
 
 [[integration-general-executable-examples]]
@@ -207,13 +207,13 @@ All constructors and non-getter methods of [classname]`ComplexOrderService` are 
 @Resource Validator validator;
 ----
 
-[tck-testable]#When the application is {spec-name-di} enabled, the [classname]`ValidatorFactory` and [classname]`Validator` instances returned by JNDI or [classname]`@Resource` injection are {spec-name-di} enhanced as defined in <<integration-dependencyinjection>>.# In particular, dependency injection is available to Bean Validation components.
+[tck-testable]#When the application is {spec-name-di} enabled, the [classname]`ValidatorFactory` and [classname]`Validator` instances returned by JNDI or [classname]`@Resource` injection are {spec-name-di} enhanced as defined in <<integration-dependencyinjection>>.# In particular, dependency injection is available to {spec-name-bv} components.
 
 [[integration-dependencyinjection]]
 
 === {spec-name-di} integration
 
-There are several integrations points between Bean Validation and {spec-name-di}. If a Bean Validation provider integrates with {spec-name-di}, it must follow the rules laid out in this section. In a {spec-name-eeplatform} container, a [tck-testable]#Bean Validation provider must integrate with {spec-name-di}.#
+There are several integrations points between {spec-name-bv} and {spec-name-di}. If a {spec-name-bv} provider integrates with {spec-name-di}, it must follow the rules laid out in this section. In a {spec-name-eeplatform} container, a [tck-testable]#{spec-name-bv} provider must integrate with {spec-name-di}.#
 
 [[integration-dependencyinjection-validatorfactory]]
 ==== [classname]`ValidatorFactory` and [classname]`Validator`
@@ -254,14 +254,14 @@ If no custom [classname]`ConstraintValidatorFactory` is requested by the user, t
 * calls [classname]`InjectionTarget.preDestroy()` and [classname]`InjectionTarget.dispose()` upon [classname]`ConstraintValidatorFactory.releaseInstance` (see also <<constraintsdefinitionimplementation-constraintfactory>> for more information about the lifecycle of a [classname]`ConstraintValidator`).
 --
 
-[tck-not-testable]#Using directly or indirectly a {spec-name-persistence} [classname]`EntityManager` that might call back Bean Validation for validation is not allowed in the Bean Validation extension points and in [classname]`ConstraintValidator` instances. This would lead to infinite flush or unexpected behavior.#
+[tck-not-testable]#Using directly or indirectly a {spec-name-persistence} [classname]`EntityManager` that might call back {spec-name-bv} for validation is not allowed in the {spec-name-bv} extension points and in [classname]`ConstraintValidator` instances. This would lead to infinite flush or unexpected behavior.#
 
 [[integration-dependencyinjection-methodconstructorvalidation]]
 ==== Method and constructor validation
 
-[tck-testable]#Bean Validation requires that {spec-name-di} beans support constructor and method validation as defined in <<integration-general-executable>>. Validation must happen at the equivalent time an interceptor occurs when having priority `Interceptor.Priority.PLATFORM_AFTER+800`, in other words priority of `4800`.#
+[tck-testable]#{spec-name-bv} requires that {spec-name-di} beans support constructor and method validation as defined in <<integration-general-executable>>. Validation must happen at the equivalent time an interceptor occurs when having priority `Interceptor.Priority.PLATFORM_AFTER+800`, in other words priority of `4800`.#
 
-[tck-not-testable]#For maximum portability, it is recommended to mark {spec-name-di} bean interfaces and classes involved in executable validation with [classname]`@ValidateOnExecution` (defaults to `IMPLICIT`). This helps some implementations to bind the method validation interceptor. Most {spec-name-di} - Bean Validation integration implementations do not need such marker. In particular this marker should not be needed on validated beans annotated with constraint annotations, [classname]`@Valid` or [classname]`@ValidateOnExecution` anywhere in the class. Such limitation will be removed in a future version of this specification.#
+[tck-not-testable]#For maximum portability, it is recommended to mark {spec-name-di} bean interfaces and classes involved in executable validation with [classname]`@ValidateOnExecution` (defaults to `IMPLICIT`). This helps some implementations to bind the method validation interceptor. Most {spec-name-di} - {spec-name-bv} integration implementations do not need such marker. In particular this marker should not be needed on validated beans annotated with constraint annotations, [classname]`@Valid` or [classname]`@ValidateOnExecution` anywhere in the class. Such limitation will be removed in a future version of this specification.#
 
 [NOTE]
 .Discussion on possible implementations
