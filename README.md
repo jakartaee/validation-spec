@@ -1,7 +1,7 @@
-# Bean Validation specification
+# Jakarta Bean Validation specification
 
-This repository contains the Bean Validation specification. 
-For more information on Bean Validation and the work in progress,
+This repository contains the Jakarta Bean Validation specification. 
+For more information on Jakarta Bean Validation and the work in progress,
 go to <http://beanvalidation.org>.
 
 ## Building docs
@@ -17,8 +17,8 @@ also the default target.
 
 ## Tagging phrases for the TCK
 
-The [Bean Validation TCK](https://github.com/beanvalidation/beanvalidation-tck) is a suite of unit
-tests for validating the compliance of Bean Validation implementations with the specification.
+The [Jakarta Bean Validation TCK](https://github.com/beanvalidation/beanvalidation-tck) is a suite of unit
+tests for validating the compliance of Jakarta Bean Validation implementations with the specification.
 
 The tests of the TCK are based on assertions representing sentences and phrases in this
 specification. Labels on specific text elements of the specification are used to mark those which

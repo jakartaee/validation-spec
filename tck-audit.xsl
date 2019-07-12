@@ -125,7 +125,7 @@
         <xsl:text>&#10;</xsl:text>
         <xsl:comment>
 
-    Bean Validation TCK
+    Jakarta Bean Validation TCK
 
     License: Apache License, Version 2.0
     See the license.txt file in the root directory or &lt;http://www.apache.org/licenses/LICENSE-2.0&gt;.
