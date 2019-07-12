@@ -152,7 +152,7 @@
             <xsl:with-param name="sectionId"><xsl:value-of select="@xml:id" /></xsl:with-param>
             <xsl:with-param name="sectionNum"><xsl:value-of select="@sectionNum" /></xsl:with-param>
         </xsl:call-template>
-        <section>
+        <section xmlns="http://jboss.com/products/weld/tck/audit">
             <xsl:attribute name="id"><xsl:value-of select="@xml:id" /></xsl:attribute>
             <xsl:attribute name="title"><xsl:value-of select="normalize-space(translate(title, '’', $apos))" /></xsl:attribute>
             <xsl:attribute name="level"><xsl:value-of select="count(ancestor::section) + 1" /></xsl:attribute>
@@ -187,7 +187,7 @@
             </xsl:choose>
         </xsl:variable>
 
-        <assertion>
+        <assertion xmlns="http://jboss.com/products/weld/tck/audit">
             <xsl:attribute name="id">
                 <xsl:number count="*[starts-with(@role, 'tck')]" from="section" level="any" format="a" />
             </xsl:attribute>
@@ -195,7 +195,7 @@
                 <xsl:attribute name="testable">false</xsl:attribute>
             </xsl:if>
 
-            <text>
+            <text xmlns="http://jboss.com/products/weld/tck/audit">
                 <xsl:choose>
                     <!-- Remove trailing ":" -->
                     <xsl:when test="substring($assertionText, string-length($assertionText)) = ':'">
@@ -208,7 +208,7 @@
             </text>
 
             <xsl:if test="contains(@role, 'tck-needs-update')">
-                <note>Needs update</note>
+                <note xmlns="http://jboss.com/products/weld/tck/audit">Needs update</note>
             </xsl:if>
         </assertion>
     </xsl:template>
