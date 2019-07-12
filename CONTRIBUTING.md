@@ -12,5 +12,3 @@ Please see the following pages to learn more about contributing to the Jakarta B
 
 Before working on a feature for a long time, it is recommended to discuss the suggested change,
 e.g. by sending a mail to the [beanvalidation-dev](http://lists.jboss.org/pipermail/beanvalidation-dev/) mailing list.
-If there's agreement on a given change and this is your first pull request for Jakarta Bean Validation,
-please sign the [Contributor License Agreement](https://cla.jboss.org/) for the "Jakarta Bean Validation" project.

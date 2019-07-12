@@ -2,7 +2,7 @@
 
 This repository contains the Jakarta Bean Validation specification. 
 For more information on Jakarta Bean Validation and the work in progress,
-go to <http://beanvalidation.org>.
+go to <https://beanvalidation.org>.
 
 ## Building docs
 
