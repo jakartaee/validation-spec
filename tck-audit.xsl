@@ -40,6 +40,7 @@
 
     <xsl:param name="currentDate"/>
     <xsl:param name="repositoryRevision"/>
+    <xsl:param name="beanValidationVersion"/>
 
     <!-- A regular apostroph; provided as a variable to avoid escaping issues -->
     <xsl:variable name="apos">'</xsl:variable>
@@ -140,7 +141,8 @@
 
         <specification xmlns="http://jboss.com/products/weld/tck/audit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://jboss.com/products/weld/tck/audit" name="Jakarta Bean Validation 2.0"
-            version="2.0.0" id="beanvalidation" generateSectionIds="true">
+            id="beanvalidation" generateSectionIds="true">
+            <xsl:attribute name="version"><xsl:value-of select="$beanValidationVersion"/></xsl:attribute>
 
             <xsl:apply-templates mode="createAuditFile"/>
 
