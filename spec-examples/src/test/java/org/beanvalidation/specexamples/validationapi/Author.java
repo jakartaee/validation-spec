@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.validationapi;
 
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.Size;
 
 //tag::include[]
 public class Author {

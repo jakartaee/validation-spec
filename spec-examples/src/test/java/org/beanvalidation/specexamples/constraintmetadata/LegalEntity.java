@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintmetadata;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 //tag::include[]
 public interface LegalEntity {

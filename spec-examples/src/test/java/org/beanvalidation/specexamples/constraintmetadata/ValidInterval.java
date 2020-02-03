@@ -10,18 +10,18 @@ import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import static javax.validation.constraintvalidation.ValidationTarget.PARAMETERS;
+import static jakarta.validation.constraintvalidation.ValidationTarget.PARAMETERS;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import javax.validation.Constraint;
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.Payload;
-import javax.validation.constraintvalidation.SupportedValidationTarget;
+import jakarta.validation.Constraint;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.Payload;
+import jakarta.validation.constraintvalidation.SupportedValidationTarget;
 
 import org.beanvalidation.specexamples.constraintmetadata.ValidInterval.List;
 //tag::include[]

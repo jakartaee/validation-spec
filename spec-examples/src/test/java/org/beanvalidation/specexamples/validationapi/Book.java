@@ -8,10 +8,10 @@ package org.beanvalidation.specexamples.validationapi;
 
 import java.util.List;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import javax.validation.groups.Default;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.Default;
 
 //tag::include[]
 public class Book {

@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.explicitlist;
 
-import javax.validation.groups.Default;
+import jakarta.validation.groups.Default;
 
 import org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.SuperUser;
 import org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint.ZipCode;

@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint;
 
-import javax.validation.groups.Default;
+import jakarta.validation.groups.Default;
 
 //tag::include[]
 public class Address {

@@ -6,12 +6,12 @@
  */
 package org.beanvalidation.specexamples.constraintmetadata;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
-import javax.validation.groups.ConvertGroup;
-import javax.validation.groups.Default;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.groups.ConvertGroup;
+import jakarta.validation.groups.Default;
 
 //tag::include[]
 public class Book {

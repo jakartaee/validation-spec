@@ -11,11 +11,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import javax.validation.ConstraintViolation;
-import javax.validation.ElementKind;
-import javax.validation.Path.Node;
-import javax.validation.Validation;
-import javax.validation.Validator;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ElementKind;
+import jakarta.validation.Path.Node;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 
 /**
  * @author Gunnar Morling
