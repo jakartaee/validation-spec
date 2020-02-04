@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintdefinition.multivaluedconstraint;
 
-import javax.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidator;
 
 /**
  * @author Gunnar Morling

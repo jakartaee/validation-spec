@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintdefinition.annotation;
 
-import javax.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidator;
 
 abstract class ELAssertValidator implements ConstraintValidator<ELAssert, String> {
 }

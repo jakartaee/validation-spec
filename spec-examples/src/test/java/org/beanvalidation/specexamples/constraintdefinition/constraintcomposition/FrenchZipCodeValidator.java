@@ -6,7 +6,7 @@
  */
 package org.beanvalidation.specexamples.constraintdefinition.constraintcomposition;
 
-import javax.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidator;
 
 public abstract class FrenchZipCodeValidator implements ConstraintValidator<FrenchZipCode, String> {
 

@@ -8,9 +8,9 @@ package org.beanvalidation.specexamples.constraintdefinition.temporal;
 
 import java.time.ZonedDateTime;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-import javax.validation.constraints.Past;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import jakarta.validation.constraints.Past;
 
 //tag::include[]
 /**
