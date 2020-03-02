@@ -167,6 +167,9 @@
         <xsl:apply-templates select="section" mode="createAuditFile"/>
     </xsl:template>
 
+    <xsl:template match="section[ancestor::preface]" mode="createAuditFile">
+    </xsl:template>
+
     <xsl:template match="section[ancestor::appendix]" mode="createAuditFile">
     </xsl:template>
 
