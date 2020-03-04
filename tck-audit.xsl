@@ -139,8 +139,8 @@
         <xsl:text>&#10;</xsl:text>
 
         <specification xmlns="http://jboss.com/products/weld/tck/audit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://jboss.com/products/weld/tck/audit" name="Jakarta Bean Validation 2.0"
-            version="2.0.0" id="beanvalidation" generateSectionIds="true">
+            xsi:schemaLocation="http://jboss.com/products/weld/tck/audit" name="Jakarta Bean Validation 3.0"
+            version="3.0.0" id="beanvalidation" generateSectionIds="true">
 
             <xsl:apply-templates mode="createAuditFile"/>
 
