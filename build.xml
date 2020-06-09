@@ -10,9 +10,9 @@
 		<format property="current.date" pattern="yyyy-MM-dd"/>
 	</tstamp>
 
-	<property name="bv.version" value="3.0.0-SNAPSHOT" /><!-- e.g. '2.0.0.Alpha1' -->
+	<property name="bv.version" value="3.0.0-M1" /><!-- e.g. '2.0.0.Alpha1' -->
 	<property name="bv.version.spec" value="3.0" /><!-- The major.minor of the specification (no service releases) -->
-	<property name="bv.version.qualifier" value="SNAPSHOT" /><!-- e.g. ' (Early Draft 1)' - be careful about the space before the qualifier -->
+	<property name="bv.version.qualifier" value="Draft" /><!-- e.g. ' (Early Draft 1)' - be careful about the space before the qualifier -->
 	<property name="bv.revdate" value="${current.date}" /> <!-- Replace with fixed date when releasing -->
         <!-- value to use for releasing: license-final -->
 	<property name="license" value="license-final" />
@@ -26,7 +26,7 @@
 	<property name="hibernate-asciidoctor-theme.version" value="1.0.2.Final" />
 	<property name="hibernate-asciidoctor-extensions.version" value="1.0.2.Final" />
 	<property name="maven-dependency-plugin.version" value="2.10" />
-	<property name="pdf.name" value="bean-validation-specification.pdf"/>
+	<property name="base.name" value="bean-validation-specification"/>
 	<property name="spec.styles.dir" value="${basedir}/styles"/>
 	<property name="document.basedir" value="${basedir}"/>
 	<property name="validation-api.sourcedir" value="target/validation-api" />
@@ -121,6 +121,7 @@
 
 	<target name="render-html" depends="clean-html-output, have-dependencies, html-output-dir-exists">
 		<renderer outputDirectory="target/html" backend="html" sourceHighlighter="coderay" />
+		<move file="target/html/index.html" tofile="target/html/${base.name}-${bv.version}.html" />
 	</target>
 
 	<target name="render-docbook" depends="clean-docbook-output, have-dependencies, docbook-output-dir-exists">
@@ -129,6 +130,7 @@
 
 	<target name="render-pdf" depends="clean-pdf-output, have-dependencies, pdf-output-dir-exists">
 		<renderer outputDirectory="target/pdf" backend="pdf" sourceHighlighter="coderay" />
+		<move file="target/pdf/index.pdf" tofile="target/pdf/${base.name}-${bv.version}.pdf" />
 	</target>
 
 	<target name="generate-preprocessed" depends="have-dependencies, preprocessed-output-dir-exists">
