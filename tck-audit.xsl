@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Jakarta Bean Validation: constrain once, validate everywhere.
+  ~ Jakarta Validation: constrain once, validate everywhere.
   ~
   ~ License: Apache License, Version 2.0
   ~ See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
@@ -125,7 +125,7 @@
         <xsl:text>&#10;</xsl:text>
         <xsl:comment>
 
-    Jakarta Bean Validation TCK
+    Jakarta Validation TCK
 
     License: Apache License, Version 2.0
     See the license.txt file in the root directory or &lt;http://www.apache.org/licenses/LICENSE-2.0&gt;.
@@ -139,7 +139,7 @@
         <xsl:text>&#10;</xsl:text>
 
         <specification xmlns="http://jboss.com/products/weld/tck/audit" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-            xsi:schemaLocation="http://jboss.com/products/weld/tck/audit" name="Jakarta Bean Validation 3.0"
+            xsi:schemaLocation="http://jboss.com/products/weld/tck/audit" name="Jakarta Validation 3.0"
             version="3.0.0" id="beanvalidation" generateSectionIds="true">
 
             <xsl:apply-templates mode="createAuditFile"/>
