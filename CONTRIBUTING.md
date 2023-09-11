@@ -1,4 +1,4 @@
-# Contributing to Eclipse Jakarta Validation
+!# Contributing to Eclipse Jakarta Validation
 
 Thanks for your interest in this project.
 

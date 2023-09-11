@@ -1,4 +1,4 @@
-# Notices for Eclipse Jakarta Validation
+!# Notices for Eclipse Jakarta Validation
 
 This content is produced and maintained by the Eclipse Jakarta Validation
 project.
