@@ -1,4 +1,4 @@
-#!/bin/bash
+!#!/bin/bash
 # Make sure there was no update to the used dependencies (if not, this is just a quick version check for Bundler)
 ant render-html
 rc=$?

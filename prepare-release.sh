@@ -1,4 +1,4 @@
-#! /bin/bash
+!#! /bin/bash
 
 RELEASE_VERSION=$1
 NEW_VERSION=$3

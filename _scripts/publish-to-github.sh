@@ -1,4 +1,4 @@
-#! /bin/bash
+!#! /bin/bash
 ant deep-clean render-html
 rc=$?
 if [[ $rc != 0 ]] ; then

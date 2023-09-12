@@ -1,7 +1,7 @@
-# Jakarta Bean Validation specification
+!# Jakarta Validation specification
 
-This repository contains the Jakarta Bean Validation specification. 
-For more information on Jakarta Bean Validation and the work in progress,
+This repository contains the Jakarta Validation specification. 
+For more information on Jakarta Validation and the work in progress,
 go to <https://beanvalidation.org>.
 
 ## Building docs
@@ -17,8 +17,8 @@ also the default target.
 
 ## Tagging phrases for the TCK
 
-The [Jakarta Bean Validation TCK](https://github.com/eclipse-ee4j/beanvalidation-tck) is a suite of unit
-tests for validating the compliance of Jakarta Bean Validation implementations with the specification.
+The [Jakarta Validation TCK](https://github.com/jakartaee/validation-tck) is a suite of unit
+tests for validating the compliance of Jakarta Validation implementations with the specification.
 
 The tests of the TCK are based on assertions representing sentences and phrases in this
 specification. Labels on specific text elements of the specification are used to mark those which
@@ -43,7 +43,7 @@ elements have been added, updated, removed or changed their position within all 
 a section.
 
 The generated file _target/tck-audit.xml_ should not be re-formatted and must be checked into the
-[TCK project](https://github.com/eclipse-ee4j/beanvalidation-tck/blob/master/tests/src/main/resources/tck-audit.xml).
+[TCK project](https://github.com/jakartaee/validation-tck/blob/master/tests/src/main/resources/tck-audit.xml).
 If an update changed the section numbers of existing assertions, the corresponding tests need to be
 adapted as well since they reference the section numbers in the `@SpecAssertion` annotation.
 
