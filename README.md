@@ -1,4 +1,4 @@
-!# Jakarta Validation specification
+# Jakarta Validation specification
 
 This repository contains the Jakarta Validation specification. 
 For more information on Jakarta Validation and the work in progress,
@@ -14,6 +14,8 @@ file _build.xml_ is located in this directory and all commands are relative to t
 also the default target.
 * Running `ant clean` will clean up output HTML and PDF files.
 * Running `ant render-html` will only build the HTML output (much faster).
+
+The pom.xml in the root directory is an in-progress migration to build with maven. It can be run with `mvn clean package`, however Ant is still currently the official build method.
 
 ## Tagging phrases for the TCK
 
