@@ -2,6 +2,8 @@
 //
 // License: Apache License, Version 2.0
 // See the license.txt file in the root directory or <http://www.apache.org/licenses/LICENSE-2.0>.
+:validation-api-source-dir: ../target/validation-api/
+:spec-examples-source-dir: ../spec-examples/src/test/java/
 
 [[constraintdeclarationvalidationprocess]]
 
@@ -1014,7 +1016,7 @@ Note that declaring these constraints does not automatically cause their validat
 
 [TIP]
 ====
-In order to use constraint annotations for method or constructor parameters, their element type must be [varname]`ElementType.PARAMETER`. In order to use constraint annotations for cross-parameter validation or on the return values of methods or constructors (see the following sections), their element type must be [varname]`ElementType.METHOD` respectively [varname]`ElementType.CONSTRUCTOR`. All built-in constraints support these element types and it is considered a best practice to do the same for custom constraints.
+In order to use constraint annotations for method or constructor parameters, their element type must be [varname]`ElementType.PARAMETER`. In order to use constraint annotations for cross-parameter validation or on the return values of methods or constructors (see the following sections), their element type must be [varname]`ElementType.METHOD` respectively [varname]`ElementType.CONSTRUCTOR`. All built-in constraints support these element types, and it is considered a best practice to do the same for custom constraints.
 ====
 
 [[constraintdeclarationvalidationprocess-methodlevelconstraints-parameterconstraints-crossparameterconstraints]]
@@ -2462,3 +2464,74 @@ the validation routine will return the following failures:
 
 
 As the [classname]`First` and [classname]`Second` groups pass without failure, the [classname]`Last` group is going through validation.
+
+Java records are supported by {spec-name-bv}. The following examples demonstrate how to use records with {spec-name-bv} constraints.
+
+.Example record constuctor parameter constraint and constructor return value constraint
+====
+
+[source, JAVA]
+----
+@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = ValidStockItemRecord.Validator.class)
+@Documented
+public @interface ValidStockItemRecord {
+	String message() default "{ValidStockItem.message}";
+
+	Class<?>[] groups() default { };
+
+	Class<? extends Payload>[] payload() default { };
+
+	public class Validator implements ConstraintValidator<ValidStockItemRecord, StockItemRecord> {
+
+		@Override
+		public boolean isValid(StockItemRecord object, ConstraintValidatorContext context) {
+			return false;
+		}
+	}
+}
+
+public record StockItemRecord(@NotNull String name) {
+    @ValidStockItemRecord
+    public StockItemRecord {
+    }
+}
+----
+Here the constructor parameter constraint is declared on the record components list and the return value constraint is declared on the compact constructor.
+
+====
+
+.Example record cross-parameter constraint with parameter constraints
+====
+
+[source, JAVA]
+----
+
+@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = MyCrossParameterConstraintValidator.class)
+@Documented
+public @interface MyCrossParameterConstraint {
+	String message() default "{MyCrossParameterConstraint.message}";
+
+	Class<?>[] groups() default { };
+
+	Class<? extends Payload>[] payload() default { };
+
+	@Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
+	@Retention(RUNTIME)
+	@Documented
+	@interface List {
+		MyCrossParameterConstraint[] value();
+	}
+}
+
+public record ComplexStockItemRecord(@NotNull String name, @NotNull String description) {
+    @MyCrossParameterConstraint
+    public ComplexStockItemRecord {
+    }
+}
+----
+Here the constructor parameter constraints are declared on the record components list and the cross-parameter constraint is declared on the compact constructor.
+====
