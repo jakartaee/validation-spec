@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      workflow-actions:
+        patterns:
+          - "*"
+    allow:
+      - dependency-name: "actions/*"
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      asciidoctor-dependencies:
+        patterns:
+          - "org.hibernate.infra*"
+          - "org.asciidoctor*"
+      build-dependencies:
+        patterns:
+          # Maven plugins:
+          - "*maven*plugin*"
+          - "org.apache.maven*:*"
+          # Test dependencies:
+          - "org.testng*"
+    ignore:
+      # we want to update this explicitly to match the api version we need:
+      - dependency-name: "jakarta.validation:*"
