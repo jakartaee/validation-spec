@@ -29,7 +29,7 @@
     <groupId>jakarta.validation</groupId>
     <version>4.0.0-SNAPSHOT</version>
 
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
     <name>Jakarta Validation Specification</name>
 
     <properties>
@@ -130,6 +130,13 @@
             <artifactId>hibernate-asciidoctor-theme</artifactId>
             <version>${hibernate-asciidoctor-theme.version}</version>
             <type>zip</type>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>${bv.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -274,7 +281,7 @@
                         <imagesdir>resources/images</imagesdir>
                         <tabsize>4</tabsize>
                         <validation-api-source-dir>${basedir}/target/validation-api/</validation-api-source-dir>
-                        <spec-examples-source-dir>${basedir}/spec-examples/src/test/java/</spec-examples-source-dir>
+                        <spec-examples-source-dir>${basedir}/src/test/java/</spec-examples-source-dir>
                     </attributes>
                     <extensions>
                         <extension>
@@ -282,7 +289,44 @@
                         </extension>
                     </extensions>
                 </configuration>
-            </plugin>       
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>3.0</version>
+                <configuration>
+                    <header>${project.basedir}/src/main/resources/license.header</header>
+                    <strictCheck>true</strictCheck>
+                    <headerDefinitions>
+                        <headerDefinition>${project.basedir}/src/main/resources/java-header-style.xml</headerDefinition>
+                        <headerDefinition>${project.basedir}/src/main/resources/xml-header-style.xml</headerDefinition>
+                    </headerDefinitions>
+                    <mapping>
+                        <java>JAVA_CLASS_STYLE</java>
+                        <xml>XML_FILE_STYLE</xml>
+                    </mapping>
+                    <includes>
+                        <include>**/*.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>license-headers</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- We don't have the tests that can be executed as that would require an implementation of the API. -->
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
