@@ -1791,9 +1791,33 @@ When the {spec-name-bv} provider is about to perform a cascaded validation of th
 * `elementType`: [classname]`ElementType.FIELD`. The [varname]`country` property is annotated on its field.
 
 
-[[constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution]]
+[[constraintdeclarationvalidationprocess-validationroutine-validatorresolution]]
+==== ConstraintValidator resolution
 
-==== ConstraintValidator resolution algorithm
+[[constraintdeclarationvalidationprocess-validationroutine-register-validators]]
+===== Registering ConstraintValidator implementations
+
+Constraint validators can be registered with the validation engine in the following ways:
+
+* Provided by the validation engine itself (see <<builtinconstraints,Built-in constraints>>)
+* [tck-testable]#Via the Java https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ServiceLoader.html[service loader] mechanism;
+for this the file _META-INF/services/jakarta.validation.ConstraintValidator_ must be provided#,
+with the fully-qualified name(s) of one or more constraint validator implementations as its contents.
+* [tck-testable]#Provided in the `validatedBy()` attribute of the `@jakarta.validation.Constraint` annotation#.
+* [tck-testable]#Through XML mapping# (see <<xml-mapping-constraintdeclarationinxml>>).
+
+[tck-testable]#If multiple constraint validators for the exactly same constraint and target type are registered via one of the above methods,
+a `jakarta.validation.ValidationException` is thrown,#
+[tck-testable]#unless the constraint validator configuration source allows specifying that it overrides any previously defined constraint validators
+for the particular constraint (e.g. <<xml-mapping-constraintdeclarationinxml-classleveloverriding>>/<<xml-mapping-constraintdeclarationinxml-constructorleveloverriding>>/<<xml-mapping-constraintdeclarationinxml-fieldleveloverriding>>/<<xml-mapping-constraintdeclarationinxml-methodleveloverriding>>/<<xml-mapping-constraintdeclarationinxml-propertyleveloverriding>>).#
+
+[NOTE]
+====
+{spec-name-bv} providers may have other means to register and/or override constraint validators.
+====
+
+[[constraintdeclarationvalidationprocess-validationroutine-typevalidatorresolution]]
+===== ConstraintValidator resolution algorithm
 
 A constraint is associated to one or more [classname]`ConstraintValidator` implementations. Each [classname]`ConstraintValidator<A, T>` accepts the type [classname]`T`. The [classname]`ConstraintValidator` executed depends on the type hosting the constraint. For a given constraint evaluation, a single [classname]`ConstraintValidator` is considered.
 
@@ -1909,7 +1933,7 @@ Exactly one value extractor must be identified when processing a container eleme
 Value extractors can be registered with the validation engine in the following ways (in increasing order of priority):
 
 * Provided by the validation engine itself (see <<valueextractordefinition-builtinvalueextractors>>)
-* [tck-testable]#Via the Java https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/jakarta.validation.valueextraction.ValueExtractor_ must be provided#,
+* [tck-testable]#Via the Java https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ServiceLoader.html[service loader] mechanism; for this the file _META-INF/services/jakarta.validation.valueextraction.ValueExtractor_ must be provided#,
 with the fully-qualified name(s) of one or more extractor implementations as its contents.
 It is undefined which value extractor will be selected if multiple extractors for the same type and type parameter are registered via the service loader mechanism.
 * [tck-testable]#By specifying the fully-qualified class name of one or several extractors in `META-INF/validation.xml`# (see <<validationapi-bootstrapping-xmlconfiguration>>). Not more than one extractor for the same type and type parameter may be given.
