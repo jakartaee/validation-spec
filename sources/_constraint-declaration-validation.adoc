@@ -93,7 +93,7 @@ In addition to supporting instance validation, validation of graphs of objects i
 [role="api"]
 .[classname]`@Valid` annotation
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/Valid.java[lines=20..-1]
 ----
@@ -138,7 +138,7 @@ A future revision of this specification might define support for such usages of 
 
 .Making elements of a list subject to graph validation
 ====
-[source, JAVA]
+[source, java]
 ----
 public class User {
 
@@ -159,7 +159,7 @@ public class User {
 
 .Making values of a map subject to graph validation
 ====
-[source, JAVA]
+[source, java]
 ----
 public class User {
 
@@ -180,7 +180,7 @@ public class User {
 
 .Making keys and values of a map subject to graph validation
 ====
-[source, JAVA]
+[source, java]
 ----
 public class User {
 
@@ -191,7 +191,7 @@ public class User {
 
 .Making elements of a nested list subject to graph validation
 ====
-[source, JAVA]
+[source, java]
 ----
 public class User {
     private Map<String, List<@Valid Address>> addressesByType;
@@ -207,7 +207,7 @@ Two value extractors are invoked for this:
 
 .Making keys and values of a nested map subject to graph validation
 ====
-[source, JAVA]
+[source, java]
 ----
 public class User {
     private Map<String, Map<@Valid AddressType, @Valid Address>> addressesByUserAndType;
@@ -254,7 +254,7 @@ A group defines a subset of constraints. Instead of validating all constraints f
 .Definition of groups
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * Validation group verifing that a user is billable
@@ -277,7 +277,7 @@ public interface BuyInOneClick {
 .Assign groups to constraints
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * User representation
@@ -303,7 +303,7 @@ public class User {
 [role="api"]
 .`Default` group
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/groups/Default.java[lines=7..-1]
 ----
@@ -317,7 +317,7 @@ In some situations, a group is a superset of one or more groups. This can be des
 .Groups can inherit other groups
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * Customer can buy without harrassing checking process
@@ -334,7 +334,7 @@ In the following example:
 .Use of a inherited group
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * User representation
@@ -393,7 +393,7 @@ Groups defining a sequence and groups composing a sequence must not be involved 
 [role="api"]
 .`@GroupSequence` annotation
 ====
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/GroupSequence.java[lines=18..-1]
 ----
@@ -406,7 +406,7 @@ Here is a usage example:
 .Make use of group sequence
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
 public class Address {
@@ -453,7 +453,7 @@ In <<example-groupsequence>>, validating the [classname]`Default` group does not
 .Redefining Default group for Address
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @GroupSequence({Address.class, HighLevelCoherence.class})
 @ZipCodeCoherenceChecker(groups = Address.HighLevelCoherence.class)
@@ -491,7 +491,7 @@ It is possible to implicitly group several constraints in the same group without
 .Example of interface / group hosting constraints
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * Auditable object contract
@@ -552,7 +552,7 @@ When performing cascading validation, it is possible to use a different group th
 [role="api"]
 .@ConvertGroup annotation
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/groups/ConvertGroup.java[lines=7..8;24..-1]
 ----
@@ -609,7 +609,7 @@ In this example we will reuse the [classname]`Address` group split and match it 
 
 .Example of group conversion
 ====
-[source, JAVA]
+[source, java]
 ----
 public interface Complete extends Default {}
 public interface BasicPostal {}
@@ -643,7 +643,7 @@ When validating an instance of [classname]`User` with the [classname]`Default` g
 
 .Example of container element validation with group conversion
 ====
-[source, JAVA]
+[source, java]
 ----
 public class User {
     Set<
@@ -662,7 +662,7 @@ The following example shows an illegal declaration of a group conversion rule on
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public interface BasicPostal {}
 
@@ -816,7 +816,7 @@ Container element constraints can be used within the following declarations:
 
 .Container element constraints
 ====
-[source, JAVA]
+[source, java]
 ----
 private List<@Email String> emails;
 
@@ -847,7 +847,7 @@ or multiple values in the case of collection types.
 
 .Container element constraints on nested containers
 ====
-[source, JAVA]
+[source, java]
 ----
 private Map<String, @NotEmpty List<@ValidAddress Address>> addressesByType;
 ----
@@ -867,7 +867,7 @@ I.e. the following usages are unsupported:
 
 .Unsupported usage of container element constraints on generic types and methods
 ====
-[source, JAVA]
+[source, java]
 ----
 public class NonNullList<@NotNull T> {
     [...]
@@ -894,7 +894,7 @@ Examples for types being subject to implicit unwrapping are `java.util.OptionalI
 
 .Implicit unwrapping of container elements
 ====
-[source, JAVA]
+[source, java]
 ----
 @Min(1)
 private OptionalInt optionalNumber;
@@ -918,7 +918,7 @@ If needed, the target (container or container element) of a constraint declared 
 [role="api"]
 .`Payload` types for unwrapping control
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/valueextraction/Unwrapping.java[lines=7..8;11..-1]
 ----
@@ -987,7 +987,7 @@ Getters are not considered constrained methods by default (see <<integration-gen
 .Declaring parameter constraints
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public class OrderService {
 
@@ -1031,7 +1031,7 @@ Cross-parameter constraints allow to express constraints based on the value of s
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public class CalendarService {
 
@@ -1068,7 +1068,7 @@ In case the validation of a parameter constraint fails, the concerned parameter 
 [role="api"]
 .`ParameterNameProvider` interface
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/ParameterNameProvider.java[lines=13..-1]
 ----
@@ -1099,7 +1099,7 @@ Some constraints can target both the return value and the array of parameters of
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public class OrderService {
 
@@ -1151,7 +1151,7 @@ Like parameter constraints, these return value constraints are not per-se valida
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public class OrderService {
 
@@ -1217,7 +1217,7 @@ This sections provides some examples of illegal constraint definitions which vio
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public interface OrderService {
 
@@ -1244,7 +1244,7 @@ The constraints in [classname]`SimpleOrderService` are illegal, as they strength
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public class OrderService {
 
@@ -1275,7 +1275,7 @@ The constraints in [classname]`SimpleOrderService` are illegal, as they strength
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public interface OrderService {
 
@@ -1307,7 +1307,7 @@ Here the class [classname]`SimpleOrderService` implements the interfaces [classn
 ====
 
 
-[source, JAVA]
+[source, java]
 ----
 public class OrderService {
 
@@ -1432,7 +1432,7 @@ The [classname]`ConstraintViolation` objects are built when a failing constraint
 .Class Driver with redefined default group
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @GroupSequence({ Minimal.class, Driver.class })
 public class Driver {
@@ -1454,7 +1454,7 @@ public class Driver {
 .Class Car with redefined default group
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @GroupSequence({ Car.class, Later.class })
 public class Car {
@@ -1473,7 +1473,7 @@ public class Car {
 .Defining a group sequence
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @GroupSequence({ Minimal.class, Later.class })
 public interface SequencedGroups {
@@ -1485,7 +1485,7 @@ public interface SequencedGroups {
 .Group sequence overriding is not propagated to associated objects
 ====
 
-[source, JAVA]
+[source, java]
 ----
 Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
@@ -1549,7 +1549,7 @@ Likewise, it is sometimes undesirable to cascade validation despite the use of [
 [role="api"]
 .`TraversableResolver` interface
 ====
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/TraversableResolver.java[lines=13..-1]
 ----
@@ -1603,7 +1603,7 @@ An example implementation of such a resolver is shown in <<constraintdeclaration
 .{spec-name-persistence} aware TraversableResolver
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public class JPATraversableResolver implements TraversableResolver {
 
@@ -1643,7 +1643,7 @@ The following example assumes the object graph defined in <<example-ognav-defini
 .Definitions used in the example
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public class Country {
     @NotNull
@@ -1760,7 +1760,7 @@ The following example shows invocations of the [classname]`TraversableResolver` 
 .Examplary class [classname]`AddressService`
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public class AddressService {
     public void persistAddress(@NotNull @Valid Address address) {
@@ -1836,7 +1836,7 @@ Let's see a couple of declarations and their respective [classname]`ConstraintVa
 .ConstraintValidator and type resolution
 ====
 
-[source, JAVA]
+[source, java]
 ----
 [...]
 @Constraint(validatedBy={
@@ -1984,7 +1984,7 @@ Let's consider a couple of value extractor definitions and their respective `Val
 
 .`ValueExtractor` resolution
 ====
-[source, JAVA]
+[source, java]
 ----
 public interface ConcurrentList<T> {
     [...]
@@ -2087,7 +2087,7 @@ The first example demonstrates how beans, fields and getters are annotated to ex
 .Place constraint declarations on the element to validate
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @ZipCodeCityCoherenceChecker
 public class Address {
@@ -2150,7 +2150,7 @@ The second example demonstrates object graph validation.
 .Define object graph validation
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public class Country {
     @NotNull
@@ -2246,7 +2246,7 @@ During the validation routine execution on an [classname]`Address` object, const
 
 Assuming that [classname]`@NonEmpty` is defined as such:
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/constraintdeclarationvalidation/resolution/NonEmpty.java[tags=include]
 ----
@@ -2256,7 +2256,7 @@ The third example demonstrates superclass, inheritance and composite constraints
 .Use inheritance, constraints on superclasses and composite constraints
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public interface Person {
     @NonEmpty
@@ -2355,7 +2355,7 @@ The fourth example demonstrates the influence of group sequence.
 .Use groups and group sequence to define constraint ordering
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @GroupSequence({First.class, Second.class, Last.class})
 public interface Complete {}
@@ -2436,7 +2436,7 @@ public class Author {
 
 Assuming the validation of the [classname]`Complete` group on the following book instance:
 
-[source, JAVA]
+[source, java]
 ----
 Author author = new Author();
 author.setLastName( "Baudelaire" );
@@ -2452,7 +2452,7 @@ the validation routine will return the following failure:
 
 As both [methodname]`title` and [methodname]`author.lastname` are checked as part of the `First` group. If the instance is updated:
 
-[source, JAVA]
+[source, java]
 ----
 book.setTitle( "Les fleurs du mal" );
 author.setCompany( "Some random publisher with a very very very long name" );
@@ -2471,7 +2471,7 @@ Java records are supported by {spec-name-bv}. The following examples demonstrate
 .Example record constuctor parameter constraint and constructor return value constraint
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
@@ -2506,7 +2506,7 @@ Here the constructor parameter constraint is declared on the record components l
 .Example record cross-parameter constraint with parameter constraints
 ====
 
-[source, JAVA]
+[source, java]
 ----
 
 @Target({ METHOD, CONSTRUCTOR, ANNOTATION_TYPE })
