@@ -23,7 +23,7 @@ A [classname]`Validator` instance is able to validate instances of beans and the
 .`Validator` interface
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/Validator.java[lines=15..-1]
 ----
@@ -41,7 +41,7 @@ The methods [methodname]`validate()`, [methodname]`validateProperty()` and [meth
 .Using unwrap to access a provider specific contract
 ====
 
-[source, JAVA]
+[source, java]
 ----
 //if using the ACME provider
 ACMEValidator acmeValidator = factory.unwrap(ACMEValidator.class);
@@ -81,7 +81,7 @@ However, constraints hosted on the most specific (hierarchy wise) element type a
 
 All the examples will be based on the following class definition, constraint declarations and address instance.
 
-[source, JAVA]
+[source, java]
 ----
 public class Address {
     @NotNull @Size(max=30)
@@ -137,21 +137,21 @@ address.setCity("Llanfairpwllgwyngyllgogerychwyrndrobwyll-llantysiliogogogoch");
 
 The following code will return two [classname]`ConstraintViolation` objects. One for `addressline1` violating `@NotNull` and one for `city` violating `@Size`.
 
-[source, JAVA]
+[source, java]
 ----
 validator.validate(address).size() == 2
 ----
 
 The following code will return one [classname]`ConstraintViolation` since `city` violates `@Size` and only `city` is validated.
 
-[source, JAVA]
+[source, java]
 ----
 validator.validateProperty(address, "city").size() == 1
 ----
 
 The following code will return no [classname]`ConstraintViolation` objects because the value "Paris" for `city` would not raise any constraint failures.
 
-[source, JAVA]
+[source, java]
 ----
 validator.validateValue(Address.class, "city", "Paris").size() == 0
 ----
@@ -166,7 +166,7 @@ The methods for the validation of parameters and return values of methods and co
 .`ExecutableValidator` interface
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/executable/ExecutableValidator.java[lines=7..8;16..-1]
 ----
@@ -188,7 +188,7 @@ include::{validation-api-source-dir}jakarta/validation/executable/ExecutableVali
 
 All the examples will be based on the following class definitions, constraint declarations and instances.
 
-[source, JAVA]
+[source, java]
 ----
 public class OrderService {
 
@@ -236,7 +236,7 @@ ExecutableValidator executableValidator = Validation
 
 The following method parameter validation will return one [classname]`ConstraintViolation` object as the customer code is null:
 
-[source, JAVA]
+[source, java]
 ----
 //orderService.placeOrder(null, item1, 1);
 executableValidator.validateParameters(
@@ -245,7 +245,7 @@ executableValidator.validateParameters(
 
 The following method parameter validation will return one [classname]`ConstraintViolation` object as the [varname]`item` parameter is marked for cascaded validation and the given [classname]`Item` instance is not valid (its name is null):
 
-[source, JAVA]
+[source, java]
 ----
 //orderService.placeOrder("CUST-123", item2, 1);
 executableValidator.validateParameters(
@@ -254,7 +254,7 @@ executableValidator.validateParameters(
 
 The following constructor parameter validation will return one [classname]`ConstraintViolation` object as null is passed for the [varname]`creditCardProcessor` parameter:
 
-[source, JAVA]
+[source, java]
 ----
 //new OrderService(null);
 executableValidator.validateConstructorParameters(constructor, new Object[] { null })
@@ -263,21 +263,21 @@ executableValidator.validateConstructorParameters(constructor, new Object[] { nu
 
 Assuming the [methodname]`placeOrder()` method returned [varname]`null`, the following return value validation will return one [classname]`ConstraintViolation`:
 
-[source, JAVA]
+[source, java]
 ----
 executableValidator.validateReturnValue(orderService, placeOrder, null).size() == 1;
 ----
 
 Assuming the constructor of [classname]`OrderService` failed to store the given credit card processor into the [varname]`creditCardProcessor` field, the following validation of the constructor return value would fail as the constructor is marked with [classname]`@Valid` and the [classname]`@NotNull` constraint of the [classname]`OrderService` class would be violated:
 
-[source, JAVA]
+[source, java]
 ----
 executableValidator.validateConstructorReturnValue(constructor, orderService).size() == 1;
 ----
 
 Let's now look at how a validation interceptor would use these methods.
 
-[source, JAVA]
+[source, java]
 ----
 @Interceptor
 public class SampleMethodInterceptor {
@@ -337,7 +337,7 @@ Groups allow you to restrict the set of constraints applied during validation. G
 [[validationapi-validatorapi-groups-examples]]
 ===== Examples
 
-[source, JAVA]
+[source, java]
 ----
 /** Validates a minimal set of constraints */
 public interface Minimal {}
@@ -360,21 +360,21 @@ public class Address {
 
 In the previous example, [classname]`@NonEmpty` (and its composing constraints, assuming the definition given in chapter <<constraintdeclarationvalidationprocess>>) on [methodname]`street1` applies to the group [classname]`Minimal`, [classname]`@Size` on [methodname]`street1` applies to the group `Default` and [classname]`@NonEmpty`(and its composing constraints) on [methodname]`zipCode` applies to the groups `Default` and `Minimal`.
 
-[source, JAVA]
+[source, java]
 ----
 validator.validate(address);
 ----
 
 validates the group [classname]`Default` (implicitly) and applies [classname]`@Size` on [methodname]`street1`, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`city`, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`zipCode`. Particularly, [classname]`@NonEmpty` (and its composing constraints) on [methodname]`street1` are not applied.
 
-[source, JAVA]
+[source, java]
 ----
 validator.validate(address, Minimal.class);
 ----
 
 applies [classname]`@NonEmpty` (and its composing constraints) on [methodname]`street1` and [classname]`@NonEmpty` (and its composing constraints) on [methodname]`zipCode` because they belong to the [classname]`Minimal` group.
 
-[source, JAVA]
+[source, java]
 ----
 validator.validate(address, Minimal.class, Default.class);
 ----
@@ -383,7 +383,7 @@ validates both [classname]`Default` and [classname]`Minimal` groups. The routine
 
 Let's look at a more complex example involving group sequence.
 
-[source, JAVA]
+[source, java]
 ----
 public class Address {
     @NonEmpty(groups = Minimal.class)
@@ -409,7 +409,7 @@ public class Address {
 
 When running:
 
-[source, JAVA]
+[source, java]
 ----
 validator.validate(address, Minimal.class, Total.class);
 ----
@@ -418,7 +418,7 @@ the validation process will process [classname]`@NonEmpty` (and its composing co
 
 When running:
 
-[source, JAVA]
+[source, java]
 ----
 validator.validate(address, Total.class, SecondStep.class);
 ----
@@ -439,7 +439,7 @@ If the group definition is invalid, a [classname]`GroupDefinitionException` is r
 [role="api"]
 .`ConstraintViolation` interface
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/ConstraintViolation.java[lines=11..-1]
 ----
@@ -482,12 +482,12 @@ The [methodname]`getLeafBean()` method returns the following object:
 .`Path` and `Node` interfaces and `ElementKind` enum
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/Path.java[lines=13..-1]
 ----
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/ElementKind.java[lines=9..-1]
 ----
@@ -538,7 +538,7 @@ the former returns the declared type of the container and, if the container is o
 .Narrow a node to its specific type
 ====
 
-[source, JAVA]
+[source, java]
 ----
 Node node = [...];
 switch ( node.getKind() ) {
@@ -678,7 +678,7 @@ Let there be the following object definitions:
 .Object model definition for examples
 ====
 
-[source, JAVA]
+[source, java]
 ----
 @SecurityChecking
 public class Author {
@@ -907,7 +907,7 @@ If a user wishes to send [classname]`ConstraintViolation` remotely, it should ma
 
 These examples assume the following definition of [classname]`@NonEmpty`:
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 package com.acme.constraint;
 
@@ -916,19 +916,19 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi
 
 And the following class definitions:
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/Author.java[tags=include]
 ----
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/Book.java[tags=include]
 ----
 
 When executing the following validation:
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=invocation]
 ----
@@ -940,7 +940,7 @@ The [classname]`ConstraintViolation` object for this failure passes the followin
 .Test assertions on `ContraintViolation` for `title`
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=title]
 ----
@@ -952,7 +952,7 @@ The second failure, `@NonEmpty` (or more precisely [classname]`@NotNull` a compo
 .Test assertions on `ContraintViolation` for `lastName`
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=lastName]
 ----
@@ -964,7 +964,7 @@ The third failure, `@Size` on one of the book's `tags`, will produce a `Constrai
 .Test assertions on `ContraintViolation` for `tags`
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi/ValidationApiTest.java[tags=tags]
 ----
@@ -976,7 +976,7 @@ include::{spec-examples-source-dir}org/beanvalidation/specexamples/validationapi
 
 The following examples assume the constraint, class and object definitions given in the previous section. Additionally the following class and object definitions are assumed:
 
-[source, JAVA]
+[source, java]
 ----
 public class Library {
 
@@ -1010,14 +1010,14 @@ author.setLastName("Doe");
 
 Assuming the following invocation of [methodname]`addBook()` is subject to method parameter validation:
 
-[source, JAVA]
+[source, java]
 ----
 library.addBook(null);
 ----
 
 Then one [classname]`ConstraintViolation` object would be returned by [methodname]`ExecutableValidator.validateParameters()` which satisfies the following assertions:
 
-[source, JAVA]
+[source, java]
 ----
 //assuming an english locale, the interpolated message is returned
 assert "must not be null".equals( constraintViolation.getMessage() );
@@ -1047,14 +1047,14 @@ assert false == nodeIter.hasNext();
 
 Assuming the following invocation of [methodname]`addBook()` is subject to method parameter validation:
 
-[source, JAVA]
+[source, java]
 ----
 library.addBook(book);
 ----
 
 Then one [classname]`ConstraintViolation` object would be returned by [methodname]`ExecutableValidator.validateParameters()` which satisfies the following assertions:
 
-[source, JAVA]
+[source, java]
 ----
 //assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( constraintViolation.getMessage() );
@@ -1088,7 +1088,7 @@ assert false == nodeIter.hasNext();
 
 Assuming the following invocation of [methodname]`User.renewPassword()` is subject to method parameter validation and the [classname]`@OldAndNewPasswordsDifferent` constraint is violated:
 
-[source, JAVA]
+[source, java]
 ----
 User user = [...];
 user.renewPassword("foo", "foo", "foo");
@@ -1096,7 +1096,7 @@ user.renewPassword("foo", "foo", "foo");
 
 Then one [classname]`ConstraintViolation` object would be returned by [methodname]`ExecutableValidator.validateParameters()` which satisfies the following assertions:
 
-[source, JAVA]
+[source, java]
 ----
 assert user == constraintViolation.getRootBean();
 assert User.class == constraintViolation.getRootBeanClass();
@@ -1121,14 +1121,14 @@ assert false == nodeIter.hasNext();
 
 Assuming the following invocation of the [classname]`Library` constructor accepting a list of books is subject to constructor parameter validation:
 
-[source, JAVA]
+[source, java]
 ----
 Library anotherLibrary = new Library(null);
 ----
 
 Then one [classname]`ConstraintViolation` object would be returned by [methodname]`ExecutableValidator.validateConstructorParameters()` which satisfies the following assertions:
 
-[source, JAVA]
+[source, java]
 ----
 //assuming an english locale, the interpolated message is returned
 assert "must not be null".equals( constraintViolation.getMessage() );
@@ -1158,14 +1158,14 @@ assert false == nodeIter.hasNext();
 
 Assuming the following invocation of [methodname]`getMostPopularBookPerAuthor()` is subject to method return value validation and returns a [classname]`Map` containing one entry with key [varname]`author` and value [varname]`book`:
 
-[source, JAVA]
+[source, java]
 ----
 Map<Author, Book> mostPopularBookPerAuthor = library.getMostPopularBookPerAuthor();
 ----
 
 Then one [classname]`ConstraintViolation` object would be returned by [methodname]`ExecutableValidator.validateReturnValue()` which satisfies the following assertions:
 
-[source, JAVA]
+[source, java]
 ----
 //assuming an english locale, the interpolated message is returned
 assert "may not be null or empty".equals( constraintViolation.getMessage() );
@@ -1199,14 +1199,14 @@ assert false == nodeIter.hasNext();
 
 Assuming the following invocation of the [classname]`Library` default constructor is subject to constructor return value validation and returns an instance which violates the [classname]`@PublicLibrary` constraint:
 
-[source, JAVA]
+[source, java]
 ----
 Library publicLibrary = new Library();
 ----
 
 Then one [classname]`ConstraintViolation` object would be returned by [methodname]`ExecutableValidator.validateConstructorReturnValue()` which satisfies the following assertions:
 
-[source, JAVA]
+[source, java]
 ----
 assert null == constraintViolation.getRootBean();
 assert Library.class == constraintViolation.getRootBeanClass();
@@ -1259,7 +1259,7 @@ Below are two examples using message parameters and expressions. The second is e
 .Message using parameters
 ====
 
-[source, JAVA]
+[source, java]
 ----
 Value must be between {min} and {max}
 ----
@@ -1269,7 +1269,7 @@ Value must be between {min} and {max}
 .Message using expressions
 ====
 
-[source, JAVA]
+[source, java]
 ----
 Must be greater than ${inclusive == true ? 'or equal to ' : ''}{value}
 ----
@@ -1341,7 +1341,7 @@ A custom message interpolator may be provided (e.g., to interpolate contextual d
 [role="api"]
 .`MessageInterpolator` interface
 ====
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/MessageInterpolator.java[lines=12..-1]
 ----
@@ -1375,7 +1375,7 @@ It is recommended that [classname]`MessageInterpolator` implementations delegate
 
 These examples describe message interpolation based on the default message interpolator's built-in messages (see <<standard-resolver-messages>>), and the [filename]`ValidationMessages.properties` file shown in table <<table-messageinterpolation>>. The current locale is assumed English.
 
-[source, JAVA]
+[source, java]
 ----
 //ValidationMessages.properties
 myapp.creditcard.error=credit card number not valid
@@ -1401,7 +1401,7 @@ Here is an approach to specify the [classname]`Locale` value to choose on a give
 .Use MessageInterpolator to use a specific Locale value
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * Delegates to a MessageInterpolator implementation but enforces a given Locale
@@ -1455,7 +1455,7 @@ Most of the time, however, the relevant [classname]`Locale` will be provided by 
 .Contextual container possible [classname]`MessageInterpolator` implementation
 ====
 
-[source, JAVA]
+[source, java]
 ----
 public class ContextualMessageInterpolator implements MessageInterpolator {
     private final MessageInterpolator delegate;
@@ -1526,7 +1526,7 @@ Here is an example of what such metadata usage would be:
 .Using metadata API to figure out if method interception is required
 ====
 
-[source, JAVA]
+[source, java]
 ----
 //For methods
 
@@ -1576,7 +1576,7 @@ public boolean requiresReturnValueValidation(Class<?> type, Method method) {
 .Using metadata API to figure out if constructor interception is required
 ====
 
-[source, JAVA]
+[source, java]
 ----
 //For constructors
 
@@ -1686,7 +1686,7 @@ The most simple approach is to initialize the default {spec-name-bv} provider or
 .Simple {spec-name-bv} bootstrap sequence
 ====
 
-[source, JAVA]
+[source, java]
 ----
 ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
 
@@ -1706,7 +1706,7 @@ The second example shows how a container can customize aspects like message inte
 .Customize message resolution, traversable resolver etc.
 ====
 
-[source, JAVA]
+[source, java]
 ----
 //some customization from a container
 ValidatorFactory factory = Validation
@@ -1734,7 +1734,7 @@ The third example shows how to bootstrap {spec-name-bv} in an environment not fo
 .Customize the {spec-name-bv} provider resolution mechanism
 ====
 
-[source, JAVA]
+[source, java]
 ----
 //osgi environment
 ValidatorFactory factory = Validation
@@ -1757,7 +1757,7 @@ The next example shows how a client can choose a specific {spec-name-bv} provide
 .Use a specific provider and add specific configuration
 ====
 
-[source, JAVA]
+[source, java]
 ----
 ValidatorFactory factory = Validation
        .byProvider( ACMEProvider.class )  //chose a specific provider
@@ -1804,7 +1804,7 @@ The last example shows how a [classname]`Validator` can use a specific [classnam
 .Use a specific MessageInterpolator instance for a given Validator
 ====
 
-[source, JAVA]
+[source, java]
 ----
 ValidatorFactory factory = [...];
 MessageInterpolator customInterpolator = new LocaleSpecificMessageInterpolator(
@@ -1835,7 +1835,7 @@ We will now explore the various interfaces, their constraints and usage. We will
 .`ValidatorFactory` interface
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/ValidatorFactory.java[lines=9..-1]
 ----
@@ -1849,7 +1849,7 @@ A [classname]`ValidatorFactory` is provided by a [classname]`Configuration` obje
 .Using unwrap to access a provider specific contract
 ====
 
-[source, JAVA]
+[source, java]
 ----
 //if using the ACME provider
 ACMEValidatorFactory acmeFactory = factory.unwrap(ACMEValidatorFactory.class);
@@ -1876,7 +1876,7 @@ acmeFactory.setSpecificConfiguration( [...] );
 .`ValidatorContext` interface
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/ValidatorContext.java[lines=12..-1]
 ----
@@ -1889,7 +1889,7 @@ include::{validation-api-source-dir}jakarta/validation/ValidatorContext.java[lin
 .Use of ValidatorFactory
 ====
 
-[source, JAVA]
+[source, java]
 ----
 ValidatorFactory factory = [...];
 Validator validatorUsingDefaults = factory.getValidator();
@@ -1948,12 +1948,12 @@ Clients call [methodname]`Configuration.buildValidatorFactory()` to retrieve the
 .`Configuration` and `BootstrapConfiguration` interfaces
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/Configuration.java[lines=15..-1]
 ----
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/BootstrapConfiguration.java[lines=17..-1]
 ----
@@ -1969,7 +1969,7 @@ To facilitate the use of provider specific configuration methods, [classname]`Co
 .Example of provider specific Configuration sub interface
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * Unique identifier of the ACME provider
@@ -2002,7 +2002,7 @@ A typical implementation of [classname]`Configuration` also implements [classnam
 .`ConfigurationState` interface
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/spi/ConfigurationState.java[lines=7..8;21..-1]
 ----
@@ -2039,7 +2039,7 @@ Here is an example of [classname]`Configuration` use.
 .Use Configuration
 ====
 
-[source, JAVA]
+[source, java]
 ----
 Configuration<?> configuration = [...];
 ValidatorFactory factory = configuration
@@ -2057,7 +2057,7 @@ The following shows an example of setting up a [classname]`Configuration`, retri
 .Using Configuration to create several validator factories
 ====
 
-[source, JAVA]
+[source, java]
 ----
 Configuration<?> configuration = [...];
 ValidatorFactory factory1 = configuration
@@ -2087,7 +2087,7 @@ Here, [varname]`factory1` is set up using a custom message interpolator, while [
 .`ValidationProviderResolver` interface
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/ValidationProviderResolver.java[lines=12..-1]
 ----
@@ -2115,7 +2115,7 @@ The default [classname]`ValidationProviderResolver` can be accessed via [classna
 .`ValidationProvider` interface
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/spi/ValidationProvider.java[lines=7..8;14..-1]
 ----
@@ -2126,7 +2126,7 @@ include::{validation-api-source-dir}jakarta/validation/spi/ValidationProvider.ja
 .`BootstrapState` interface
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/spi/BootstrapState.java[lines=7..8;12..-1]
 ----
@@ -2140,7 +2140,7 @@ A [classname]`ValidationProvider` implementation is linked (via its generic para
 .Example of provider specific Configuration sub interface
 ====
 
-[source, JAVA]
+[source, java]
 ----
 /**
  * Unique identifier of the ACME provider
@@ -2204,7 +2204,7 @@ The [classname]`Validation` class is the entry point used to bootstrap {spec-nam
 .Validation methods available
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/Validation.java[lines=24..102]
         [...]
@@ -2226,7 +2226,7 @@ include::{validation-api-source-dir}jakarta/validation/Validation.java[lines=125
 .`GenericBootstrap` interface
 ====
 
-[source, JAVA]
+[source, java]
 ----
 include::{validation-api-source-dir}jakarta/validation/bootstrap/GenericBootstrap.java[lines=7..8;15..-1]
 ----
@@ -2241,7 +2241,7 @@ A [classname]`ProviderSpecificBootstrap` object can optionally receive a [classn
 .`ProviderSpecificBootstrap` interface
 ====
 
-[source, JAVA, indent=0]
+[source, java, indent=0]
 ----
 include::{validation-api-source-dir}jakarta/validation/bootstrap/ProviderSpecificBootstrap.java[lines=7..8;14..-1]
 ----
@@ -2302,7 +2302,7 @@ over any extractor for the same type and type parameter detected through the ser
 .Example of META-INF/validation.xml file
 ====
 
-[source, XML]
+[source, xml]
 ----
 <?xml version="1.0" encoding="UTF-8"?>
 <validation-config
