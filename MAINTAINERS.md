@@ -13,6 +13,6 @@ When preparing the repository for the next major/minor version:
     ```
 * Update the versions in the following files: 
   * [xml-descriptor.asciidoc](sources/xml-descriptor.asciidoc)
-  * [tck-audit.xsl](tck-audit.xsl)
+  * [tck-audit.xsl](tck-audit.xsl) (including the version attribute in the `specification` tag)
 * Create a placeholder section for "What's new" in [whatsnew.asciidoc](sources/whatsnew.asciidoc)
 * Generate a new `tck-audit.xml` (see [README.md](README.md)) and push it to the [Jakarta Validation TCK](https://github.com/jakartaee/validation-tck) repository.
