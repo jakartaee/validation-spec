@@ -87,7 +87,7 @@ pipeline {
 							sh "sed -i 's@<property name=\"bv\\.version\\.spec\" value=\".*\" />@<property name=\"bv.version.spec\" value=\"'${params.RELEASE_VERSION}'\" />@' build.xml"
 							sh "sed -i 's@<property name=\"bv\\.version\\.qualifier\" value=\".*\" />@<property name=\"bv.version.qualifier\" value=\"'${params.RELEASE_VERSION_QUALIFIER}'\" />@' build.xml"
 							sh "sed -i 's@<property name=\"bv\\.revdate\" value=\".*\" />@<property name=\"bv.revdate\" value=\"'\$(date +%Y-%m-%d)'\" />@' build.xml"
-							sh "sed -i 's@<property name=\"license\" value=\".*\" />@<property name=\"license\" value=\"license-${params.RELEASE_LICENSE_TO_APPLY}\" />@' build.xml"
+							sh "sed -i 's@<property name=\"license\" value=\".*\" />@<property name=\"license\" value=\"_license-${params.RELEASE_LICENSE_TO_APPLY}\" />@' build.xml"
 
 
 							// commit and tag the "release version":
@@ -97,13 +97,18 @@ pipeline {
 
 							sh "./mvnw clean install -DskipTests=true -Dlicense=${params.RELEASE_LICENSE_TO_APPLY} -Dbv.version.qualifier=\"${params.RELEASE_VERSION_QUALIFIER}\""
 
+							// create the audit report (required for the TCK before releasing it):
+							withAnt(installation: 'apache-ant-latest') {
+								sh "ant create-tck-audit-file"
+							}
+
 							// reset the version back to dev (NOTE: do not "clean" to keep the rendered artifacts in place):
 							sh "./mvnw versions:set -DnewVersion=${params.DEVELOPMENT_VERSION} -DgenerateBackupPoms=false"
 
 							sh "sed -i 's@<property name=\"bv\\.version\\.spec\" value=\".*\" />@<property name=\"bv.version.spec\" value=\"'${params.DEVELOPMENT_VERSION}'\" />@' build.xml"
 							sh "sed -i 's@<property name=\"bv\\.version\\.qualifier\" value=\".*\" />@<property name=\"bv.version.qualifier\" value=\"Draft\" />@' build.xml"
 							sh "sed -i 's@<property name=\"bv\\.revdate\" value=\".*\" />@<property name=\"bv.revdate\" value=\"\${current.date}\" />@' build.xml"
-							sh "sed -i 's@<property name=\"license\" value=\".*\" />@<property name=\"license\" value=\"license-evaluation\" />@' build.xml"
+							sh "sed -i 's@<property name=\"license\" value=\".*\" />@<property name=\"license\" value=\"_license-evaluation\" />@' build.xml"
 
 							// commit the dev version and push all back to git:
 							sh "git add build.xml pom.xml"
