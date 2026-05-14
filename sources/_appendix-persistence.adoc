@@ -7,75 +7,53 @@
 
 
 [appendix]
-== {spec-name-persistence} 2.0 and schema generation
+== {spec-name-persistence} and schema generation
 
-While not specified by this specification or the {spec-name-persistence} 2.0 specification, Persistence Providers are encouraged to make use of {spec-name-bv} constraint metadata when generating DDL schemas. The proposal is as followed.
+{spec-name-persistence} defines integration points with {spec-name-bv} in two areas:
+automatic validation upon entity lifecycle events, and derivation of schema metadata
+from {spec-name-bv} constraints for DDL generation.
+The authoritative specification of this integration is defined by
+{spec-name-persistence}; this appendix only provides a summary for reference.
 
-[source,subs="verbatim,specialchars,specialcharacters,normal"]
-----
-Ideas explored and not standardized
+=== Integration
 
-{spec-name-persistence} consumes {spec-name-bv} metadata to enhance persistence property 
-metadata.
+The `ValidatorFactory` instance is supplied by the container in Jakarta EE environments
+(via the `jakarta.persistence.validation.factory` property), or bootstrapped by the
+persistence provider using `Validation.buildDefaultValidatorFactory()` in Java SE
+environments when no factory is explicitly provided.
 
-A Persistence provider must use the {spec-name-bv} metadata of a given list of groups. 
-The default group evaluated is Default (default {spec-name-bv} group). Groups evaluated 
-can be overridden by a property. 
-This property contains the comma separated groups (fully qualified class name).
+The persistence provider must use a `TraversableResolver` that only considers attributes
+and associations already loaded, and does not cascade into associations, ensuring that
+validation does not trigger lazy loading.
 
-For each entity, apply the following algorithm. 
-For each persistent property in a given entity: 
- - extract the list of {spec-name-bv} constraints (including the composing constraints) 
- - determine the subset of applicable constraints 
-    (i.e. constraints understood by the persistence provider)
- - apply these constraints on the persistent property metadata 
- - if the property type is an embeddable object or a collection 
-of embeddable objects, apply the algorithm on the embeddable object properties.
+=== Automatic validation upon lifecycle events
 
-The list of constraints that must be understood by persistence providers are
-as followed:
- - @NotNull should be considered equivalent to @Column(nullable=false) / 
-     @JoinColumn(nullable=false)
- - @Size.max should be considered equivalent to @Column.length 
-     for String properties 
- - @Digits (which contains integer and fraction) should be considered 
-     equivalent to @Column.precision = integer+fraction, 
-     @Column.scale = fraction for decimal columns
+When automatic validation is enabled, the persistence provider validates managed types
+(entities, mapped superclasses, and embeddable classes) immediately after lifecycle
+callback methods complete for the applicable events.
 
-The {spec-name-bv} annotation metadata should have priority over {spec-name-persistence} metadata 
-({spec-name-persistence} has no sensible "unset" values on their annotations).
+By default, constraints from the `jakarta.validation.groups.Default` group are validated.
+The target groups for each lifecycle event can be overridden via configuration properties
+such as `jakarta.persistence.validation.group.*`.
 
-Question: should we add @Unique that would map to @Column(unique=true)? 
-@Unique cannot be tested at the Java level reliably but could generate
-a database unique constraint generation. @Unique is not part 
-of the {spec-name-bv} spec today.
+If validation produces any `ConstraintViolation`, the persistence provider must throw a
+`jakarta.validation.ConstraintViolationException` and mark the transaction for rollback.
 
-Persistence Provider should optionally recognize and try to apply the 
-following constraints as well:
- - @Min / @Max on numeric columns (TODO String too?)
- - @Future / @Past on temporal columns
- - @Size for collections and array (not sure it is feasible).
+=== Derivation of schema metadata from {spec-name-bv} constraints
 
-Persistence Providers can also apply non standard constraints to their metadata model. 
-For example, provider ACME might recognize and understand @com.acme.validation.Email 
-and apply it to the database model.
+The persistence provider must use {spec-name-bv} constraint metadata to derive
+persistent attribute characteristics (such as nullability, column length, and
+numeric precision) and database constraints (such as check constraints) for the
+purpose of DDL schema generation.
+This derivation occurs whenever a {spec-name-bv} provider is present and is
+independent of the runtime validation mode.
 
-While most high level constraints will not be recognized, the {spec-name-bv} built-in constraints 
-will be the common language spoken by Persistence Providers. Any high level constraint 
-can be composed of more modular constraints (constraint composition).
+Only constraints belonging to the `jakarta.validation.groups.Default` group are
+considered by default, though providers may allow overriding this.
 
-* additional proposal
-In case of a constraint violation report detected and generated by the database 
-(not null, etc), the Java persistence provider catches this report and translates 
-it into a {spec-name-bv} error report. From the perspective of the application, constraint 
-errors are viewed through a unified layer. {spec-name-bv} must provide some API to create a 
-constraint violation error (constraintDescriptor.createConstraintViolation(...)).
+{spec-name-bv} constraint metadata takes precedence over {spec-name-persistence}
+annotation metadata when both are present. When multiple constraints apply to the
+same attribute, the most restrictive constraint is applied.
 
-While this proposal has a lot of value-add, I wonder how difficult it can be to 
-implement this in persistence providers.
-
-Provide a way to disable {spec-name-bv} metadata use by a persistence provider (property based).
-----
-
-This is not an endorsement of the {spec-name-persistence} expert group or the {spec-name-bv} expert group. Such approach may or may not be standardized in the future. Such integration should not be considered portable.
-
+The precise list of recognized built-in constraints, their influence on attribute
+metadata, and the resulting DDL effects are defined by {spec-name-persistence}.
