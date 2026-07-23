@@ -494,7 +494,47 @@ include::{validation-api-source-dir}jakarta/validation/ElementKind.java[lines=9.
 
 ====
 
-[classname]`Path` is an iterable of [classname]`Node` objects. [classname]`Node` offers the following methods:
+[classname]`Path` is an iterable of [classname]`Node` objects.
+In addition to iteration, [classname]`Path` offers the following methods
+for direct access to its nodes:
+
+* [tck-testable]#[methodname]`length()` returns the number of nodes in the path.#
+* [tck-testable]#[methodname]`getNode(int index)` returns the node at the given index.
+Throws [classname]`IndexOutOfBoundsException` if the index is negative
+or greater than or equal to [methodname]`length()`.#
+* [tck-testable]#[methodname]`getRootNode()` returns the first node in the path.
+Equivalent to [methodname]`getNode(0)`.#
+* [tck-testable]#[methodname]`getLeafNode()` returns the last node in the path.#
+
+[NOTE]
+====
+The default implementations of these methods iterate through nodes
+to produce the result. Implementations may provide more optimal
+versions, but are not required to do so.
+====
+
+.Accessing path nodes: iterator vs direct access
+====
+
+[source, java]
+----
+Path path = constraintViolation.getPropertyPath();
+
+// Using iterator-based access:
+Iterator<Node> nodeIter = path.iterator();
+Node first = nodeIter.next();
+Node second = nodeIter.next();
+
+// Using direct access:
+Node first = path.getRootNode();
+Node second = path.getNode(1);
+Node last = path.getLeafNode();
+int pathLength = path.length();
+----
+
+====
+
+[classname]`Node` offers the following methods:
 
 * [tck-testable]#[methodname]`getName()` returns the name of the element which the node represents:#
 ** `null` if it is a leaf node which represents an entity / bean. In particular, the node representing the root object.
