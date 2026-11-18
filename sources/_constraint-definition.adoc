@@ -665,9 +665,19 @@ public class NumberPositiveValidator implements ConstraintValidator<NumberPositi
 
 The lifecycle of a constraint validation implementation instance is undefined. {spec-name-bv} providers are allowed to cache [classname]`ConstraintValidator` instances retrieved from the [classname]`ConstraintValidatorFactory`.
 
-[tck-testable]#The [methodname]`initialize()` method is called by the {spec-name-bv} provider prior to any use of the constraint implementation.#
-[tck-testable]#As of {spec-name-bv} 2.0, `initialize()` has an empty default implementation,
+[tck-testable]#Before using a constraint validator instance for validation,
+the {spec-name-bv} provider initializes it by calling only
+[methodname]`initialize(ConstraintDescriptor<A>, ConstraintValidatorInitializationContext)`
+with the constraint descriptor and a non-null initialization context.#
+[tck-testable]#The default implementation of this overload delegates to
+[methodname]`initialize(A)` with the annotation returned by
+[methodname]`ConstraintDescriptor.getAnnotation()`. The one-argument method
+has an empty default implementation,
 allowing to omit the implementation from validators that don't need to access any constraint attributes.#
+
+The initialization context exposes the clock provider used by the
+[classname]`Validator`, including any override configured through
+[methodname]`ValidatorContext.clockProvider()`.
 
 [tck-testable]#The [methodname]`isValid()` method is evaluated by the {spec-name-bv} provider each time a given value is validated.# [tck-not-testable]#It returns `false` if the value is not valid, `true` otherwise.# [tck-not-testable]#`isValid()` implementations must be thread-safe.#
 
